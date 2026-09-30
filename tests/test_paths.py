@@ -37,7 +37,8 @@ class PathTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp:
             profile = make_profile(Path(temp), {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT)})
-            with mock.patch("sys.stdout"):
+            # No auto-detected saves, so the test can't pass by finding real ones on this PC.
+            with mock.patch("sys.stdout"), mock.patch("dungeons2_editor.saves.find_profiles", return_value=[]):
                 self.assertEqual(cli.main(["verify", "--profile", str(profile)]), 0)
                 self.assertEqual(cli.main(["--profile", str(profile), "verify"]), 0)
             with mock.patch.object(gui, "run", return_value=0) as run:

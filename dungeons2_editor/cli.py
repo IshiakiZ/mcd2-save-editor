@@ -135,7 +135,6 @@ def main(argv: list[str] | None = None) -> int:
     shared.add_argument("--backups", type=Path, default=argparse.SUPPRESS, help="where backups are kept")
     shared.add_argument("--icons", type=Path, default=argparse.SUPPRESS, help="folder of item pictures")
     parser = argparse.ArgumentParser(prog="dungeons2_editor", description="Minecraft Dungeons II save editor.", parents=[shared])
-    parser.set_defaults(profile=None, backups=saves.DEFAULT_BACKUP_ROOT, icons=None)
     commands = parser.add_subparsers(dest="command", metavar="command")
 
     def command(name: str, help: str) -> argparse.ArgumentParser:
@@ -159,10 +158,13 @@ def main(argv: list[str] | None = None) -> int:
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     args = parser.parse_args(argv)
-    if args.icons is None:
-        from .icons import DEFAULT_ICON_ROOT
+    # Defaults are filled in here rather than with set_defaults(), which would change the shared
+    # options' defaults and make each command reset a --profile given before it.
+    from .icons import DEFAULT_ICON_ROOT
 
-        args.icons = DEFAULT_ICON_ROOT
+    for name, default in (("profile", None), ("backups", saves.DEFAULT_BACKUP_ROOT), ("icons", DEFAULT_ICON_ROOT)):
+        if getattr(args, name, None) is None:
+            setattr(args, name, default)
 
     if args.command in (None, "gui"):
         from .gui import run
