@@ -129,27 +129,34 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="dungeons2_editor", description="Minecraft Dungeons II save editor.")
-    parser.add_argument("--profile", type=Path, help="save folder that contains containers.index (default: auto-detect)")
-    parser.add_argument("--backups", type=Path, default=saves.DEFAULT_BACKUP_ROOT, help="where backups are kept")
-    parser.add_argument("--icons", type=Path, default=None, help="folder of item pictures (default: icons next to the editor)")
+    # The folder options work before or after the command: "--profile X list" and "list --profile X".
+    shared = argparse.ArgumentParser(add_help=False)
+    shared.add_argument("--profile", type=Path, default=argparse.SUPPRESS, help="save folder that contains containers.index (default: auto-detect)")
+    shared.add_argument("--backups", type=Path, default=argparse.SUPPRESS, help="where backups are kept")
+    shared.add_argument("--icons", type=Path, default=argparse.SUPPRESS, help="folder of item pictures")
+    parser = argparse.ArgumentParser(prog="dungeons2_editor", description="Minecraft Dungeons II save editor.", parents=[shared])
+    parser.set_defaults(profile=None, backups=saves.DEFAULT_BACKUP_ROOT, icons=None)
     commands = parser.add_subparsers(dest="command", metavar="command")
-    gui_command = commands.add_parser("gui", help="open the editor window (default)")
+
+    def command(name: str, help: str) -> argparse.ArgumentParser:
+        return commands.add_parser(name, help=help, parents=[shared])
+
+    gui_command = command("gui", "open the editor window (default)")
     gui_command.add_argument("--close-after", type=float, metavar="SECONDS", help="close the window again after this long (for testing a build)")
-    commands.add_parser("list", help="list the save containers")
-    export = commands.add_parser("export", help="write a container's data to a JSON file")
+    command("list", "list the save containers")
+    export = command("export", "write a container's data to a JSON file")
     export.add_argument("container")
     export.add_argument("output", nargs="?", type=Path)
-    import_ = commands.add_parser("import", help="save a JSON file into a container (makes a backup first)")
+    import_ = command("import", "save a JSON file into a container (makes a backup first)")
     import_.add_argument("container")
     import_.add_argument("input", type=Path)
     import_.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
-    commands.add_parser("backup", help="back up the whole save folder")
-    restore = commands.add_parser("restore", help="put back the save data from a backup folder")
+    command("backup", "back up the whole save folder")
+    restore = command("restore", "put back the save data from a backup folder")
     restore.add_argument("backup", type=Path)
     restore.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
-    commands.add_parser("verify", help="check that saves re-encode exactly (writes nothing)")
-    pictures = commands.add_parser("pictures", help="download item pictures from minecraft.wiki into the icons folder")
+    command("verify", "check that saves re-encode exactly (writes nothing)")
+    pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     args = parser.parse_args(argv)
     if args.icons is None:

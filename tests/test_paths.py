@@ -32,6 +32,18 @@ class PathTests(unittest.TestCase):
             self.assertEqual(cli.main(["gui", "--close-after", "2.5"]), 0)
         self.assertEqual(run.call_args.args[3], 2.5)
 
+    def test_folder_options_work_before_or_after_the_command(self):
+        from .helpers import SETTINGS_TEXT, make_profile, shift_encode
+
+        with tempfile.TemporaryDirectory() as temp:
+            profile = make_profile(Path(temp), {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT)})
+            with mock.patch("sys.stdout"):
+                self.assertEqual(cli.main(["verify", "--profile", str(profile)]), 0)
+                self.assertEqual(cli.main(["--profile", str(profile), "verify"]), 0)
+            with mock.patch.object(gui, "run", return_value=0) as run:
+                cli.main(["gui", "--profile", str(profile), "--close-after", "1"])
+            self.assertEqual(run.call_args.args[0], profile)
+
 
 if __name__ == "__main__":
     unittest.main()
