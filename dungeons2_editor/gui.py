@@ -17,7 +17,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import codec, saves, wgs, wiki
+from . import __version__, codec, paths, saves, wgs, wiki
 from . import document as doc
 from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document
 from .hero_tab import HeroTab
@@ -79,7 +79,7 @@ def _short(value: Any, limit: int = 48) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
-SETTINGS_FILE = Path(__file__).resolve().parent.parent / "editor-settings.json"
+SETTINGS_FILE = paths.data_dir() / "editor-settings.json"
 
 
 def _load_settings(path: Path) -> dict:
@@ -92,6 +92,7 @@ def _load_settings(path: Path) -> dict:
 
 def _save_settings(path: Path, settings: dict) -> None:
     try:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text(json.dumps(settings, indent=2), encoding="utf-8")
     except OSError:
         pass  # only a convenience; the editor works without it
@@ -141,7 +142,13 @@ class EditorApp:
     # ------------------------------------------------------------------ layout
 
     def _setup_style(self) -> None:
-        self.root.title(APP_TITLE)
+        self.root.title(f"{APP_TITLE} {__version__}")
+        icon = paths.resource("assets/app.ico")
+        if icon.is_file():
+            try:
+                self.root.iconbitmap(default=str(icon))
+            except tk.TclError:
+                pass
         self.root.geometry("1240x880")
         self.root.minsize(960, 640)
         style = ttk.Style(self.root)
@@ -1138,19 +1145,31 @@ def _enable_dpi_awareness() -> None:
             pass
 
 
-def run(profile: Path | None = None, backup_root: Path = saves.DEFAULT_BACKUP_ROOT, icon_root: Path = DEFAULT_ICON_ROOT) -> int:
+def run(
+    profile: Path | None = None,
+    backup_root: Path = saves.DEFAULT_BACKUP_ROOT,
+    icon_root: Path = DEFAULT_ICON_ROOT,
+    close_after: float | None = None,
+) -> int:
+    """Open the editor window. ``close_after`` (seconds) closes it again, for checking a build starts."""
     _enable_dpi_awareness()
     root = tk.Tk()
+    failures: list[str] = []
 
     def report(exc_type, exc, tb) -> None:
-        messagebox.showerror(APP_TITLE, "".join(traceback.format_exception(exc_type, exc, tb)), parent=root)
+        failures.append("".join(traceback.format_exception(exc_type, exc, tb)))
+        if close_after is None:
+            messagebox.showerror(APP_TITLE, failures[-1], parent=root)
 
     root.report_callback_exception = report
     try:
         EditorApp(root, profile, backup_root, icon_root)
     except Exception:
-        messagebox.showerror(APP_TITLE, traceback.format_exc(), parent=root)
+        if close_after is None:
+            messagebox.showerror(APP_TITLE, traceback.format_exc(), parent=root)
         root.destroy()
         return 1
+    if close_after is not None:
+        root.after(int(close_after * 1000), root.destroy)
     root.mainloop()
-    return 0
+    return 1 if failures else 0

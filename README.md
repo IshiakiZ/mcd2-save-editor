@@ -30,16 +30,23 @@ having to know anything about save files. Advanced mode shows the full save for 
 |---|---|
 | ![Save summary](docs/screenshots/save-summary.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
 
-## Getting started
+## Download
 
-You need Windows, Minecraft Dungeons II from the Xbox app or PC Game Pass, and
-[Python 3.10 or newer](https://www.python.org/downloads/) (the standard installer includes the Tkinter it uses).
-There's nothing else to install.
+**[⬇ Download MCD2SaveEditor.exe](https://github.com/IshiakiZ/mcd2-save-editor/releases/latest)** from the latest
+release and double-click it. There's nothing to install, and it finds your saves automatically.
 
-1. Download this repository (**Code → Download ZIP**) and unzip it anywhere.
-2. **Close the game.**
-3. Double-click **Start Save Editor.bat**. It finds your saves automatically.
-4. Pick your hero on the left, make your changes, and press **Save to game**.
+1. **Close the game.**
+2. Open **MCD2SaveEditor.exe**.
+3. Pick your hero on the left, make your changes, and press **Save to game**.
+
+Windows may say **"Windows protected your PC"** because the .exe isn't code-signed. Click **More info → Run
+anyway**. The .exe is built by GitHub Actions straight from this repository's source
+([the workflow](.github/workflows/release.yml)). The .exe keeps backups, pictures and settings in
+`%LOCALAPPDATA%\MCD2 Save Editor`.
+
+**Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
+installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
+double-click **Start Save Editor.bat**. Run that way, backups, pictures and settings stay in the unzipped folder.
 
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore…** puts any of those back. Backups contain

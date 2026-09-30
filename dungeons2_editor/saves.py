@@ -13,12 +13,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from . import codec, wgs
+from . import codec, paths, wgs
 from .hero import Hero, is_hero_document
 
 PACKAGE_PATTERN = "Microsoft.MinecraftDungeons2_*"
 GAME_EXECUTABLES = ("Dungeons-WinGDK-Shipping.exe", "Dungeons.exe")
-DEFAULT_BACKUP_ROOT = Path(__file__).resolve().parent.parent / "backups"
+DEFAULT_BACKUP_ROOT = paths.data_dir() / "backups"
 BACKUP_INFO_FILE = "backup-info.json"
 
 # Containers the editor never reads or writes. The first two hold sign-in and

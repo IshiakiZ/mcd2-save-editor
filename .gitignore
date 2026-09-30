@@ -12,3 +12,8 @@ mcd2-research/data/
 
 __pycache__/
 *.pyc
+
+# PyInstaller output (the .exe is built by .github/workflows/release.yml)
+build/
+dist/
+*.spec

@@ -14,7 +14,9 @@ import re
 import tkinter as tk
 from pathlib import Path
 
-DEFAULT_ICON_ROOT = Path(__file__).resolve().parent.parent / "icons"
+from .paths import data_dir
+
+DEFAULT_ICON_ROOT = data_dir() / "icons"
 WIKI_FOLDER = "wiki"  # pictures downloaded from minecraft.wiki; your own pictures take priority
 ALIASES_FILE = "aliases.txt"
 EXTENSIONS = (".png", ".gif", ".jpg", ".jpeg", ".webp", ".bmp")

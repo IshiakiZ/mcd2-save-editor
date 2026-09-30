@@ -1,0 +1,51 @@
+name: Build and release
+
+# Push a tag like v1.0.1 to build MCD2SaveEditor.exe and publish it as a GitHub Release.
+# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the .exe as an artifact.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the tests
+        run: python -m unittest discover -s tests -t .
+
+      - name: Build the .exe
+        run: |
+          python -m pip install --upgrade "pyinstaller>=6.10,<7"
+          pyinstaller --noconfirm --onefile --windowed --name MCD2SaveEditor --icon assets/app.ico --add-data "assets/app.ico;assets" mcd2_save_editor.py
+
+      - name: Check the .exe reads a save and opens its window
+        shell: pwsh
+        run: |
+          $saves = python -c "import tempfile; from pathlib import Path; from tests.helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode; print(make_profile(Path(tempfile.mkdtemp()), {'Character00000000-0000-1000-8000-000000000002': hero_save_text().encode(), 'GlobalSaveDataDefault': shift_encode(SETTINGS_TEXT)}))"
+          foreach ($arguments in @("verify --profile `"$saves`"", "gui --profile `"$saves`" --close-after 4")) {
+            $run = Start-Process dist/MCD2SaveEditor.exe -ArgumentList $arguments -Wait -PassThru
+            if ($run.ExitCode -ne 0) { throw "MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
+            Write-Output "MCD2SaveEditor.exe $arguments: OK"
+          }
+
+      - name: Keep the .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCD2SaveEditor
+          path: dist/MCD2SaveEditor.exe
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.exe --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md

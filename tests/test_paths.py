@@ -1,0 +1,37 @@
+import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from dungeons2_editor import cli, gui, paths
+
+
+class PathTests(unittest.TestCase):
+    def test_from_source_files_live_next_to_the_code(self):
+        self.assertEqual(paths.data_dir(), paths.SOURCE_ROOT)
+        self.assertEqual(paths.resource("assets/app.ico"), paths.SOURCE_ROOT / "assets" / "app.ico")
+        self.assertTrue(paths.resource("assets/app.ico").is_file())
+
+    def test_the_exe_keeps_files_in_local_app_data(self):
+        with mock.patch.object(sys, "frozen", True, create=True), mock.patch.dict(os.environ, {"LOCALAPPDATA": r"C:\Users\someone\AppData\Local"}):
+            self.assertEqual(paths.data_dir(), Path(r"C:\Users\someone\AppData\Local") / "MCD2 Save Editor")
+        with mock.patch.object(sys, "_MEIPASS", r"C:\Temp\_MEI123", create=True):
+            self.assertEqual(paths.resource("assets/app.ico"), Path(r"C:\Temp\_MEI123") / "assets" / "app.ico")
+
+    def test_settings_folder_is_created_when_needed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / "MCD2 Save Editor" / "editor-settings.json"
+            gui._save_settings(target, {"advanced": True})
+            self.assertEqual(json.loads(target.read_text(encoding="utf-8")), {"advanced": True})
+
+    def test_gui_close_after_is_passed_through(self):
+        with mock.patch.object(gui, "run", return_value=0) as run:
+            self.assertEqual(cli.main(["gui", "--close-after", "2.5"]), 0)
+        self.assertEqual(run.call_args.args[3], 2.5)
+
+
+if __name__ == "__main__":
+    unittest.main()

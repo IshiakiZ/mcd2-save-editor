@@ -134,7 +134,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--backups", type=Path, default=saves.DEFAULT_BACKUP_ROOT, help="where backups are kept")
     parser.add_argument("--icons", type=Path, default=None, help="folder of item pictures (default: icons next to the editor)")
     commands = parser.add_subparsers(dest="command", metavar="command")
-    commands.add_parser("gui", help="open the editor window (default)")
+    gui_command = commands.add_parser("gui", help="open the editor window (default)")
+    gui_command.add_argument("--close-after", type=float, metavar="SECONDS", help="close the window again after this long (for testing a build)")
     commands.add_parser("list", help="list the save containers")
     export = commands.add_parser("export", help="write a container's data to a JSON file")
     export.add_argument("container")
@@ -159,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in (None, "gui"):
         from .gui import run
 
-        return run(args.profile, args.backups, args.icons)
+        return run(args.profile, args.backups, args.icons, getattr(args, "close_after", None))
     handler = {
         "list": cmd_list,
         "export": cmd_export,
