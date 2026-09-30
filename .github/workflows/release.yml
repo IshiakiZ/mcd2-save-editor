@@ -35,7 +35,7 @@ jobs:
           foreach ($arguments in @("verify --profile `"$saves`"", "gui --profile `"$saves`" --close-after 4")) {
             $run = Start-Process dist/MCD2SaveEditor.exe -ArgumentList $arguments -Wait -PassThru
             if ($run.ExitCode -ne 0) { throw "MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
-            Write-Output "MCD2SaveEditor.exe $arguments: OK"
+            Write-Output "OK: MCD2SaveEditor.exe $arguments"
           }
 
       - name: Keep the .exe
