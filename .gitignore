@@ -1,0 +1,14 @@
+# Your saves: backups hold sign-in tokens and must never be shared
+backups/
+
+# Pictures: downloaded from minecraft.wiki or added by you (Mojang artwork, not ours to publish)
+icons/
+
+# Per-user editor settings
+editor-settings.json
+
+# Extracted from the game's files by mcd2-research/mcd2_script_dump.py
+mcd2-research/data/
+
+__pycache__/
+*.pyc
