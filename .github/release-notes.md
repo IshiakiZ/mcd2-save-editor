@@ -1,3 +1,12 @@
+## What's new in 1.1.0
+
+- **Add any item in the game**: all 170+ weapons, armor pieces, artifacts and talismans, not just ones you've found.
+  Items whose internal name has been seen in a real save are marked Confirmed; the rest are best guesses and the
+  editor asks before adding them.
+- **In-game names**: the save's `MysticHelmet` now shows as the Mystic Circlet, and as the Oracle Crown at Unique rarity.
+- **Uniques**: pick Unique rarity to get an item's Unique version (a Unique Battle Hammer is the Emerald Hammer).
+- Presets can add unconfirmed items if you tick the box.
+
 ## Download
 
 Download **MCD2SaveEditor.exe** below and double-click it. There's nothing to install.

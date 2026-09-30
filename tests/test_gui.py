@@ -1,3 +1,4 @@
+import gc
 import json
 import tempfile
 import tkinter as tk
@@ -39,6 +40,7 @@ class WindowTestCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.root = tk.Tk()
         self.root.withdraw()
+        self.addCleanup(gc.collect)  # frees Tk objects on the main thread, after the window is destroyed
         self.addCleanup(self.root.destroy)
         self.make_icons()
         with mock.patch.object(saves, "find_profiles", return_value=[]):
@@ -166,23 +168,23 @@ class HeroTabTests(WindowTestCase):
         self.assertTrue(self.app.meta_var.get().startswith("Last saved"))
 
     def test_lists_items_most_powerful_first_with_pictures(self):
-        self.assertEqual(self.rows(), ["Longbow", "Mystic Helmet", "Curved Greatsword", "Sword"])
+        self.assertEqual(self.rows(), ["Longbow", "Mystic Circlet", "Curved Greatsword", "Sword"])
         images = {self.tab.tree.item(i, "text").strip(): self.tab.tree.item(i, "image") for i in self.tab.tree.get_children()}
         self.assertTrue(all(images.values()))
-        self.select_item("Mystic Helmet")
+        self.select_item("Mystic Circlet")
         self.assertEqual(self.tab.preview_source_var.get(), "Picture: minecraft.wiki")
 
     def test_sorting_and_filters(self):
         self.tab.sort_var.set("Name")
         self.tab._fill_items()
-        self.assertEqual(self.rows(), ["Curved Greatsword", "Longbow", "Mystic Helmet", "Sword"])
+        self.assertEqual(self.rows(), ["Curved Greatsword", "Longbow", "Mystic Circlet", "Sword"])
         self.tab._sort_by_heading("rarity")
         self.assertEqual(self.rows()[0], "Longbow")
         self.assertTrue(self.tab.tree.heading("rarity", "text").endswith("▼"))
         self.tab.show_merchant.set(False)
         self.tab.show_cosmetics.set(True)
         self.tab._fill_items()
-        self.assertEqual(sorted(self.rows()), ["Hero", "Longbow", "Mystic Helmet", "Sword"])
+        self.assertEqual(sorted(self.rows()), ["Hero", "Longbow", "Mystic Circlet", "Sword"])
 
     def test_stats_apply_as_you_go_and_save_with_a_plain_summary(self):
         self.tab.stat_vars["Emeralds"].set("5000")
@@ -209,7 +211,7 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(self.app.change_count, 0)
 
     def test_item_power_rarity_copy_and_delete(self):
-        self.select_item("Mystic Helmet")
+        self.select_item("Mystic Circlet")
         self.tab.power_var.set("50")
         self.assertTrue(self.tab._apply_numbers())
         self.tab.rarity_var.set("Unique")
@@ -220,7 +222,7 @@ class HeroTabTests(WindowTestCase):
         with mock.patch("tkinter.messagebox.askyesno", return_value=True):
             self.tab.delete_item()
         summary = self.save()
-        self.assertIn("Mystic Helmet: Common → Unique, power 1 → 50", summary)
+        self.assertIn("Mystic Circlet: Common → Unique, power 1 → 50", summary)
         self.assertIn("Added Longbow (Rare, power 2)", summary)
         self.assertIn("Removed Curved Greatsword", summary)
         hero = self.saved_hero()
@@ -229,10 +231,10 @@ class HeroTabTests(WindowTestCase):
         self.assertNotIn("SW.Item.CurvedGreatsword", tags)
 
     def test_bad_item_value_stays_on_that_item(self):
-        self.select_item("Mystic Helmet")
+        self.select_item("Mystic Circlet")
         self.tab.power_var.set("-5")
         self.select_item("Longbow")  # clicking away with a bad value
-        self.assertEqual(self.tab.item_title_var.get(), "Mystic Helmet")
+        self.assertEqual(self.tab.item_title_var.get(), "Mystic Circlet")
         self.assertEqual(str(self.tab.item_message.cget("style")), "Error.TLabel")
 
     def test_equipped_items_cannot_be_deleted(self):
@@ -249,7 +251,11 @@ class HeroTabTests(WindowTestCase):
         self.assertNotIn("Hero", names)  # cosmetics can't be added
         picker.search_var.set("axe")
         self.root.update()
-        self.assertEqual([picker.tree.item(i, "text").strip() for i in picker.tree.get_children()], ["Axe"])
+        results = {picker.tree.item(i, "text").strip(): i for i in picker.tree.get_children()}
+        self.assertIn("Greataxe", results)  # from the game's item list, not just the saves
+        self.assertEqual(picker.tree.item(results["Axe"], "values")[1], "Confirmed")  # seen in this save's collections
+        picker.tree.selection_set(results["Axe"])
+        self.root.update()
         picker.rarity_var.set("Unique")
         picker.power_var.set("40")
         picker.count_var.set("2")
@@ -260,6 +266,50 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("Added Axe (Unique, power 40)", summary)
         axe = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Axe")
         self.assertEqual((axe.rarity, axe.power, axe.count, axe.where), ("Unique", 40, 2, "Inventory"))
+
+    def open_picker_on(self, name):
+        self.tab.open_add_items()
+        self.root.update()
+        picker = next(w for w in self.tab.winfo_children() if isinstance(w, ItemPicker))
+        picker.search_var.set(name)
+        self.root.update()
+        row = next(i for i in picker.tree.get_children() if picker.tree.item(i, "text").strip() == name)
+        picker.tree.selection_set(row)
+        self.root.update()
+        return picker, row
+
+    def test_unconfirmed_items_warn_once_before_adding(self):
+        picker, row = self.open_picker_on("Claymore")
+        self.assertEqual(picker.tree.item(row, "values")[1], "Unconfirmed")
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            picker._confirm()
+        ask.assert_called_once()
+        self.assertEqual(self.app.change_count, 0)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            picker._confirm()
+            picker._confirm()  # asked only once per window
+        ask.assert_called_once()
+        picker.destroy()
+        claymores = [item for item in self.app.hero_tab.hero.items() if item.tag == "SW.Item.Claymore"]
+        self.assertEqual(len(claymores), 2)
+
+    def test_uniques_are_their_base_item_at_unique_rarity(self):
+        picker, _row = self.open_picker_on("Battle Hammer")
+        picker.rarity_var.set("Unique")
+        picker._show_selected()
+        self.assertEqual(picker.name_var.get(), "Emerald Hammer")
+        self.assertIn("Unique Battle Hammer", picker.unique_text.get())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            picker._confirm()
+        picker.destroy()
+        self.assertIn("Added Emerald Hammer (Unique", self.save())
+        hammer = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.BattleHammer")
+        self.assertEqual((hammer.rarity, hammer.name), ("Unique", "Emerald Hammer"))
+
+    def test_rarity_unique_shows_the_unique_name_in_the_list(self):
+        self.select_item("Mystic Circlet")
+        self.tab._apply_item(rarity="Unique")
+        self.assertIn("Oracle Crown", self.rows())
 
     def test_picker_reports_bad_input_inline(self):
         self.tab.open_add_items()
@@ -272,7 +322,7 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(self.app.change_count, 0)
 
     def test_change_item_into_another(self):
-        self.select_item("Mystic Helmet")
+        self.select_item("Mystic Circlet")
         with mock.patch.object(self.tab, "wait_window"):
             with mock.patch("dungeons2_editor.hero_tab.ItemPicker") as picker_class:
                 picker_class.return_value.result = "SW.Item.Axe"
@@ -285,7 +335,7 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("GlobalSaveDataDefault", self.container_names())
         self.assertEqual(self.app.notebook.tab(self.app.edit_tab, "state"), "normal")
         self.assertTrue(self.tab.raw_row.winfo_manager())
-        self.select_item("Mystic Helmet")
+        self.select_item("Mystic Circlet")
         self.assertEqual(self.tab.type_var.get(), "SW.Item.MysticHelmet")
 
     def test_edits_in_the_tree_show_up_on_the_hero_tab(self):

@@ -1,0 +1,1156 @@
+[
+ {
+  "name": "Beekeeper Boots",
+  "kind": "Armor",
+  "id": "SW.Item.HoneyBoots",
+  "confirmed": true,
+  "slot": "Boots",
+  "unique": "Hivemind Boots"
+ },
+ {
+  "name": "Beekeeper Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.HoneyLeggings",
+  "confirmed": true,
+  "slot": "Leggings",
+  "unique": "Hivemind Leggings"
+ },
+ {
+  "name": "Beekeeper Suit",
+  "kind": "Armor",
+  "id": "SW.Item.HoneyChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Hivemind Chestplate"
+ },
+ {
+  "name": "Beekeeper Veil",
+  "kind": "Armor",
+  "id": "SW.Item.HoneyHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Hivemind Hardhat"
+ },
+ {
+  "name": "Bounty Hunter Boots",
+  "kind": "Armor",
+  "id": "SW.Item.BountyHunterBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Bounty Hunter Helmet",
+  "kind": "Armor",
+  "id": "SW.Item.BountyHunterHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Disciple Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.DiscipleLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Disciple Mask",
+  "kind": "Armor",
+  "id": "SW.Item.DiscipleHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Disciple Robe",
+  "kind": "Armor",
+  "id": "SW.Item.DiscipleChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Disciple Wraps",
+  "kind": "Armor",
+  "id": "SW.Item.DiscipleBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Fly Agaric Cap",
+  "kind": "Armor",
+  "id": "SW.Item.FlyAgaricHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Fly Agaric Coat",
+  "kind": "Armor",
+  "id": "SW.Item.FlyAgaricChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Fly Agaric Galoshes",
+  "kind": "Armor",
+  "id": "SW.Item.FlyAgaricBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Fly Agaric Trousers",
+  "kind": "Armor",
+  "id": "SW.Item.FlyAgaricLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Mushroom Boots",
+  "kind": "Armor",
+  "id": "SW.Item.MushroomBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Fly Agaric Galoshes"
+ },
+ {
+  "name": "Mushroom Cap",
+  "kind": "Armor",
+  "id": "SW.Item.MushroomHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Fly Agaric Cap"
+ },
+ {
+  "name": "Mushroom Robe",
+  "kind": "Armor",
+  "id": "SW.Item.MushroomChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Fly Agaric Coat"
+ },
+ {
+  "name": "Mystic Boots",
+  "kind": "Armor",
+  "id": "SW.Item.MysticBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Mystic Circlet",
+  "kind": "Armor",
+  "id": "SW.Item.MysticHelmet",
+  "confirmed": true,
+  "slot": "Helmet",
+  "unique": "Oracle Crown"
+ },
+ {
+  "name": "Mystic Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.MysticLeggings",
+  "confirmed": false,
+  "slot": "Leggings",
+  "unique": "Oracle Tights"
+ },
+ {
+  "name": "Mystic Robe",
+  "kind": "Armor",
+  "id": "SW.Item.MysticChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Nomad Boots",
+  "kind": "Armor",
+  "id": "SW.Item.NomadBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Rover Sabatons"
+ },
+ {
+  "name": "Nomad Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.NomadChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Rover Pauldrons"
+ },
+ {
+  "name": "Nomad Hood",
+  "kind": "Armor",
+  "id": "SW.Item.NomadHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Rover Helmet"
+ },
+ {
+  "name": "Nomad Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.NomadLeggings",
+  "confirmed": false,
+  "slot": "Leggings",
+  "unique": "Rover Leggings"
+ },
+ {
+  "name": "Phantom Boots",
+  "kind": "Armor",
+  "id": "SW.Item.PhantomBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Phantom Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.PhantomChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Phantom Helmet",
+  "kind": "Armor",
+  "id": "SW.Item.PhantomHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Phantom Pants",
+  "kind": "Armor",
+  "id": "SW.Item.PhantomLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Protector Boots",
+  "kind": "Armor",
+  "id": "SW.Item.ProtectorBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Protector Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.ProtectorChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Protector Helmet",
+  "kind": "Armor",
+  "id": "SW.Item.ProtectorHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Protector Shinguards",
+  "kind": "Armor",
+  "id": "SW.Item.ProtectorLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Ranger Boots",
+  "kind": "Armor",
+  "id": "SW.Item.RangerBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Ranger Cap",
+  "kind": "Armor",
+  "id": "SW.Item.RangerHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Sharpshooter Fedora"
+ },
+ {
+  "name": "Ranger Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.RangerChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Ranger Jacket",
+  "kind": "Armor",
+  "id": "SW.Item.RangerChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Ranger Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.RangerLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Realmreacher Boots",
+  "kind": "Armor",
+  "id": "SW.Item.RealmreacherBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Realmreacher Hat",
+  "kind": "Armor",
+  "id": "SW.Item.RealmreacherHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Realmreacher Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.RealmreacherLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Realmreacher Robe",
+  "kind": "Armor",
+  "id": "SW.Item.RealmreacherChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Redstone Boots",
+  "kind": "Armor",
+  "id": "SW.Item.RedstoneBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Monstrosity Greaves"
+ },
+ {
+  "name": "Redstone Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.RedstoneChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Monstrosity Armor"
+ },
+ {
+  "name": "Redstone Helmet",
+  "kind": "Armor",
+  "id": "SW.Item.RedstoneHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Redstone Monstrosity Helmet"
+ },
+ {
+  "name": "Redstone Shinguards",
+  "kind": "Armor",
+  "id": "SW.Item.RedstoneLeggings",
+  "confirmed": false,
+  "slot": "Leggings",
+  "unique": "Redstone Monstrosity Shinguards"
+ },
+ {
+  "name": "Scamp Jacket",
+  "kind": "Armor",
+  "id": "SW.Item.ScampChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Scamp Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.ScampLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Sculk Digger Boots",
+  "kind": "Armor",
+  "id": "SW.Item.SculkDiggerBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Twisted Warden Boots"
+ },
+ {
+  "name": "Sculk Digger Hood",
+  "kind": "Armor",
+  "id": "SW.Item.SculkDiggerHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Twisted Warden Blindfold"
+ },
+ {
+  "name": "Sculk Digger Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.SculkDiggerLeggings",
+  "confirmed": false,
+  "slot": "Leggings",
+  "unique": "Twisted Warden Tights"
+ },
+ {
+  "name": "Sculk Digger Robe",
+  "kind": "Armor",
+  "id": "SW.Item.SculkDiggerChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Twisted Warden Vest"
+ },
+ {
+  "name": "Sculker Slacks",
+  "kind": "Armor",
+  "id": "SW.Item.SkulkerLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Sifter Boots",
+  "kind": "Armor",
+  "id": "SW.Item.SifterBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Mad Sifter Paws"
+ },
+ {
+  "name": "Sifter Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.SifterChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Mad Sifter Vest"
+ },
+ {
+  "name": "Sifter Hat",
+  "kind": "Armor",
+  "id": "SW.Item.SifterHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Mad Sifter Hat"
+ },
+ {
+  "name": "Sifter Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.SifterLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Sorcerer Hat",
+  "kind": "Armor",
+  "id": "SW.Item.SorcererHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Alchemist Top Hat"
+ },
+ {
+  "name": "Sorcerer Robe",
+  "kind": "Armor",
+  "id": "SW.Item.SorcererChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Alchemist Overcoat"
+ },
+ {
+  "name": "Steel Wool Boots",
+  "kind": "Armor",
+  "id": "SW.Item.SteelWoolBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Hoarfrost Boots"
+ },
+ {
+  "name": "Steel Wool Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.SteelWoolChest",
+  "confirmed": false,
+  "slot": "Chestplate",
+  "unique": "Hoarfrost Chestplate"
+ },
+ {
+  "name": "Steel Wool Hat",
+  "kind": "Armor",
+  "id": "SW.Item.SteelWoolHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Steel Wool Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.SteelWoolLeggings",
+  "confirmed": false,
+  "slot": "Leggings",
+  "unique": "Hoarfrost Leggings"
+ },
+ {
+  "name": "Treehugger Chestplate",
+  "kind": "Armor",
+  "id": "SW.Item.TreehuggerHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Treehugger Clogs",
+  "kind": "Armor",
+  "id": "SW.Item.TreehuggerBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Woodsprite Root Boots"
+ },
+ {
+  "name": "Treehugger Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.TreehuggerBoots",
+  "confirmed": false,
+  "slot": "Boots",
+  "unique": "Woodsprite Trunks"
+ },
+ {
+  "name": "Treehugger Mask",
+  "kind": "Armor",
+  "id": "SW.Item.TreehuggerHelmet",
+  "confirmed": false,
+  "slot": "Helmet",
+  "unique": "Woodsprite Crown"
+ },
+ {
+  "name": "Twisted Warden Blindfold",
+  "kind": "Armor",
+  "id": "SW.Item.TwistedWardenHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Wolfpack Boots",
+  "kind": "Armor",
+  "id": "SW.Item.WolfpackBoots",
+  "confirmed": false,
+  "slot": "Boots"
+ },
+ {
+  "name": "Wolfpack Hood",
+  "kind": "Armor",
+  "id": "SW.Item.WolfpackHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Wolfpack Jacket",
+  "kind": "Armor",
+  "id": "SW.Item.WolfpackChest",
+  "confirmed": false,
+  "slot": "Chestplate"
+ },
+ {
+  "name": "Wolfpack Leggings",
+  "kind": "Armor",
+  "id": "SW.Item.WolfpackLeggings",
+  "confirmed": false,
+  "slot": "Leggings"
+ },
+ {
+  "name": "Woodsprite Crown",
+  "kind": "Armor",
+  "id": "SW.Item.WoodspriteHelmet",
+  "confirmed": false,
+  "slot": "Helmet"
+ },
+ {
+  "name": "Battle Banner",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.BattleBanner",
+  "confirmed": false
+ },
+ {
+  "name": "Blaze Bangle",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.BlazeBangle",
+  "confirmed": false
+ },
+ {
+  "name": "Blight Bangle",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.BlightBangle",
+  "confirmed": false
+ },
+ {
+  "name": "Cinder Scepter",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.CinderScepter",
+  "confirmed": false
+ },
+ {
+  "name": "Conductive Quiver",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.ConductiveQuiver",
+  "confirmed": false
+ },
+ {
+  "name": "Corrupted Beacon",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.CorruptedBeacon",
+  "confirmed": false
+ },
+ {
+  "name": "Corrupted Seeds",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.CorruptedSeeds",
+  "confirmed": false
+ },
+ {
+  "name": "Creeper Candle",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.CreeperCandle",
+  "confirmed": false
+ },
+ {
+  "name": "Death Cap Mushroom",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.DeathCapMushroom",
+  "confirmed": false
+ },
+ {
+  "name": "Echo Ocarina",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.EchoOcarina",
+  "confirmed": false
+ },
+ {
+  "name": "Electric Bangle",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.ElectricBangle",
+  "confirmed": false
+ },
+ {
+  "name": "Ender Fog",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.EnderFog",
+  "confirmed": false
+ },
+ {
+  "name": "Fighter's Flute",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.FightersFlute",
+  "confirmed": false
+ },
+ {
+  "name": "Firework Arrow",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.FireworkQuiver",
+  "confirmed": true
+ },
+ {
+  "name": "Flaming Quiver",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.FlamingQuiver",
+  "confirmed": false
+ },
+ {
+  "name": "Freezing Quiver",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.FreezingQuiver",
+  "confirmed": false
+ },
+ {
+  "name": "Grindstone",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.Grindstone",
+  "confirmed": false
+ },
+ {
+  "name": "Honey Dipper",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.HoneyDipper",
+  "confirmed": false
+ },
+ {
+  "name": "Humbling Horn",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.HumblingHorn",
+  "confirmed": false
+ },
+ {
+  "name": "Lightning Rod",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.LightningRod",
+  "confirmed": false
+ },
+ {
+  "name": "Picnic Basket",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.PicnicBasket",
+  "confirmed": false
+ },
+ {
+  "name": "Pouch of Ember",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.PouchOfEmber",
+  "confirmed": false
+ },
+ {
+  "name": "Pouch of Frost",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.PouchOfFrost",
+  "confirmed": false
+ },
+ {
+  "name": "Pouch of Thunder",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.PouchOfThunder",
+  "confirmed": false
+ },
+ {
+  "name": "Powershaker",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.Powershaker",
+  "confirmed": false
+ },
+ {
+  "name": "Redstone Mine Launcher",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.RedstoneMineLauncher",
+  "confirmed": false
+ },
+ {
+  "name": "Soul Harvester",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.SoulHarvester",
+  "confirmed": false
+ },
+ {
+  "name": "Tempo Truffle",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.TempoTruffle",
+  "confirmed": false
+ },
+ {
+  "name": "Totem of Casting",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.TotemOfCasting",
+  "confirmed": false
+ },
+ {
+  "name": "Totem of Regeneration",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.TotemOfRegeneration",
+  "confirmed": false
+ },
+ {
+  "name": "Totem of Shielding",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.TotemOfShielding",
+  "confirmed": false
+ },
+ {
+  "name": "Turtle Master's Mandolin",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.TurtleMastersMandolin",
+  "confirmed": false
+ },
+ {
+  "name": "Venomous Quiver",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.VenomousQuiver",
+  "confirmed": false
+ },
+ {
+  "name": "Warding Chimes",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.WardingChimes",
+  "confirmed": false
+ },
+ {
+  "name": "Warrior Drums",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.WarriorDrums",
+  "confirmed": false
+ },
+ {
+  "name": "Wind Horn",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.WindHorn",
+  "confirmed": false
+ },
+ {
+  "name": "Winter Staff",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.WinterStaff",
+  "confirmed": false
+ },
+ {
+  "name": "Witch Brew",
+  "kind": "Artifact",
+  "id": "SW.Item.Artifact.WitchBrew",
+  "confirmed": false
+ },
+ {
+  "name": "Axe",
+  "kind": "Melee",
+  "id": "SW.Item.Axe",
+  "confirmed": false
+ },
+ {
+  "name": "Battle Hammer",
+  "kind": "Melee",
+  "id": "SW.Item.BattleHammer",
+  "confirmed": false,
+  "unique": "Emerald Hammer"
+ },
+ {
+  "name": "Battlestaff",
+  "kind": "Melee",
+  "id": "SW.Item.Battlestaff",
+  "confirmed": false
+ },
+ {
+  "name": "Claymore",
+  "kind": "Melee",
+  "id": "SW.Item.Claymore",
+  "confirmed": false
+ },
+ {
+  "name": "Clobberer",
+  "kind": "Melee",
+  "id": "SW.Item.Clobberer",
+  "confirmed": false,
+  "unique": "Redstone Club"
+ },
+ {
+  "name": "Cookiecutter",
+  "kind": "Melee",
+  "id": "SW.Item.Cookiecutter",
+  "confirmed": false
+ },
+ {
+  "name": "Curved Greatsword",
+  "kind": "Melee",
+  "id": "SW.Item.CurvedGreatsword",
+  "confirmed": true
+ },
+ {
+  "name": "Double Daggers",
+  "kind": "Melee",
+  "id": "SW.Item.DoubleDaggers",
+  "confirmed": false
+ },
+ {
+  "name": "Double Sickles",
+  "kind": "Melee",
+  "id": "SW.Item.DoubleSickles",
+  "confirmed": false
+ },
+ {
+  "name": "Gauntlets",
+  "kind": "Melee",
+  "id": "SW.Item.Gauntlets",
+  "confirmed": false,
+  "unique": "Prime Enchanter's Gauntlets"
+ },
+ {
+  "name": "Glaive",
+  "kind": "Melee",
+  "id": "SW.Item.Glaive",
+  "confirmed": false
+ },
+ {
+  "name": "Greataxe",
+  "kind": "Melee",
+  "id": "SW.Item.Greataxe",
+  "confirmed": false,
+  "unique": "Awesomeaxe"
+ },
+ {
+  "name": "Greatsword",
+  "kind": "Melee",
+  "id": "SW.Item.Greatsword",
+  "confirmed": false
+ },
+ {
+  "name": "Mace",
+  "kind": "Melee",
+  "id": "SW.Item.Mace",
+  "confirmed": false
+ },
+ {
+  "name": "Mallet",
+  "kind": "Melee",
+  "id": "SW.Item.Mallet",
+  "confirmed": false
+ },
+ {
+  "name": "Meat Cleaver",
+  "kind": "Melee",
+  "id": "SW.Item.MeatCleaver",
+  "confirmed": false,
+  "unique": "Cacaphonous Cleaver"
+ },
+ {
+  "name": "Pickaxe",
+  "kind": "Melee",
+  "id": "SW.Item.Pickaxe",
+  "confirmed": false,
+  "unique": "Diamond Pickaxe"
+ },
+ {
+  "name": "Pike",
+  "kind": "Melee",
+  "id": "SW.Item.Pike",
+  "confirmed": false,
+  "unique": "Stormcaller"
+ },
+ {
+  "name": "Rapier",
+  "kind": "Melee",
+  "id": "SW.Item.Rapier",
+  "confirmed": false
+ },
+ {
+  "name": "Riftslasher",
+  "kind": "Melee",
+  "id": "SW.Item.Riftslasher",
+  "confirmed": false
+ },
+ {
+  "name": "Sabre",
+  "kind": "Melee",
+  "id": "SW.Item.Sabre",
+  "confirmed": false
+ },
+ {
+  "name": "Scythe",
+  "kind": "Melee",
+  "id": "SW.Item.Scythe",
+  "confirmed": false,
+  "unique": "Soul Reaper"
+ },
+ {
+  "name": "Short Spear",
+  "kind": "Melee",
+  "id": "SW.Item.ShortSpear",
+  "confirmed": false
+ },
+ {
+  "name": "Shovel",
+  "kind": "Melee",
+  "id": "SW.Item.Shovel",
+  "confirmed": false,
+  "unique": "Diamond Shovel"
+ },
+ {
+  "name": "Spear",
+  "kind": "Melee",
+  "id": "SW.Item.Spear",
+  "confirmed": false,
+  "unique": "Spectral Spear"
+ },
+ {
+  "name": "Sword",
+  "kind": "Melee",
+  "id": "SW.Item.Sword",
+  "confirmed": true,
+  "unique": "Burning Blade"
+ },
+ {
+  "name": "War Hammer",
+  "kind": "Melee",
+  "id": "SW.Item.WarHammer",
+  "confirmed": false,
+  "unique": "Great Hammer"
+ },
+ {
+  "name": "Wolf Claws",
+  "kind": "Melee",
+  "id": "SW.Item.WolfClaws",
+  "confirmed": false,
+  "unique": "Sculker Claws"
+ },
+ {
+  "name": "Bow",
+  "kind": "Ranged",
+  "id": "SW.Item.Bow",
+  "confirmed": true
+ },
+ {
+  "name": "Crossbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Crossbow",
+  "confirmed": false
+ },
+ {
+  "name": "Dual Crossbows",
+  "kind": "Ranged",
+  "id": "SW.Item.DualCrossbows",
+  "confirmed": false,
+  "unique": "Double Crossers"
+ },
+ {
+  "name": "Greatbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Greatbow",
+  "confirmed": false
+ },
+ {
+  "name": "Heavy Crossbow",
+  "kind": "Ranged",
+  "id": "SW.Item.HeavyCrossbow",
+  "confirmed": false
+ },
+ {
+  "name": "Longbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Longbow",
+  "confirmed": true
+ },
+ {
+  "name": "Powerbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Powerbow",
+  "confirmed": false
+ },
+ {
+  "name": "Rapid Crossbow",
+  "kind": "Ranged",
+  "id": "SW.Item.RapidCrossbow",
+  "confirmed": false
+ },
+ {
+  "name": "Scatter Crossbow",
+  "kind": "Ranged",
+  "id": "SW.Item.ScatterCrossbow",
+  "confirmed": false,
+  "unique": "Harp Crossbow"
+ },
+ {
+  "name": "Shortbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Shortbow",
+  "confirmed": false,
+  "unique": "Shooting Star"
+ },
+ {
+  "name": "Trickbow",
+  "kind": "Ranged",
+  "id": "SW.Item.Trickbow",
+  "confirmed": false
+ },
+ {
+  "name": "Amethyst Lens",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.AmethystLens",
+  "confirmed": false
+ },
+ {
+  "name": "Armadillo Amulet",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.ArmadilloAmulet",
+  "confirmed": false
+ },
+ {
+  "name": "Essence of Efficiency",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.EssenceOfEfficiency",
+  "confirmed": false
+ },
+ {
+  "name": "Fist of Iron",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.FistOfIron",
+  "confirmed": false
+ },
+ {
+  "name": "Glowstone Flask",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.GlowstoneFlask",
+  "confirmed": false
+ },
+ {
+  "name": "Golem Kit",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.GolemKit",
+  "confirmed": false
+ },
+ {
+  "name": "Healing Heart",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.HealingHeart",
+  "confirmed": false
+ },
+ {
+  "name": "Looter's Charm",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.LootersCharm",
+  "confirmed": false
+ },
+ {
+  "name": "Lucky Clover",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.LuckyClover",
+  "confirmed": false
+ },
+ {
+  "name": "Medallion of Momentum",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.MedallionOfMomentum",
+  "confirmed": false
+ },
+ {
+  "name": "Ocelot's Paw",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.OcelotsPaw",
+  "confirmed": false
+ },
+ {
+  "name": "Prickle's Mark",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.PricklesMark",
+  "confirmed": false
+ },
+ {
+  "name": "Sculk Badge",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.SculkBadge",
+  "confirmed": false
+ },
+ {
+  "name": "Sigil of Beeswax",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.SigilOfBeeswax",
+  "confirmed": false
+ },
+ {
+  "name": "Soul Chip",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.SoulChip",
+  "confirmed": false
+ },
+ {
+  "name": "Tasty Bone",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.TastyBone",
+  "confirmed": false
+ },
+ {
+  "name": "Tendrils of the Sprout",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.TendrilsOfTheSprout",
+  "confirmed": false
+ },
+ {
+  "name": "The Eye of Experience",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.TheEyeOfExperience",
+  "confirmed": false
+ },
+ {
+  "name": "Thrifty Pendant",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.ThriftyPendant",
+  "confirmed": false
+ },
+ {
+  "name": "Twig of Dark Oak",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.TwigOfDarkOak",
+  "confirmed": false
+ },
+ {
+  "name": "Twisted Tooth",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.TwistedTooth",
+  "confirmed": false
+ },
+ {
+  "name": "Wobblestone",
+  "kind": "Talisman",
+  "id": "SW.Item.Talisman.Wobblestone",
+  "confirmed": false
+ }
+]

@@ -11,7 +11,9 @@ having to know anything about save files. Advanced mode shows the full save for 
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
   levels. Changes apply as you type, and mistakes show up in red next to the field.
 - **Items:** change rarity, power and count, turn an item into another one, make copies or delete them.
-- **Add items:** pick from every item the game has saved on your PC, with pictures, search and a category filter.
+- **Add items:** pick any of the game's 170+ weapons, armor pieces, artifacts and talismans, with pictures, search
+  and a category filter. Uniques are there too: pick Unique rarity and a Battle Hammer becomes the Emerald Hammer.
+  Items show their in-game names.
 - **Presets:** Most money, Most XP, Best loot, Most powerful, Fully upgraded town, Secret talisman hunt and Max
   level. Each shows exactly what it will change, why, and where to find items you haven't picked up yet.
 - **Sorting:** items by most powerful, highest item level, most item XP, rarest, most enchantments, newest, name,
@@ -56,9 +58,13 @@ your sign-in token, so don't share them.
 
 - **Online heroes** are stored on the game's servers, so no save editor can change them. When you create a hero,
   the game makes you pick online or offline for good; this editor works with **offline** heroes.
-- **Adding items** only works for items whose IDs the game has saved on your PC (your inventory, loot you've found,
-  your collections, and your other heroes). The game's full item list is in encrypted files, so the editor never
-  guesses IDs. Advanced mode lets you type one if you know it.
+- **Some added items may not work yet.** A save stores each item under an internal name (the Mystic Circlet is
+  `SW.Item.MysticHelmet`). The game's list of those names is in encrypted files, so for most items the editor works
+  it out from the in-game name, following the pattern of the names seen in real saves. Items whose internal name has
+  been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
+  drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
+  game become confirmed automatically. Found a wrong or missing one? `python -m dungeons2_editor items` lists them
+  all, so please open an issue with the correct name from your save (Advanced mode shows it).
 - **Enchantments and Unique signature effects** can't be added yet.
 - Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
 - Level, XP, item power caps and some other numbers come from community datamines, not from the game's own tables.
@@ -90,6 +96,7 @@ python -m dungeons2_editor backup
 python -m dungeons2_editor restore "backups\2026-09-30_14-35-12"
 python -m dungeons2_editor verify                               # checks saves re-encode exactly; writes nothing
 python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
+python -m dungeons2_editor items                                # every item the editor can add, with its ID
 ```
 
 Add `--profile <folder>` to point at a save folder somewhere else.
@@ -121,6 +128,8 @@ python -m unittest discover -s tests -t .
 This is a fan project. It is **not affiliated with or endorsed by Mojang Studios or Microsoft**. Minecraft is a
 trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 
+- The item list (names, kinds, armor sets and Unique versions) comes from the [Minecraft Wiki](https://minecraft.wiki);
+  `tools/build_item_catalog.py` rebuilds it.
 - Item pictures come from the [Minecraft Wiki](https://minecraft.wiki) and are downloaded on your PC when you ask;
   none are included here. The screenshots use a made-up demo save.
 - The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky

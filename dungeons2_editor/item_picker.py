@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import Callable
 
 from . import document as doc
@@ -43,6 +43,7 @@ class ItemPicker(tk.Toplevel):
         self.on_add = on_add
         self.result: str | None = None
         self._by_iid: dict[str, CatalogItem] = {}
+        self._unconfirmed_ok = False
         self.title("Add items" if mode == "add" else "Change item")
         self.transient(parent)
         self.geometry("860x580")
@@ -74,16 +75,21 @@ class ItemPicker(tk.Toplevel):
         kind_box = ttk.Combobox(top, textvariable=self.kind_var, values=kinds, state="readonly", width=16)
         kind_box.pack(side="left")
         kind_box.bind("<<ComboboxSelected>>", lambda _event: self._fill())
+        self.confirmed_only = tk.BooleanVar(value=False)
+        ttk.Checkbutton(top, text="Only confirmed", variable=self.confirmed_only, command=self._fill).pack(side="left", padx=(12, 0))
 
         listing = ttk.Frame(frame)
         listing.grid(row=1, column=0, sticky="nsew")
         listing.columnconfigure(0, weight=1)
         listing.rowconfigure(0, weight=1)
-        self.tree = ttk.Treeview(listing, columns=("kind",), selectmode="browse", style="Items.Treeview")
+        self.tree = ttk.Treeview(listing, columns=("kind", "status"), selectmode="browse", style="Items.Treeview")
         self.tree.heading("#0", text="Item")
         self.tree.heading("kind", text="Kind")
-        self.tree.column("#0", width=300, stretch=True)
-        self.tree.column("kind", width=110, stretch=False)
+        self.tree.heading("status", text="Status")
+        self.tree.column("#0", width=280, stretch=True)
+        self.tree.column("kind", width=90, stretch=False)
+        self.tree.column("status", width=100, stretch=False)
+        self.tree.tag_configure("unconfirmed", foreground=ttk.Style(self).lookup("Muted.TLabel", "foreground"))
         scroll = ttk.Scrollbar(listing, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scroll.set)
         self.tree.grid(row=0, column=0, sticky="nsew")
@@ -100,16 +106,27 @@ class ItemPicker(tk.Toplevel):
         ttk.Label(panel, textvariable=self.name_var, style="Heading.TLabel", wraplength=260).pack(anchor="w", pady=(8, 0))
         self.kind_text = tk.StringVar()
         ttk.Label(panel, textvariable=self.kind_text, style="Muted.TLabel").pack(anchor="w")
+        self.status_text = tk.StringVar()
+        self.status_label = ttk.Label(panel, textvariable=self.status_text, style="Muted.TLabel", wraplength=260, justify="left")
+        self.status_label.pack(anchor="w", pady=(4, 0))
 
         self.rarity_var = tk.StringVar(value="Common")
         self.power_var = tk.StringVar(value=str(best_power))
         self.count_var = tk.StringVar(value="1")
+        self.unique_text = tk.StringVar()
         if self.mode == "add":
-            ttk.Label(panel, text="Rarity").pack(anchor="w", pady=(14, 2))
+            ttk.Label(panel, text="Rarity").pack(anchor="w", pady=(12, 2))
             for rarity in RARITIES:
                 ttk.Radiobutton(
-                    panel, text=rarity, value=rarity, variable=self.rarity_var, image=self.icons.rarity_badge(rarity, 16), compound="left"
+                    panel,
+                    text=rarity,
+                    value=rarity,
+                    variable=self.rarity_var,
+                    image=self.icons.rarity_badge(rarity, 16),
+                    compound="left",
+                    command=self._show_selected,
                 ).pack(anchor="w")
+            ttk.Label(panel, textvariable=self.unique_text, style="Muted.TLabel", wraplength=260, justify="left").pack(anchor="w")
             numbers = ttk.Frame(panel)
             numbers.pack(anchor="w", pady=(12, 0))
             ttk.Label(numbers, text="Power").grid(row=0, column=0, sticky="w", padx=(0, 8))
@@ -126,8 +143,9 @@ class ItemPicker(tk.Toplevel):
         self.message.pack(anchor="w", pady=(8, 0))
 
         hint = (
-            "These are the items the game has saved on this PC (in your inventory, loot you've found and your "
-            "collections). Find more items in the game and they'll show up here too."
+            "Every item in the game is listed. Confirmed items have been seen in real saves, so the game knows them. "
+            "For the others the editor has to guess the game's name for the item; if it guesses wrong, the game may "
+            "drop the item. Items you find in the game become confirmed automatically."
         )
         ttk.Label(frame, text=hint, style="Muted.TLabel", wraplength=780, justify="left").grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
@@ -152,10 +170,19 @@ class ItemPicker(tk.Toplevel):
         for item in self.catalog:
             if kind != ALL and item.kind != kind:
                 continue
-            if query and query not in item.name.lower() and query not in item.tag.lower():
+            if self.confirmed_only.get() and not item.confirmed:
                 continue
-            image = self.icons.image(item.tag, LIST_ICON_SIZE) or self.icons.rarity_badge("", LIST_ICON_SIZE)
-            iid = self.tree.insert("", "end", text=" " + item.name, image=image, values=(item.kind,))
+            words = f"{item.name} {item.unique or ''} {item.tag}".lower()
+            if query and query not in words:
+                continue
+            iid = self.tree.insert(
+                "",
+                "end",
+                text=" " + item.name,
+                image=self.icons.item_image(item.tag, "", LIST_ICON_SIZE, item.name),
+                values=(item.kind, "Confirmed" if item.confirmed else "Unconfirmed"),
+                tags=() if item.confirmed else ("unconfirmed",),
+            )
             self._by_iid[iid] = item
         if not self._by_iid:
             self.name_var.set("Nothing matches. Try another search." if self.catalog else "No items found in your saves yet.")
@@ -172,11 +199,26 @@ class ItemPicker(tk.Toplevel):
         item = self.selected_item()
         if item is None:
             self.preview.configure(image="")
-            self.kind_text.set("")
+            for var in (self.kind_text, self.status_text, self.unique_text):
+                var.set("")
             return
-        self.preview.configure(image=self.icons.image(item.tag, PREVIEW_SIZE) or self.icons.rarity_badge("", PREVIEW_SIZE))
-        self.name_var.set(item.name)
+        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
+        shown_name = item.unique if as_unique else item.name
+        self.preview.configure(image=self.icons.item_image(item.tag, "", PREVIEW_SIZE, shown_name))
+        self.name_var.set(shown_name)
         self.kind_text.set(item.kind + (f"  ·  {item.tag}" if self.advanced else ""))
+        if item.confirmed:
+            self.status_text.set("Confirmed: seen in real saves, so the game knows it.")
+            self.status_label.configure(style="Success.TLabel")
+        else:
+            self.status_text.set("Unconfirmed: the game's name for this item is a best guess.")
+            self.status_label.configure(style="Warn.TLabel")
+        if as_unique:
+            self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).")
+        elif item.unique and self.mode == "add":
+            self.unique_text.set(f"Pick Unique to get the {item.unique}.")
+        else:
+            self.unique_text.set("")
 
     def _say(self, text: str, error: bool = False) -> None:
         self.message_var.set(text)
@@ -184,8 +226,23 @@ class ItemPicker(tk.Toplevel):
 
     def _confirm(self) -> None:
         item = self.selected_item()
-        if item is not None:
-            self._finish(item.tag, item.name)
+        if item is None or (not item.confirmed and not self._accept_unconfirmed()):
+            return
+        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
+        self._finish(item.tag, item.unique if as_unique else item.name)
+
+    def _accept_unconfirmed(self) -> bool:
+        """Ask once per window before using an item whose ID is a best guess."""
+        if self._unconfirmed_ok:
+            return True
+        self._unconfirmed_ok = messagebox.askyesno(
+            "Unconfirmed item",
+            "The game's name for this item hasn't been seen in a real save yet, so the editor is making a best guess.\n\n"
+            "If the guess is wrong, the game may drop the item, or may not load this hero until you undo the change "
+            "with Restore… (a backup is made every time you save).\n\nAdd it anyway?",
+            parent=self,
+        )
+        return self._unconfirmed_ok
 
     def _use_raw(self) -> None:
         tag = self.raw_var.get().strip()

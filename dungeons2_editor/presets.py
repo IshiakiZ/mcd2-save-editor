@@ -162,14 +162,21 @@ PRESETS = (
 )
 
 
+def _wanted(name: str) -> set[str]:
+    return {normalize(name), normalize(re.sub(r"^The\s+", "", name))}
+
+
 def find_item(name: str, catalog: list[CatalogItem]) -> CatalogItem | None:
-    """The catalog entry for an in-game item name, allowing for known renames and a leading 'The'."""
-    wanted = {normalize(name), normalize(re.sub(r"^The\s+", "", name))}
+    """The catalog entry for an in-game item name, allowing for known renames, a leading 'The' and
+    Unique names (the Emerald Hammer is a Unique Battle Hammer). Confirmed entries win."""
+    wanted = _wanted(name)
+    matches = []
     for entry in catalog:
         internal = entry.tag.rsplit(".", 1)[-1]
-        if normalize(entry.name) in wanted or normalize(ALIASES.get(internal, "")) in wanted:
-            return entry
-    return None
+        names = {normalize(entry.name), normalize(ALIASES.get(internal, "")), normalize(entry.unique or "")}
+        if names & wanted:
+            matches.append(entry)
+    return min(matches, key=lambda entry: not entry.confirmed) if matches else None
 
 
 @dataclass
@@ -179,6 +186,7 @@ class Plan:
     power: int = 1  # for upgraded gear, and added items the game hasn't saved a copy of
     stats: dict[str, int] = field(default_factory=dict)
     add: list[tuple[KitItem, CatalogItem]] = field(default_factory=list)
+    unconfirmed: list[tuple[KitItem, CatalogItem]] = field(default_factory=list)  # addable, but with a best-guess ID
     have: list[KitItem] = field(default_factory=list)
     find: list[KitItem] = field(default_factory=list)
     upgrades: list[tuple[int, str, int]] = field(default_factory=list)  # (item index, rarity, power)
@@ -188,7 +196,8 @@ class Plan:
         return bool(self.stats or self.add or self.upgrades)
 
 
-def plan(preset: Preset, hero: Hero, catalog: list[CatalogItem], power: int) -> Plan:
+def plan(preset: Preset, hero: Hero, catalog: list[CatalogItem], power: int, include_unconfirmed: bool = False) -> Plan:
+    """What ``preset`` would do. Items with best-guess IDs are only added with ``include_unconfirmed``."""
     result = Plan(power=power)
     for name, value in preset.stats.items():
         if name in {a["AttributeName"] for a in hero.attributes()} and hero.attribute(name) != value:
@@ -196,14 +205,15 @@ def plan(preset: Preset, hero: Hero, catalog: list[CatalogItem], power: int) -> 
     owned = {normalize(item.name) for item in hero.items() if not item.stock_slot}
     owned |= {normalize(ALIASES.get(item.tag.rsplit(".", 1)[-1], "")) for item in hero.items() if not item.stock_slot}
     for kit_item in preset.items:
-        wanted = {normalize(kit_item.name), normalize(re.sub(r"^The\s+", "", kit_item.name))}
         found = find_item(kit_item.name, catalog)
-        if owned & wanted:
+        if owned & _wanted(kit_item.name):
             result.have.append(kit_item)
-        elif found is not None:
+        elif found is None:
+            result.find.append(kit_item)
+        elif found.confirmed or include_unconfirmed:
             result.add.append((kit_item, found))
         else:
-            result.find.append(kit_item)
+            result.unconfirmed.append((kit_item, found))
     if preset.upgrade_gear:
         for item in hero.items():
             if item.is_cosmetic or item.stock_slot or item.power is None:
@@ -232,7 +242,7 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
             parts.append(f"power {format_amount(item.power)} → {format_amount(power)}")
         lines.append(f"{item.name}: {', '.join(parts)}")
     for kit_item, found in preset_plan.add:
-        lines.append(f"Add {kit_item.name}: {kit_item.why}")
+        lines.append(f"Add {kit_item.name}: {kit_item.why}" + ("" if found.confirmed else " (unconfirmed)"))
     for kit_item in preset_plan.have:
         lines.append(f"Already have {kit_item.name}")
     return lines

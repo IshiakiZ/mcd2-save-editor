@@ -1,3 +1,4 @@
+import gc
 import tempfile
 import tkinter as tk
 import unittest
@@ -62,6 +63,7 @@ class ImageTests(unittest.TestCase):
         self.root = _tk_root()
         if self.root is None:
             self.skipTest("needs a display")
+        self.addCleanup(gc.collect)  # frees Tk objects on the main thread, after the window is destroyed
         self.addCleanup(self.root.destroy)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

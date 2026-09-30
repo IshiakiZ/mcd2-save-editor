@@ -338,7 +338,7 @@ class HeroTab(ttk.Frame):
                 "",
                 "end",
                 text=" " + item.name,
-                image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE),
+                image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name),
                 values=(item.kind, item.rarity, power, item.level, _number_text(item.xp), item.enchantments, item.where),
                 tags=("locked",) if item.is_cosmetic else (),
             )
@@ -400,9 +400,10 @@ class HeroTab(ttk.Frame):
         item = self.hero.item(index)
         self.item_title_var.set(item.name)
         self.item_subtitle_var.set(f"{item.rarity} {item.kind.lower()}  ·  {item.where}")
-        self.preview.configure(image=self.icons.image(item.tag, PREVIEW_SIZE) or self.icons.rarity_badge(item.rarity, PREVIEW_SIZE))
-        self.preview_source_var.set("Picture: minecraft.wiki" if self.icons.is_from_wiki(item.tag) else "")
-        self.type_box["values"] = self.hero.known_item_types()
+        self.preview.configure(image=self.icons.item_image(item.tag, item.rarity, PREVIEW_SIZE, item.name))
+        self.preview_source_var.set("Picture: minecraft.wiki" if self.icons.is_from_wiki(item.name, item.tag) else "")
+        if self.advanced:
+            self.type_box["values"] = [entry.tag for entry in self._catalog()]
         self.type_var.set(item.tag)
         self.rarity_var.set(item.rarity)
         self.power_var.set(_number_text(item.power))

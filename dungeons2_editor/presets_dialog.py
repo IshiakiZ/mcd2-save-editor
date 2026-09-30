@@ -84,6 +84,13 @@ class PresetsDialog(tk.Toplevel):
             text=f"Your strongest item has power {self.hero.best_power()}. Well above your level's usual power, the game may lower it.",
             style="Muted.TLabel",
         ).grid(row=1, column=0, columnspan=2, sticky="w")
+        self.include_unconfirmed = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            self.power_row,
+            text="Also add unconfirmed items (the game's name for them is a best guess)",
+            variable=self.include_unconfirmed,
+            command=self._refresh,
+        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
         text_frame = ttk.Frame(panel)
         text_frame.grid(row=3, column=0, sticky="nsew", pady=(8, 0))
@@ -128,7 +135,7 @@ class PresetsDialog(tk.Toplevel):
         else:
             self.power_row.grid_remove()
         power = self._power()
-        self.plan = presets.plan(preset, self.hero, self.catalog, power or self.hero.best_power())
+        self.plan = presets.plan(preset, self.hero, self.catalog, power or self.hero.best_power(), self.include_unconfirmed.get())
 
         text = self.text
         text.configure(state="normal")
@@ -143,6 +150,19 @@ class PresetsDialog(tk.Toplevel):
                 text.insert("end", f"•  {line}\n")
         else:
             text.insert("end", "Nothing to change: this hero already matches.\n", "muted")
+        if self.plan.unconfirmed:
+            text.insert("end", "Unconfirmed items\n", "heading")
+            text.insert(
+                "end",
+                "These can be added, but the game's name for them hasn't been seen in a real save yet. If the editor's "
+                "guess is wrong, the game may drop them. Tick \"Also add unconfirmed items\" above to include them, "
+                "or find one in the game first.\n",
+                "muted",
+            )
+            for kit_item, _found in self.plan.unconfirmed:
+                text.insert("end", f"•  {kit_item.name} ({kit_item.kind.lower()}): {kit_item.why}\n")
+                if kit_item.where:
+                    text.insert("end", f"   {kit_item.where}\n", "muted")
         if self.plan.find:
             text.insert("end", "Find these in the game first\n", "heading")
             text.insert(

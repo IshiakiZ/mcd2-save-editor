@@ -17,12 +17,17 @@ granted by editions and pre-orders; cosmetics are never edited or copied.
 from __future__ import annotations
 
 import copy
+import json
 import math
 import random
 import re
 import time
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
+
+GAME_ITEMS_FILE = Path(__file__).resolve().parent / "data" / "items.json"  # made by tools/build_item_catalog.py
 
 ITEM_PREFIX = "SW.Item."
 COSMETIC_PREFIX = "SW.Item.Cosmetic."
@@ -100,6 +105,47 @@ def item_kind(tag: str) -> str:
     return "Melee"
 
 
+@dataclass(frozen=True)
+class GameItem:
+    """An item from the game's full item list (dungeons2_editor/data/items.json)."""
+
+    name: str  # in-game name
+    kind: str  # Melee, Ranged, Armor, Artifact or Talisman
+    id: str  # save ID; a best guess unless confirmed
+    confirmed: bool  # the ID has been seen in real saves
+    unique: str | None = None  # name of the item at Unique rarity
+    slot: str | None = None  # armor slot
+
+
+@lru_cache(maxsize=1)
+def game_items() -> tuple[GameItem, ...]:
+    try:
+        entries = json.loads(GAME_ITEMS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    return tuple(
+        GameItem(e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"))
+        for e in entries
+        if isinstance(e, dict) and e.get("name") and e.get("id")
+    )
+
+
+@lru_cache(maxsize=1)
+def _game_items_by_id() -> dict[str, GameItem]:
+    found: dict[str, GameItem] = {}
+    for game_item in game_items():
+        found.setdefault(game_item.id, game_item)
+    return found
+
+
+def display_name(tag: str, rarity: str = "") -> str:
+    """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity."""
+    known = _game_items_by_id().get(tag)
+    if known is None:
+        return item_name(tag)
+    return known.unique if rarity == "Unique" and known.unique else known.name
+
+
 def item_group(tag: str) -> str:
     """'Gear' for weapons and armor (SW.Item.<Name>), else the group named in the tag (Artifact, Talisman, ...)."""
     parts = tag.split(".")
@@ -146,11 +192,12 @@ class Item:
 
     @property
     def name(self) -> str:
-        return item_name(self.tag)
+        return display_name(self.tag, self.rarity)
 
     @property
     def kind(self) -> str:
-        return item_kind(self.tag)
+        known = _game_items_by_id().get(self.tag)
+        return known.kind if known else item_kind(self.tag)
 
     @property
     def is_cosmetic(self) -> bool:
@@ -469,35 +516,58 @@ class CatalogItem:
 
     tag: str
     template: dict
+    confirmed: bool = True  # the ID has been seen in real saves, so the game knows it
+    title: str | None = None  # in-game name, when known
+    unique: str | None = None  # name of the item at Unique rarity
+    kind_name: str | None = None
 
     @property
     def name(self) -> str:
-        return item_name(self.tag)
+        return self.title or item_name(self.tag)
 
     @property
     def kind(self) -> str:
-        return item_kind(self.tag)
+        return self.kind_name or item_kind(self.tag)
 
 
 def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
-    """Items that can be added: every item ID the game has saved for these heroes, except
-    cosmetics, quest items and currencies. The game wrote these IDs itself, so they're valid;
-    the list grows as heroes discover more loot."""
-    tags: set[str] = set()
+    """Items that can be added: every item in the game's item list, plus any other item ID
+    the game has saved for these heroes. Cosmetics, quest items and currencies are left out.
+
+    IDs seen in saves are confirmed; the game list's other IDs are best guesses from the
+    items' names (see tools/build_item_catalog.py). Each item borrows the layout of a saved
+    inventory entry: the same item, the same group, or any gear.
+    """
+    seen: set[str] = set()
     by_tag: dict[str, dict] = {}
     by_group: dict[str, dict] = {}
     for hero in heroes:
-        tags |= hero.seen_item_types()
+        seen |= hero.seen_item_types()
         for item in hero.items():
             if not item.is_cosmetic:
                 by_tag.setdefault(item.tag, item.entry)
                 by_group.setdefault(item_group(item.tag), item.entry)
-    catalog = []
-    for tag in tags:
-        template = by_tag.get(tag) or by_group.get(item_group(tag))
-        if item_group(tag) not in NOT_ADDABLE_GROUPS and template is not None:
-            catalog.append(CatalogItem(tag, template))
-    return sorted(catalog, key=lambda entry: (entry.kind, entry.name.lower()))
+    fallback = by_group.get("Gear") or next(iter(by_group.values()), None)
+
+    def template(tag: str) -> dict | None:
+        return by_tag.get(tag) or by_group.get(item_group(tag)) or fallback
+
+    catalog: dict[str, CatalogItem] = {}
+    for game_item in game_items():
+        if game_item.id in catalog or item_group(game_item.id) in NOT_ADDABLE_GROUPS or template(game_item.id) is None:
+            continue
+        catalog[game_item.id] = CatalogItem(
+            game_item.id,
+            template(game_item.id),
+            confirmed=game_item.confirmed or game_item.id in seen,
+            title=game_item.name,
+            unique=game_item.unique,
+            kind_name=game_item.kind,
+        )
+    for tag in seen:
+        if tag not in catalog and item_group(tag) not in NOT_ADDABLE_GROUPS and template(tag) is not None:
+            catalog[tag] = CatalogItem(tag, template(tag))
+    return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
 
 
 def template_for(tag: str, catalog: list[CatalogItem]) -> dict | None:

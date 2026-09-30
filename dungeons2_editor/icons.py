@@ -140,9 +140,13 @@ class IconLibrary:
         alias = self.aliases().get(key)
         return files.get(normalize(alias)) if alias else None
 
-    def is_from_wiki(self, name: str) -> bool:
-        path = self.find(name)
+    def is_from_wiki(self, *names: str) -> bool:
+        path = next((found for found in (self.find(name) for name in names if name) if found), None)
         return path is not None and path.relative_to(self.folder).parts[0] == WIKI_FOLDER
+
+    def image_for(self, names: tuple[str, ...], size: int) -> tk.PhotoImage | None:
+        """The picture for the first of ``names`` that has one (e.g. an in-game name, then an item ID)."""
+        return next((image for image in (self.image(name, size) for name in names if name) if image), None)
 
     def image(self, name: str, size: int) -> tk.PhotoImage | None:
         """The picture for ``name`` scaled to ``size`` pixels, or None if there isn't one."""
@@ -164,8 +168,9 @@ class IconLibrary:
             self._badges[key] = badge
         return self._badges[key]
 
-    def item_image(self, tag: str, rarity: str, size: int) -> tk.PhotoImage:
-        return self.image(tag, size) or self.rarity_badge(rarity, size)
+    def item_image(self, tag: str, rarity: str, size: int, name: str = "") -> tk.PhotoImage:
+        """The item's picture, found by its in-game name or ID, or else its rarity badge."""
+        return self.image_for((name, tag), size) or self.rarity_badge(rarity, size)
 
     def ensure_folder(self) -> Path:
         """Create the icons folder (with a note on how to name pictures) and return it."""

@@ -36,7 +36,10 @@ HELP_SECTIONS = [
         "• Stats: type a new number or use the arrows. Changes are kept as you go.\n"
         "• Items: sort by power, level, XP, rarity and more (click a column heading or use Sort by). Pick an item "
         "to change its rarity, power or count, turn it into another item, make a copy or delete it.\n"
-        "• + Add items: pick from every item the game has saved on this PC, choose rarity, power and how many.\n"
+        "• + Add items: pick any weapon, armor piece, artifact or talisman in the game and choose rarity, power and "
+        "how many. Pick Unique rarity to get an item's Unique version. Confirmed items are known to work; for "
+        "Unconfirmed ones the editor has to guess the game's name for the item, and a wrong guess may make the game "
+        "drop it.\n"
         "• Presets: ready-made changes such as Most money, Most XP, Best loot and Most powerful. Each one shows "
         "exactly what it will change, and where to find items the game hasn't saved yet.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
@@ -168,6 +171,7 @@ class EditorApp:
         style.configure("Heading.TLabel", font=self.bold_font)
         style.configure("Muted.TLabel", foreground=MUTED_COLOR)
         style.configure("Error.TLabel", foreground="#b3261e")
+        style.configure("Warn.TLabel", foreground=CHANGED_COLOR)
         style.configure("Success.TLabel", foreground="#1e7e34")
         style.configure("Changes.TLabel", foreground=CHANGED_COLOR, font=self.bold_font)
         style.configure("Accent.TButton", font=self.bold_font, padding=(14, 4))
@@ -1104,10 +1108,11 @@ class EditorApp:
 
     def _start_game_watch(self) -> None:
         def watch() -> None:
-            while True:
+            while not self._closing.is_set():
                 self._game_results.put(saves.running_game_processes())
-                time.sleep(GAME_CHECK_SECONDS)
+                self._closing.wait(GAME_CHECK_SECONDS)
 
+        self._closing = threading.Event()
         threading.Thread(target=watch, name="game-watch", daemon=True).start()
         self._poll_game_results()
 
@@ -1132,6 +1137,7 @@ class EditorApp:
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget is self.root:
+            self._closing.set()
             for job in (self._poll_job, self._search_job):
                 if job is not None:
                     self.root.after_cancel(job)

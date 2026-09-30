@@ -50,7 +50,7 @@ class HeroTests(unittest.TestCase):
 
     def test_items_are_described(self):
         rows = {item.tag: (item.name, item.kind, item.rarity, item.where) for item in self.hero.items()}
-        self.assertEqual(rows["SW.Item.MysticHelmet"], ("Mystic Helmet", "Armor", "Common", "Inventory"))
+        self.assertEqual(rows["SW.Item.MysticHelmet"], ("Mystic Circlet", "Armor", "Common", "Inventory"))
         self.assertEqual(rows["SW.Item.CurvedGreatsword"][1:], ("Melee", "Common", "Merchant stock"))
         self.assertEqual(rows["SW.Item.Longbow"][1:3], ("Ranged", "Rare"))
         self.assertEqual(rows["SW.Item.Sword"][3], "Equipped (melee weapon)")
@@ -139,6 +139,30 @@ class HeroTests(unittest.TestCase):
         self.assertEqual(order("Save order"), ["MysticHelmet", "CurvedGreatsword", "Longbow", "Sword", "Hero"])
         for sort in heroes.ITEM_SORTS:
             self.assertEqual(len(order(sort)), 5)
+
+    def test_in_game_names(self):
+        self.assertEqual(heroes.display_name("SW.Item.MysticHelmet"), "Mystic Circlet")
+        self.assertEqual(heroes.display_name("SW.Item.MysticHelmet", "Unique"), "Oracle Crown")
+        self.assertEqual(heroes.display_name("SW.Item.Artifact.FireworkQuiver"), "Firework Arrow")
+        self.assertEqual(heroes.display_name("SW.Item.SomethingNew"), "Something New")
+
+    def test_the_game_item_list(self):
+        items = heroes.game_items()
+        self.assertGreater(len(items), 150)
+        self.assertTrue(all(heroes._ITEM_TAG.fullmatch(item.id) for item in items))
+        self.assertFalse([item for item in items if heroes.item_group(item.id) in heroes.NOT_ADDABLE_GROUPS])
+        self.assertTrue({"SW.Item.Sword", "SW.Item.MysticHelmet"} <= {item.id for item in items if item.confirmed})
+
+    def test_catalog_has_every_game_item_and_marks_confirmed_ones(self):
+        catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
+        self.assertGreater(len(catalog), 150)
+        self.assertTrue(catalog["SW.Item.Axe"].confirmed)  # in this save's collections
+        self.assertTrue(catalog["SW.Item.MysticHelmet"].confirmed)
+        self.assertFalse(catalog["SW.Item.Claymore"].confirmed)  # a best guess from its name
+        self.assertEqual(catalog["SW.Item.BattleHammer"].unique, "Emerald Hammer")
+        self.assertNotIn("SW.Item.Cosmetic.Cape.Hero", catalog)
+        talisman = catalog["SW.Item.Talisman.LuckyClover"]
+        self.assertEqual(talisman.template["ItemData"]["TypeTag"], "SW.Item.MysticHelmet")  # borrows a gear layout
 
     def test_hero_sorting(self):
         rich, poor = Hero(hero_save(emeralds=900, level=2)), Hero(hero_save(emeralds=10, level=30))

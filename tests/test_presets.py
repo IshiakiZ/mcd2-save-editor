@@ -72,6 +72,18 @@ class PresetTests(unittest.TestCase):
         sword = next(item for item in self.hero.items() if item.tag == "SW.Item.Sword")
         self.assertEqual((sword.rarity, sword.power, sword.equipped_slot), ("Unique", 60, "SW.ItemSlot.Equipment.MeleeWeapon"))
 
+    def test_unique_names_and_unconfirmed_items(self):
+        self.assertEqual(presets.find_item("Emerald Hammer", self.catalog).tag, "SW.Item.BattleHammer")
+        careful = presets.plan(by_title("Best loot"), self.hero, self.catalog, power=30)
+        self.assertIn("Emerald Hammer", [kit.name for kit, _ in careful.unconfirmed])
+        self.assertNotIn("Emerald Hammer", [kit.name for kit, _ in careful.add])
+        bold = presets.plan(by_title("Best loot"), self.hero, self.catalog, power=30, include_unconfirmed=True)
+        self.assertIn("Emerald Hammer", [kit.name for kit, _ in bold.add])
+        self.assertTrue(any(line.endswith("(unconfirmed)") for line in presets.describe(bold, self.hero)))
+        presets.apply(bold, self.hero, self.catalog)
+        hammer = next(item for item in self.hero.items() if item.tag == "SW.Item.BattleHammer")
+        self.assertEqual((hammer.name, hammer.rarity, hammer.power), ("Emerald Hammer", "Unique", 30))
+
     def test_max_level_keeps_both_levels_in_step(self):
         plan = presets.plan(by_title("Max level"), self.hero, self.catalog, power=1)
         presets.apply(plan, self.hero, self.catalog)

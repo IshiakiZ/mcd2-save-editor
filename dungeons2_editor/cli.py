@@ -112,6 +112,18 @@ def cmd_pictures(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_items(args: argparse.Namespace) -> int:
+    """Every item the editor knows, with its ID and whether that ID has been seen in a real save."""
+    from .hero import game_items
+
+    items = game_items()
+    for item in items:
+        unique = f"  (Unique: {item.unique})" if item.unique else ""
+        print(f"{item.kind:<9} {item.name:<32} {item.id:<44} {'confirmed' if item.confirmed else 'unconfirmed'}{unique}")
+    print(f"{len(items)} items, {sum(item.confirmed for item in items)} with confirmed IDs.")
+    return 0 if items else 1
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     """Check, without writing anything, that every editable container re-encodes byte for byte."""
     profile = _pick_profile(args.profile)
@@ -155,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
     restore.add_argument("backup", type=Path)
     restore.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     command("verify", "check that saves re-encode exactly (writes nothing)")
+    command("items", "list every item the editor can add, with its ID")
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     args = parser.parse_args(argv)
@@ -177,6 +190,7 @@ def main(argv: list[str] | None = None) -> int:
         "backup": cmd_backup,
         "restore": cmd_restore,
         "verify": cmd_verify,
+        "items": cmd_items,
         "pictures": cmd_pictures,
     }[args.command]
     try:
