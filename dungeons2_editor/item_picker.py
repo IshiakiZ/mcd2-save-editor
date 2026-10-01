@@ -179,7 +179,9 @@ class ItemPicker(tk.Toplevel):
             ttk.Spinbox(numbers, textvariable=self.power_var, from_=0, to=MAX_ITEM_POWER, increment=1, width=9).grid(row=0, column=1, pady=2)
             ttk.Label(numbers, text="How many").grid(row=1, column=0, sticky="w", padx=(0, 8))
             ttk.Spinbox(numbers, textvariable=self.count_var, from_=1, to=MAX_STACK, increment=1, width=9).grid(row=1, column=1, pady=2)
-            ttk.Label(panel, text=f"Your strongest item has power {best_power}.", style="Muted.TLabel", wraplength=wrap).pack(anchor="w", pady=(2, 0))
+            ttk.Label(
+                panel, text=f"Your strongest item has power {best_power}. Much higher may be removed by the game.", style="Muted.TLabel", wraplength=wrap
+            ).pack(anchor="w", pady=(2, 0))
 
             equip_row = ttk.Frame(panel)
             equip_row.pack(anchor="w", pady=(10, 0))

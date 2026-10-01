@@ -550,6 +550,18 @@ class HeroTabTests(WindowTestCase):
         hero = self.saved_hero()
         self.assertEqual((hero.attribute("Emeralds"), hero.attribute("XP")), (5000, 3000))  # yours and the game's
 
+    def test_share_item_ids_window(self):
+        from dungeons2_editor.share_ids import ShareIdsDialog
+
+        with mock.patch("webbrowser.open") as browser:
+            self.app._share_ids()
+            self.root.update()
+            dialog = next(w for w in self.root.winfo_children() if isinstance(w, ShareIdsDialog))
+            self.assertIn("SW.Item.CurvedGreatsword", dialog.report())
+            dialog.open_issue()
+        self.assertIn("template=item-ids.yml", browser.call_args.args[0])
+        dialog.destroy()
+
     def test_simple_mode_stops_stats_at_the_game_cap(self):
         self.tab.stat_vars["Emeralds"].set("50000")
         self.assertFalse(self.tab._apply_stat("Emeralds"))

@@ -82,14 +82,16 @@ your sign-in token, so don't share them.
   hero. Items whose internal name has
   been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
   drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
-  game become confirmed automatically. Found a wrong or missing one? `python -m dungeons2_editor items` lists them
-  all, so please open an issue with the correct name from your save (Advanced mode shows it).
+  game become confirmed automatically. To help everyone else, press **Share item IDs…** on the Help tab (or run
+  `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
+  GitHub issue with just those IDs, nothing else from your save.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
 - Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
-- **Level** comes from XP: the game works your level out from your XP, so changing the level alone doesn't stick,
-  and the XP each level needs isn't known yet.
-- **Uniques made by the editor** (a base item at Unique rarity) haven't been tested in the game yet.
+- **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
+  all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
+  removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
+  close to your level to be safe.
 - Item power caps and some other numbers come from community datamines, not from the game's own tables.
 
 ## How it works
@@ -119,6 +121,7 @@ python -m dungeons2_editor restore "backups\2026-09-30_14-35-12"
 python -m dungeons2_editor verify                               # checks saves re-encode exactly; writes nothing
 python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
+python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
 ```
 
 Add `--profile <folder>` to point at a save folder somewhere else.

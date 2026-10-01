@@ -130,12 +130,11 @@ PRESETS: tuple[Preset, ...] = (
         "Turn everything you own into top-rarity gear at the power you pick.",
         "Makes every weapon and armor piece in your inventory Unique and every artifact Special (artifacts and "
         "talismans can't be Unique), at the power you choose. It also fills your emeralds for the Thrifty Pendant, "
-        "which adds more damage the more emeralds you carry. Uniques made by the editor haven't been tested in the "
-        "game yet: it might not accept them, so try it on one item first (Restore… undoes it).",
+        "which adds more damage the more emeralds you carry. Uniques made by the editor work (a Unique Sword stuck "
+        "in testing), but keep the power close to your level: in a test, the game removed items at power 135.",
         stats={"Emeralds": 9_999},
         items=(THRIFTY_PENDANT,),
         upgrade_gear=True,
-        experimental=True,
         sources=(METABOT_TALISMANS, METABOT_UNIQUES),
     ),
     Preset(

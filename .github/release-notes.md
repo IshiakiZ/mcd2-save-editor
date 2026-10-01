@@ -1,3 +1,15 @@
+## What's new in 1.2.5
+
+- **More confirmed items**: the Heavy Crossbow (added with the editor and kept by the game), the Mystic Boots, and
+  two items the game calls something the editor doesn't know yet. 12 items are now confirmed.
+- **Share item IDs…** on the Help tab (or `python -m dungeons2_editor ids`) lists the item IDs in your saves that the
+  editor doesn't know yet. Add the in-game names and open a pre-filled GitHub issue with one click. Only item IDs
+  are shared, nothing else from your saves.
+- **Corrected what 1.2.4 said about the game:** a Unique Sword, a Heavy Crossbow at power 10 and level 10 all
+  stuck in the game. Level 100 and twelve items at power 135 didn't, so the warnings now point at very high power
+  and level instead of saying the game rejects Uniques or works out your level from XP. Upgrade my gear is no
+  longer marked experimental.
+
 ## What's new in 1.2.4
 
 - **Equipped view**: a second tab next to your items lists all 12 gear slots and what's in each. Pick a slot to

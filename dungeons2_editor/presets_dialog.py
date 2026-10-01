@@ -108,7 +108,7 @@ class PresetsDialog(tk.Toplevel):
         power.bind("<FocusOut>", lambda _event: self._refresh())
         ttk.Label(
             self.power_row,
-            text=f"Your strongest item has power {self.hero.best_power()}. Far above your level's usual power, the game may lower it.",
+            text=f"Your strongest item has power {self.hero.best_power()}. Stay close: in a test, the game removed items at power 135.",
             style="Muted.TLabel",
         ).pack(side="left")
 

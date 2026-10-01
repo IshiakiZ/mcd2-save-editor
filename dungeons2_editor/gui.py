@@ -17,7 +17,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, merge, paths, saves, wgs, wiki
+from . import __version__, codec, merge, paths, saves, share_ids, wgs, wiki
 from . import document as doc
 from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document
 from .hero_tab import HeroTab
@@ -365,6 +365,10 @@ class EditorApp:
         ttk.Button(buttons, text="Undo raw edits", command=self._refresh_raw).pack(side="right", padx=8)
 
     def _build_help_tab(self) -> None:
+        share = ttk.Frame(self.help_tab)
+        share.pack(fill="x", padx=6, pady=(4, 6))
+        ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.").pack(side="left")
+        ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
         text = tk.Text(
             self.help_tab,
             wrap="word",
@@ -383,6 +387,10 @@ class EditorApp:
             text.insert("end", body.format(backups=self.backup_root) + "\n", "body")
         text.configure(state="disabled")
         text.pack(fill="both", expand=True)
+
+    def _share_ids(self) -> None:
+        heroes = [c.hero for c in self.profile.containers if c.hero is not None] if self.profile is not None else []
+        share_ids.ShareIdsDialog(self.root, heroes, __version__)
 
     # ---------------------------------------------------------------- profiles
 

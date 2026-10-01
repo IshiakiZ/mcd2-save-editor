@@ -363,7 +363,7 @@ class HeroTab(ttk.Frame):
         var.set(_number_text(self.hero.attribute(name)))
         message = f"{attribute_label(name)} is now {format_amount(value)}. {SAVE_REMINDER}"
         if name == "Level":
-            message += " The game works out your level from your XP, so it puts a level that doesn't match back."
+            message += " In testing, level 10 stuck but level 100 was put back to 1, so change it in small steps."
         if value > STAT_CAPS.get(name, MAX_STAT):
             message = f"{attribute_label(name)} is now {format_amount(value)}, above the game's cap of {format_amount(STAT_CAPS[name])}, so the game may lower it."
         self._say(self.stats_message, self.stats_message_var, message)

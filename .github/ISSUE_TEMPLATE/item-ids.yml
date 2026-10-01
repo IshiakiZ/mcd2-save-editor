@@ -1,0 +1,23 @@
+name: Report item IDs
+description: Item IDs from your Minecraft Dungeons II saves, so the editor can add those items for everyone.
+title: "Item IDs from my saves"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping! The editor's **Share item IDs…** button (on its Help tab) fills this in for you.
+        An item ID looks like `SW.Item.MysticHelmet`. Please don't paste anything else from your save: no
+        character IDs, account names or backup files.
+  - type: textarea
+    id: ids
+    attributes:
+      label: Item IDs
+      description: One per line. After the dash, write what the game calls the item if you know it.
+      placeholder: "SW.Item.UndauntedHelmet - Bounty Hunter Helmet"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Editor version
+      placeholder: "1.2.5"

@@ -169,7 +169,7 @@
    "name": "Mystic Boots",
    "kind": "Armor",
    "id": "SW.Item.MysticBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Mystic",
    "unique": "Oracle Sandals",
@@ -726,6 +726,14 @@
    "unique_effect": "Companions take 20% less damage."
   },
   {
+   "name": "Undaunted Helmet",
+   "kind": "Armor",
+   "id": "SW.Item.UndauntedHelmet",
+   "confirmed": true,
+   "slot": "Helmet",
+   "name_from_id": true
+  },
+  {
    "name": "Wolfpack Boots",
    "kind": "Armor",
    "id": "SW.Item.WolfpackBoots",
@@ -934,6 +942,13 @@
    "confirmed": false
   },
   {
+   "name": "Rallying Horn",
+   "kind": "Artifact",
+   "id": "SW.Item.Artifact.RallyingHorn",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Redstone Mine Launcher",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.RedstoneMineLauncher",
@@ -1057,7 +1072,8 @@
    "name": "Curved Greatsword",
    "kind": "Melee",
    "id": "SW.Item.CurvedGreatsword",
-   "confirmed": true
+   "confirmed": true,
+   "name_from_id": true
   },
   {
    "name": "Double Daggers",
@@ -1279,7 +1295,7 @@
    "name": "Heavy Crossbow",
    "kind": "Ranged",
    "id": "SW.Item.HeavyCrossbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Close Ranger",
    "unique_effect": "Ranged attacks deal 100% more damage at close range."
   },

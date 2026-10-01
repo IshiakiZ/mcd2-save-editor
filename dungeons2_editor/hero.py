@@ -120,6 +120,7 @@ class GameItem:
     set: str | None = None  # armor set
     unique_effect: str | None = None  # what the Unique does
     effect: str | None = None  # what a talisman does at level 3
+    name_from_id: bool = False  # the name is made from the ID; what the game calls it isn't known yet
 
 
 @dataclass(frozen=True)
@@ -146,7 +147,7 @@ def game_items() -> tuple[GameItem, ...]:
     return tuple(
         GameItem(
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
-            e.get("set"), e.get("unique_effect"), e.get("effect"),
+            e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")

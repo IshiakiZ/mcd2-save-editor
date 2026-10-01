@@ -140,6 +140,21 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_ids(args: argparse.Namespace) -> int:
+    """The item IDs in your saves that the editor doesn't know yet, to share on GitHub."""
+    from . import __version__
+    from .share_ids import ISSUE_URL, report_text
+
+    profile = _pick_profile(args.profile)
+    report = report_text([c.hero for c in profile.containers if c.hero is not None], __version__)
+    if not report:
+        print("Every item ID in your saves is already in the editor's list, with its name.")
+        return 0
+    print(report)
+    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs, nothing else).")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # The folder options work before or after the command: "--profile X list" and "list --profile X".
     shared = argparse.ArgumentParser(add_help=False)
@@ -168,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     restore.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     command("verify", "check that saves re-encode exactly (writes nothing)")
     command("items", "list every item the editor can add, with its ID")
+    command("ids", "list the item IDs in your saves that the editor doesn't know yet, to share")
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     args = parser.parse_args(argv)
@@ -191,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         "restore": cmd_restore,
         "verify": cmd_verify,
         "items": cmd_items,
+        "ids": cmd_ids,
         "pictures": cmd_pictures,
     }[args.command]
     try:

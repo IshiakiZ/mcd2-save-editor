@@ -49,6 +49,10 @@ CONFIRMED_IDS = {
     "SW.Item.HoneyLeggings",
     "SW.Item.HoneyBoots",
     "SW.Item.Artifact.FireworkQuiver",
+    "SW.Item.HeavyCrossbow",  # added by the editor and kept by the game (2026-10-01)
+    "SW.Item.MysticBoots",
+    "SW.Item.UndauntedHelmet",
+    "SW.Item.Artifact.RallyingHorn",
 }
 KNOWN_IDS = {"Firework Arrow": "SW.Item.Artifact.FireworkQuiver"}
 # Armor sets named differently in saves: the save's HoneyLeggings and HoneyBoots are the Beekeeper pieces.
@@ -60,7 +64,12 @@ SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings",
 RANGED_TYPES = {"Bow", "Crossbow"}
 ENCHANT_SLOTS = {"Melee": "Melee", "Ranged": "Ranged", "Armor": "Armor", "Chest": "Chestplate"}
 # In saves, but under a name MetaBot doesn't list.
-EXTRA = [{"name": "Curved Greatsword", "kind": "Melee", "id": "SW.Item.CurvedGreatsword"}]
+# Names until someone reports what the game calls these (the names below come from the IDs).
+EXTRA = [
+    {"name": "Curved Greatsword", "kind": "Melee", "id": "SW.Item.CurvedGreatsword"},
+    {"name": "Undaunted Helmet", "kind": "Armor", "id": "SW.Item.UndauntedHelmet", "slot": "Helmet"},
+    {"name": "Rallying Horn", "kind": "Artifact", "id": "SW.Item.Artifact.RallyingHorn"},
+]
 
 
 class Tables(HTMLParser):
@@ -151,7 +160,7 @@ def main() -> None:
         name, effect = row["TALISMAN"], row["EFFECT AT LEVEL 3"]
         items.setdefault(name, entry(name, "Talisman", f"SW.Item.Talisman.{pascal(name)}", effect="" if effect == "—" else effect))
     for extra in EXTRA:
-        items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"]))
+        items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"], slot=extra.get("slot", ""), name_from_id=True))
 
     enchantments = [
         {
