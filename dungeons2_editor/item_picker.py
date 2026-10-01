@@ -58,6 +58,7 @@ class ItemPicker(tk.Toplevel):
         equipped: Callable[[], dict[str, str]] | None = None,
         hero_level: int | None = None,
         on_add: Callable[[str, str, int, int, GearSlot | None], None] | None = None,
+        for_slot: GearSlot | None = None,
     ):
         super().__init__(parent)
         self.catalog = catalog
@@ -68,13 +69,14 @@ class ItemPicker(tk.Toplevel):
         self.equipped = equipped or (lambda: {})
         self.hero_level = hero_level
         self.on_add = on_add
+        self.for_slot = for_slot  # only items for this slot, equipped there
         self.result: str | None = None
         self._by_iid: dict[str, CatalogItem] = {}
         self._slot_by_choice: dict[str, GearSlot] = {}
-        self._chosen_slot_tag: str | None = None
+        self._chosen_slot_tag: str | None = for_slot.tag if for_slot else None
         self._unconfirmed_ok = False
         self._guessed_slot_ok = False
-        self.title("Add items" if mode == "add" else "Change item")
+        self.title(f"Add items: {for_slot.label}" if for_slot else "Add items" if mode == "add" else "Change item")
         self.transient(parent)
         self.geometry("{}x{}".format(*SIZE))
         self._build(best_power)
@@ -105,6 +107,9 @@ class ItemPicker(tk.Toplevel):
         kinds = [ALL] + sorted({item.kind for item in self.catalog})
         kind_box = ttk.Combobox(top, textvariable=self.kind_var, values=kinds, state="readonly", width=16)
         kind_box.pack(side="left")
+        if self.for_slot is not None:
+            self.kind_var.set(self.for_slot.kind)
+            kind_box.state(["disabled"])
         kind_box.bind("<<ComboboxSelected>>", lambda _event: self._fill())
         self.confirmed_only = tk.BooleanVar(value=False)
         ttk.Checkbutton(top, text="Only confirmed", variable=self.confirmed_only, command=self._fill).pack(side="left", padx=(12, 0))
@@ -150,7 +155,7 @@ class ItemPicker(tk.Toplevel):
         self.power_var = tk.StringVar(value=str(best_power))
         self.count_var = tk.StringVar(value="1")
         self.unique_text = tk.StringVar()
-        self.equip_var = tk.BooleanVar(value=False)
+        self.equip_var = tk.BooleanVar(value=self.for_slot is not None)
         self.slot_var = tk.StringVar()
         self.slot_note = tk.StringVar()
         if self.mode == "add":
@@ -221,6 +226,8 @@ class ItemPicker(tk.Toplevel):
         self._by_iid.clear()
         for item in self.catalog:
             if kind != ALL and item.kind != kind:
+                continue
+            if self.for_slot is not None and not slots_for(item.kind, item.piece, [self.for_slot]):
                 continue
             if self.confirmed_only.get() and not item.confirmed:
                 continue
@@ -356,8 +363,8 @@ class ItemPicker(tk.Toplevel):
             what = f"the {slot.label.lower()} slot hasn't"
         lines = [
             f"The game's name for {what} been seen in a real save yet, so the editor is making a best guess.",
-            "If a guess is wrong, the game may drop the item or leave it unequipped, or may not load this hero until "
-            "you undo the change with Restore… (a backup is made every time you save).",
+            "If a guess is wrong, the game removes the item when it loads your hero (it did in testing) and keeps "
+            "the rest. Restore… undoes the change (a backup is made every time you save).",
         ]
         if guessed_slot:
             lines.append(f"Equip any {slot.kind.lower()} in the game once and the editor learns the slot's real name.")

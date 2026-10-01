@@ -164,11 +164,6 @@ class PresetTests(unittest.TestCase):
         self.assertIn("Melee", lightning.slots)
         self.assertTrue(lightning.tier3 and lightning.book)
 
-    def test_max_level_keeps_both_levels_in_step(self):
-        plan = presets.plan(by_title("Max level"), self.hero, self.catalog, power=1)
-        presets.apply(plan, self.hero, self.catalog)
-        self.assertEqual((self.hero.attribute("Level"), self.hero.level), (100, 100))
-
     def test_game_caps(self):
         with self.assertRaises(ValueError):
             self.hero.set_attributes({"Emeralds": 10_000}, game_caps=True)

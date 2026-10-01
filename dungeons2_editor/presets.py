@@ -130,11 +130,12 @@ PRESETS: tuple[Preset, ...] = (
         "Turn everything you own into top-rarity gear at the power you pick.",
         "Makes every weapon and armor piece in your inventory Unique and every artifact Special (artifacts and "
         "talismans can't be Unique), at the power you choose. It also fills your emeralds for the Thrifty Pendant, "
-        "which adds more damage the more emeralds you carry. The editor can't add a Unique's signature effect; "
-        "Uniques found in the game come with one.",
+        "which adds more damage the more emeralds you carry. Uniques made by the editor haven't been tested in the "
+        "game yet: it might not accept them, so try it on one item first (Restore… undoes it).",
         stats={"Emeralds": 9_999},
         items=(THRIFTY_PENDANT,),
         upgrade_gear=True,
+        experimental=True,
         sources=(METABOT_TALISMANS, METABOT_UNIQUES),
     ),
     Preset(
@@ -154,16 +155,6 @@ PRESETS: tuple[Preset, ...] = (
         "secret talisman guide shows where each one is hidden: " + MAXROLL_SECRETS,
         items=SECRET_TALISMANS,
         sources=(METABOT_TALISMANS,),
-    ),
-    Preset(
-        "Max level",
-        "Jump straight to level 100 with all your enchantment points.",
-        "Sets your level to 100 and enchantment points to 99 (one per level-up). The editor doesn't know how the "
-        "game ties XP to level, so XP is left alone and the game may adjust it. Try it on a hero you don't mind "
-        "restoring from a backup.",
-        stats={"Level": 100, "EnchantmentPoints": 99},
-        experimental=True,
-        sources=(METABOT_PROGRESSION,),
     ),
 )
 

@@ -12,13 +12,13 @@ save for people who want it.
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
   levels. Changes apply as you type, and mistakes show up in red next to the field.
 - **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
-  delete them.
+  delete them. The **Equipped** view lists all 12 gear slots, so you can put an item straight into a slot or take
+  one off.
 - **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a War Hammer becomes the Heartbreaker. Items show their in-game names.
 - **Presets:**
-  - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town, Secret talisman hunt and Max
-    level.
+  - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
   - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
   - **Kits:** six complete loadouts from MetaBot's data-backed builds (Melee damage, Greatbow sharpshooter,
     Close-range crossbow, Humbler tank, Soul caster and Companion support).
@@ -38,9 +38,9 @@ save for people who want it.
 |---|---|
 | ![Add items](docs/screenshots/add-items.png) | ![A kit preset](docs/screenshots/presets-kit.png) |
 
-| Before saving | Advanced mode |
+| Equipped gear | Advanced mode |
 |---|---|
-| ![Save summary](docs/screenshots/save-summary.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
+| ![The Equipped view](docs/screenshots/equipped.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
 
 ## Download
 
@@ -78,7 +78,8 @@ your sign-in token, so don't share them.
   `SW.Item.MysticHelmet`). The game's list of those names is in its encrypted content files, and the editor doesn't
   break that encryption, so for most items it works the name out from the in-game name, following the pattern of the
   names seen in real saves. (The equipment slots are different: the game's readable script cache names all 12, so
-  equipping is exact.) Items whose internal name has
+  equipping is exact.) In testing, the game removed items whose name was a wrong guess and kept the rest of the
+  hero. Items whose internal name has
   been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
   drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
   game become confirmed automatically. Found a wrong or missing one? `python -m dungeons2_editor items` lists them
@@ -86,8 +87,10 @@ your sign-in token, so don't share them.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
 - Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
-- Level, XP, item power caps and some other numbers come from community datamines, not from the game's own tables.
-  The **Max level** preset is experimental.
+- **Level** comes from XP: the game works your level out from your XP, so changing the level alone doesn't stick,
+  and the XP each level needs isn't known yet.
+- **Uniques made by the editor** (a base item at Unique rarity) haven't been tested in the game yet.
+- Item power caps and some other numbers come from community datamines, not from the game's own tables.
 
 ## How it works
 
@@ -160,6 +163,8 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
 - Item pictures come from the [Minecraft Wiki](https://minecraft.wiki) and are downloaded on your PC when you ask;
   none are included here. The screenshots use a made-up demo save.
+- The Equipped view takes its idea from the equipment screen of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit),
+  the save editor for the first Minecraft Dungeons.
 - The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky
   saves the same way.
 - Game facts come from community datamines by [MetaBot](https://metabot.gg/en/minecraft-dungeons-2) and

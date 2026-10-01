@@ -1,3 +1,16 @@
+## What's new in 1.2.4
+
+- **Equipped view**: a second tab next to your items lists all 12 gear slots and what's in each. Pick a slot to
+  **put an item in it** or **unequip** it. The idea comes from the equipment screen of
+  [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit), the save editor for the first Minecraft Dungeons.
+- **What a first real test showed** (with 1.2.3's fix):
+  - **Stat changes stick**: 9,999 emeralds showed up in the game.
+  - **Items with guessed IDs are removed by the game** when it loads the hero, and the rest of the hero is kept.
+    Presets leave unconfirmed items out by default again and say so.
+  - **The game works out your level from your XP**, so the Max level preset is gone, and changing Level now says
+    the game will put it back.
+  - **Uniques made by the editor haven't been tested in the game yet**, so Upgrade my gear is marked experimental.
+
 ## What's new in 1.2.3: important fix, please update
 
 - **Saves are now written exactly the way the game writes them.** Earlier versions gave each new save file a new

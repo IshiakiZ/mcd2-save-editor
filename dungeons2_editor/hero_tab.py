@@ -136,17 +136,50 @@ class HeroTab(ttk.Frame):
         self.shown_var = tk.StringVar()
         ttk.Label(controls, textvariable=self.shown_var, style="Muted.TLabel").pack(side="right", padx=(0, 10))
 
-        self.tree = ttk.Treeview(items, columns=list(_HEADINGS)[1:], selectmode="browse", height=7, style="Items.Treeview")
+        # Two views of the items: every item, and the 12 gear slots with what's equipped in each.
+        self.item_views = ttk.Notebook(items)
+        self.item_views.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        inventory = ttk.Frame(self.item_views)
+        inventory.columnconfigure(0, weight=1)
+        inventory.rowconfigure(0, weight=1)
+        self.tree = ttk.Treeview(inventory, columns=list(_HEADINGS)[1:], selectmode="browse", height=7, style="Items.Treeview")
         for column, text in _HEADINGS.items():
             self.tree.heading(column, text=text, command=lambda column=column: self._sort_by_heading(column))
         self.tree.column("#0", width=200, stretch=True)
         widths = {"kind": 80, "rarity": 72, "power": 64, "level": 54, "xp": 64, "enchants": 72, "where": 180}
         for column, width in widths.items():
             self.tree.column(column, width=width, stretch=column == "where", anchor="e" if column in _NUMBER_COLUMNS else "w")
-        scroll = ttk.Scrollbar(items, orient="vertical", command=self.tree.yview)
+        scroll = ttk.Scrollbar(inventory, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scroll.set)
-        self.tree.grid(row=1, column=0, sticky="nsew")
-        scroll.grid(row=1, column=1, sticky="ns")
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scroll.grid(row=0, column=1, sticky="ns")
+        self.gear = ttk.Frame(self.item_views)
+        self.gear.columnconfigure(0, weight=1)
+        self.gear.rowconfigure(0, weight=1)
+        self.gear_tree = ttk.Treeview(self.gear, columns=("item", "detail"), selectmode="browse", height=7, style="Items.Treeview")
+        self.gear_tree.heading("#0", text="Slot")
+        self.gear_tree.heading("item", text="Equipped")
+        self.gear_tree.heading("detail", text="Rarity and power")
+        self.gear_tree.column("#0", width=170, stretch=False)
+        self.gear_tree.column("item", width=260, stretch=True)
+        self.gear_tree.column("detail", width=200, stretch=False)
+        self.gear_tree.tag_configure("empty", foreground=ttk.Style(self).lookup("Muted.TLabel", "foreground"))
+        gear_scroll = ttk.Scrollbar(self.gear, orient="vertical", command=self.gear_tree.yview)
+        self.gear_tree.configure(yscrollcommand=gear_scroll.set)
+        self.gear_tree.grid(row=0, column=0, sticky="nsew")
+        gear_scroll.grid(row=0, column=1, sticky="ns")
+        self.gear_tree.bind("<<TreeviewSelect>>", lambda _event: self._on_gear_select())
+        self.gear_tree.bind("<Double-1>", lambda _event: self._add_to_gear_slot())
+        gear_buttons = ttk.Frame(self.gear)
+        gear_buttons.grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        self.slot_add_button = ttk.Button(gear_buttons, text="Put an item here…", command=self._add_to_gear_slot)
+        self.slot_add_button.pack(side="left", padx=(0, 6))
+        self.slot_off_button = ttk.Button(gear_buttons, text="Unequip", command=self._unequip_gear_slot)
+        self.slot_off_button.pack(side="left")
+        self._gear_slots: dict[str, tuple[GearSlot, int | None]] = {}  # row id (slot tag) -> slot, equipped item index
+        self.item_views.add(inventory, text="All items")
+        self.item_views.add(self.gear, text="Equipped")
+        self.item_views.bind("<<NotebookTabChanged>>", lambda _event: self._fill_gear())
         self.tree.tag_configure("locked", foreground=ttk.Style(self).lookup("Muted.TLabel", "foreground"))
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Delete>", lambda _event: self.delete_item())
@@ -329,6 +362,8 @@ class HeroTab(ttk.Frame):
             return False
         var.set(_number_text(self.hero.attribute(name)))
         message = f"{attribute_label(name)} is now {format_amount(value)}. {SAVE_REMINDER}"
+        if name == "Level":
+            message += " The game works out your level from your XP, so it puts a level that doesn't match back."
         if value > STAT_CAPS.get(name, MAX_STAT):
             message = f"{attribute_label(name)} is now {format_amount(value)}, above the game's cap of {format_amount(STAT_CAPS[name])}, so the game may lower it."
         self._say(self.stats_message, self.stats_message_var, message)
@@ -370,6 +405,76 @@ class HeroTab(ttk.Frame):
         else:
             self.selected = None
             self._show_item(None)
+        self._fill_gear()
+
+    def _fill_gear(self) -> None:
+        """The Equipped view: each gear slot and what's in it. Built only while it's showing;
+        switching to it builds it."""
+        if self.item_views.select() != str(self.gear):
+            return
+        chosen = self.gear_tree.selection()
+        self.gear_tree.delete(*self.gear_tree.get_children())
+        self._gear_slots.clear()
+        if self.hero is not None:
+            level = None if self.advanced else self.hero.level
+            worn = {item.equipped_slot: item for item in self.hero.items() if item.equipped_slot}
+            for slot in self._slots():
+                item = worn.get(slot.tag)
+                if item is not None:
+                    values = (item.name, f"{item.rarity}, power {_number_text(item.power)}")
+                    image = self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name)
+                else:
+                    values = ("empty" if slot_open(slot, level) else f"opens at level {slot.level}", "")
+                    image = ""
+                self.gear_tree.insert("", "end", iid=slot.tag, text=" " + slot.label, image=image, values=values, tags=() if item else ("empty",))
+                self._gear_slots[slot.tag] = (slot, item.index if item else None)
+        if chosen and chosen[0] in self._gear_slots:
+            self.gear_tree.selection_set(chosen[0])
+        self._on_gear_select()
+
+    def _selected_gear_slot(self) -> tuple[GearSlot, int | None] | None:
+        selection = self.gear_tree.selection()
+        return self._gear_slots.get(selection[0]) if selection else None
+
+    def _on_gear_select(self) -> None:
+        chosen = self._selected_gear_slot()
+        level = None if self.advanced or self.hero is None else self.hero.level
+        can_add = chosen is not None and slot_open(chosen[0], level)
+        self.slot_add_button.state(["!disabled"] if can_add else ["disabled"])
+        self.slot_off_button.state(["!disabled"] if chosen is not None and chosen[1] is not None else ["disabled"])
+        if chosen is not None and chosen[1] is not None:
+            self._pick_item(chosen[1])
+
+    def _add_to_gear_slot(self) -> None:
+        chosen = self._selected_gear_slot()
+        level = None if self.advanced or self.hero is None else self.hero.level
+        if chosen is not None and slot_open(chosen[0], level):
+            self.open_add_items(for_slot=chosen[0])
+
+    def _unequip_gear_slot(self) -> None:
+        chosen = self._selected_gear_slot()
+        if chosen is not None:
+            self._take_off(chosen[1])
+
+    def _pick_item(self, index: int) -> None:
+        """Show an item (picked in the Equipped view) in the details below."""
+        if index == self.selected:
+            return
+        previous = self.selected
+        self.selected = index
+        if not self._apply_numbers():  # something typed for the previous item is wrong: stay on it
+            self.selected = previous
+            return
+        self._select_row(index)
+        self._show_item(index)
+
+    def _take_off(self, index: int | None) -> None:
+        if self.hero is None or index is None:
+            return
+        self.hero.unequip(index)
+        self._fill_items()
+        self._say(self.item_message, self.item_message_var, f"Unequipped. It's in your inventory. {SAVE_REMINDER}")
+        self.on_change()
 
     def _mark_sorted_heading(self) -> None:
         sort = self.sort_var.get()
@@ -499,7 +604,8 @@ class HeroTab(ttk.Frame):
     def _equipped_names(self) -> dict[str, str]:
         return {item.equipped_slot: item.name for item in self.hero.items() if item.equipped_slot} if self.hero else {}
 
-    def open_add_items(self) -> None:
+    def open_add_items(self, for_slot: GearSlot | None = None) -> None:
+        """Add items; with ``for_slot``, only items for that slot, equipped there."""
         if self.hero is None:
             return
         catalog = self._catalog()
@@ -526,6 +632,7 @@ class HeroTab(ttk.Frame):
             equipped=self._equipped_names,
             hero_level=None if self.advanced else self.hero.level,
             on_add=add,
+            for_slot=for_slot,
         )
 
     def equip_item(self) -> None:

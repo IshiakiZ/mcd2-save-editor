@@ -262,6 +262,56 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("Mystic Circlet: equipped (helmet)", summary)
         self.assertEqual(self.saved_hero().equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Mystic Circlet")
 
+    def show_equipped(self):
+        self.tab.item_views.select(self.tab.gear)
+        self.root.update()
+
+    def slot_row(self, label):
+        """(equipped column, rarity and power) for the slot with this label in the Equipped view."""
+        iid = next(i for i in self.tab.gear_tree.get_children() if self.tab.gear_tree.item(i, "text").strip() == label)
+        return iid, tuple(self.tab.gear_tree.item(iid, "values"))
+
+    def test_equipped_view_shows_every_slot(self):
+        self.show_equipped()
+        self.assertEqual(len(self.tab.gear_tree.get_children()), 12)
+        self.assertEqual(self.slot_row("Melee weapon")[1], ("Sword", "Common, power 1"))
+        self.assertEqual(self.slot_row("Helmet")[1][0], "empty")
+        locked, values = self.slot_row("Artifact 2")
+        self.assertEqual(values[0], "opens at level 5")
+        self.tab.gear_tree.selection_set(locked)
+        self.root.update()
+        self.assertTrue(self.tab.slot_add_button.instate(["disabled"]))
+        melee, _values = self.slot_row("Melee weapon")
+        self.tab.gear_tree.selection_set(melee)
+        self.root.update()
+        self.assertEqual(self.tab.item_title_var.get(), "Sword")  # picking a slot shows its item below
+        self.tab.slot_off_button.invoke()
+        self.assertEqual(self.slot_row("Melee weapon")[1][0], "empty")
+        self.assertIn("Unequipped", self.tab.item_message_var.get())
+
+    def test_add_straight_into_a_slot(self):
+        self.show_equipped()
+        helmet, _values = self.slot_row("Helmet")
+        self.tab.gear_tree.selection_set(helmet)
+        self.root.update()
+        self.tab.slot_add_button.invoke()
+        self.root.update()
+        picker = next(w for w in self.tab.winfo_children() if isinstance(w, ItemPicker))
+        names = [picker.tree.item(i, "text").strip() for i in picker.tree.get_children()]
+        self.assertIn("Mystic Circlet", names)
+        self.assertNotIn("Sword", names)
+        self.assertNotIn("Beekeeper Boots", names)  # armor, but not a helmet
+        self.assertTrue(picker.equip_var.get())
+        row = next(i for i in picker.tree.get_children() if picker.tree.item(i, "text").strip() == "Mystic Circlet")
+        picker.tree.selection_set(row)
+        self.root.update()
+        self.assertEqual(picker.slot_var.get(), "Helmet: empty")
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            picker._confirm()
+        ask.assert_not_called()  # a confirmed item, in a slot the game's own files name
+        picker.destroy()
+        self.assertEqual(self.slot_row("Helmet")[1][0], "Mystic Circlet")
+
     def test_add_and_equip_from_the_picker(self):
         picker, _row = self.open_picker_on("Axe")
         picker.equip_var.set(True)
@@ -436,7 +486,10 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(dialog.title_var.get(), "Melee damage")
         self.assertTrue(dialog.rarity_row.winfo_manager())
         self.assertTrue(dialog.equip_var.get())
-        self.assertTrue(dialog.include_unconfirmed.get())  # gear presets ask on Apply instead
+        self.assertFalse(dialog.include_unconfirmed.get())  # the game removed them in testing
+        self.assertIn("the game removed every unconfirmed item a kit added", dialog.text.get("1.0", "end"))
+        dialog.include_unconfirmed.set(True)
+        dialog._refresh()
         text = dialog.text.get("1.0", "end")
         self.assertIn("Enchantments to pick in the game", text)
         self.assertIn("Melee weapon\tLightning Surge (book: Any area)", text)

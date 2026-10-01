@@ -198,7 +198,6 @@ class PresetsDialog(tk.Toplevel):
         if preset is not self._shown_preset:
             self._shown_preset = preset
             self.equip_var.set(preset.equip)
-            self.include_unconfirmed.set(preset.choose_rarity)  # gear presets ask once on Apply instead
 
     def _refresh(self) -> None:
         preset = self.preset
@@ -310,8 +309,9 @@ class PresetsDialog(tk.Toplevel):
         notes = []
         if any(row.state == "left out" for row in rows):
             notes.append(
-                "Grey items are unconfirmed (the editor has to guess the game's name for them), so they're left out. "
-                "Tick \"Also add unconfirmed items\" to add them anyway."
+                "Grey items are unconfirmed (the editor has to guess the game's name for them), so they're left out: "
+                "in a test, the game removed every unconfirmed item a kit added. Tick \"Also add unconfirmed items\" "
+                "to try them anyway."
             )
         guesses = []
         guessed = sum(row.state == "add" and not row.confirmed for row in rows)
