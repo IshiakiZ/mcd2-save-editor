@@ -7,6 +7,8 @@ way around. Advanced mode shows the full save for people who want it.
 
 ![Simple mode, laid out like the game's inventory](docs/screenshots/inventory.png)
 
+> **Also from the same developer: [Lemma](https://lemma.ishiakiz.com)**, a free creative studio for Minecraft.
+
 ## Features
 
 - **Looks like the game:** your gear on the left (weapons, armor, artifacts, talismans) as tiles in their rarity's
