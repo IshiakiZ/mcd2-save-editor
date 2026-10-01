@@ -171,6 +171,11 @@ def _game_items_by_id() -> dict[str, GameItem]:
     return found
 
 
+def game_item(tag: str) -> GameItem | None:
+    """What the game's item list says about an item ID, if it lists it."""
+    return _game_items_by_id().get(tag)
+
+
 def display_name(tag: str, rarity: str = "") -> str:
     """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity."""
     known = _game_items_by_id().get(tag)

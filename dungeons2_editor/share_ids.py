@@ -11,6 +11,7 @@ import webbrowser
 from tkinter import ttk
 
 from .hero import NOT_ADDABLE_GROUPS, Hero, game_items, item_group, item_kind
+from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
 ISSUE_URL = "https://github.com/IshiakiZ/mcd2-save-editor/issues/new"
@@ -56,6 +57,7 @@ class ShareIdsDialog(tk.Toplevel):
         self.version = version
         self.title("Share item IDs")
         self.transient(parent)
+        match_title_bar(self)
         frame = ttk.Frame(self, padding=12)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)

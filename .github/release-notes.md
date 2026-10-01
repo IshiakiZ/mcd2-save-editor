@@ -1,3 +1,21 @@
+## What's new in 1.3.0
+
+- **Simple mode now looks like the game's inventory screen.** Your gear is on the left as tiles in their rarity's
+  colour (weapons, armor, artifacts and talismans; slots your level hasn't opened yet show a lock). The rest of your
+  inventory is in the middle, with filters for each kind of item and the Village Merchant's stock. The item card on
+  the right shows power, rarity, what the item does and whether it's enchanted, with buttons to change it. Level, XP
+  and gear power run along the top, and enchantment points, emeralds and echo shards sit in the top bar; click any
+  of them to change it. **Stats & town** has every other stat. The Add items and Presets windows are dark to match.
+- **Gear power** is worked out the way the game does (the average power of what your hero wears; talismans don't
+  count) and changes as you edit.
+- **Item pictures:** the editor cuts the item out of the Minecraft Wiki's pictures so it sits on the tiles the way it
+  does in the game; items without a picture get a pixel-art icon. The .exe now includes Pillow for this.
+- **Quicker editing:** double-click an empty slot to fill it, double-click an inventory item to put it on,
+  right-click a tile for its actions, and press Ctrl+S to save.
+- **Advanced mode** stays as it was, with the sortable item list, the Edit tree and the raw JSON. Rarity colours now
+  match the game everywhere: Common grey-brown, Rare green, Special blue, Unique orange.
+- A link to Lemma, a free creative studio for Minecraft from the same developer, in the menu and on the Help page.
+
 ## What's new in 1.2.5
 
 - **More confirmed items**: the Heavy Crossbow (added with the editor and kept by the game), the Mystic Boots, and

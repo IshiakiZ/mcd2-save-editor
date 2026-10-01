@@ -9,6 +9,7 @@ from typing import Callable
 from . import document as doc
 from .hero import MAX_ITEM_POWER, MAX_STACK, RARITIES, CatalogItem, GearSlot, slots_for
 from .icons import IconLibrary
+from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
 LIST_ICON_SIZE = 24
@@ -78,6 +79,7 @@ class ItemPicker(tk.Toplevel):
         self._guessed_slot_ok = False
         self.title(f"Add items: {for_slot.label}" if for_slot else "Add items" if mode == "add" else "Change item")
         self.transient(parent)
+        match_title_bar(self)
         self.geometry("{}x{}".format(*SIZE))
         self._build(best_power)
         self._fill()

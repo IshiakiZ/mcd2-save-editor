@@ -5,15 +5,17 @@ import tempfile
 import tkinter as tk
 import unittest
 from pathlib import Path
+from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import gui, saves
+from dungeons2_editor import game_style, gui, saves
 from dungeons2_editor.hero import Hero
 from dungeons2_editor.item_picker import ItemPicker
 
 from .helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode
 
 HERO = "Character00000000-0000-1000-8000-000000000002"
+OTHER_HERO = "Character00000000-0000-1000-8000-000000000003"
 
 
 def _tk_available() -> bool:
@@ -120,6 +122,11 @@ class AdvancedSettingsTests(WindowTestCase):
         self.assertIsNone(self.app.document)
         self.assertIn("sign-in token", self.app.message_var.get())
 
+    def test_advanced_mode_keeps_the_windows_look(self):
+        self.assertEqual(ttk.Style(self.root).theme_use(), self.app.light_theme)
+        self.assertTrue(self.app.advanced_screen.winfo_manager())
+        self.assertFalse(self.app.simple_screen.winfo_manager())
+
     def test_switching_to_simple_mode_hides_the_technical_parts(self):
         self.app.advanced_var.set(False)
         self.app._on_advanced_toggled()
@@ -127,11 +134,18 @@ class AdvancedSettingsTests(WindowTestCase):
         self.assertEqual(self.app.notebook.tab(self.app.edit_tab, "state"), "hidden")
         self.assertEqual(self.app.title_var.get(), "No offline heroes yet")
         self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8")), {"advanced": False})
+        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.THEME)
+        self.assertTrue(self.app.simple_screen.winfo_manager())
+        self.assertTrue(self.app.inventory.empty.winfo_manager())  # no hero to show: says how to get one
+        self.assertIn("Reload", self.app.empty_text_var.get())
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
 class HeroTabTests(WindowTestCase):
+    """The Hero tab, which Advanced mode shows."""
+
     containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: hero_save_text().encode()}
+    advanced = True
 
     def make_icons(self):
         icons = self.dir / "icons" / "wiki"
@@ -160,14 +174,14 @@ class HeroTabTests(WindowTestCase):
             self.app.save_to_game()
         return ask.call_args.args[1] if ask.called else None
 
-    def test_simple_mode_shows_only_heroes_and_the_hero_tab(self):
+    def test_opens_the_hero_on_the_hero_tab(self):
         self.assertEqual(self.app.container.name, HERO)
-        self.assertEqual(self.container_names(), [HERO])
+        self.assertEqual(sorted(self.container_names()), sorted([HERO, "GlobalSaveDataDefault"]))
         self.assertEqual(self.app.notebook.select(), str(self.tab))
         for tab in (self.app.edit_tab, self.app.raw_tab):
-            self.assertEqual(self.app.notebook.tab(tab, "state"), "hidden")
-        self.assertFalse(self.tab.raw_row.winfo_manager())
-        self.assertTrue(self.app.meta_var.get().startswith("Last saved"))
+            self.assertEqual(self.app.notebook.tab(tab, "state"), "normal")
+        self.assertTrue(self.tab.raw_row.winfo_manager())
+        self.assertTrue(self.app.meta_var.get().startswith(HERO))
 
     def test_lists_items_most_powerful_first_with_pictures(self):
         self.assertEqual(self.rows(), ["Longbow", "Mystic Circlet", "Curved Greatsword", "Sword"])
@@ -276,11 +290,11 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(len(self.tab.gear_tree.get_children()), 12)
         self.assertEqual(self.slot_row("Melee weapon")[1], ("Sword", "Common, power 1"))
         self.assertEqual(self.slot_row("Helmet")[1][0], "empty")
-        locked, values = self.slot_row("Artifact 2")
-        self.assertEqual(values[0], "opens at level 5")
-        self.tab.gear_tree.selection_set(locked)
+        later, values = self.slot_row("Artifact 2")
+        self.assertEqual(values[0], "empty")  # Advanced mode doesn't wait for the level that opens it
+        self.tab.gear_tree.selection_set(later)
         self.root.update()
-        self.assertTrue(self.tab.slot_add_button.instate(["disabled"]))
+        self.assertTrue(self.tab.slot_add_button.instate(["!disabled"]))
         melee, _values = self.slot_row("Melee weapon")
         self.tab.gear_tree.selection_set(melee)
         self.root.update()
@@ -328,21 +342,6 @@ class HeroTabTests(WindowTestCase):
         summary = self.save()
         self.assertIn("Added Axe (Common, power 2), equipped (melee weapon)", summary)  # power starts at your best item's
         self.assertIn("Sword: unequipped", summary)
-
-    def test_slots_that_open_later_are_offered_but_locked(self):
-        picker, _row = self.open_picker_on("Firework Arrow")
-        picker.equip_var.set(True)
-        picker._show_slot()
-        self.assertEqual(list(picker.slot_box["values"]), ["Artifact 1: empty", "Artifact 2: opens at level 5", "Artifact 3: opens at level 10"])
-        picker.slot_var.set("Artifact 3: opens at level 10")
-        picker._pick_slot()
-        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
-            picker._confirm()
-        ask.assert_not_called()  # a confirmed item in a slot the game's files name
-        self.assertEqual(str(picker.message.cget("style")), "Error.TLabel")
-        self.assertIn("opens at level 10", picker.message_var.get())
-        picker.destroy()
-        self.assertEqual(self.app.change_count, 0)
 
     def test_add_items_from_the_picker(self):
         self.tab.open_add_items()
@@ -426,14 +425,12 @@ class HeroTabTests(WindowTestCase):
     def test_change_item_into_another(self):
         self.select_item("Mystic Circlet")
         with mock.patch.object(self.tab, "wait_window"):
-            with mock.patch("dungeons2_editor.hero_tab.ItemPicker") as picker_class:
+            with mock.patch("dungeons2_editor.hero_editing.ItemPicker") as picker_class:
                 picker_class.return_value.result = "SW.Item.Axe"
                 self.tab.change_item()
         self.assertIn("Axe", self.rows())
 
     def test_advanced_mode_shows_raw_ids_and_other_saves(self):
-        self.app.advanced_var.set(True)
-        self.app._on_advanced_toggled()
         self.assertIn("GlobalSaveDataDefault", self.container_names())
         self.assertEqual(self.app.notebook.tab(self.app.edit_tab, "state"), "normal")
         self.assertTrue(self.tab.raw_row.winfo_manager())
@@ -441,8 +438,6 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(self.tab.type_var.get(), "SW.Item.MysticHelmet")
 
     def test_edits_in_the_tree_show_up_on_the_hero_tab(self):
-        self.app.advanced_var.set(True)
-        self.app._on_advanced_toggled()
         self.app.notebook.select(self.app.edit_tab)
         self.root.update()
         attributes = self.app.document["CharacterSaveV1"]["Ability"]["Attributes"]
@@ -482,33 +477,16 @@ class HeroTabTests(WindowTestCase):
         dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
         number = next(i for i, p in enumerate(presets.PRESETS) if p.title == "Melee damage")
         dialog.listing.selection_set(str(number))
-        self.root.update()
-        self.assertEqual(dialog.title_var.get(), "Melee damage")
-        self.assertTrue(dialog.rarity_row.winfo_manager())
-        self.assertTrue(dialog.equip_var.get())
-        self.assertFalse(dialog.include_unconfirmed.get())  # the game removed them in testing
-        self.assertIn("the game removed every unconfirmed item a kit added", dialog.text.get("1.0", "end"))
         dialog.include_unconfirmed.set(True)
-        dialog._refresh()
-        text = dialog.text.get("1.0", "end")
-        self.assertIn("Enchantments to pick in the game", text)
-        self.assertIn("Melee weapon\tLightning Surge (book: Any area)", text)
         dialog.power_var.set("40")
+        self.root.update()
         dialog._refresh()
-        text = dialog.text.get("1.0", "end")
-        self.assertIn("Unique gear at power 40, equipped:", text)
-        self.assertIn("\tMelee weapon\tPride of the Plains\n", text)
-        # This hero is level 1, and artifact slots 2 and 3 open at levels 5 and 10.
-        self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom (inventory), Grindstone (inventory)\n", text)
-        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+        # Advanced mode doesn't wait for the levels that open artifact slots 2 and 3.
+        self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom, Grindstone\n", dialog.text.get("1.0", "end"))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
             dialog._apply()
-        ask.assert_called_once()  # most of the kit's item IDs are best guesses
-        self.assertTrue(dialog.message_var.get().startswith("Applied Melee damage"))
         dialog.destroy()
-        hero = self.tab.hero
-        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon").name, "Pride of the Plains")
-        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Twisted Warden Blindfold")
-        self.assertIsNone(hero.equipped("SW.ItemSlot.Equipment.Artifact.Slot2"))  # this hero is level 1
+        self.assertEqual(self.tab.hero.equipped("SW.ItemSlot.Equipment.Artifact.Slot3").name, "Grindstone")
         self.assertIn("Pride of the Plains", self.rows())
 
     def test_group_rows_pick_their_first_preset(self):
@@ -562,12 +540,7 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("template=item-ids.yml", browser.call_args.args[0])
         dialog.destroy()
 
-    def test_simple_mode_stops_stats_at_the_game_cap(self):
-        self.tab.stat_vars["Emeralds"].set("50000")
-        self.assertFalse(self.tab._apply_stat("Emeralds"))
-        self.assertIn("cap", self.tab.stats_message_var.get())
-        self.app.advanced_var.set(True)
-        self.app._on_advanced_toggled()
+    def test_advanced_mode_lets_stats_pass_the_game_caps(self):
         self.tab.stat_vars["Emeralds"].set("50000")
         self.assertTrue(self.tab._apply_stat("Emeralds"))
         self.assertIn("above the game's cap", self.tab.stats_message_var.get())
@@ -575,6 +548,323 @@ class HeroTabTests(WindowTestCase):
     def test_hero_rows_show_level_and_emeralds(self):
         details = [self.app.container_list.item(iid, "values")[0] for iid, c in self.app._containers_by_iid.items() if c.name == HERO]
         self.assertEqual(details, ["Lv 1 · 55 emeralds"])
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class SimpleModeTests(WindowTestCase):
+    """Simple mode: the hero laid out like the game's inventory screen."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: hero_save_text().encode()}
+
+    @property
+    def screen(self):
+        return self.app.inventory
+
+    def index_of(self, tag):
+        return next(item.index for item in self.screen.hero.items() if item.tag == tag)
+
+    def shown(self):
+        return [item.name for item in self.screen._inventory_items()]
+
+    def show(self, kind):
+        self.screen.filter_var.set(kind)
+        self.screen._draw_inventory()
+
+    def saved_hero(self):
+        return saves.SaveProfile(self.profile_path).get(HERO).hero
+
+    def save(self):
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        return ask.call_args.args[1] if ask.called else None
+
+    def test_shows_the_game_style_screen(self):
+        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.THEME)
+        self.assertTrue(self.app.simple_screen.winfo_manager())
+        self.assertFalse(self.app.advanced_screen.winfo_manager())
+        self.assertEqual(self.app.container.name, HERO)
+        self.assertEqual(self.container_names(), [HERO])  # only heroes in Simple mode
+        self.assertEqual(self.app.hero_choice_var.get(), "RANGER DELUXE  ·  LV 1")
+        self.assertTrue(self.app.meta_var.get().startswith("Last saved"))
+        self.assertEqual(self.screen.gear_power_var.get(), "1")  # only the Sword (power 1) is worn
+        self.assertEqual(self.screen.power_part_vars["Melee"].get(), "1")
+        self.assertEqual(self.screen._fixed_vars["Emeralds"].get(), "55")
+        self.assertEqual(self.screen._fixed_vars["SpringStone"].get(), "")  # this hero has no echo shards yet
+        self.assertEqual(self.screen.banner_text, "YOUR HERO")
+
+    def test_gear_is_laid_out_like_the_game(self):
+        labels = [slot.label for _box, slot in self.screen._gear_hits]
+        self.assertEqual(labels, [
+            "Melee weapon", "Ranged weapon", "Helmet", "Chestplate", "Leggings", "Boots",
+            "Artifact 1", "Artifact 2", "Artifact 3", "Talisman 1", "Talisman 2", "Talisman 3",
+        ])
+        self.screen.pick_slot("SW.ItemSlot.Equipment.MeleeWeapon")
+        self.assertEqual((self.screen.banner_text, self.screen.card_name_var.get()), ("EQUIPPED", "SWORD"))
+        self.assertEqual(self.screen.equip_button.cget("text"), "UNEQUIP")
+        self.assertTrue(self.screen.delete_button.instate(["disabled"]))
+        self.screen.pick_slot("SW.ItemSlot.Equipment.Armor.Helmet")
+        self.assertEqual(self.screen.banner_text, "EMPTY SLOT")
+        self.assertTrue(self.screen.slot_add_button.instate(["!disabled"]))
+        self.screen.pick_slot("SW.ItemSlot.Equipment.Artifact.Slot2")  # opens at level 5; this hero is level 1
+        self.assertEqual(self.screen.banner_text, "LOCKED SLOT")
+        self.assertTrue(self.screen.slot_add_button.instate(["disabled"]))
+
+    def test_inventory_shows_what_isnt_worn(self):
+        self.assertEqual(self.shown(), ["Longbow", "Mystic Circlet"])  # not the worn Sword, the merchant's stock or cosmetics
+        self.assertEqual(len(self.screen._item_hits), 2)
+        self.show("Merchant")
+        self.assertEqual(self.shown(), ["Curved Greatsword"])
+        self.show("Armor")
+        self.assertEqual(self.shown(), ["Mystic Circlet"])
+        self.assertEqual(self.screen.count_text.get(), "1 ITEM")
+        self.show("Talisman")
+        self.assertEqual((self.shown(), self.screen._item_hits), ([], []))
+
+    def test_change_rarity_and_power_on_the_card(self):
+        self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        self.assertEqual((self.screen.banner_text, self.screen.card_name_var.get()), ("INVENTORY", "MYSTIC CIRCLET"))
+        self.assertIn("Make it Unique to get the Oracle Crown.", self.screen.card_text_var.get())
+        unique = next(button for button in self.screen.rarity_buttons if str(button.cget("value")) == "Unique")
+        unique.invoke()
+        self.assertEqual(self.screen.card_name_var.get(), "ORACLE CROWN")
+        self.assertEqual(self.screen.card_text_var.get(), "Lightning attacks deal 25% more damage.")
+        self.screen.power_var.set("50")
+        self.assertTrue(self.screen._apply_numbers())
+        self.assertEqual(self.screen.card_power_var.get(), "50")
+        self.assertIn("Mystic Circlet: Common → Unique, power 1 → 50", self.save())
+
+    def test_bad_power_stays_on_that_item(self):
+        self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        self.screen.power_var.set("-5")
+        self.screen.pick_item(self.index_of("SW.Item.Longbow"))  # clicking away with a bad value
+        self.assertEqual(self.screen.card_name_var.get(), "MYSTIC CIRCLET")
+        self.assertEqual(str(self.screen.item_message.cget("style")), "CardError.TLabel")
+
+    def test_equip_and_unequip_from_the_card(self):
+        self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            self.screen.equip_button.invoke()
+        ask.assert_not_called()
+        self.assertEqual(self.screen.banner_text, "EQUIPPED")
+        self.assertNotIn("Mystic Circlet", self.shown())
+        self.assertEqual(self.screen.power_part_vars["Armor"].get(), "1")
+        self.screen.equip_button.invoke()
+        self.assertEqual(self.screen.banner_text, "INVENTORY")
+        self.assertIn("Unequipped", self.screen.item_message_var.get())
+
+    def test_merchant_stock_can_be_copied_but_not_worn(self):
+        self.show("Merchant")
+        self.screen.pick_item(self.index_of("SW.Item.CurvedGreatsword"))
+        self.assertEqual(self.screen.banner_text, "MERCHANT STOCK")
+        self.assertTrue(self.screen.equip_button.instate(["disabled"]))
+        self.screen.copy_button.invoke()
+        self.assertIn("Copied", self.screen.item_message_var.get())
+        self.assertEqual(self.screen.banner_text, "INVENTORY")  # the copy is yours
+        self.show("All")
+        self.assertIn("Curved Greatsword", self.shown())
+
+    def test_delete_from_the_card(self):
+        self.screen.pick_item(self.index_of("SW.Item.Longbow"))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            self.screen.delete_button.invoke()
+        self.assertEqual(self.shown(), ["Mystic Circlet"])
+        self.assertEqual(self.screen.banner_text, "YOUR HERO")
+        self.assertIn("Removed Longbow", self.save())
+
+    def test_stats_stop_at_the_game_caps(self):
+        emeralds = self.screen.stat_vars["Emeralds"]
+        emeralds.set("50000")
+        self.assertFalse(self.screen._apply_stat("Emeralds"))
+        self.assertIn("cap", self.screen.stats_message_var.get())
+        self.assertEqual(str(self.screen.stats_message.cget("style")), "MessageError.TLabel")
+        self.assertEqual(emeralds.get(), "55")
+        emeralds.set("9998")
+        self.assertTrue(self.screen._apply_stat("Emeralds"))
+        self.assertEqual(self.screen._nudge_stat("Emeralds", 5), "break")  # arrow keys stop at the cap
+        self.assertEqual(emeralds.get(), "9999")
+        self.app.advanced_var.set(True)
+        self.app._on_advanced_toggled()
+        self.assertEqual(self.app.hero_tab.stat_vars["Emeralds"].get(), "9999")  # the Hero tab sees the change
+        self.app.hero_tab.stat_vars["Emeralds"].set("50000")
+        self.assertTrue(self.app.hero_tab._apply_stat("Emeralds"))  # Advanced mode may go past the caps
+        self.app.advanced_var.set(False)
+        self.app._on_advanced_toggled()
+        self.assertEqual(self.screen.stat_vars["Emeralds"].get(), "50000")
+
+    def test_level_opens_gear_slots(self):
+        self.screen.stat_vars["Level"].set("5")
+        self.assertTrue(self.screen._apply_stat("Level"))
+        self.assertEqual(self.app.hero_choice_var.get(), "RANGER DELUXE  ·  LV 5")
+        self.screen.pick_slot("SW.ItemSlot.Equipment.Artifact.Slot2")
+        self.assertEqual(self.screen.banner_text, "EMPTY SLOT")
+        self.screen.pick_slot("SW.ItemSlot.Equipment.Artifact.Slot3")
+        self.assertEqual(self.screen.banner_text, "LOCKED SLOT")
+
+    def test_stats_card_lists_every_stat(self):
+        self.screen.show_stats()
+        self.assertEqual(self.screen.card_name_var.get(), "STATS & TOWN")
+        entries = [w for w in self.screen.stats_box.winfo_children() if isinstance(w, ttk.Entry)]
+        self.assertEqual(len(entries), len(self.screen.hero.attributes()))
+        self.assertIs(self.screen.stat_vars["Emeralds"], self.screen._fixed_vars["Emeralds"])  # the same as the top bar's
+        self.screen._close_stats()
+        self.assertEqual(self.screen.banner_text, "YOUR HERO")
+
+    def test_typed_values_are_kept_when_saving(self):
+        self.screen.stat_vars["XP"].set("900")  # typed, then straight to Save to game
+        self.screen.pick_item(self.index_of("SW.Item.Longbow"))
+        self.screen.power_var.set("9")
+        summary = self.save()
+        self.assertIn("XP: 845.5 → 900", summary)
+        self.assertIn("Longbow: power 2 → 9", summary)
+
+    def test_save_button_and_shortcut(self):
+        self.assertTrue(self.app.simple_save_button.instate(["disabled"]))
+        self.screen.stat_vars["Emeralds"].set("123")
+        self.assertTrue(self.screen._apply_stat("Emeralds"))
+        self.assertEqual(self.app.changes_var.get(), "1 unsaved change")
+        self.assertTrue(self.app.simple_save_button.instate(["!disabled"]))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+            self.app._save_shortcut()
+        self.assertEqual(self.saved_hero().attribute("Emeralds"), 123)
+
+    def test_put_an_item_in_an_empty_slot(self):
+        self.screen.pick_slot("SW.ItemSlot.Equipment.Armor.Helmet")
+        self.screen.slot_add_button.invoke()
+        self.root.update()
+        picker = next(w for w in self.screen.winfo_children() if isinstance(w, ItemPicker))
+        names = [picker.tree.item(i, "text").strip() for i in picker.tree.get_children()]
+        self.assertIn("Mystic Circlet", names)
+        self.assertNotIn("Sword", names)
+        row = next(i for i in picker.tree.get_children() if picker.tree.item(i, "text").strip() == "Mystic Circlet")
+        picker.tree.selection_set(row)
+        self.root.update()
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            picker._confirm()
+        ask.assert_not_called()  # a confirmed item, in a slot the game's own files name
+        picker.destroy()
+        self.assertEqual(self.screen.hero.equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Mystic Circlet")
+        self.assertEqual(self.screen.banner_text, "EQUIPPED")  # the card shows what was added
+
+    def test_slots_that_open_later_are_offered_but_locked(self):
+        self.screen.open_add_items()
+        self.root.update()
+        picker = next(w for w in self.screen.winfo_children() if isinstance(w, ItemPicker))
+        picker.search_var.set("Firework Arrow")
+        self.root.update()
+        row = next(i for i in picker.tree.get_children() if picker.tree.item(i, "text").strip() == "Firework Arrow")
+        picker.tree.selection_set(row)
+        self.root.update()
+        picker.equip_var.set(True)
+        picker._show_slot()
+        self.assertEqual(list(picker.slot_box["values"]), ["Artifact 1: empty", "Artifact 2: opens at level 5", "Artifact 3: opens at level 10"])
+        picker.slot_var.set("Artifact 3: opens at level 10")
+        picker._pick_slot()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            picker._confirm()
+        ask.assert_not_called()  # a confirmed item in a slot the game's files name
+        self.assertEqual(str(picker.message.cget("style")), "Error.TLabel")
+        self.assertIn("opens at level 10", picker.message_var.get())
+        picker.destroy()
+        self.assertEqual(self.app.change_count, 0)
+
+    def test_kit_preset_adds_and_equips_a_loadout(self):
+        from dungeons2_editor import presets
+        from dungeons2_editor.presets_dialog import PresetsDialog
+
+        self.screen.open_presets()
+        self.root.update()
+        dialog = next(w for w in self.screen.winfo_children() if isinstance(w, PresetsDialog))
+        number = next(i for i, p in enumerate(presets.PRESETS) if p.title == "Melee damage")
+        dialog.listing.selection_set(str(number))
+        self.root.update()
+        self.assertEqual(dialog.title_var.get(), "Melee damage")
+        self.assertTrue(dialog.rarity_row.winfo_manager())
+        self.assertTrue(dialog.equip_var.get())
+        self.assertFalse(dialog.include_unconfirmed.get())  # the game removed them in testing
+        self.assertIn("the game removed every unconfirmed item a kit added", dialog.text.get("1.0", "end"))
+        dialog.include_unconfirmed.set(True)
+        dialog._refresh()
+        text = dialog.text.get("1.0", "end")
+        self.assertIn("Enchantments to pick in the game", text)
+        self.assertIn("Melee weapon\tLightning Surge (book: Any area)", text)
+        dialog.power_var.set("40")
+        dialog._refresh()
+        text = dialog.text.get("1.0", "end")
+        self.assertIn("Unique gear at power 40, equipped:", text)
+        self.assertIn("\tMelee weapon\tPride of the Plains\n", text)
+        # This hero is level 1, and artifact slots 2 and 3 open at levels 5 and 10.
+        self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom (inventory), Grindstone (inventory)\n", text)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            dialog._apply()
+        ask.assert_called_once()  # most of the kit's item IDs are best guesses
+        self.assertTrue(dialog.message_var.get().startswith("Applied Melee damage"))
+        dialog.destroy()
+        hero = self.screen.hero
+        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon").name, "Pride of the Plains")
+        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Twisted Warden Blindfold")
+        self.assertIsNone(hero.equipped("SW.ItemSlot.Equipment.Artifact.Slot2"))  # this hero is level 1
+        self.assertEqual(self.screen.gear_power_var.get(), "40")
+        self.assertIn("Preset applied", self.screen.stats_message_var.get())
+
+    def test_reloads_when_the_game_saves_and_nothing_is_unsaved(self):
+        game = saves.SaveProfile(self.profile_path)
+        document = copy.deepcopy(game.get(HERO).decoded.document)
+        Hero(document).set_attributes({"XP": 3000})
+        game.save(HERO, document, self.dir / "game-backups", check_game=lambda: [])
+        self.app.game_running = []
+        self.app._check_disk()
+        self.assertEqual(self.screen.stat_vars["XP"].get(), "3000")
+
+    def test_help_page(self):
+        self.app.page_var.set("help")
+        self.app._show_page()
+        self.assertTrue(self.app.simple_help.winfo_manager())
+        self.assertFalse(self.screen.winfo_manager())
+        self.assertIn("EDITING YOUR HERO", self.app.simple_help_text.get("1.0", "end"))
+        self.app.page_var.set("inventory")
+        self.app._show_page()
+        self.assertTrue(self.screen.winfo_manager())
+
+    def test_menu_has_the_tools(self):
+        menu = self.app.app_menu
+        labels = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1) if menu.type(i) != "separator"]
+        for label in ("Reload", "Back up now", "Restore a backup…", "Get item pictures…", "Share item IDs…", "Save profile"):
+            self.assertIn(label, labels)
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class HeroChoiceTests(WindowTestCase):
+    containers = {HERO: hero_save_text().encode(), OTHER_HERO: hero_save_text(emeralds=999, level=7).encode()}
+
+    def test_pick_another_hero_in_the_top_bar(self):
+        menu = self.app.hero_menu
+        heroes = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1) if menu.type(i) == "radiobutton"]
+        self.assertEqual(len(heroes), 2)
+        other = next(c for c in self.app._containers_by_iid.values() if c.name != self.app.container.name)
+        self.app.inventory.stat_vars["Emeralds"].set("123")
+        self.assertTrue(self.app.inventory._apply_stat("Emeralds"))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False):
+            self.app._choose_hero(other)  # keep the unsaved change
+        self.assertNotEqual(self.app.container.name, other.name)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            self.app._choose_hero(other)
+        self.assertEqual(self.app.container.name, other.name)
+        self.assertEqual(self.app.hero_menu_var.get(), other.name)
+        self.assertTrue(self.app.hero_choice_var.get().endswith(f"LV {other.hero.level}"))
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class OnlineHeroTests(WindowTestCase):
+    containers = {HERO: hero_save_text(online=True).encode()}
+
+    def test_online_heroes_say_why_they_cant_be_changed(self):
+        self.assertIsNone(self.app.container)
+        self.assertEqual(self.app.title_var.get(), "No offline heroes yet")
+        self.assertTrue(self.app.inventory.empty.winfo_manager())
+        online = next(iter(self.app._containers_by_iid.values()))
+        self.app._choose_hero(online)
+        self.assertIn("servers", self.app.empty_text_var.get())
+        self.assertTrue(self.app.inventory.empty.winfo_manager())
 
 
 if __name__ == "__main__":

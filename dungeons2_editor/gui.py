@@ -8,27 +8,97 @@ import json
 import os
 import queue
 import threading
-import time
 import tkinter as tk
 import traceback
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, merge, paths, saves, share_ids, wgs, wiki
+from . import __version__, codec, game_style, merge, paths, saves, share_ids, wgs, wiki
 from . import document as doc
+from .game_art import Art
+from .game_style import GameFonts
 from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document
 from .hero_tab import HeroTab
 from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
+from .inventory_screen import InventoryScreen
 
 APP_TITLE = "Minecraft Dungeons II Save Editor"
 SEARCH_LIMIT = 2000
+START_SIZE = (1280, 880)
+MIN_SIZE = (960, 640)
 GAME_CHECK_SECONDS = 3
 CHANGED_COLOR = "#b35900"
 MUTED_COLOR = "#6b7075"
+LEMMA_URL = "https://lemma.ishiakiz.com"
+LEMMA_TEXT = "Lemma, a free creative studio for Minecraft, from the same developer: " + LEMMA_URL
 
+_SAFE_TEXT = (
+    "• Close Minecraft Dungeons II before saving. The editor will not save while the game is running.\n"
+    "• Every save first copies your whole save folder into the backups folder. {restore} puts one back.\n"
+    "• If the game saves your hero while the editor is open (say you played to check a change), the editor loads "
+    "the new version. If you have unsaved changes, it re-applies them to the new version when you save.\n"
+    "• Changes are written the same way the game writes them and are marked for upload, so the Xbox cloud "
+    "keeps the edited version.\n"
+    "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
+    "• Backups contain your sign-in token, so don't share them."
+)
+_DATA_TEXT = (
+    "Item names, armor sets, Uniques and enchantments: MetaBot.GG's Minecraft Dungeons II database, which is built "
+    "from the game files (https://metabot.gg/en/minecraft-dungeons-2/uniques, /artifacts, /talismans and "
+    "/enchantments). Best gear and kits: MetaBot.GG's best builds guide and tier list; each preset links its "
+    "pages. Item pictures: the Minecraft Wiki."
+)
+_FILES_TEXT = (
+    "Saves: %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
+    "Backups: {backups}"
+)
+
+# Simple mode's Help page.
+SIMPLE_HELP_SECTIONS = [
+    (
+        "Editing your hero",
+        "This screen is laid out like the game's inventory.\n"
+        "• Your gear is on the left: weapons, armor, artifacts and talismans. Click a tile to see it on the card on "
+        "the right. Double-click an empty slot to put an item in it.\n"
+        "• The rest of your inventory is in the middle. Pick a filter to see one kind of item, or MERCHANT for the "
+        "Village Merchant's stock. Double-click an item to put it on, and right-click any tile for its actions.\n"
+        "• The card shows the item's power and rarity. Click a rarity or type a power to change it, and use the "
+        "buttons to equip it, copy it, change it into another item or delete it.\n"
+        "• Level, XP and gear power are along the top, and enchantment points, emeralds and echo shards are in the "
+        "top bar. Click a number to change it (the arrow keys change it by one). STATS & TOWN lists every stat, "
+        "with the town upgrades.\n"
+        "• + ADD ITEMS adds any weapon, armor piece, artifact or talisman in the game at the rarity and power you "
+        "pick. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
+        "money, the most powerful gear, or complete kits from top builds, with the best enchantments for each piece.\n"
+        "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
+        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
+        "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
+    ),
+    (
+        "Advanced mode",
+        "Tick ADVANCED MODE in the top bar for the technical side: every item in a sortable list, every value in the "
+        "save as a tree, the raw JSON, the settings save, item IDs (and typing any item ID), and stats past the "
+        "game's caps.",
+    ),
+    (
+        "Pictures",
+        "Items show their picture when the icons folder has one, and an icon in their rarity's colour when it "
+        "doesn't. Get item pictures… in MENU downloads the Minecraft Wiki's item pictures. You can also add your own, "
+        "named after the item, stat or hero skin (MysticHelmet.png, Emeralds.png, RangerDeluxe.png). The README in "
+        "the icons folder explains the names.",
+    ),
+    ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore a backup… (in MENU)")),
+    ("Where the data comes from", _DATA_TEXT),
+    ("Where the files are", _FILES_TEXT),
+    ("More from the developer", LEMMA_TEXT),
+]
+
+# Advanced mode's Help tab.
 HELP_SECTIONS = [
     (
         "Editing a hero",
@@ -51,9 +121,10 @@ HELP_SECTIONS = [
     ),
     (
         "Advanced mode",
-        "Tick Advanced mode at the top to see the technical side: the Edit tab shows every value in the save as a "
-        "tree, Raw JSON shows the whole file, the settings save appears on the left, items show their IDs (and you "
-        "can type any item ID), and stats may go past the game's caps.",
+        "Advanced mode shows the technical side: the Edit tab shows every value in the save as a tree, Raw JSON "
+        "shows the whole file, the settings save appears on the left, items show their IDs (and you can type any "
+        "item ID), and stats may go past the game's caps. Untick Advanced mode at the top for Simple mode, which "
+        "looks like the game's own inventory screen.",
     ),
     (
         "Pictures",
@@ -62,29 +133,10 @@ HELP_SECTIONS = [
         "own, named after the item, stat or hero skin (MysticHelmet.png, Emeralds.png, RangerDeluxe.png). "
         "The README in the icons folder explains the names.",
     ),
-    (
-        "Staying safe",
-        "• Close Minecraft Dungeons II before saving. The editor will not save while the game is running.\n"
-        "• Every save first copies your whole save folder into the backups folder. Restore… puts one back.\n"
-        "• If the game saves your hero while the editor is open (say you played to check a change), the editor loads "
-        "the new version. If you have unsaved changes, it re-applies them to the new version when you save.\n"
-        "• Changes are written the same way the game writes them and are marked for upload, so the Xbox cloud "
-        "keeps the edited version.\n"
-        "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
-        "• Backups contain your sign-in token, so don't share them.",
-    ),
-    (
-        "Where the data comes from",
-        "Item names, armor sets, Uniques and enchantments: MetaBot.GG's Minecraft Dungeons II database, which is built "
-        "from the game files (https://metabot.gg/en/minecraft-dungeons-2/uniques, /artifacts, /talismans and "
-        "/enchantments). Best gear and kits: MetaBot.GG's best builds guide and tier list; each preset links its "
-        "pages. Item pictures: the Minecraft Wiki.",
-    ),
-    (
-        "Where the files are",
-        "Saves: %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
-        "Backups: {backups}",
-    ),
+    ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore…")),
+    ("Where the data comes from", _DATA_TEXT),
+    ("Where the files are", _FILES_TEXT),
+    ("More from the developer", LEMMA_TEXT),
 ]
 
 
@@ -166,11 +218,13 @@ class EditorApp:
                 self.root.iconbitmap(default=str(icon))
             except tk.TclError:
                 pass
-        self.root.geometry("1240x880")
-        self.root.minsize(960, 640)
+        self.root.geometry("{}x{}".format(*START_SIZE))
+        self.root.minsize(*MIN_SIZE)
         style = ttk.Style(self.root)
         if "vista" in style.theme_names():
             style.theme_use("vista")
+        self.light_theme = style.theme_use()  # Advanced mode's look; Simple mode switches to game_style.THEME
+        self.light_background = self.root.cget("background")
         base = tkfont.nametofont("TkDefaultFont")
         base.configure(size=10)
         tkfont.nametofont("TkTextFont").configure(size=10)
@@ -191,13 +245,43 @@ class EditorApp:
         style.configure("Accent.TButton", font=self.bold_font, padding=(14, 4))
         style.configure("Running.TLabel", foreground="#b3261e", font=self.bold_font)
         style.configure("Closed.TLabel", foreground="#1e7e34")
+        style.configure("Link.TLabel", foreground="#0b6f80")
+        self.game_fonts = GameFonts(self.root)
+        self.art = Art(self.root.winfo_fpixels("1i") / 96)
+        row_height = int(base.metrics("linespace") * 1.55)
+        game_style.install(style, self.game_fonts, row_height, max(30, int(base.metrics("linespace") * 1.9)))
 
     def _build(self) -> None:
         root = self.root
         root.columnconfigure(0, weight=1)
-        root.rowconfigure(1, weight=1)
+        root.rowconfigure(0, weight=1)
+        # Shared by both screens.
+        self.title_var = tk.StringVar(value="No save loaded")
+        self.meta_var = tk.StringVar()
+        self.empty_text_var = tk.StringVar()  # Simple mode, with no hero to show: why, and what to do
+        self.changes_var = tk.StringVar()
+        self.game_var = tk.StringVar(value="Checking whether the game is running…")
+        self.status_var = tk.StringVar()
+        self.advanced_var = tk.BooleanVar(value=bool(self.settings.get("advanced", False)))
+        self.hero_sort_var = tk.StringVar(value="Most powerful")
 
-        bar = ttk.Frame(root, padding=(12, 10, 12, 6))
+        self.advanced_screen = ttk.Frame(root)
+        self.advanced_screen.grid(row=0, column=0, sticky="nsew")
+        self._build_advanced_screen(self.advanced_screen)
+        self.simple_screen = ttk.Frame(root, style="Game.TFrame")
+        self.simple_screen.grid(row=0, column=0, sticky="nsew")
+        self._build_simple_screen(self.simple_screen)
+        root.bind("<Control-s>", lambda _event: self._save_shortcut())
+
+        self._update_buttons()
+        self._apply_mode()
+
+    def _build_advanced_screen(self, screen: ttk.Frame) -> None:
+        """Advanced mode: the save files' containers on the left, and tabs for the hero, every value and the raw JSON."""
+        screen.columnconfigure(0, weight=1)
+        screen.rowconfigure(1, weight=1)
+
+        bar = ttk.Frame(screen, padding=(12, 10, 12, 6))
         bar.grid(row=0, column=0, sticky="ew")
         ttk.Label(bar, text="Save profile").pack(side="left")
         self.profile_box = ttk.Combobox(bar, state="readonly", width=44)
@@ -205,20 +289,18 @@ class EditorApp:
         self.profile_box.bind("<<ComboboxSelected>>", self._on_profile_selected)
         ttk.Button(bar, text="Reload", command=self.reload).pack(side="left", padx=2)
         ttk.Button(bar, text="Open folder…", command=self._open_folder).pack(side="left", padx=2)
-        self.advanced_var = tk.BooleanVar(value=bool(self.settings.get("advanced", False)))
         ttk.Checkbutton(bar, text="Advanced mode", variable=self.advanced_var, command=self._on_advanced_toggled).pack(side="left", padx=(14, 2))
         ttk.Button(bar, text="Backups folder", command=self._open_backups_folder).pack(side="right", padx=2)
         ttk.Button(bar, text="Restore…", command=self._restore_dialog).pack(side="right", padx=2)
         ttk.Button(bar, text="Back up now", command=self._backup_now).pack(side="right", padx=2)
 
-        panes = ttk.PanedWindow(root, orient="horizontal")
+        panes = ttk.PanedWindow(screen, orient="horizontal")
         panes.grid(row=1, column=0, sticky="nsew", padx=12)
 
         left = ttk.Frame(panes, padding=(0, 0, 10, 0))
         heading = ttk.Frame(left)
         heading.pack(fill="x", pady=(0, 4))
         ttk.Label(heading, text="Save data", font=self.bold_font).pack(side="left")
-        self.hero_sort_var = tk.StringVar(value="Most powerful")
         hero_sort = ttk.Combobox(heading, textvariable=self.hero_sort_var, values=list(HERO_SORTS), state="readonly", width=15)
         hero_sort.pack(side="right")
         hero_sort.bind("<<ComboboxSelected>>", lambda _event: self._resort_heroes())
@@ -238,8 +320,6 @@ class EditorApp:
         right.columnconfigure(0, weight=1)
         right.rowconfigure(2, weight=1)
         panes.add(right, weight=4)
-        self.title_var = tk.StringVar(value="No save loaded")
-        self.meta_var = tk.StringVar()
         ttk.Label(right, textvariable=self.title_var, style="Title.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(right, textvariable=self.meta_var, style="Muted.TLabel").grid(row=1, column=0, sticky="w", pady=(0, 6))
 
@@ -268,24 +348,151 @@ class EditorApp:
 
         actions = ttk.Frame(right, padding=(0, 10, 0, 0))
         actions.grid(row=3, column=0, sticky="ew")
-        self.changes_var = tk.StringVar()
         ttk.Label(actions, textvariable=self.changes_var, style="Changes.TLabel").pack(side="left")
         self.save_button = ttk.Button(actions, text="Save to game", style="Accent.TButton", command=self.save_to_game)
         self.save_button.pack(side="right")
         self.discard_button = ttk.Button(actions, text="Discard changes", command=self.discard_changes)
         self.discard_button.pack(side="right", padx=8)
 
-        status = ttk.Frame(root, padding=(12, 6, 12, 8))
+        status = ttk.Frame(screen, padding=(12, 6, 12, 8))
         status.grid(row=2, column=0, sticky="ew")
         status.columnconfigure(1, weight=1)
-        self.game_var = tk.StringVar(value="Checking whether the game is running…")
         self.game_label = ttk.Label(status, textvariable=self.game_var, style="Muted.TLabel")
         self.game_label.grid(row=0, column=0, sticky="w")
-        self.status_var = tk.StringVar()
         ttk.Label(status, textvariable=self.status_var, style="Muted.TLabel", anchor="e").grid(row=0, column=1, sticky="ew", padx=(16, 0))
 
-        self._update_buttons()
-        self._apply_mode()
+    def _build_simple_screen(self, screen: ttk.Frame) -> None:
+        """Simple mode: the hero as the game's inventory screen shows it, between dark bars like the game's."""
+        screen.columnconfigure(0, weight=1)
+        screen.rowconfigure(1, weight=1)
+        bar = ttk.Frame(screen, style="Bar.TFrame", padding=(8, 0, 12, 0))
+        bar.grid(row=0, column=0, sticky="ew")
+
+        menu_button = ttk.Menubutton(bar, text="MENU", image=self.art.icon("menu", game_style.SOFT, 1), compound="left", style="Bar.TMenubutton")
+        menu_button.pack(side="left")
+        self.app_menu = menu = tk.Menu(menu_button, tearoff=False)
+        menu.add_command(label="Reload", command=self.reload)
+        menu.add_command(label="Open a save folder…", command=self._open_folder)
+        self.profile_menu = tk.Menu(menu, tearoff=False)
+        self.profile_menu_var = tk.StringVar()
+        menu.add_cascade(label="Save profile", menu=self.profile_menu)
+        menu.add_separator()
+        menu.add_command(label="Back up now", command=self._backup_now)
+        menu.add_command(label="Restore a backup…", command=self._restore_dialog)
+        menu.add_command(label="Open the backups folder", command=self._open_backups_folder)
+        menu.add_separator()
+        menu.add_command(label="Get item pictures…", command=self._get_pictures)
+        menu.add_command(label="Share item IDs…", command=self._share_ids)
+        menu.add_separator()
+        menu.add_command(label="Lemma: a free creative studio for Minecraft ↗", command=lambda: webbrowser.open(LEMMA_URL))
+        menu_button["menu"] = menu
+
+        self.hero_choice_var = tk.StringVar(value="NO HERO")
+        self.hero_menu_var = tk.StringVar()
+        hero_button = ttk.Menubutton(bar, textvariable=self.hero_choice_var, style="Bar.TMenubutton")
+        hero_button.pack(side="left", padx=(2, 12))
+        self.hero_menu = tk.Menu(hero_button, tearoff=False)
+        hero_button["menu"] = self.hero_menu
+
+        tabs = ttk.Frame(bar, style="Bar.TFrame")
+        tabs.pack(side="left")
+        self.page_var = tk.StringVar(value="inventory")
+        self._tab_lines: dict[str, ttk.Frame] = {}
+        for column, (key, text) in enumerate((("inventory", "INVENTORY"), ("help", "HELP"))):
+            ttk.Radiobutton(tabs, text=text, value=key, variable=self.page_var, style="BarTab.Toolbutton", command=self._show_page).grid(row=0, column=column)
+            line = ttk.Frame(tabs, style="BarLine.TFrame", height=3)
+            line.grid(row=1, column=column, sticky="ew", padx=6)
+            self._tab_lines[key] = line
+
+        ttk.Checkbutton(bar, text="ADVANCED MODE", variable=self.advanced_var, command=self._on_advanced_toggled, style="Bar.TCheckbutton").pack(
+            side="right", padx=(20, 0)
+        )
+
+        body = ttk.Frame(screen, style="Game.TFrame")
+        body.grid(row=1, column=0, sticky="nsew")
+        body.columnconfigure(0, weight=1)
+        body.rowconfigure(0, weight=1)
+        self.inventory = InventoryScreen(
+            body,
+            on_change=self._on_hero_changed,
+            app_title=APP_TITLE,
+            icons=self.icons,
+            fonts=self.game_fonts,
+            art=self.art,
+            get_pictures=self._get_pictures,
+            catalog_heroes=self._other_saved_heroes,
+            empty_title=self.title_var,
+            empty_text=self.empty_text_var,
+        )
+        self.inventory.grid(row=0, column=0, sticky="nsew")
+        self.inventory.make_currency_strip(bar).pack(side="right")
+        self.simple_help = self._build_simple_help(body)
+
+        bottom = ttk.Frame(screen, style="Bar.TFrame", padding=(16, 8, 16, 8))
+        bottom.grid(row=2, column=0, sticky="ew")
+        bottom.columnconfigure(2, weight=1)
+        self.simple_game_label = ttk.Label(bottom, textvariable=self.game_var, style="BarMuted.TLabel")
+        self.simple_game_label.grid(row=0, column=0, sticky="w")
+        ttk.Label(bottom, textvariable=self.meta_var, style="BarMuted.TLabel").grid(row=0, column=1, sticky="w", padx=(18, 0))
+        ttk.Label(bottom, textvariable=self.status_var, style="BarMuted.TLabel", width=1).grid(row=0, column=2, sticky="ew", padx=(18, 12))
+        ttk.Label(bottom, textvariable=self.changes_var, style="BarChanges.TLabel").grid(row=0, column=3, sticky="e", padx=(0, 12))
+        self.simple_discard_button = ttk.Button(bottom, text="DISCARD CHANGES", style="Bar.TButton", command=self.discard_changes)
+        self.simple_discard_button.grid(row=0, column=4, padx=(0, 8))
+        self.simple_save_button = ttk.Button(bottom, text="SAVE TO GAME", style="Accent.TButton", command=self.save_to_game)
+        self.simple_save_button.grid(row=0, column=5)
+        self._show_page()
+
+    def _build_simple_help(self, parent: ttk.Frame) -> ttk.Frame:
+        page = ttk.Frame(parent, style="Game.TFrame", padding=(28, 16, 20, 12))
+        page.columnconfigure(0, weight=1)
+        page.rowconfigure(1, weight=1)
+        share = ttk.Frame(page, style="Game.TFrame")
+        share.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
+        ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.", style="Body.TLabel").pack(side="left")
+        ttk.Button(share, text="SHARE ITEM IDS…", command=self._share_ids).pack(side="left", padx=12)
+        text = tk.Text(
+            page, wrap="word", font=self.game_fonts.body, relief="flat", borderwidth=0, highlightthickness=0, padx=4, pady=4,
+            background=game_style.BG, foreground=game_style.SOFT, cursor="arrow",
+        )
+        text.tag_configure("heading", font=self.game_fonts.heading, foreground=game_style.TEXT, spacing1=14, spacing3=4)
+        text.tag_configure("body", lmargin1=2, lmargin2=2, spacing2=3)
+        text.tag_configure("link", foreground=game_style.LINK, underline=True)
+        text.tag_bind("link", "<Button-1>", lambda _event: webbrowser.open(LEMMA_URL))
+        text.tag_bind("link", "<Enter>", lambda _event: text.configure(cursor="hand2"))
+        text.tag_bind("link", "<Leave>", lambda _event: text.configure(cursor="arrow"))
+        for heading, body in SIMPLE_HELP_SECTIONS:
+            text.insert("end", heading.upper() + "\n", "heading")
+            body = body.format(backups=self.backup_root) if "{backups}" in body else body
+            if LEMMA_URL in body:
+                before, _url, after = body.partition(LEMMA_URL)
+                text.insert("end", before, "body")
+                text.insert("end", LEMMA_URL, ("body", "link"))
+                text.insert("end", after + "\n", "body")
+            else:
+                text.insert("end", body + "\n", "body")
+        text.configure(state="disabled")
+        text.grid(row=1, column=0, sticky="nsew")
+        scroll = ttk.Scrollbar(page, orient="vertical", command=text.yview)
+        scroll.grid(row=1, column=1, sticky="ns")
+        text.configure(yscrollcommand=scroll.set)
+        self.simple_help_text = text
+        return page
+
+    def _show_page(self) -> None:
+        """Simple mode's top-bar tabs: the inventory or the help."""
+        page = self.page_var.get()
+        for key, line in self._tab_lines.items():
+            line.configure(style="Underline.TFrame" if key == page else "BarLine.TFrame")
+        if page == "help":
+            self.inventory.grid_remove()
+            self.simple_help.grid(row=0, column=0, sticky="nsew")
+        else:
+            self.simple_help.grid_remove()
+            self.inventory.grid()
+
+    def _save_shortcut(self) -> None:
+        if self.change_count and not self.game_running:
+            self.save_to_game()
 
     def _build_edit_tab(self) -> None:
         tab = self.edit_tab
@@ -382,9 +589,19 @@ class EditorApp:
         )
         text.tag_configure("heading", font=self.bold_font, spacing1=10, spacing3=4)
         text.tag_configure("body", lmargin1=4, lmargin2=4, spacing2=2)
+        text.tag_configure("link", foreground="#0b6f80", underline=True)
+        text.tag_bind("link", "<Button-1>", lambda _event: webbrowser.open(LEMMA_URL))
+        text.tag_bind("link", "<Enter>", lambda _event: text.configure(cursor="hand2"))
+        text.tag_bind("link", "<Leave>", lambda _event: text.configure(cursor=""))
         for heading, body in HELP_SECTIONS:
             text.insert("end", heading + "\n", "heading")
-            text.insert("end", body.format(backups=self.backup_root) + "\n", "body")
+            body = body.format(backups=self.backup_root) if "{backups}" in body else body
+            before, url, after = body.partition(LEMMA_URL)
+            text.insert("end", before, "body")
+            if url:
+                text.insert("end", url, ("body", "link"))
+                text.insert("end", after, "body")
+            text.insert("end", "\n", "body")
         text.configure(state="disabled")
         text.pack(fill="both", expand=True)
 
@@ -402,6 +619,13 @@ class EditorApp:
             paths.insert(0, Path(select))
         self._profile_paths = paths
         self.profile_box["values"] = [self._profile_label(path) for path in paths]
+        self.profile_menu.delete(0, "end")
+        for path in paths:
+            self.profile_menu.add_radiobutton(
+                label=self._profile_label(path), value=str(path), variable=self.profile_menu_var, command=lambda path=path: self._switch_profile(path)
+            )
+        if not paths:
+            self.profile_menu.add_command(label="No saves found", state="disabled")
         if not paths:
             self.profile = None
             self._fill_container_list()
@@ -411,6 +635,7 @@ class EditorApp:
             return
         target = Path(select) if select is not None else paths[0]
         self.profile_box.current(paths.index(target))
+        self.profile_menu_var.set(str(target))
         self._open_profile(target)
 
     def _profile_label(self, path: Path) -> str:
@@ -424,8 +649,7 @@ class EditorApp:
             profile = profile or saves.SaveProfile(path)
         except (OSError, wgs.WgsFormatError) as exc:
             messagebox.showerror(APP_TITLE, f"Could not read the saves in\n{path}\n\n{exc}", parent=self.root)
-            if self.profile is not None and self.profile.path in self._profile_paths:
-                self.profile_box.current(self._profile_paths.index(self.profile.path))
+            self._show_profile_choice()
             return
         self.profile = profile
         self._index_stamp = stamp
@@ -471,25 +695,55 @@ class EditorApp:
         self._show_meta()
 
     def _apply_mode(self) -> None:
-        """Show the technical tabs and details only in Advanced mode."""
+        """Simple mode shows the game-style screen in the game's colours; Advanced mode, the technical one."""
         advanced = self.advanced_var.get()
+        game_style.use(self.root, simple=not advanced, light_theme=self.light_theme)
+        self.root.configure(background=self.light_background if advanced else game_style.BG)
+        if advanced:
+            self.simple_screen.grid_remove()
+            self.advanced_screen.grid()
+        else:
+            self.advanced_screen.grid_remove()
+            self.simple_screen.grid()
         if not advanced and self.notebook.select() in (str(self.edit_tab), str(self.raw_tab)):
             hero_shown = self.notebook.tab(self.hero_tab, "state") == "normal"
             self.notebook.select(self.hero_tab if hero_shown else self.help_tab)
         for tab in (self.edit_tab, self.raw_tab):
             self.notebook.tab(tab, state="normal" if advanced else "hidden")
         self.hero_tab.set_advanced(advanced)
+        if advanced:
+            self.hero_tab.refresh()  # Simple mode may have changed the hero
+        self.inventory.set_active(not advanced)
+        self._fit_window()
+
+    def _fit_window(self) -> None:
+        """Simple mode's screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
+        window big enough for it, within the screen. Advanced mode keeps its usual minimum."""
+        if self.advanced_var.get():
+            self.root.minsize(*MIN_SIZE)
+            return
+        self.root.update_idletasks()
+        most_width = self.root.winfo_screenwidth() - 40
+        most_height = self.root.winfo_screenheight() - 80
+        need_width = min(max(MIN_SIZE[0], self.simple_screen.winfo_reqwidth()), most_width)
+        need_height = min(max(MIN_SIZE[1], self.simple_screen.winfo_reqheight()), most_height)
+        self.root.minsize(need_width, need_height)
+        width, height = self.root.winfo_width(), self.root.winfo_height()
+        if self.root.winfo_ismapped() and (width < need_width or height < need_height):
+            self.root.geometry(f"{max(width, need_width)}x{max(height, need_height)}")
 
     def _fill_container_list(self) -> None:
         self.container_list.delete(*self.container_list.get_children())
         self._containers_by_iid.clear()
         if self.profile is None:
+            self._fill_hero_menu([])
             return
         heroes = [c for c in self.profile.containers if c.hero is not None]
         others = [c for c in self.profile.containers if c.hero is None]
         sort_key = HERO_SORTS[self.hero_sort_var.get()]
         heroes.sort(key=lambda c: sort_key(c.hero), reverse=True)
 
+        self._fill_hero_menu(heroes)
         group = self.container_list.insert("", "end", text="Heroes", open=True, tags=("group",))
         for container in heroes:
             hero = container.hero
@@ -504,6 +758,43 @@ class EditorApp:
             group = self.container_list.insert("", "end", text="Game data", open=True, tags=("group",))
             for container in others:
                 self._add_container_row(group, container, container.kind.value)
+
+    def _fill_hero_menu(self, heroes: list[saves.Container]) -> None:
+        """Simple mode's hero list, in the top bar."""
+        menu = self.hero_menu
+        menu.delete(0, "end")
+        for container in heroes:
+            hero = container.hero
+            name = hero.skin or f"Hero {hero.character_id[:8]}"
+            if container.kind is saves.Kind.EDITABLE:
+                label = f"{name}  ·  level {hero.level}  ·  {format_amount(hero.attribute('Emeralds') or 0)} emeralds"
+            else:
+                label = f"{name}  ·  online, can't be changed"
+            menu.add_radiobutton(label=label, value=container.name, variable=self.hero_menu_var, command=lambda c=container: self._choose_hero(c))
+        if not heroes:
+            menu.add_command(label="No offline heroes yet", state="disabled")
+        sorts = tk.Menu(menu, tearoff=False)
+        for sort in HERO_SORTS:
+            sorts.add_radiobutton(label=sort, value=sort, variable=self.hero_sort_var, command=self._resort_heroes)
+        menu.add_separator()
+        menu.add_cascade(label="Sort heroes by", menu=sorts)
+
+    def _choose_hero(self, container: saves.Container) -> None:
+        if container is not self.container and self._confirm_discard():
+            self._show_container(container)
+            self._select_in_list(container)
+        self._show_hero_choice()
+
+    def _show_hero_choice(self) -> None:
+        """The hero button in Simple mode's top bar: the hero on screen, with their level."""
+        container = self.container
+        self.hero_menu_var.set(container.name if container is not None else "")
+        hero = Hero(self.document) if self.document is not None and is_hero_document(self.document) else container.hero if container else None
+        if hero is None:
+            self.hero_choice_var.set("NO HERO" if container is None else container.label.upper())
+            return
+        name = (hero.skin or f"Hero {hero.character_id[:8]}").upper()
+        self.hero_choice_var.set(f"{name}  ·  LV {hero.level}")
 
     def _add_container_row(self, parent: str, container: saves.Container, details: str) -> None:
         locked = container.kind is not saves.Kind.EDITABLE
@@ -520,6 +811,7 @@ class EditorApp:
         self._select_in_list(self.container)
 
     def _select_in_list(self, container: saves.Container | None) -> None:
+        self._show_hero_choice()
         for iid, candidate in self._containers_by_iid.items():
             if candidate is container:
                 self.container_list.selection_set(iid)
@@ -527,13 +819,22 @@ class EditorApp:
                 return
 
     def _on_profile_selected(self, _event: tk.Event) -> None:
-        path = self._profile_paths[self.profile_box.current()]
+        self._switch_profile(self._profile_paths[self.profile_box.current()])
+
+    def _switch_profile(self, path: Path) -> None:
         if self.profile is not None and path == self.profile.path:
             return
         if not self._confirm_discard():
-            self.profile_box.current(self._profile_paths.index(self.profile.path))
+            self._show_profile_choice()
             return
         self._open_profile(path)
+        self._show_profile_choice()
+
+    def _show_profile_choice(self) -> None:
+        """Point the profile list (Advanced mode) and the Save profile menu (Simple mode) at the open profile."""
+        if self.profile is not None and self.profile.path in self._profile_paths:
+            self.profile_box.current(self._profile_paths.index(self.profile.path))
+            self.profile_menu_var.set(str(self.profile.path))
 
     def _on_container_selected(self, _event: tk.Event) -> None:
         selection = self.container_list.selection()
@@ -608,14 +909,21 @@ class EditorApp:
     def _show_meta(self) -> None:
         """The title and the line under it: friendly in Simple mode, technical in Advanced mode."""
         container = self.container
+        self.empty_text_var.set("")
         if container is None:
             if self.profile is not None and not self.advanced_var.get():
                 self.title_var.set("No offline heroes yet")
                 self.meta_var.set("Create an offline hero in the game, play until it saves, close the game, then press Reload.")
+                self.empty_text_var.set(
+                    "Create an offline hero in the game, play until it saves and close the game. Then pick Reload in MENU."
+                )
             else:
                 self.title_var.set("No save loaded")
                 self.meta_var.set("")
+                self.empty_text_var.set("Play Minecraft Dungeons II once on this PC, or pick Open a save folder… in MENU.")
             return
+        if container.hero is not None and container.kind is not saves.Kind.EDITABLE:
+            self.empty_text_var.set(f"{container.note} Pick an offline hero in the top bar.")
         entry = container.entry
         when = datetime.fromtimestamp(wgs.filetime_to_unix(entry.mtime))
         self.title_var.set(container.label)
@@ -631,9 +939,12 @@ class EditorApp:
         self.meta_var.set(meta)
 
     def _load_hero_tab(self, select: bool = False) -> None:
-        """Point the Hero tab at the document being edited; hide it unless that's a hero."""
+        """Point the Hero tab (and Simple mode's screen) at the document being edited; hide the tab unless
+        that's a hero."""
         hero = Hero(self.document) if self.document is not None and is_hero_document(self.document) else None
         self.hero_tab.load(hero)
+        self.inventory.load(hero)
+        self._show_hero_choice()
         self._hero_stale = False
         if hero is not None:
             self.notebook.tab(self.hero_tab, state="normal")
@@ -648,6 +959,11 @@ class EditorApp:
         self._tree_stale = True
         self._raw_stale = True
         self._update_changes()
+        self._show_hero_choice()  # the level may have changed
+
+    def _hero_editor(self) -> HeroTab | InventoryScreen:
+        """Whichever shows the hero in this mode."""
+        return self.hero_tab if self.advanced_var.get() else self.inventory
 
     def _locked_message(self, container: saves.Container | None) -> str:
         if container is None:
@@ -852,11 +1168,13 @@ class EditorApp:
 
     def _update_buttons(self) -> None:
         dirty = self.change_count > 0
-        self.save_button.state(["!disabled"] if dirty and not self.game_running else ["disabled"])
-        self.discard_button.state(["!disabled"] if dirty else ["disabled"])
+        for button in (self.save_button, self.simple_save_button):
+            button.state(["!disabled"] if dirty and not self.game_running else ["disabled"])
+        for button in (self.discard_button, self.simple_discard_button):
+            button.state(["!disabled"] if dirty else ["disabled"])
 
     def _confirm_discard(self) -> bool:
-        self.hero_tab.commit_pending()
+        self._hero_editor().commit_pending()
         if not self.change_count:
             return True
         return messagebox.askyesno(APP_TITLE, "You have unsaved changes. Throw them away?", parent=self.root)
@@ -889,8 +1207,8 @@ class EditorApp:
     def save_to_game(self) -> None:
         if self.profile is None or self.container is None or self.document is None:
             return
-        if not self.hero_tab.commit_pending():
-            return  # the Hero tab shows what's wrong
+        if not self._hero_editor().commit_pending():
+            return  # the hero screen shows what's wrong
         changes = doc.diff(self.original, self.document)
         if not changes:
             return
@@ -1169,6 +1487,7 @@ class EditorApp:
         self._pictures_busy = False
         self.icons.reload()
         self.hero_tab.refresh()
+        self.inventory.refresh()
         self._resort_heroes()
         if ok:
             self.status_var.set(f"Downloaded {result[0]} pictures from minecraft.wiki.")
@@ -1197,9 +1516,11 @@ class EditorApp:
             if latest:
                 self.game_var.set("●  Minecraft Dungeons II is running. Close it before saving.")
                 self.game_label.configure(style="Running.TLabel")
+                self.simple_game_label.configure(style="BarRunning.TLabel")
             else:
                 self.game_var.set("●  Game is closed. Saving is allowed.")
                 self.game_label.configure(style="Closed.TLabel")
+                self.simple_game_label.configure(style="BarClosed.TLabel")
             self._update_buttons()
         self._polls += 1
         if self._polls % 4 == 0:  # every 2 seconds
@@ -1229,7 +1550,7 @@ class EditorApp:
         self._index_stamp = stamp
         if entry is None or entry.revision == self.container.entry.revision:
             return  # only the upload state changed
-        if self.change_count == 0 and not self.hero_tab.has_pending_input():
+        if self.change_count == 0 and not self._hero_editor().has_pending_input():
             self._open_profile(self.profile.path, keep=self.container.name)
             self.status_var.set("The game saved this hero since it was loaded, so the editor loaded the new version.")
         elif not self._newer_on_disk:

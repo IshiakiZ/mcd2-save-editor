@@ -20,6 +20,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Pillow scales item pictures smoothly and cuts the item out of minecraft.wiki's pictures for Simple
+      # mode's tiles. The editor works without it, so it's only needed for the tests that cover it and the .exe.
+      - name: Install Pillow
+        run: python -m pip install "pillow>=10,<12"
+
       - name: Run the tests
         run: python -m unittest discover -s tests -t .
 

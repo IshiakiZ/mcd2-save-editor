@@ -11,14 +11,15 @@ from . import document as doc
 from . import presets
 from .hero import MAX_ITEM_POWER, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount
 from .icons import IconLibrary
+from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
 GROUP_PREFIX = "group:"
 SIZE = (1000, 680)
 ENCHANTING_HELP = (
     "The editor can't add enchantments yet, so put these on at the Enchantsmith. Each weapon and armor piece takes "
-    "one enchantment, and a book works on any number of items. Enchanting costs enchantment points (set them on the "
-    "Hero tab) and Echo Shards."
+    "one enchantment, and a book works on any number of items. Enchanting costs enchantment points and Echo Shards, "
+    "which you can set in the editor."
 )
 
 
@@ -46,6 +47,7 @@ class PresetsDialog(tk.Toplevel):
         self._shown_preset: presets.Preset | None = None
         self.title("Presets")
         self.transient(parent)
+        match_title_bar(self)
         self.geometry("{}x{}".format(*SIZE))
         self._build(text_font)
         first = self.listing.get_children(self.listing.get_children()[0])[0]
@@ -147,13 +149,14 @@ class PresetsDialog(tk.Toplevel):
         scroll.grid(row=0, column=1, sticky="ns")
         self.text.configure(yscrollcommand=scroll.set)
         self.text.configure(background=self.cget("background"))
-        muted = ttk.Style(self).lookup("Muted.TLabel", "foreground")
+        style = ttk.Style(self)
+        muted = style.lookup("Muted.TLabel", "foreground")
         family, size = text_font.actual("family"), text_font.actual("size")
         self.text.tag_configure("heading", font=(family, size, "bold"), spacing1=10, spacing3=2)
         self.text.tag_configure("bold", font=(family, size, "bold"))
         self.text.tag_configure("muted", foreground=muted)
-        self.text.tag_configure("warn", foreground="#b35900")
-        self.text.tag_configure("link", foreground="#0b6f80", underline=True)
+        self.text.tag_configure("warn", foreground=style.lookup("Warn.TLabel", "foreground") or "#b35900")
+        self.text.tag_configure("link", foreground=style.lookup("Link.TLabel", "foreground") or "#0b6f80", underline=True)
         indent, column = text_width(self, 3), text_width(self, 19)
         self.text.tag_configure("row", tabs=(indent, column), lmargin2=column)
         self.text.tag_bind("link", "<Enter>", lambda _event: self.text.configure(cursor="hand2"))

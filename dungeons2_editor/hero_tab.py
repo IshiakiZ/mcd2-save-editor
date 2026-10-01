@@ -1,18 +1,17 @@
-"""The Hero tab: an offline hero's stats and items, made for everyone.
+"""The Hero tab, in Advanced mode: an offline hero's stats, and every item in a sortable list.
 
 Changes apply as soon as you press Enter, click an arrow or leave a field, and
 mistakes show up in red next to the field instead of in pop-ups. Advanced mode
-adds the raw item ID for people who want it.
+adds the raw item ID for people who want it. Simple mode shows the hero the way
+the game's inventory screen does instead (inventory_screen.py).
 """
 
 from __future__ import annotations
 
 import tkinter as tk
-from tkinter import font as tkfont
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import Any, Callable
 
-from . import document as doc
 from .hero import (
     ITEM_SORTS,
     MAX_ITEM_POWER,
@@ -23,16 +22,12 @@ from .hero import (
     GearSlot,
     Hero,
     attribute_label,
-    build_catalog,
-    format_amount,
-    gear_slots,
     slots_for,
     sort_items,
-    template_for,
 )
+from .hero_editing import SAVE_REMINDER, HeroEditing, number_text
 from .icons import IconLibrary
-from .item_picker import ItemPicker, slot_choice, slot_open
-from .presets_dialog import PresetsDialog
+from .item_picker import slot_open
 
 _HEADINGS = {
     "#0": "Item",
@@ -60,14 +55,9 @@ _STATS_PER_ROW = 3
 ROW_ICON_SIZE = 24
 STAT_ICON_SIZE = 18
 PREVIEW_SIZE = 72
-SAVE_REMINDER = "Press Save to game when you're done."
 
 
-def _number_text(value: Any) -> str:
-    return "" if value is None else doc.format_value(value)
-
-
-class HeroTab(ttk.Frame):
+class HeroTab(HeroEditing, ttk.Frame):
     def __init__(
         self,
         master: tk.Misc,
@@ -272,7 +262,7 @@ class HeroTab(ttk.Frame):
         self.hero = hero
         self.selected = self._shown = None
         self.icons.reload()
-        self._say(self.stats_message, self.stats_message_var, f"Changes are kept as you go. {SAVE_REMINDER}")
+        self._say_stats(f"Changes are kept as you go. {SAVE_REMINDER}")
         self.refresh()
 
     def refresh(self) -> None:
@@ -283,24 +273,6 @@ class HeroTab(ttk.Frame):
         self._update_summary()
         self._shown = None
         self._fill_items()
-
-    def has_pending_input(self) -> bool:
-        """Whether something has been typed into a field but not applied yet."""
-        if self.hero is None:
-            return False
-        if any(var.get().strip() != _number_text(self.hero.attribute(name)) for name, var in self.stat_vars.items()):
-            return True
-        if self._shown is None or self._shown >= len(self.hero.items()):
-            return False
-        item = self.hero.item(self._shown)
-        return not item.is_cosmetic and (
-            self.power_var.get().strip() != _number_text(item.power) or self.count_var.get().strip() != str(item.count)
-        )
-
-    def commit_pending(self) -> bool:
-        """Apply anything typed but not applied yet. False if something typed is invalid."""
-        ok = all([self._apply_stat(name) for name in list(self.stat_vars)])
-        return self._apply_numbers() and ok
 
     def _update_summary(self) -> None:
         hero = self.hero
@@ -318,6 +290,12 @@ class HeroTab(ttk.Frame):
         var.set(text)
         label.configure(style="Error.TLabel" if error else "Muted.TLabel")
 
+    def _say_stats(self, text: str, error: bool = False) -> None:
+        self._say(self.stats_message, self.stats_message_var, text, error)
+
+    def _say_item(self, text: str, error: bool = False) -> None:
+        self._say(self.item_message, self.item_message_var, text, error)
+
     # ------------------------------------------------------------------- stats
 
     def _build_stats(self) -> None:
@@ -332,7 +310,7 @@ class HeroTab(ttk.Frame):
             icon = self.icons.image(name, STAT_ICON_SIZE)
             label = ttk.Label(self.stats_fields, text=attribute_label(name), image=icon or "", compound="left")
             label.grid(row=row, column=column * 2, sticky="w", padx=(0 if column == 0 else 24, 8), pady=3)
-            var = tk.StringVar(value=_number_text(attribute.get("CurrentValue")))
+            var = tk.StringVar(value=number_text(attribute.get("CurrentValue")))
             highest = MAX_STAT if self.advanced else STAT_CAPS.get(name, MAX_STAT)
             spin = ttk.Spinbox(
                 self.stats_fields, textvariable=var, from_=0, to=highest, increment=1, width=12, command=lambda name=name: self._apply_stat(name)
@@ -341,35 +319,6 @@ class HeroTab(ttk.Frame):
             spin.bind("<Return>", lambda _event, name=name: self._apply_stat(name))
             spin.bind("<FocusOut>", lambda _event, name=name: self._apply_stat(name))
             self.stat_vars[name] = var
-
-    def _apply_stat(self, name: str) -> bool:
-        if self.hero is None or name not in self.stat_vars:
-            return True
-        var = self.stat_vars[name]
-        current = self.hero.attribute(name)
-        if var.get().strip() == _number_text(current):
-            return True
-        like = current if isinstance(current, (int, float)) and not isinstance(current, bool) else 0
-        try:
-            value = doc.parse_input(var.get(), like)
-            self.hero.set_attributes({name: value}, game_caps=not self.advanced)
-        except (ValueError, KeyError) as exc:
-            var.set(_number_text(current))
-            message = f"{attribute_label(name)}: {exc}"
-            if name in STAT_CAPS and not self.advanced:
-                message += " That's the game's cap; anything above it is lost in the game."
-            self._say(self.stats_message, self.stats_message_var, message, error=True)
-            return False
-        var.set(_number_text(self.hero.attribute(name)))
-        message = f"{attribute_label(name)} is now {format_amount(value)}. {SAVE_REMINDER}"
-        if name == "Level":
-            message += " In testing, level 10 stuck but level 100 was put back to 1, so change it in small steps."
-        if value > STAT_CAPS.get(name, MAX_STAT):
-            message = f"{attribute_label(name)} is now {format_amount(value)}, above the game's cap of {format_amount(STAT_CAPS[name])}, so the game may lower it."
-        self._say(self.stats_message, self.stats_message_var, message)
-        self._update_summary()
-        self.on_change()
-        return True
 
     # ------------------------------------------------------------------- items
 
@@ -387,13 +336,13 @@ class HeroTab(ttk.Frame):
             if (self.show_merchant.get() or not item.stock_slot) and (self.show_cosmetics.get() or not item.is_cosmetic)
         ]
         for item in sort_items(shown, self.sort_var.get()):
-            power = "" if item.is_cosmetic else _number_text(item.power)
+            power = "" if item.is_cosmetic else number_text(item.power)
             iid = self.tree.insert(
                 "",
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name),
-                values=(item.kind, item.rarity, power, item.level, _number_text(item.xp), item.enchantments, item.where),
+                values=(item.kind, item.rarity, power, item.level, number_text(item.xp), item.enchantments, item.where),
                 tags=("locked",) if item.is_cosmetic else (),
             )
             self._index_by_iid[iid] = item.index
@@ -416,12 +365,12 @@ class HeroTab(ttk.Frame):
         self.gear_tree.delete(*self.gear_tree.get_children())
         self._gear_slots.clear()
         if self.hero is not None:
-            level = None if self.advanced else self.hero.level
+            level = self._hero_level()
             worn = {item.equipped_slot: item for item in self.hero.items() if item.equipped_slot}
             for slot in self._slots():
                 item = worn.get(slot.tag)
                 if item is not None:
-                    values = (item.name, f"{item.rarity}, power {_number_text(item.power)}")
+                    values = (item.name, f"{item.rarity}, power {number_text(item.power)}")
                     image = self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name)
                 else:
                     values = ("empty" if slot_open(slot, level) else f"opens at level {slot.level}", "")
@@ -438,7 +387,7 @@ class HeroTab(ttk.Frame):
 
     def _on_gear_select(self) -> None:
         chosen = self._selected_gear_slot()
-        level = None if self.advanced or self.hero is None else self.hero.level
+        level = self._hero_level()
         can_add = chosen is not None and slot_open(chosen[0], level)
         self.slot_add_button.state(["!disabled"] if can_add else ["disabled"])
         self.slot_off_button.state(["!disabled"] if chosen is not None and chosen[1] is not None else ["disabled"])
@@ -447,7 +396,7 @@ class HeroTab(ttk.Frame):
 
     def _add_to_gear_slot(self) -> None:
         chosen = self._selected_gear_slot()
-        level = None if self.advanced or self.hero is None else self.hero.level
+        level = self._hero_level()
         if chosen is not None and slot_open(chosen[0], level):
             self.open_add_items(for_slot=chosen[0])
 
@@ -467,14 +416,6 @@ class HeroTab(ttk.Frame):
             return
         self._select_row(index)
         self._show_item(index)
-
-    def _take_off(self, index: int | None) -> None:
-        if self.hero is None or index is None:
-            return
-        self.hero.unequip(index)
-        self._fill_items()
-        self._say(self.item_message, self.item_message_var, f"Unequipped. It's in your inventory. {SAVE_REMINDER}")
-        self.on_change()
 
     def _mark_sorted_heading(self) -> None:
         sort = self.sort_var.get()
@@ -511,7 +452,7 @@ class HeroTab(ttk.Frame):
         inputs = [self.power_entry, self.count_entry, self.type_box, *self.rarity_buttons]
         buttons = [self.equip_button, self.change_button, self.copy_button, self.delete_button]
         if index != self._shown:
-            self._say(self.item_message, self.item_message_var, "")
+            self._say_item("")
         self._shown = index
         if self.hero is None or index is None:
             self.item_title_var.set("Pick an item in the list to change it, or add new ones with + Add items.")
@@ -531,7 +472,7 @@ class HeroTab(ttk.Frame):
             self.type_box["values"] = [entry.tag for entry in self._catalog()]
         self.type_var.set(item.tag)
         self.rarity_var.set(item.rarity)
-        self.power_var.set(_number_text(item.power))
+        self.power_var.set(number_text(item.power))
         self.count_var.set(str(item.count))
         locked = item.is_cosmetic
         for widget in inputs + buttons:
@@ -539,210 +480,21 @@ class HeroTab(ttk.Frame):
         self.equip_button.configure(text="Unequip" if item.equipped_slot else "Equip")
         if locked:
             if not self.item_message_var.get():
-                self._say(self.item_message, self.item_message_var, "Cosmetics come from your game edition, so they can't be changed or copied.")
+                self._say_item("Cosmetics come from your game edition, so they can't be changed or copied.")
             return
         if item.equipped_slot:
             self.change_button.state(["disabled"])
             self.delete_button.state(["disabled"])
             self.type_box.state(["disabled"])
             if not self.item_message_var.get():
-                self._say(self.item_message, self.item_message_var, "You have this equipped. Unequip it to delete it or change it into another item.")
+                self._say_item("You have this equipped. Unequip it to delete it or change it into another item.")
         elif item.stock_slot:
             self.equip_button.state(["disabled"])
             if not self.item_message_var.get():
-                self._say(self.item_message, self.item_message_var, "This is in the Village Merchant's stock, not your inventory. Make a copy to get one for yourself.")
+                self._say_item("This is in the Village Merchant's stock, not your inventory. Make a copy to get one for yourself.")
         elif not slots_for(item.kind, item.piece, self._slots()):
             self.equip_button.state(["disabled"])
-
-    def _apply_item(self, **changes: Any) -> bool:
-        if self.hero is None or self._shown is None:
-            return True
-        index = self._shown
-        try:
-            self.hero.update_item(index, **changes)
-        except ValueError as exc:
-            self._show_item(index)
-            self._say(self.item_message, self.item_message_var, str(exc), error=True)
-            return False
-        self._fill_items()  # keeps whichever item is selected
-        self._say(self.item_message, self.item_message_var, f"Changed. {SAVE_REMINDER}")
-        self.on_change()
-        return True
-
-    def _apply_numbers(self) -> bool:
-        if self.hero is None or self._shown is None:
-            return True
-        item = self.hero.item(self._shown)
-        if item.is_cosmetic:
-            return True
-        changes = {}
-        try:
-            if self.power_var.get().strip() != _number_text(item.power):
-                changes["power"] = doc.parse_input(self.power_var.get(), item.power if item.power is not None else 0)
-            if self.count_var.get().strip() != str(item.count):
-                changes["count"] = doc.parse_input(self.count_var.get(), item.count)
-        except ValueError as exc:
-            self._show_item(self._shown)
-            self._say(self.item_message, self.item_message_var, str(exc), error=True)
-            return False
-        return self._apply_item(**changes) if changes else True
 
     def _apply_type(self) -> None:
         if self.hero is not None and self._shown is not None and self.type_var.get().strip() != self.hero.item(self._shown).tag:
             self._apply_item(tag=self.type_var.get())
-
-    def _heroes(self) -> list[Hero]:
-        heroes = [self.hero] if self.hero is not None else []
-        return heroes + [hero for hero in self.catalog_heroes() if hero is not None]
-
-    def _catalog(self):
-        return build_catalog(self._heroes())
-
-    def _slots(self) -> list[GearSlot]:
-        return gear_slots(self._heroes())
-
-    def _equipped_names(self) -> dict[str, str]:
-        return {item.equipped_slot: item.name for item in self.hero.items() if item.equipped_slot} if self.hero else {}
-
-    def open_add_items(self, for_slot: GearSlot | None = None) -> None:
-        """Add items; with ``for_slot``, only items for that slot, equipped there."""
-        if self.hero is None:
-            return
-        catalog = self._catalog()
-
-        def add(tag: str, rarity: str, power: int, count: int, slot: GearSlot | None) -> None:
-            template = template_for(tag, catalog)
-            if template is None:
-                raise ValueError("There's no item in your saves to copy the layout from yet.")
-            self.selected = self.hero.add_item(
-                tag, template, rarity=rarity, power=power, count=count, slot=slot, check_level=not self.advanced
-            )
-            self._fill_items()
-            self._say(self.item_message, self.item_message_var, f"Added. {SAVE_REMINDER}")
-            self.on_change()
-
-        ItemPicker(
-            self,
-            catalog,
-            self.icons,
-            mode="add",
-            advanced=self.advanced,
-            best_power=self.hero.best_power(),
-            slots=self._slots(),
-            equipped=self._equipped_names,
-            hero_level=None if self.advanced else self.hero.level,
-            on_add=add,
-            for_slot=for_slot,
-        )
-
-    def equip_item(self) -> None:
-        """Equip the selected item (asking which slot when there's a choice), or unequip it."""
-        if self.hero is None or self._shown is None:
-            return
-        item = self.hero.item(self._shown)
-        if item.equipped_slot:
-            self.hero.unequip(self._shown)
-            self._fill_items()
-            self._say(self.item_message, self.item_message_var, f"Unequipped. It's in your inventory. {SAVE_REMINDER}")
-            self.on_change()
-            return
-        slots = slots_for(item.kind, item.piece, self._slots())
-        if len(slots) == 1:
-            self._equip(slots[0])
-            return
-        menu = tk.Menu(self, tearoff=False)
-        equipped = self._equipped_names()
-        level = None if self.advanced else self.hero.level
-        for slot in slots:
-            menu.add_command(
-                label=slot_choice(slot, equipped.get(slot.tag), level),
-                state="normal" if slot_open(slot, level) else "disabled",
-                command=lambda slot=slot: self._equip(slot),
-            )
-        menu.tk_popup(self.equip_button.winfo_rootx(), self.equip_button.winfo_rooty() + self.equip_button.winfo_height())
-
-    def _equip(self, slot: GearSlot) -> None:
-        if self.hero is None or self._shown is None or not self._accept_guessed_slot(slot):
-            return
-        try:
-            replaced = self.hero.equip(self._shown, slot, check_level=not self.advanced)
-        except ValueError as exc:
-            self._say(self.item_message, self.item_message_var, str(exc), error=True)
-            return
-        text = f"Equipped ({slot.label.lower()})."
-        if replaced is not None:
-            text += f" Your {replaced.name} went back to your inventory."
-        self._fill_items()
-        self._say(self.item_message, self.item_message_var, f"{text} {SAVE_REMINDER}")
-        self.on_change()
-
-    def _accept_guessed_slot(self, slot: GearSlot) -> bool:
-        """Ask once before using a slot whose name in the game is a best guess."""
-        if slot.confirmed or self._guessed_slot_ok:
-            return True
-        self._guessed_slot_ok = messagebox.askyesno(
-            "Unconfirmed slot",
-            f"The game's name for the {slot.label.lower()} slot hasn't been seen in a real save yet, so the editor "
-            "is making a best guess.\n\nIf the guess is wrong, the game may leave the item unequipped, or may not "
-            "load this hero until you undo the change with Restore… (a backup is made every time you save).\n\n"
-            f"Equip any {slot.kind.lower()} in the game once and the editor learns the slot's real name.\n\nEquip it anyway?",
-            parent=self,
-        )
-        return self._guessed_slot_ok
-
-    def open_presets(self) -> None:
-        if self.hero is None or not self.commit_pending():
-            return
-        PresetsDialog(
-            self,
-            hero=self.hero,
-            catalog=self._catalog(),
-            advanced=self.advanced,
-            on_applied=self._after_preset,
-            text_font=tkfont.nametofont("TkDefaultFont"),
-            slots=self._slots(),
-            icons=self.icons,
-        )
-
-    def _after_preset(self) -> None:
-        self.refresh()
-        self._say(self.stats_message, self.stats_message_var, f"Preset applied. {SAVE_REMINDER}")
-        self.on_change()
-
-    def change_item(self) -> None:
-        if self.hero is None or self._shown is None:
-            return
-        picker = ItemPicker(self, self._catalog(), self.icons, mode="choose", advanced=self.advanced)
-        self.wait_window(picker)
-        if picker.result:
-            self._apply_item(tag=picker.result)
-
-    def copy_item(self) -> None:
-        if self.hero is None or self._shown is None:
-            return
-        try:
-            self.selected = self.hero.duplicate_item(self._shown)
-        except ValueError as exc:
-            self._say(self.item_message, self.item_message_var, str(exc), error=True)
-            return
-        self._fill_items()
-        self._say(self.item_message, self.item_message_var, f"Copied into your inventory. {SAVE_REMINDER}")
-        self.on_change()
-
-    def delete_item(self) -> None:
-        if self.hero is None or self._shown is None:
-            return
-        item = self.hero.item(self._shown)
-        if item.is_cosmetic or item.equipped_slot:
-            return
-        if not messagebox.askyesno(self.app_title, f"Delete the {item.name}?", parent=self):
-            return
-        try:
-            self.hero.remove_item(self._shown)
-        except ValueError as exc:
-            self._say(self.item_message, self.item_message_var, str(exc), error=True)
-            return
-        self.selected = self._shown = None
-        self._fill_items()
-        self._say(self.item_message, self.item_message_var, f"Deleted. {SAVE_REMINDER}")
-        self.on_change()

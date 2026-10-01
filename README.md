@@ -1,19 +1,23 @@
 # Minecraft Dungeons II Save Editor
 
 An unofficial save editor for **Minecraft Dungeons II** on Windows (Xbox app / PC Game Pass). Change your offline
-hero's stats and gear, add and equip items, apply ready-made presets and complete kits from top builds, and sort
-everything by power, XP and more, without having to know anything about save files. Advanced mode shows the full
-save for people who want it.
+hero's stats and gear, add and equip items, and apply ready-made presets and complete kits from top builds, without
+having to know anything about save files. It looks like the game's own inventory screen, so you already know your
+way around. Advanced mode shows the full save for people who want it.
 
-![The Hero tab](docs/screenshots/hero-tab.png)
+![Simple mode, laid out like the game's inventory](docs/screenshots/inventory.png)
 
 ## Features
 
+- **Looks like the game:** your gear on the left (weapons, armor, artifacts, talismans) as tiles in their rarity's
+  colour, the rest of your inventory in the middle, and the item card on the right, with level, gear power and your
+  currencies along the top, just like the game's inventory screen. Click a tile to change it on its card, double-click
+  an empty slot to put something in it, and right-click any tile for its actions.
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
-  levels. Changes apply as you type, and mistakes show up in red next to the field.
+  levels (under **Stats & town**). Click a number to change it; changes apply as you type, and mistakes show up in
+  red.
 - **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
-  delete them. The **Equipped** view lists all 12 gear slots, so you can put an item straight into a slot or take
-  one off.
+  delete them. Every gear slot is shown, including the ones your level hasn't opened yet.
 - **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a War Hammer becomes the Heartbreaker. Items show their in-game names.
@@ -25,11 +29,14 @@ save for people who want it.
 
   Pick the item power and rarity, and the preset adds and equips everything. Each one shows what it will change,
   and lists the best enchantment for every piece, what it does and where its book drops.
-- **Sorting:** items by most powerful, highest item level, most item XP, rarest, most enchantments, newest, name,
-  kind or location; heroes by power, level, XP or emeralds.
-- **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own.
-- **Simple and Advanced modes:** Simple keeps numbers within the game's caps and hides the technical parts.
-  Advanced adds a tree of every value in the save, the raw JSON, the settings save and raw item IDs.
+- **Sorting and filters:** items by most powerful, highest item level, most item XP, rarest, most enchantments,
+  newest, name or kind, and filters for each kind of item and the Village Merchant's stock; heroes by power, level,
+  XP or emeralds.
+- **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own. The editor cuts the item
+  out of the wiki's pictures so it sits on the game-style tiles; items without a picture get a pixel-art icon.
+- **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
+  slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
+  every value in the save, the raw JSON, the settings save and raw item IDs.
 - **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
   after writing, and an automatic rollback if anything fails. If the game saves your hero while the editor is open,
   the editor loads the new version, or re-applies your unsaved changes to it, so neither side's progress is lost.
@@ -38,9 +45,7 @@ save for people who want it.
 |---|---|
 | ![Add items](docs/screenshots/add-items.png) | ![A kit preset](docs/screenshots/presets-kit.png) |
 
-| Equipped gear | Advanced mode |
-|---|---|
-| ![The Equipped view](docs/screenshots/equipped.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
+![Advanced mode](docs/screenshots/advanced-mode.png)
 
 ## Download
 
@@ -49,7 +54,7 @@ release and double-click it. There's nothing to install, and it finds your saves
 
 1. **Close the game.**
 2. Open **MCD2SaveEditor.exe**.
-3. Pick your hero on the left, make your changes, and press **Save to game**.
+3. Your hero opens (pick another at the top left), make your changes, and press **Save to game**.
 
 Windows may say **"Windows protected your PC"** because the .exe isn't code-signed. Click **More info → Run
 anyway**. The .exe is built by GitHub Actions straight from this repository's source
@@ -59,10 +64,12 @@ anyway**. The .exe is built by GitHub Actions straight from this repository's so
 **Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
 installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
 double-click **Start Save Editor.bat**. Run that way, backups, pictures and settings stay in the unzipped folder.
+Install [Pillow](https://pypi.org/project/pillow/) too (`py -m pip install pillow`) for smoother item pictures; the
+.exe includes it.
 
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
-save first copies your whole save folder into `backups\`, and **Restore…** puts any of those back. Backups contain
-your sign-in token, so don't share them.
+save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
+back. Backups contain your sign-in token, so don't share them.
 
 > **Versions before 1.2.3 could lose edits and progress.** They wrote save files differently from the game (they
 > kept the old cloud ID), so the Xbox app's cloud sync could bring the old data back. Edits then didn't show up in
@@ -82,7 +89,7 @@ your sign-in token, so don't share them.
   hero. Items whose internal name has
   been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
   drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
-  game become confirmed automatically. To help everyone else, press **Share item IDs…** on the Help tab (or run
+  game become confirmed automatically. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs, nothing else from your save.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
@@ -146,8 +153,10 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/hero.py` | Hero stats and items, the add-item catalog, change summaries |
 | `dungeons2_editor/presets.py` | The presets, kits and the facts behind them |
 | `dungeons2_editor/data/` | The item and enchantment lists (`tools/build_item_catalog.py` rebuilds them) |
-| `dungeons2_editor/gui.py`, `hero_tab.py`, `item_picker.py`, `presets_dialog.py`, `layout.py` | The window |
-| `dungeons2_editor/icons.py`, `wiki.py` | Pictures and the Minecraft Wiki downloader |
+| `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `layout.py` | The window and its dialogs |
+| `dungeons2_editor/inventory_screen.py`, `game_style.py`, `game_art.py` | Simple mode's game-style screen, its colours and theme, and its pixel art |
+| `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
+| `dungeons2_editor/icons.py`, `wiki.py` | Pictures (and cutting items out of them) and the Minecraft Wiki downloader |
 
 ## Credits and disclaimer
 
@@ -166,8 +175,9 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
 - Item pictures come from the [Minecraft Wiki](https://minecraft.wiki) and are downloaded on your PC when you ask;
   none are included here. The screenshots use a made-up demo save.
-- The Equipped view takes its idea from the equipment screen of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit),
-  the save editor for the first Minecraft Dungeons.
+- Simple mode follows the idea of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit), the save editor for the
+  first Minecraft Dungeons, which is laid out like that game's inventory. Its colours and layout follow Minecraft
+  Dungeons II's own inventory screen; the fonts are Windows' own and the icons are drawn by the editor.
 - The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky
   saves the same way.
 - Game facts come from community datamines by [MetaBot](https://metabot.gg/en/minecraft-dungeons-2) and
