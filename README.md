@@ -68,15 +68,14 @@ your sign-in token, so don't share them.
 - **Online heroes** are stored on the game's servers, so no save editor can change them. When you create a hero,
   the game makes you pick online or offline for good; this editor works with **offline** heroes.
 - **Some added items may not work yet.** A save stores each item under an internal name (the Mystic Circlet is
-  `SW.Item.MysticHelmet`). The game's list of those names is in encrypted files, so for most items the editor works
-  it out from the in-game name, following the pattern of the names seen in real saves. Items whose internal name has
+  `SW.Item.MysticHelmet`). The game's list of those names is in its encrypted content files, and the editor doesn't
+  break that encryption, so for most items it works the name out from the in-game name, following the pattern of the
+  names seen in real saves. (The equipment slots are different: the game's readable script cache names all 12, so
+  equipping is exact.) Items whose internal name has
   been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
   drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
   game become confirmed automatically. Found a wrong or missing one? `python -m dungeons2_editor items` lists them
   all, so please open an issue with the correct name from your save (Advanced mode shows it).
-- **Equipping armor, artifacts and talismans is a best guess.** A save names each equipment slot, and only the
-  weapon slots have been seen in a real save so far. The editor guesses the others from them and learns the real
-  names as soon as a save shows one, so equip one of each in the game first if you can.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
 - Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.

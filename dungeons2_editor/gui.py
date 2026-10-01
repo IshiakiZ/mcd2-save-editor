@@ -44,8 +44,6 @@ HELP_SECTIONS = [
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
         "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
-        "Only the weapon slots' names have been seen in a real save, so equipping armor, artifacts and talismans is a "
-        "best guess until you equip one of each in the game; the editor then learns the real names.\n\n"
         "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",

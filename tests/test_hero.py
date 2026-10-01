@@ -221,8 +221,8 @@ class HeroTests(unittest.TestCase):
 
     def test_slot_names_are_learned_from_saves(self):
         default = {slot.label: slot for slot in heroes.gear_slots([self.hero])}
-        self.assertTrue(default["Melee weapon"].confirmed)
-        self.assertFalse(default["Helmet"].confirmed)
+        self.assertTrue(all(slot.confirmed for slot in default.values()))  # named in the game's own script cache
+        self.assertEqual(default["Helmet"].tag, "SW.ItemSlot.Equipment.Armor.Helmet")
         self.entry("SW.Item.MysticHelmet")["EquippedSlot"] = "SW.ItemSlot.Equipment.Head"
         other = Hero(hero_save())
         other.body["Inventory"]["Entries"].append(dict(self.entry("SW.Item.Longbow"), EquippedSlot="SW.ItemSlot.Equipment.Artifact2"))

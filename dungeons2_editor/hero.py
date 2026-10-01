@@ -214,22 +214,23 @@ class GearSlot:
     confirmed: bool = False  # the name has been seen in a real save
 
 
-# The hero's 12 gear slots. Only the weapon slots' names have been seen in real saves; the others
-# follow their pattern and stay best guesses until a save shows the real name (see gear_slots).
+# The hero's 12 gear slots, named as the game's own script cache lists them
+# (Content/Dungeons/Script/PrecompiledScript.Cache spells SW.ItemSlot.Equipment.Armor.Helmet as
+# SW_ItemSlot_Equipment_Armor_Helmet, the way it spells the weapon and merchant slots seen in saves).
 # Artifact slots 2 and 3 open at levels 5 and 10 (community datamines; mcd2-research/README.md).
 GEAR_SLOTS = (
     GearSlot("SW.ItemSlot.Equipment.MeleeWeapon", "Melee", "Melee weapon", confirmed=True),
     GearSlot("SW.ItemSlot.Equipment.RangedWeapon", "Ranged", "Ranged weapon", confirmed=True),
-    GearSlot("SW.ItemSlot.Equipment.Armor.Helmet", "Armor", "Helmet", piece="Helmet"),
-    GearSlot("SW.ItemSlot.Equipment.Armor.Chest", "Armor", "Chestplate", piece="Chestplate"),
-    GearSlot("SW.ItemSlot.Equipment.Armor.Leggings", "Armor", "Leggings", piece="Leggings"),
-    GearSlot("SW.ItemSlot.Equipment.Armor.Boots", "Armor", "Boots", piece="Boots"),
-    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot1", "Artifact", "Artifact 1"),
-    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot2", "Artifact", "Artifact 2", level=5),
-    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot3", "Artifact", "Artifact 3", level=10),
-    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot1", "Talisman", "Talisman 1"),
-    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot2", "Talisman", "Talisman 2"),
-    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot3", "Talisman", "Talisman 3"),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Helmet", "Armor", "Helmet", piece="Helmet", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Chest", "Armor", "Chestplate", piece="Chestplate", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Leggings", "Armor", "Leggings", piece="Leggings", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Boots", "Armor", "Boots", piece="Boots", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot1", "Artifact", "Artifact 1", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot2", "Artifact", "Artifact 2", level=5, confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot3", "Artifact", "Artifact 3", level=10, confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot1", "Talisman", "Talisman 1", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot2", "Talisman", "Talisman 2", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot3", "Talisman", "Talisman 3", confirmed=True),
 )
 
 
@@ -682,11 +683,11 @@ class CatalogItem:
 
 
 def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
-    """GEAR_SLOTS, corrected by the slot names these heroes' saves show.
+    """GEAR_SLOTS, unless these heroes' saves show other names for the slots: real saves win.
 
-    A name seen in a save is confirmed. An armor slot takes the name seen for the same piece, and
-    an artifact or talisman slot the name seen for the same slot number, or else another slot's
-    name with the number swapped in (still a guess, but a better one).
+    An armor slot takes the name seen for the same piece, and an artifact or talisman slot the
+    name seen for the same slot number, or else another slot's name with the number swapped in
+    (a guess, so not confirmed).
     """
     seen: dict[str, Item] = {}
     for hero in heroes:
@@ -709,7 +710,9 @@ def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
             if tag is not None:
                 slot = replace(slot, tag=tag, confirmed=True)
             else:
-                slot = replace(slot, tag=re.sub(r"\d+$", str(number), numbered[0][0]))
+                tag = re.sub(r"\d+$", str(number), numbered[0][0])
+                if tag != slot.tag:
+                    slot = replace(slot, tag=tag, confirmed=False)
         slots.append(slot)
     return slots
 

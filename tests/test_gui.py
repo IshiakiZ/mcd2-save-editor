@@ -249,12 +249,9 @@ class HeroTabTests(WindowTestCase):
         self.assertFalse(self.tab.delete_button.instate(["disabled"]))
         self.assertEqual(self.tab.equip_button.cget("text"), "Equip")
         self.select_item("Mystic Circlet")
-        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
-            self.tab.equip_item()  # the helmet slot's name is a best guess, so it asks first
-        ask.assert_called_once()
-        self.assertEqual(self.tab.hero.item(self.tab._shown).where, "Inventory")
-        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
-            self.tab.equip_item()
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            self.tab.equip_item()  # the game's files name every gear slot, so there's nothing to ask
+        ask.assert_not_called()
         self.assertIn("Equipped (helmet)", self.tab.item_message_var.get())
         self.select_item("Curved Greatsword")  # merchant stock
         self.assertTrue(self.tab.equip_button.instate(["disabled"]))
@@ -289,7 +286,7 @@ class HeroTabTests(WindowTestCase):
         picker._pick_slot()
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             picker._confirm()
-        ask.assert_called_once()  # artifact slot names are best guesses
+        ask.assert_not_called()  # a confirmed item in a slot the game's files name
         self.assertEqual(str(picker.message.cget("style")), "Error.TLabel")
         self.assertIn("opens at level 10", picker.message_var.get())
         picker.destroy()
@@ -450,7 +447,7 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom (inventory), Grindstone (inventory)\n", text)
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             dialog._apply()
-        ask.assert_called_once()  # armor, artifact and talisman slot names are best guesses
+        ask.assert_called_once()  # most of the kit's item IDs are best guesses
         self.assertTrue(dialog.message_var.get().startswith("Applied Melee damage"))
         dialog.destroy()
         hero = self.tab.hero

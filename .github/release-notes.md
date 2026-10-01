@@ -1,22 +1,18 @@
+## What's new in 1.2.1
+
+- **Equipping is exact for every slot.** The game's own script cache (a readable file in the game's folder) names
+  all 12 gear slots, and they match the editor's, so equipping armor, artifacts and talismans no longer asks first.
+
+Item names are still the game's encrypted data, so items whose internal name hasn't been seen in a save remain
+best guesses (marked Unconfirmed). See 1.2.0 below for equipping, the new presets and kits.
+
 ## What's new in 1.2.0
 
-- **Equip gear**: an **Equip / Unequip** button on the Hero tab, and **Equip it** when adding items, so new gear goes
-  straight onto your hero. Whatever was in that slot goes back to your inventory.
-- **Most powerful gear presets**: the best melee weapon, ranged weapon, armor, artifacts and talismans, added at the
-  power and rarity you pick.
-- **Kits**: six complete loadouts from [MetaBot](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds)'s
-  data-backed builds (Melee damage, Greatbow sharpshooter, Close-range crossbow, Humbler tank, Soul caster and
-  Companion support). Each has a full set of armor, weapons, three artifacts and three talismans, Unique by
-  default, at the power you choose, and equipped in one click.
-- **Enchantment suggestions**: presets list the best enchantment for every weapon and armor piece, what it does and
-  where its book drops. The editor can't add enchantments itself yet, so you put them on at the Enchantsmith.
-- **Better item list**: names now come from [MetaBot](https://metabot.gg/en/minecraft-dungeons-2/uniques)'s
-  database built from the game files: 181 items, all 116 Uniques with what they do, and the right names where the
-  wiki still had placeholders. For example, the Unique War Hammer is the Heartbreaker.
+- **Equip gear**: an **Equip / Unequip** button on the Hero tab, and **Equip it** when adding items.
+- **Most powerful gear presets** and six **kits** from MetaBot's builds, at the power and rarity you pick, equipped in
+  one click, with the best enchantment for every piece and where its book drops.
+- **Better item list** from MetaBot's game-data database: 181 items and all 116 Uniques with what they do.
 - **Fixed**: the Add items window could cut off text and hide its Add button.
-
-Equipping weapons uses slot names seen in real saves. For armor, artifacts and talismans the slot names are best
-guesses until the editor sees one in a save: equip one of each in the game and it learns them.
 
 ## Download
 
