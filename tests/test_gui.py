@@ -8,8 +8,8 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import game_style, gui, saves
-from dungeons2_editor.hero import Hero
+from dungeons2_editor import game_style, gui, saves, share_ids
+from dungeons2_editor.hero import Hero, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
 
 from .helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode
@@ -47,8 +47,10 @@ class WindowTestCase(unittest.TestCase):
         self.addCleanup(gc.collect)  # frees Tk objects on the main thread, after the window is destroyed
         self.addCleanup(self.root.destroy)
         self.make_icons()
+        self.names_file = self.dir / "item-names.json"
+        self.addCleanup(use_local_names, {})  # names given in a test don't leak into the next
         with mock.patch.object(saves, "find_profiles", return_value=[]):
-            self.app = gui.EditorApp(self.root, self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file)
+            self.app = gui.EditorApp(self.root, self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file, self.names_file)
         self.root.update()
 
     def make_icons(self):
@@ -828,8 +830,64 @@ class SimpleModeTests(WindowTestCase):
     def test_menu_has_the_tools(self):
         menu = self.app.app_menu
         labels = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1) if menu.type(i) != "separator"]
-        for label in ("Reload", "Back up now", "Restore a backup…", "Get item pictures…", "Share item IDs…", "Save profile"):
+        for label in ("Reload", "Back up now", "Restore a backup…", "Get item pictures…", "Open the pictures folder", "Share item IDs…",
+                      "Connect an AI (MCP)…", "Save profile"):
             self.assertIn(label, labels)
+        self.assertIn("Lemma: a free creative studio for Minecraft ↗", labels)
+        self.assertIn("Batchly: free browser games, tools and experiments ↗", labels)
+
+    def test_help_links_to_the_developers_sites(self):
+        for text in (self.app.simple_help_text, self.app.help_text):
+            self.assertIn("https://lemma.ishiakiz.com", text.get("1.0", "end"))
+            self.assertIn("https://batch-ly.com", text.get("1.0", "end"))
+            self.assertTrue(text.tag_ranges("link:https://batch-ly.com"))  # a link you can click
+        with mock.patch("webbrowser.open") as browser:
+            self.app.app_menu.invoke("Batchly: free browser games, tools and experiments ↗")
+        browser.assert_called_once_with("https://batch-ly.com")
+
+    def test_connect_an_ai_window(self):
+        from dungeons2_editor.ai_dialog import ConnectAiDialog
+
+        self.app._connect_ai()
+        self.root.update()
+        dialog = next(w for w in self.root.winfo_children() if isinstance(w, ConnectAiDialog))
+        config = json.loads(dialog.sections["desktop"])
+        self.assertEqual(config["mcpServers"]["mcd2-save-editor"]["args"][-1], "mcp")
+        self.assertIn("claude mcp add mcd2-save-editor --", dialog.sections["code"])
+        dialog.copy("code")
+        self.assertEqual(self.root.clipboard_get(), dialog.sections["code"])
+        dialog.destroy()
+
+    def test_paste_a_picture_from_the_game(self):
+        from tests.test_icons import Image, game_tile
+
+        if Image is None:
+            self.skipTest("needs Pillow")
+        self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        with mock.patch("PIL.ImageGrab.grabclipboard", return_value=None):
+            self.screen.picture_button.invoke()
+        self.assertIn("Windows+Shift+S", self.screen.item_message_var.get())
+        with mock.patch("PIL.ImageGrab.grabclipboard", return_value=game_tile()):
+            self.screen.picture_button.invoke()
+        kept = self.dir / "icons" / "captured" / "Mystic Circlet.png"
+        self.assertTrue(kept.is_file())
+        with Image.open(kept) as picture:
+            self.assertEqual(picture.size, (46, 46))  # just the item, cut out of the tile
+        self.assertIn("kept on this PC", self.screen.item_message_var.get())
+        self.assertEqual(self.app.icons.find("SW.Item.MysticHelmet"), kept)
+
+    def test_name_an_item_the_editor_doesnt_know(self):
+        self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        self.assertTrue(self.screen.name_button.instate(["disabled"]))  # the game's list names it
+        self.show("Merchant")
+        self.screen.pick_item(self.index_of("SW.Item.CurvedGreatsword"))
+        self.assertIn("name made from its save ID", self.screen.card_kind_var.get())
+        self.assertTrue(self.screen.name_button.instate(["!disabled"]))
+        with mock.patch.object(self.screen, "_ask_text", return_value="Cookiecutter"):
+            self.screen.name_button.invoke()
+        self.assertEqual(self.screen.card_name_var.get(), "COOKIECUTTER")
+        self.assertEqual(json.loads(self.names_file.read_text(encoding="utf-8")), {"SW.Item.CurvedGreatsword": "Cookiecutter"})
+        self.assertIn("SW.Item.CurvedGreatsword - Cookiecutter", share_ids.report_text([self.screen.hero], "9"))
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")

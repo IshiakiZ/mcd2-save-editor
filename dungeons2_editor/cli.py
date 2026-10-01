@@ -155,6 +155,13 @@ def cmd_ids(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    """Run as an MCP server on stdin and stdout, for an AI assistant's app to start."""
+    from .mcp_server import serve
+
+    return serve(args.profile, args.backups)
+
+
 def main(argv: list[str] | None = None) -> int:
     # The folder options work before or after the command: "--profile X list" and "list --profile X".
     shared = argparse.ArgumentParser(add_help=False)
@@ -184,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     command("verify", "check that saves re-encode exactly (writes nothing)")
     command("items", "list every item the editor can add, with its ID")
     command("ids", "list the item IDs in your saves that the editor doesn't know yet, to share")
+    command("mcp", "run as an MCP server (stdin/stdout) so an AI assistant can customise your heroes")
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     args = parser.parse_args(argv)
@@ -208,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         "verify": cmd_verify,
         "items": cmd_items,
         "ids": cmd_ids,
+        "mcp": cmd_mcp,
         "pictures": cmd_pictures,
     }[args.command]
     try:

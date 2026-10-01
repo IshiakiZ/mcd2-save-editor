@@ -1,7 +1,7 @@
 import unittest
 
-from dungeons2_editor.hero import GEAR_SLOTS, Hero, game_item
-from dungeons2_editor.inventory_screen import describe, fit_lines, gear_power, slot_noun
+from dungeons2_editor.hero import GEAR_SLOTS, Hero, game_item, gear_power
+from dungeons2_editor.inventory_screen import describe, fit_lines, slot_noun
 
 from .helpers import hero_item, hero_save
 

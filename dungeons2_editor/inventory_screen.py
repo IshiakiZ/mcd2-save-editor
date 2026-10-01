@@ -9,6 +9,7 @@ the top, and the currencies go in the window's top bar (``make_currency_strip``)
 from __future__ import annotations
 
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 from typing import Any, Callable
 
@@ -31,12 +32,18 @@ from .hero import (
     attribute_label,
     format_amount,
     game_item,
+    gear_power,
+    local_name,
+    name_is_known,
     slots_for,
     sort_items,
+    use_local_names,
 )
 from .hero_editing import SAVE_REMINDER, HeroEditing, number_text
 from .icons import IconLibrary
 from .item_picker import slot_open
+from .layout import fit_to_contents
+from .my_items import NAMES_FILE, load_names, save_names
 
 TILE = 64  # a gear tile, in pixels at 96 DPI
 GAP = 10
@@ -80,27 +87,6 @@ FILTERS = (
 )
 KIND_NAMES = {"Melee": "Melee weapon", "Ranged": "Ranged weapon", "Armor": "Armor", "Artifact": "Artifact", "Talisman": "Talisman"}
 ENCHANTABLE = ("Melee", "Ranged", "Armor")  # artifacts and talismans can't be enchanted
-WORN_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what counts towards gear power
-
-
-def gear_power(hero: Hero, slots: list[GearSlot]) -> tuple[int | None, dict[str, int]]:
-    """Gear power as the game shows it: the average power of the weapons, armor and artifacts the hero
-    has on, rounded down (talismans don't count), and the total for each kind. None if nothing counts.
-
-    Checked against the game: power 45, 44, 157 for four armor pieces and 108 for three artifacts show
-    as gear power 39, and a hero wearing gear at power 10, 1, 2 and 2 was saved with power level 3.
-    """
-    kind_of_slot = {slot.tag: slot.kind for slot in slots}
-    totals = dict.fromkeys(WORN_KINDS, 0)
-    powers = []
-    for item in hero.items():
-        if not item.equipped_slot or item.is_cosmetic or isinstance(item.power, bool) or not isinstance(item.power, (int, float)):
-            continue
-        kind = kind_of_slot.get(item.equipped_slot, item.kind)
-        if kind in totals:
-            totals[kind] += int(item.power)
-            powers.append(item.power)
-    return (int(sum(powers) // len(powers)) if powers else None), totals
 
 
 def describe(item: Item, known: GameItem | None) -> str:
@@ -212,6 +198,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         catalog_heroes: Callable[[], list[Hero]],
         empty_title: tk.StringVar,
         empty_text: tk.StringVar,
+        names_file: Path = NAMES_FILE,
     ):
         super().__init__(master, style="Game.TFrame")
         self.on_change = on_change
@@ -221,6 +208,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.art = art
         self.get_pictures = get_pictures
         self.catalog_heroes = catalog_heroes
+        self.names_file = Path(names_file)  # names you gave items the editor doesn't know
         self.advanced = False  # Simple mode: the game's caps and level checks apply
         self.hero: Hero | None = None
         self.active = False  # on screen; while it isn't, changes are drawn when it next is
@@ -505,6 +493,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.change_button.grid(row=1, column=0, sticky="ew", padx=(0, 3))
         self.delete_button = ttk.Button(actions, text="DELETE", style="Card.TButton", command=self.delete_item)
         self.delete_button.grid(row=1, column=1, sticky="ew", padx=(3, 0))
+        self.picture_button = ttk.Button(actions, text="PASTE PICTURE", style="Card.TButton", command=self.paste_picture)
+        self.picture_button.grid(row=2, column=0, sticky="ew", padx=(0, 3), pady=(6, 0))
+        self.name_button = ttk.Button(actions, text="NAME IT…", style="Card.TButton", command=self.name_item)
+        self.name_button.grid(row=2, column=1, sticky="ew", padx=(3, 0), pady=(6, 0))
 
         self.slot_box = ttk.Frame(content, style="Card.TFrame")
         self.slot_box.grid(row=3, column=0, sticky="ew", pady=(14, 0))
@@ -878,7 +870,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if self.card_mode == "slot":
             menu.add_command(label="Put an item here…", command=self._add_to_picked_slot, state="normal" if self.slot_add_button.instate(["!disabled"]) else "disabled")
         elif self.card_mode == "item":
-            for button in (self.equip_button, self.copy_button, self.change_button, self.delete_button):
+            for button in (self.equip_button, self.copy_button, self.change_button, self.delete_button, self.picture_button, self.name_button):
                 text = str(button.cget("text"))
                 menu.add_command(label=text[0] + text[1:].lower(), command=button.invoke, state="normal" if button.instate(["!disabled"]) else "disabled")
         menu.tk_popup(event.x_root, event.y_root)
@@ -979,6 +971,8 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         item = self.hero.item(index)
         known = game_item(item.tag)
         details = [item.piece or KIND_NAMES.get(item.kind, item.kind)]
+        if not name_is_known(item.tag):
+            details.append("name made from its save ID")
         if known is not None and known.set:
             details.append(f"{known.set} set")
         if item.level:
@@ -1004,8 +998,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             self.enchant_box.grid()
         else:
             self.enchant_box.grid_remove()
-        for widget in (self.power_entry, self.count_entry, *self.rarity_buttons, self.equip_button, self.change_button, self.copy_button, self.delete_button):
+        for widget in (self.power_entry, self.count_entry, *self.rarity_buttons, self.equip_button, self.change_button, self.copy_button,
+                       self.delete_button, self.picture_button):
             widget.state(["!disabled"])
+        # Only items the game's list doesn't name can be named here (and renamed, if you named them).
+        self.name_button.state(["!disabled"] if not name_is_known(item.tag) or local_name(item.tag) else ["disabled"])
         self.equip_button.configure(text="UNEQUIP" if item.equipped_slot else "EQUIP")
         if item.equipped_slot:
             self.change_button.state(["disabled"])
@@ -1045,6 +1042,100 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             row=len(self.hero.attributes()), column=0, sticky="w", pady=(10, 0)
         )
         self._show_parts(self.stats_box)
+
+    # ---------------------------------------------- your own pictures and names
+
+    def paste_picture(self) -> None:
+        """Use the picture on the clipboard for the item on the card. Snip an item's tile in the game
+        (Windows+Shift+S) first: the editor cuts the item out and keeps it on this PC."""
+        if self.hero is None or self._shown is None:
+            return
+        item = self.hero.item(self._shown)
+        try:
+            from PIL import Image, ImageGrab
+        except ImportError:
+            self._say_item("Pasting pictures needs Pillow (the .exe includes it; from source: py -m pip install pillow).", error=True)
+            return
+        try:
+            picture = ImageGrab.grabclipboard()
+            if isinstance(picture, list):  # files copied in Explorer
+                picture = next((Image.open(path) for path in picture if Path(path).suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp")), None)
+        except OSError:
+            picture = None
+        if picture is None:
+            self._say_item(
+                "Copy a picture first: in the game, press Windows+Shift+S and drag around the item's tile, "
+                "then pick the item here and press PASTE PICTURE.",
+                error=True,
+            )
+            return
+        try:
+            self.icons.save_captured(picture, item.name)
+        except OSError as exc:
+            self._say_item(f"Couldn't keep the picture: {exc}", error=True)
+            return
+        self._fill_items()
+        self._say_item(f"Got it: that's the {item.name}'s picture now. It's kept on this PC, in the icons folder.")
+
+    def name_item(self) -> None:
+        """Give an item the editor doesn't know the name the game uses for it."""
+        if self.hero is None or self._shown is None:
+            return
+        item = self.hero.item(self._shown)
+        name = self._ask_text(
+            "Name this item",
+            f"What does the game call this item? Its save ID is {item.tag}.\n\n"
+            "The name stays on this PC. Share item IDs (on the Help page) puts it in the list you can send, "
+            "so the editor can learn it for everyone.",
+            local_name(item.tag) or "",
+        )
+        if not name:
+            return
+        names = load_names(self.names_file)
+        names[item.tag] = name
+        try:
+            save_names(names, self.names_file)
+        except OSError as exc:
+            self._say_item(f"Couldn't keep the name: {exc}", error=True)
+            return
+        use_local_names(names)
+        self._fill_items()
+        self._say_item(f"Named it the {name}. Share item IDs can send the name on.")
+
+    def _ask_text(self, title: str, prompt: str, initial: str) -> str | None:
+        """A small window asking for a line of text, in the editor's own look. None if cancelled."""
+        window = tk.Toplevel(self)
+        window.title(title)
+        window.transient(self.winfo_toplevel())
+        gs.match_title_bar(window)
+        frame = ttk.Frame(window, padding=14)
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=prompt, wraplength=self.art.px(380), justify="left").pack(anchor="w")
+        value = tk.StringVar(value=initial)
+        entry = ttk.Entry(frame, textvariable=value, width=40)
+        entry.pack(anchor="w", fill="x", pady=(10, 0))
+        answer: list[str] = []
+
+        def done(keep: bool) -> None:
+            if keep and value.get().strip():
+                answer.append(value.get().strip())
+            window.destroy()
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x", pady=(12, 0))
+        ttk.Button(buttons, text="Cancel", command=lambda: done(False)).pack(side="right")
+        ttk.Button(buttons, text="OK", style="Accent.TButton", command=lambda: done(True)).pack(side="right", padx=(0, 8))
+        entry.bind("<Return>", lambda _event: done(True))
+        window.bind("<Escape>", lambda _event: done(False))
+        fit_to_contents(window)
+        entry.focus_set()
+        entry.select_range(0, "end")
+        try:
+            window.grab_set()
+        except tk.TclError:
+            pass
+        self.wait_window(window)
+        return answer[0] if answer else None
 
     # ------------------------------------------------------------------- hints
 

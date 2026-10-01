@@ -10,7 +10,7 @@ import urllib.parse
 import webbrowser
 from tkinter import ttk
 
-from .hero import NOT_ADDABLE_GROUPS, Hero, game_items, item_group, item_kind
+from .hero import NOT_ADDABLE_GROUPS, Hero, game_items, item_group, item_kind, local_name
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
@@ -20,7 +20,8 @@ ISSUE_TEMPLATE = "item-ids.yml"
 
 def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
     """(item ID, note) for each ID in these saves that the editor's item list doesn't confirm, or confirms
-    without knowing the item's name in the game. Cosmetics, quest items and currencies are left out."""
+    without knowing the item's name in the game. A name you gave the item (NAME IT…) is the note. Cosmetics, quest
+    items and currencies are left out."""
     known = {item.id: item for item in game_items()}
     seen = set()
     for hero in heroes:
@@ -30,7 +31,10 @@ def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
         if item_group(tag) in NOT_ADDABLE_GROUPS:
             continue
         item = known.get(tag)
-        if item is None:
+        mine = local_name(tag)
+        if mine and (item is None or item.name_from_id or not item.confirmed):
+            found.append((tag, mine))
+        elif item is None:
             found.append((tag, f"new to the editor ({item_kind(tag).lower()}), what's it called in the game?"))
         elif not item.confirmed:
             found.append((tag, f"{item.name}: confirms the editor's guess"))

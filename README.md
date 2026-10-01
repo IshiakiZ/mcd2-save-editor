@@ -7,7 +7,8 @@ way around. Advanced mode shows the full save for people who want it.
 
 ![Simple mode, laid out like the game's inventory](docs/screenshots/inventory.png)
 
-> **Also from the same developer: [Lemma](https://lemma.ishiakiz.com)**, a free creative studio for Minecraft.
+> **Also from the same developer:** [**Lemma**](https://lemma.ishiakiz.com), a free creative studio for Minecraft, and
+> [**Batchly**](https://batch-ly.com), free browser games, tools and experiments.
 
 ## Features
 
@@ -31,11 +32,18 @@ way around. Advanced mode shows the full save for people who want it.
 
   Pick the item power and rarity, and the preset adds and equips everything. Each one shows what it will change,
   and lists the best enchantment for every piece, what it does and where its book drops.
+- **Let an AI do it:** connect Claude or another AI assistant over MCP, and ask it for what you want ("give my hero
+  the best melee kit at power 30"). It shows you its changes before anything is written. See
+  [Let an AI customise your hero](#let-an-ai-customise-your-hero-mcp).
 - **Sorting and filters:** items by most powerful, highest item level, most item XP, rarest, most enchantments,
   newest, name or kind, and filters for each kind of item and the Village Merchant's stock; heroes by power, level,
   XP or emeralds.
 - **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own. The editor cuts the item
-  out of the wiki's pictures so it sits on the game-style tiles; items without a picture get a pixel-art icon.
+  out of the wiki's pictures so it sits on the game-style tiles; items without a picture get a pixel-art icon. For an
+  item the wiki doesn't have, snip its tile in the game (Windows+Shift+S), pick it in the editor and press
+  **Paste picture**: the editor cuts the item out and keeps it on your PC.
+- **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
+  The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
@@ -78,6 +86,31 @@ back. Backups contain your sign-in token, so don't share them.
 > the game, and in one case the hero went back to a much older copy. 1.2.3 writes saves the way the game does. The
 > game's own cloud save (on by default) can also bring back an older copy of a hero, so check one small change in
 > the game before making more.
+
+## Let an AI customise your hero (MCP)
+
+The editor can run as an [MCP](https://modelcontextprotocol.io) server, so AI assistants that support MCP (Claude
+Desktop, Claude Code and others) can look at your heroes and change them for you. **Menu → Connect an AI (MCP)…** shows
+the exact setup for your PC, with Copy buttons. In short:
+
+- **Claude Desktop:** Settings → Developer → Edit Config, add this, save, and restart Claude Desktop:
+
+  ```json
+  {
+    "mcpServers": {
+      "mcd2-save-editor": { "command": "C:\\path\\to\\MCD2SaveEditor.exe", "args": ["mcp"] }
+    }
+  }
+  ```
+
+- **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor.exe" mcp`
+
+The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
+set stats, add, change, equip, copy and delete items, and apply presets. Its changes collect in a draft, like unsaved
+changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
+and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
+game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
+your sign-in, account or device data.
 
 ## What it can't do
 
@@ -131,6 +164,7 @@ python -m dungeons2_editor verify                               # checks saves r
 python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
+python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 ```
 
 Add `--profile <folder>` to point at a save folder somewhere else.
@@ -158,7 +192,8 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `layout.py` | The window and its dialogs |
 | `dungeons2_editor/inventory_screen.py`, `game_style.py`, `game_art.py` | Simple mode's game-style screen, its colours and theme, and its pixel art |
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
-| `dungeons2_editor/icons.py`, `wiki.py` | Pictures (and cutting items out of them) and the Minecraft Wiki downloader |
+| `dungeons2_editor/icons.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the Minecraft Wiki downloader, and the names you give items |
+| `dungeons2_editor/mcp_server.py`, `ai_dialog.py` | The MCP server for AI assistants, and the window that shows how to connect one |
 
 ## Credits and disclaimer
 

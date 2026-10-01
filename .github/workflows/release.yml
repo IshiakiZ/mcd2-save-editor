@@ -43,6 +43,9 @@ jobs:
             Write-Output "OK: MCD2SaveEditor.exe $arguments"
           }
 
+      - name: Check the .exe answers as an MCP server
+        run: python tools/check_exe_mcp.py dist/MCD2SaveEditor.exe
+
       - name: Keep the .exe
         uses: actions/upload-artifact@v4
         with:

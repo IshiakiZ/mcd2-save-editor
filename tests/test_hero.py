@@ -1,6 +1,9 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 from dungeons2_editor import hero as heroes
+from dungeons2_editor import my_items
 from dungeons2_editor.hero import Hero
 
 from .helpers import hero_save
@@ -238,6 +241,31 @@ class HeroTests(unittest.TestCase):
         by = lambda sort: sorted([rich, poor], key=heroes.HERO_SORTS[sort], reverse=True)  # noqa: E731
         self.assertEqual(by("Most emeralds"), [rich, poor])
         self.assertEqual(by("Highest level"), [poor, rich])
+
+
+class LocalNameTests(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(heroes.use_local_names, {})
+
+    def test_your_names_fill_in_for_names_made_from_ids(self):
+        self.assertEqual(heroes.display_name("SW.Item.UndauntedHelmet"), "Undaunted Helmet")
+        self.assertFalse(heroes.name_is_known("SW.Item.UndauntedHelmet"))
+        heroes.use_local_names({"SW.Item.UndauntedHelmet": "Bounty Hunter Helmet", "SW.Item.Sword": "Not a sword"})
+        self.assertEqual(heroes.display_name("SW.Item.UndauntedHelmet"), "Bounty Hunter Helmet")
+        self.assertTrue(heroes.name_is_known("SW.Item.UndauntedHelmet"))
+        self.assertEqual(heroes.display_name("SW.Item.Sword"), "Sword")  # the game's list wins
+        self.assertEqual(heroes.display_name("SW.Item.BrandNew"), "Brand New")
+
+
+class ItemNamesFileTests(unittest.TestCase):
+    def test_saves_and_loads(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "deeper" / "item-names.json"
+            self.assertEqual(my_items.load_names(path), {})
+            my_items.save_names({"SW.Item.B": "Bee", "SW.Item.A": "Ay"}, path)
+            self.assertEqual(my_items.load_names(path), {"SW.Item.A": "Ay", "SW.Item.B": "Bee"})
+            path.write_text("[1, 2]", encoding="utf-8")
+            self.assertEqual(my_items.load_names(path), {})
 
 
 if __name__ == "__main__":

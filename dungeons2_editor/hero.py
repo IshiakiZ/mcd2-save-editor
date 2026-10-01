@@ -176,9 +176,32 @@ def game_item(tag: str) -> GameItem | None:
     return _game_items_by_id().get(tag)
 
 
+_LOCAL_NAMES: dict[str, str] = {}  # item ID -> the name you gave it (my_items.py)
+
+
+def use_local_names(names: dict[str, str]) -> None:
+    """Use the names you gave items the editor doesn't know, instead of names made from their IDs."""
+    _LOCAL_NAMES.clear()
+    _LOCAL_NAMES.update(names)
+
+
+def local_name(tag: str) -> str | None:
+    return _LOCAL_NAMES.get(tag)
+
+
+def name_is_known(tag: str) -> bool:
+    """Whether the editor knows what the game calls this item (from the game's item list, or from you)."""
+    known = _game_items_by_id().get(tag)
+    return tag in _LOCAL_NAMES or (known is not None and not known.name_from_id)
+
+
 def display_name(tag: str, rarity: str = "") -> str:
     """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity."""
     known = _game_items_by_id().get(tag)
+    if known is None or known.name_from_id:
+        mine = _LOCAL_NAMES.get(tag)
+        if mine:
+            return mine
     if known is None:
         return item_name(tag)
     return known.unique if rarity == "Unique" and known.unique else known.name
@@ -721,6 +744,29 @@ def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
                     slot = replace(slot, tag=tag, confirmed=False)
         slots.append(slot)
     return slots
+
+
+WORN_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what counts towards gear power
+
+
+def gear_power(hero: Hero, slots: list[GearSlot]) -> tuple[int | None, dict[str, int]]:
+    """Gear power as the game shows it: the average power of the weapons, armor and artifacts the hero
+    has on, rounded down (talismans don't count), and the total for each kind. None if nothing counts.
+
+    Checked against the game: power 45, 44, 157 for four armor pieces and 108 for three artifacts show
+    as gear power 39, and a hero wearing gear at power 10, 1, 2 and 2 was saved with power level 3.
+    """
+    kind_of_slot = {slot.tag: slot.kind for slot in slots}
+    totals = dict.fromkeys(WORN_KINDS, 0)
+    powers = []
+    for item in hero.items():
+        if not item.equipped_slot or item.is_cosmetic or isinstance(item.power, bool) or not isinstance(item.power, (int, float)):
+            continue
+        kind = kind_of_slot.get(item.equipped_slot, item.kind)
+        if kind in totals:
+            totals[kind] += int(item.power)
+            powers.append(item.power)
+    return (int(sum(powers) // len(powers)) if powers else None), totals
 
 
 def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:

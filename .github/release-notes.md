@@ -1,3 +1,17 @@
+## What's new in 1.4.0
+
+- **Let an AI customise your hero.** The editor can run as an MCP server, so Claude Desktop, Claude Code or another
+  AI assistant that supports MCP can look at your heroes and change them for you: stats, items, gear and presets.
+  **Menu → Connect an AI (MCP)…** shows the setup for your PC. The assistant's changes collect in a draft and are
+  written only when it saves, with the game closed and your saves backed up first, the same as Save to game. It
+  follows Simple mode's rules: offline heroes only, the game's caps, gear slots that open with your level, and
+  best-guess item IDs only if it asks.
+- **Pictures for items the wiki doesn't have:** snip an item's tile in the game (Windows+Shift+S), pick the item and
+  press **Paste picture** on its card. The editor cuts the item out and keeps the picture on your PC.
+- **Name items the editor doesn't know:** **Name it…** on the card. The name stays on your PC, and Share item IDs
+  includes it so the editor can learn it for everyone.
+- A link to Batchly, free browser games, tools and experiments from the same developer, next to Lemma.
+
 ## What's new in 1.3.0
 
 - **Simple mode now looks like the game's inventory screen.** Your gear is on the left as tiles in their rarity's

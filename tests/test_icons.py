@@ -151,6 +151,17 @@ class ItemArtTests(unittest.TestCase):
         self.assertEqual((art.width(), art.height()), (40, 40))
         self.assertIs(self.library.item_art(("Mystic Circlet",), 40), art)  # cached
 
+    def test_pictures_pasted_from_the_game_are_kept_as_yours(self):
+        kept = self.library.save_captured(game_tile(), "Mystic Boots")
+        self.assertEqual(kept, self.folder / "captured" / "Mystic Boots.png")
+        with Image.open(kept) as picture:
+            self.assertEqual(picture.size, (46, 46))
+        self.assertEqual(self.library.find("SW.Item.MysticBoots"), kept)
+        self.assertFalse(self.library.is_from_wiki("Mystic Boots"))
+        odd = self.library.save_captured(Image.new("RGB", (400, 300), (200, 200, 200)), 'What: "is" this?')
+        with Image.open(odd) as picture:
+            self.assertEqual((odd.name, max(picture.size)), ("What is this.png", 256))  # not a game tile: kept, smaller
+
     def test_pictures_that_cant_be_cut_out(self):
         self.assertIsNone(self.library.item_art(("Sword",), 40))  # a wiki picture that isn't a game tile
         own = self.library.item_art(("Bow",), 40)  # your own picture is shown as it is

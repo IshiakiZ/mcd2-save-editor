@@ -19,6 +19,7 @@ from .paths import data_dir
 
 DEFAULT_ICON_ROOT = data_dir() / "icons"
 WIKI_FOLDER = "wiki"  # pictures downloaded from minecraft.wiki; your own pictures take priority
+CAPTURED_FOLDER = "captured"  # pictures you pasted from the game (PASTE PICTURE); they're yours, like any other
 ALIASES_FILE = "aliases.txt"
 EXTENSIONS = (".png", ".gif", ".jpg", ".jpeg", ".webp", ".bmp")
 # The game's rarity colours (see game_art.RARITY_TILE): Common is grey-brown, Rare green, Special blue, Unique orange.
@@ -47,8 +48,10 @@ Stats use their save name (Emeralds.png, SpringStone.png, EnchantmentPoints.png)
 and heroes use their skin (RangerDeluxe.png).
 
 Pictures in the "wiki" folder come from minecraft.wiki (the editor's "Get
-pictures" button or `python -m dungeons2_editor pictures`). Pictures you put
-directly in this folder win over those.
+item pictures" or `python -m dungeons2_editor pictures`). Pictures in the
+"captured" folder are ones you pasted from the game (snip an item's tile with
+Windows+Shift+S, pick the item in the editor and press PASTE PICTURE). Your
+own pictures win over the wiki's.
 
 If an item's save name differs from the picture's name, add a line to
 aliases.txt in this folder:
@@ -337,6 +340,23 @@ class IconLibrary:
             return ImageTk.PhotoImage(art.resize((size, size), Image.LANCZOS))
         except (ImportError, tk.TclError, ValueError):
             return None  # Pillow without its Tk part
+
+    def save_captured(self, picture, name: str) -> Path:
+        """Keep a picture of an item that you copied from the game (a Pillow image), as just the item when it's a
+        screenshot of the game's tile, under the item's name. Returns where it went."""
+        from PIL import Image
+
+        art = cut_out(picture)
+        if art is None:
+            art = picture.convert("RGBA")
+        if max(art.size) > 256:
+            art.thumbnail((256, 256), Image.LANCZOS)
+        safe = re.sub(r'[<>:"/\\|?*]', "", name).strip() or "Item"
+        target = self.ensure_folder() / CAPTURED_FOLDER / f"{safe}.png"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        art.save(target)
+        self.reload()
+        return target
 
     def rarity_badge(self, rarity: str, size: int) -> tk.PhotoImage:
         """A square in the rarity's colour, for items without a picture."""

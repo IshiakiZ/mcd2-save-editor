@@ -7,6 +7,7 @@ import ctypes
 import json
 import os
 import queue
+import re
 import threading
 import tkinter as tk
 import traceback
@@ -19,12 +20,14 @@ from typing import Any
 
 from . import __version__, codec, game_style, merge, paths, saves, share_ids, wgs, wiki
 from . import document as doc
+from .ai_dialog import ConnectAiDialog
 from .game_art import Art
 from .game_style import GameFonts
-from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document
+from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document, use_local_names
 from .hero_tab import HeroTab
 from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
+from .my_items import NAMES_FILE, load_names
 
 APP_TITLE = "Minecraft Dungeons II Save Editor"
 SEARCH_LIMIT = 2000
@@ -33,8 +36,12 @@ MIN_SIZE = (960, 640)
 GAME_CHECK_SECONDS = 3
 CHANGED_COLOR = "#b35900"
 MUTED_COLOR = "#6b7075"
-LEMMA_URL = "https://lemma.ishiakiz.com"
-LEMMA_TEXT = "Lemma, a free creative studio for Minecraft, from the same developer: " + LEMMA_URL
+# More from the same developer, linked from the menu, both Help pages and the README.
+MORE_FROM_DEVELOPER = (
+    ("Lemma", "a free creative studio for Minecraft", "https://lemma.ishiakiz.com"),
+    ("Batchly", "free browser games, tools and experiments", "https://batch-ly.com"),
+)
+MORE_TEXT = "\n".join(f"• {name}, {what}: {url}" for name, what, url in MORE_FROM_DEVELOPER)
 
 _SAFE_TEXT = (
     "• Close Minecraft Dungeons II before saving. The editor will not save while the game is running.\n"
@@ -86,16 +93,31 @@ SIMPLE_HELP_SECTIONS = [
         "game's caps.",
     ),
     (
+        "Let an AI do it",
+        "Connect an AI (in MENU, or the button above) shows how to let an AI assistant such as Claude use the editor "
+        "over MCP. It can look at your heroes and change them for you, and its changes are only written when you "
+        "agree, with the game closed and a backup made first.",
+    ),
+    (
         "Pictures",
         "Items show their picture when the icons folder has one, and an icon in their rarity's colour when it "
-        "doesn't. Get item pictures… in MENU downloads the Minecraft Wiki's item pictures. You can also add your own, "
-        "named after the item, stat or hero skin (MysticHelmet.png, Emeralds.png, RangerDeluxe.png). The README in "
-        "the icons folder explains the names.",
+        "doesn't. Get item pictures… in MENU downloads the Minecraft Wiki's item pictures (run it again now and then "
+        "for new ones). For an item it doesn't have, take your own: in the game, press Windows+Shift+S and drag around "
+        "the item's tile, then pick the item here and press PASTE PICTURE. The editor cuts the item out and keeps it "
+        "on this PC. You can also put pictures in the icons folder yourself, named after the item, stat or hero skin "
+        "(MysticHelmet.png, Emeralds.png, RangerDeluxe.png).",
+    ),
+    (
+        "Item names",
+        "Names come from the game's item list, so new items you pick up show their names. When the editor doesn't "
+        "know what the game calls an item, its card says its name is made from its save ID: press NAME IT… and type "
+        "the name the game shows. It's kept on this PC, and Share item IDs (above) can send it on so the editor learns "
+        "it for everyone.",
     ),
     ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore a backup… (in MENU)")),
     ("Where the data comes from", _DATA_TEXT),
     ("Where the files are", _FILES_TEXT),
-    ("More from the developer", LEMMA_TEXT),
+    ("More from the developer", MORE_TEXT),
 ]
 
 # Advanced mode's Help tab.
@@ -136,8 +158,20 @@ HELP_SECTIONS = [
     ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore…")),
     ("Where the data comes from", _DATA_TEXT),
     ("Where the files are", _FILES_TEXT),
-    ("More from the developer", LEMMA_TEXT),
+    ("More from the developer", MORE_TEXT),
 ]
+
+
+def _insert_linked(text: tk.Text, body: str) -> None:
+    """Add ``body`` to a Help page, with the developer's sites as links that open in the browser."""
+    urls = [url for _name, _what, url in MORE_FROM_DEVELOPER]
+    for part in re.split("(" + "|".join(re.escape(url) for url in urls) + ")", body):
+        if part in urls:
+            tag = f"link:{part}"
+            text.insert("end", part, ("body", "link", tag))
+            text.tag_bind(tag, "<Button-1>", lambda _event, url=part: webbrowser.open(url))
+        elif part:
+            text.insert("end", part, "body")
 
 
 def _short(value: Any, limit: int = 48) -> str:
@@ -172,12 +206,15 @@ class EditorApp:
         backup_root: Path = saves.DEFAULT_BACKUP_ROOT,
         icon_root: Path = DEFAULT_ICON_ROOT,
         settings_file: Path = SETTINGS_FILE,
+        names_file: Path = NAMES_FILE,
     ):
         self.root = root
         self.backup_root = Path(backup_root)
         self.icons = IconLibrary(icon_root)
         self.settings_file = Path(settings_file)
         self.settings = _load_settings(self.settings_file)
+        self.names_file = Path(names_file)
+        use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
         self.profile: saves.SaveProfile | None = None
         self.container: saves.Container | None = None
@@ -382,9 +419,12 @@ class EditorApp:
         menu.add_command(label="Open the backups folder", command=self._open_backups_folder)
         menu.add_separator()
         menu.add_command(label="Get item pictures…", command=self._get_pictures)
+        menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
+        menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_separator()
-        menu.add_command(label="Lemma: a free creative studio for Minecraft ↗", command=lambda: webbrowser.open(LEMMA_URL))
+        for name, what, url in MORE_FROM_DEVELOPER:
+            menu.add_command(label=f"{name}: {what} ↗", command=lambda url=url: webbrowser.open(url))
         menu_button["menu"] = menu
 
         self.hero_choice_var = tk.StringVar(value="NO HERO")
@@ -423,6 +463,7 @@ class EditorApp:
             catalog_heroes=self._other_saved_heroes,
             empty_title=self.title_var,
             empty_text=self.empty_text_var,
+            names_file=self.names_file,
         )
         self.inventory.grid(row=0, column=0, sticky="nsew")
         self.inventory.make_currency_strip(bar).pack(side="right")
@@ -450,6 +491,7 @@ class EditorApp:
         share.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.", style="Body.TLabel").pack(side="left")
         ttk.Button(share, text="SHARE ITEM IDS…", command=self._share_ids).pack(side="left", padx=12)
+        ttk.Button(share, text="CONNECT AN AI…", command=self._connect_ai).pack(side="left")
         text = tk.Text(
             page, wrap="word", font=self.game_fonts.body, relief="flat", borderwidth=0, highlightthickness=0, padx=4, pady=4,
             background=game_style.BG, foreground=game_style.SOFT, cursor="arrow",
@@ -457,19 +499,12 @@ class EditorApp:
         text.tag_configure("heading", font=self.game_fonts.heading, foreground=game_style.TEXT, spacing1=14, spacing3=4)
         text.tag_configure("body", lmargin1=2, lmargin2=2, spacing2=3)
         text.tag_configure("link", foreground=game_style.LINK, underline=True)
-        text.tag_bind("link", "<Button-1>", lambda _event: webbrowser.open(LEMMA_URL))
         text.tag_bind("link", "<Enter>", lambda _event: text.configure(cursor="hand2"))
         text.tag_bind("link", "<Leave>", lambda _event: text.configure(cursor="arrow"))
         for heading, body in SIMPLE_HELP_SECTIONS:
             text.insert("end", heading.upper() + "\n", "heading")
-            body = body.format(backups=self.backup_root) if "{backups}" in body else body
-            if LEMMA_URL in body:
-                before, _url, after = body.partition(LEMMA_URL)
-                text.insert("end", before, "body")
-                text.insert("end", LEMMA_URL, ("body", "link"))
-                text.insert("end", after + "\n", "body")
-            else:
-                text.insert("end", body + "\n", "body")
+            _insert_linked(text, body.format(backups=self.backup_root) if "{backups}" in body else body)
+            text.insert("end", "\n", "body")
         text.configure(state="disabled")
         text.grid(row=1, column=0, sticky="nsew")
         scroll = ttk.Scrollbar(page, orient="vertical", command=text.yview)
@@ -576,6 +611,7 @@ class EditorApp:
         share.pack(fill="x", padx=6, pady=(4, 6))
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.").pack(side="left")
         ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
+        ttk.Button(share, text="Connect an AI…", command=self._connect_ai).pack(side="left")
         text = tk.Text(
             self.help_tab,
             wrap="word",
@@ -590,24 +626,25 @@ class EditorApp:
         text.tag_configure("heading", font=self.bold_font, spacing1=10, spacing3=4)
         text.tag_configure("body", lmargin1=4, lmargin2=4, spacing2=2)
         text.tag_configure("link", foreground="#0b6f80", underline=True)
-        text.tag_bind("link", "<Button-1>", lambda _event: webbrowser.open(LEMMA_URL))
         text.tag_bind("link", "<Enter>", lambda _event: text.configure(cursor="hand2"))
         text.tag_bind("link", "<Leave>", lambda _event: text.configure(cursor=""))
         for heading, body in HELP_SECTIONS:
             text.insert("end", heading + "\n", "heading")
-            body = body.format(backups=self.backup_root) if "{backups}" in body else body
-            before, url, after = body.partition(LEMMA_URL)
-            text.insert("end", before, "body")
-            if url:
-                text.insert("end", url, ("body", "link"))
-                text.insert("end", after, "body")
+            _insert_linked(text, body.format(backups=self.backup_root) if "{backups}" in body else body)
             text.insert("end", "\n", "body")
         text.configure(state="disabled")
+        self.help_text = text
         text.pack(fill="both", expand=True)
 
     def _share_ids(self) -> None:
         heroes = [c.hero for c in self.profile.containers if c.hero is not None] if self.profile is not None else []
         share_ids.ShareIdsDialog(self.root, heroes, __version__)
+
+    def _connect_ai(self) -> None:
+        ConnectAiDialog(self.root)
+
+    def _open_icons_folder(self) -> None:
+        os.startfile(self.icons.ensure_folder())
 
     # ---------------------------------------------------------------- profiles
 
