@@ -26,7 +26,7 @@ jobs:
       - name: Build the .exe
         run: |
           python -m pip install --upgrade "pyinstaller>=6.10,<7"
-          pyinstaller --noconfirm --onefile --windowed --name MCD2SaveEditor --icon assets/app.ico --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data/items.json;dungeons2_editor/data" mcd2_save_editor.py
+          pyinstaller --noconfirm --onefile --windowed --name MCD2SaveEditor --icon assets/app.ico --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data;dungeons2_editor/data" mcd2_save_editor.py
 
       - name: Check the .exe reads a save and opens its window
         shell: pwsh

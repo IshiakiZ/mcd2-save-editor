@@ -35,14 +35,17 @@ HELP_SECTIONS = [
         "Pick your offline hero on the left. On the Hero tab:\n"
         "• Stats: type a new number or use the arrows. Changes are kept as you go.\n"
         "• Items: sort by power, level, XP, rarity and more (click a column heading or use Sort by). Pick an item "
-        "to change its rarity, power or count, turn it into another item, make a copy or delete it.\n"
+        "to change its rarity, power or count, equip or unequip it, turn it into another item, make a copy or delete it.\n"
         "• + Add items: pick any weapon, armor piece, artifact or talisman in the game and choose rarity, power and "
-        "how many. Pick Unique rarity to get an item's Unique version. Confirmed items are known to work; for "
-        "Unconfirmed ones the editor has to guess the game's name for the item, and a wrong guess may make the game "
-        "drop it.\n"
-        "• Presets: ready-made changes such as Most money, Most XP, Best loot and Most powerful. Each one shows "
-        "exactly what it will change, and where to find items the game hasn't saved yet.\n"
+        "how many, and tick Equip it to put it straight on your hero. Pick Unique rarity to get an item's Unique "
+        "version. Confirmed items are known to work; for Unconfirmed ones the editor has to guess the game's name "
+        "for the item, and a wrong guess may make the game drop it.\n"
+        "• Presets: goals (Most money, Most XP, Best loot and more), the most powerful weapon, armor, artifacts and "
+        "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
+        "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
+        "Only the weapon slots' names have been seen in a real save, so equipping armor, artifacts and talismans is a "
+        "best guess until you equip one of each in the game; the editor then learns the real names.\n\n"
         "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
@@ -68,6 +71,13 @@ HELP_SECTIONS = [
         "keeps the edited version.\n"
         "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
         "• Backups contain your sign-in token, so don't share them.",
+    ),
+    (
+        "Where the data comes from",
+        "Item names, armor sets, Uniques and enchantments: MetaBot.GG's Minecraft Dungeons II database, which is built "
+        "from the game files (https://metabot.gg/en/minecraft-dungeons-2/uniques, /artifacts, /talismans and "
+        "/enchantments). Best gear and kits: MetaBot.GG's best builds guide and tier list; each preset links its "
+        "pages. Item pictures: the Minecraft Wiki.",
     ),
     (
         "Where the files are",

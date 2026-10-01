@@ -1,16 +1,26 @@
-"""Builds dungeons2_editor/data/items.json: every Minecraft Dungeons II item on the Minecraft Wiki.
+"""Builds the editor's item and enchantment lists from MetaBot's Minecraft Dungeons II database.
 
-The game's own item list is in encrypted files, so each item's save ID is derived from its
-in-game name, following the patterns seen in real saves:
+MetaBot (https://metabot.gg/en/minecraft-dungeons-2) lists every item in the game files
+(build 1.1.1.0). Its terms allow reusing the data with a link to the page it came from; the
+links are in each file this writes and in the README:
+
+    uniques       every Unique, its slot and its base item: so every weapon, and every
+                  armor piece with its set and slot
+    artifacts     every artifact
+    talismans     every talisman and what it does at level 3
+    enchantments  every enchantment, the gear it goes on and where its book drops
+
+The game's own item IDs aren't published anywhere the editor can use, so each item's save ID
+is worked out from its name, following the patterns seen in real saves:
 
     weapons     SW.Item.<Name>               (Sword, Bow, Longbow)
     armor       SW.Item.<Set><Slot>          (MysticHelmet is the Mystic Circlet)
     artifacts   SW.Item.Artifact.<Name>
     talismans   SW.Item.Talisman.<Name>
 
-IDs seen in real saves are marked "confirmed"; the rest are best guesses. A Unique is its
-base item at Unique rarity (the Oracle set is the Mystic set, the Emerald Hammer is a
-Battle Hammer), so Uniques are listed on their base item.
+IDs seen in real saves are marked "confirmed". The rest are best guesses, and plenty will be
+wrong: the game's internal names don't always match the names players see (the Firework Arrow
+is saved as FireworkQuiver, the Beekeeper set as Honey).
 
 Run from the repository root:  python tools/build_item_catalog.py
 """
@@ -20,20 +30,15 @@ from __future__ import annotations
 import json
 import re
 import time
-import urllib.parse
 import urllib.request
+from html.parser import HTMLParser
 from pathlib import Path
 
-API = "https://minecraft.wiki/api.php"
-HEADERS = {"User-Agent": "Dungeons2SaveEditor/1.1 (item catalog builder)"}
-OUT = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data" / "items.json"
-CATEGORIES = {
-    "Minecraft Dungeons II melee weapons": "Melee",
-    "Minecraft Dungeons II ranged weapons": "Ranged",
-    "Minecraft Dungeons II armor": "Armor",
-    "Minecraft Dungeons II artifacts": "Artifact",
-    "Minecraft Dungeons II talismans": "Talisman",
-}
+BASE_URL = "https://metabot.gg/en/minecraft-dungeons-2/"
+PAGES = ("uniques", "artifacts", "talismans", "enchantments")
+HEADERS = {"User-Agent": "Dungeons2SaveEditor/1.2 (item catalog builder; +https://github.com/IshiakiZ/mcd2-save-editor)"}
+DATA = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data"
+
 # IDs seen in real saves, and the in-game names they belong to where those differ from the ID.
 CONFIRMED_IDS = {
     "SW.Item.Sword",
@@ -48,132 +53,134 @@ CONFIRMED_IDS = {
 KNOWN_IDS = {"Firework Arrow": "SW.Item.Artifact.FireworkQuiver"}
 # Armor sets named differently in saves: the save's HoneyLeggings and HoneyBoots are the Beekeeper pieces.
 SET_NAMES = {"Beekeeper": "Honey"}
-# Slot words as the game's own slot tags spell them (SW.ItemSlot.Equipment.Armor.Chest).
+# Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them
+# (Helmet, Leggings and Boots as in the confirmed MysticHelmet, HoneyLeggings and HoneyBoots; Chest is a guess).
+SLOTS = {"Helmet": "Helmet", "Chest": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
 SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings", "Boots": "Boots"}
-SLOT_FIELDS = {"helmet": "Helmet", "chestplate": "Chestplate", "leggings": "Leggings", "boots": "Boots"}
-# In saves but not on the wiki (yet).
+RANGED_TYPES = {"Bow", "Crossbow"}
+ENCHANT_SLOTS = {"Melee": "Melee", "Ranged": "Ranged", "Armor": "Armor", "Chest": "Chestplate"}
+# In saves, but under a name MetaBot doesn't list.
 EXTRA = [{"name": "Curved Greatsword", "kind": "Melee", "id": "SW.Item.CurvedGreatsword"}]
 
 
-def api(**params) -> dict:
-    params.update(format="json")
-    request = urllib.request.Request(API + "?" + urllib.parse.urlencode(params), headers=HEADERS)
+class Tables(HTMLParser):
+    """Collects the text of every table on a page: tables -> rows -> cells."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.tables: list[list[list[str]]] = []
+        self._row: list[str] | None = None
+        self._cell: list[str] | None = None
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag == "table":
+            self.tables.append([])
+        elif tag == "tr" and self.tables:
+            self._row = []
+        elif tag in ("td", "th") and self._row is not None:
+            self._cell = []
+        elif self._cell is not None and tag in ("div", "p", "li", "br", "a"):
+            self._cell.append(" ")  # keep "Melee" and "Ranged" in separate boxes apart
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("td", "th") and self._cell is not None and self._row is not None:
+            self._row.append(" ".join("".join(self._cell).split()))
+            self._cell = None
+        elif tag == "tr" and self._row is not None:
+            if self._row and self.tables:
+                self.tables[-1].append(self._row)
+            self._row = None
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell.append(data)
+
+
+def fetch_tables(page: str) -> list[list[list[str]]]:
+    request = urllib.request.Request(BASE_URL + page, headers=HEADERS)
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                return json.load(response)
+            with urllib.request.urlopen(request, timeout=60) as response:
+                parser = Tables()
+                parser.feed(response.read().decode("utf-8"))
+                return parser.tables
         except OSError:
-            time.sleep(2 * (attempt + 1))
-    raise RuntimeError(f"minecraft.wiki didn't answer: {params}")
+            time.sleep(3 * (attempt + 1))
+    raise RuntimeError(f"metabot.gg didn't answer for {page}")
 
 
-def category_pages(category: str) -> list[str]:
-    titles, extra = [], {}
-    while True:
-        data = api(action="query", list="categorymembers", cmtitle=f"Category:{category}", cmlimit="500", **extra)
-        titles += [m["title"] for m in data["query"]["categorymembers"] if m["title"].startswith("Dungeons II:")]
-        if "continue" not in data:
-            return titles
-        extra = {"cmcontinue": data["continue"]["cmcontinue"]}
-
-
-def page_texts(titles: list[str]) -> dict[str, str]:
-    texts = {}
-    for start in range(0, len(titles), 50):
-        data = api(action="query", prop="revisions", rvprop="content", rvslots="main", titles="|".join(titles[start:start + 50]))
-        for page in data["query"]["pages"].values():
-            if "revisions" in page:
-                texts[page["title"]] = page["revisions"][0]["slots"]["main"]["*"]
-        time.sleep(0.2)
-    return texts
-
-
-def infobox(text: str) -> dict[str, str]:
-    start = text.find("{{Infobox Dungeons II item")
-    if start < 0:
-        return {}
-    fields = {}
-    for line in text[start:].splitlines()[1:]:
-        match = re.match(r"\s*\|\s*([\w-]+)\s*=\s*(.*)", line)
-        if match:
-            fields[match.group(1).lower()] = re.sub(r"\}\}\s*$", "", match.group(2)).strip()
-        if line.strip().endswith("}}") and not line.strip().startswith("|"):
-            break
-        if line.rstrip().endswith("}}") and match:
-            break
-    return fields
+def rows(tables: list[list[list[str]]], *headers: str) -> list[dict[str, str]]:
+    """The rows of the first table whose header row starts with ``headers``, keyed by header."""
+    for table in tables:
+        names = [cell.upper() for cell in table[0]] if table else []
+        if names[: len(headers)] == list(headers):
+            return [dict(zip(names, row)) for row in table[1:] if len(row) == len(names)]
+    raise RuntimeError(f"no table headed {headers}")
 
 
 def pascal(name: str) -> str:
     return "".join(word[0].upper() + word[1:] for word in re.findall(r"[A-Za-z0-9]+", name.replace("'", "")))
 
 
+def entry(name: str, kind: str, item_id: str, **extra: str) -> dict:
+    item_id = KNOWN_IDS.get(name, item_id)
+    return {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS, **{k: v for k, v in extra.items() if v}}
+
+
 def main() -> None:
-    kinds, texts = {}, {}
-    for category, kind in CATEGORIES.items():
-        for title in category_pages(category):
-            kinds.setdefault(title, kind)
-    texts = page_texts(sorted(kinds))
-    boxes = {title.removeprefix("Dungeons II:"): infobox(text) for title, text in texts.items()}
+    pages = {}
+    for page in PAGES:
+        pages[page] = fetch_tables(page)
+        time.sleep(1)  # be gentle
 
     items: dict[str, dict] = {}
-    unique_of: dict[str, str] = {}  # base item name -> its Unique's name
+    for row in rows(pages["uniques"], "ITEM", "TYPE", "BASE ITEM", "EFFECT"):
+        unique, kind, base, effect = row["ITEM"], row["TYPE"], row["BASE ITEM"], row["EFFECT"]
+        if kind in SLOTS:
+            slot = SLOTS[kind]
+            armor_set = base.rsplit(" ", 1)[0]  # "Sculk Digger Hood" is in the Sculk Digger set
+            item_id = f"SW.Item.{pascal(SET_NAMES.get(armor_set, armor_set))}{SLOT_WORDS[slot]}"
+            items[base] = entry(base, "Armor", item_id, slot=slot, set=armor_set, unique=unique, unique_effect=effect)
+        else:
+            weapon = "Ranged" if kind in RANGED_TYPES else "Melee"
+            items[base] = entry(base, weapon, f"SW.Item.{pascal(base)}", unique=unique, unique_effect=effect)
+    for row in rows(pages["artifacts"], "ARTIFACT", "TYPE"):
+        name = row["ARTIFACT"]
+        items.setdefault(name, entry(name, "Artifact", f"SW.Item.Artifact.{pascal(name)}"))
+    for row in rows(pages["talismans"], "TALISMAN", "EFFECT AT LEVEL 3"):
+        name, effect = row["TALISMAN"], row["EFFECT AT LEVEL 3"]
+        items.setdefault(name, entry(name, "Talisman", f"SW.Item.Talisman.{pascal(name)}", effect="" if effect == "—" else effect))
+    for extra in EXTRA:
+        items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"]))
 
-    def add(name: str, kind: str, item_id: str, slot: str | None = None) -> None:
-        item_id = KNOWN_IDS.get(name, item_id)
-        entry = {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS}
-        if slot:
-            entry["slot"] = slot
-        items.setdefault(name, entry)
+    enchantments = [
+        {
+            "name": row["ENCHANTMENT"],
+            "slots": [ENCHANT_SLOTS[word] for word in re.findall("|".join(ENCHANT_SLOTS), row["SLOT"])],  # "MeleeRanged"
+            "category": row["CATEGORY"],
+            "triggers": row["TRIGGERS ON"],
+            "book": row.get("BOOK DROPS IN", ""),
+            "tier3": row["AT TIER III"],
+        }
+        for row in rows(pages["enchantments"], "ENCHANTMENT", "SLOT", "CATEGORY")
+    ]
 
-    for name, box in boxes.items():
-        kind = kinds["Dungeons II:" + name]
-        item_type = box.get("type", "")
-        unique = box.get("rarity", "").lower() == "unique"
-        if item_type in ("Melee Weapon", "Ranged Weapon"):
-            if unique:
-                if box.get("variant"):
-                    unique_of[box["variant"]] = name
-            else:
-                add(name, "Melee" if item_type == "Melee Weapon" else "Ranged", f"SW.Item.{pascal(name)}")
-        elif item_type == "Armor" and box.get("slot") in SLOT_WORDS and box.get("set"):
-            if unique:
-                if box.get("variant"):
-                    unique_of[box["variant"]] = name
-            else:
-                armor_set = SET_NAMES.get(box["set"], box["set"])
-                add(name, "Armor", f"SW.Item.{pascal(armor_set)}{SLOT_WORDS[box['slot']]}", box["slot"])
-        elif item_type == "Artifact":
-            add(name, "Artifact", f"SW.Item.Artifact.{pascal(name)}")
-        elif item_type == "Talisman":
-            add(name, "Talisman", f"SW.Item.Talisman.{pascal(name)}")
-
-    # Armor set pages fill in pieces without their own page, and pair each slot with its Unique.
-    for name, box in boxes.items():
-        if box.get("type") != "Armor Set" or box.get("rarity", "").lower() == "unique":
-            continue
-        armor_set = name.removesuffix(" Armor")
-        unique_set = boxes.get(box.get("variant", ""), {})
-        for field, slot in SLOT_FIELDS.items():
-            piece = box.get(field)
-            if not piece:
-                continue
-            add(piece, "Armor", f"SW.Item.{pascal(SET_NAMES.get(armor_set, armor_set))}{SLOT_WORDS[slot]}", slot)
-            if unique_set.get(field):
-                unique_of.setdefault(piece, unique_set[field])
-
-    for entry in EXTRA:
-        items.setdefault(entry["name"], {**entry, "confirmed": entry["id"] in CONFIRMED_IDS})
-    for name, entry in items.items():
-        if name in unique_of:
-            entry["unique"] = unique_of[name]
-
-    catalog = sorted(items.values(), key=lambda entry: (entry["kind"], entry["name"]))
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(catalog, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    counts = {kind: sum(entry["kind"] == kind for entry in catalog) for kind in sorted({e["kind"] for e in catalog})}
-    print(f"{len(catalog)} items ({sum(e['confirmed'] for e in catalog)} confirmed IDs, "
-          f"{sum('unique' in e for e in catalog)} with a Unique) -> {OUT}\n{counts}")
+    catalog = sorted(items.values(), key=lambda e: (e["kind"], e["name"].lower()))
+    by_id: dict[str, list[str]] = {}
+    for item in catalog:
+        by_id.setdefault(item["id"], []).append(item["name"])
+    for item_id, same in by_id.items():
+        if len(same) > 1:
+            print(f"warning: {' and '.join(same)} would share the ID {item_id}; the editor offers only the first")
+    sources = [BASE_URL + page for page in PAGES]
+    DATA.mkdir(parents=True, exist_ok=True)
+    (DATA / "items.json").write_text(json.dumps({"sources": sources[:3], "items": catalog}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    (DATA / "enchantments.json").write_text(
+        json.dumps({"sources": sources[3:], "enchantments": sorted(enchantments, key=lambda e: e["name"])}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    counts = {kind: sum(item["kind"] == kind for item in catalog) for kind in sorted({item["kind"] for item in catalog})}
+    print(f"{len(catalog)} items ({sum(item['confirmed'] for item in catalog)} confirmed IDs, {sum('unique' in item for item in catalog)} with a Unique), "
+          f"{len(enchantments)} enchantments -> {DATA}\n{counts}")
 
 
 if __name__ == "__main__":

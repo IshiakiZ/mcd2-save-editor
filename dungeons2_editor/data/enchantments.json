@@ -1,0 +1,354 @@
+{
+ "sources": [
+  "https://metabot.gg/en/minecraft-dungeons-2/enchantments"
+ ],
+ "enchantments": [
+  {
+   "name": "Ancient Alchemy",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Using a potion",
+   "book": "Quest reward",
+   "tier3": "Potion usage grants 60 souls."
+  },
+  {
+   "name": "Artifact Amplifier",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Using an artifact",
+   "book": "Ravines",
+   "tier3": "Artifact usage improves artifact cooldown and damage for 9 seconds."
+  },
+  {
+   "name": "Barrier Brew",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Defense",
+   "triggers": "Using a potion",
+   "book": "The Sift",
+   "tier3": "Potion usage creates a Fortifying well for allies lasting 6 seconds."
+  },
+  {
+   "name": "Bottomless Brew",
+   "slots": [
+    "Chestplate"
+   ],
+   "category": "Utility",
+   "triggers": "Using a potion",
+   "book": "Ravines",
+   "tier3": "Grants 3 additional health potions."
+  },
+  {
+   "name": "Buddy Brew",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Using a potion",
+   "book": "Any area",
+   "tier3": "Potion usage creates a Regenerating well for allies lasting 6 seconds."
+  },
+  {
+   "name": "Chain Reaction",
+   "slots": [
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Projectiles",
+   "book": "Ravines",
+   "tier3": "Projectiles have a 40% chance to spawn 8 additional projectiles."
+  },
+  {
+   "name": "Cow Stampede",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Attack",
+   "triggers": "Rolling",
+   "book": "Any area",
+   "tier3": "Slamming into enemies deals damage and knocks them back."
+  },
+  {
+   "name": "Crash Landing",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Jump attack",
+   "book": "Any area",
+   "tier3": "Jump attack landings deal 5% additional damage and increases knockback by 100%."
+  },
+  {
+   "name": "Critical Quiver",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Critical hits",
+   "book": "The Sift",
+   "tier3": "Critical hits restore 5 arrows."
+  },
+  {
+   "name": "Dynamo",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Attack",
+   "triggers": "Rolling",
+   "book": "Any area",
+   "tier3": "Rolling applies 40% damage amplification to your next melee or ranged attack."
+  },
+  {
+   "name": "Ender Mines",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack, Projectiles",
+   "book": "Any area",
+   "tier3": "Weapon attacks deploy 4 mines that explode in proximity to enemies or after a short time."
+  },
+  {
+   "name": "Ender Quiver",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Projectiles",
+   "book": "Any area",
+   "tier3": "Grants 4 additional arrows."
+  },
+  {
+   "name": "Fire Aspect",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Any area",
+   "tier3": "Wave deals 50% of weapon damage and sets mobs on fire for a short time."
+  },
+  {
+   "name": "Frost Crescent",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Any area",
+   "tier3": "Wave deals 20% of weapon damage and freezes mobs for a short time, slowing their attacks and movement."
+  },
+  {
+   "name": "Gravity Pulse",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Using an artifact",
+   "book": "Ravines",
+   "tier3": "Artifact usage pulls all enemies within 5 blocks toward you."
+  },
+  {
+   "name": "Healing Smite",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Utility",
+   "triggers": "Defeating an enemy",
+   "book": "Quest reward",
+   "tier3": "Defeating an enemy has a 50% chance to create a Regenerating well for allies."
+  },
+  {
+   "name": "Health Synergy",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Defense",
+   "triggers": "Using an artifact",
+   "book": "Ravines",
+   "tier3": "Artifact usage heals 35% of your maximum health."
+  },
+  {
+   "name": "Ichor Blast",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit",
+   "book": "Unique items only",
+   "tier3": "Wave deals 90% of weapon damage and deals additional soul damage for a short time."
+  },
+  {
+   "name": "Lightning Surge",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Any area",
+   "tier3": "Wave deals 90% of weapon damage and zaps mobs for a short time, making them weaker but faster."
+  },
+  {
+   "name": "Piercing",
+   "slots": [
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Projectiles",
+   "book": "Quest reward",
+   "tier3": "Projectiles can pierce up to 5 enemies."
+  },
+  {
+   "name": "Poison Fog",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Any area",
+   "tier3": "Wave deals 30% of weapon damage and poisons mobs for a time."
+  },
+  {
+   "name": "Power Amplifier",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Attack",
+   "triggers": "Using an artifact",
+   "book": "The Sift",
+   "tier3": "Artifact usage applies 40% damage amplification to your next melee or ranged attack."
+  },
+  {
+   "name": "Primed Enchantment",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Jump attack",
+   "book": "Unique items only",
+   "tier3": "Jump attacks create waves of lightning and ice that damages enemies."
+  },
+  {
+   "name": "Ricochet",
+   "slots": [
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Projectiles",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Projectiles can bounce up to 3 times."
+  },
+  {
+   "name": "Shadowcloak",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Utility",
+   "triggers": "Defeating an enemy",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Grants a 35% chance to enter Shadowcloaking when defeating enemies."
+  },
+  {
+   "name": "Shielding Smite",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Defense",
+   "triggers": "Defeating an enemy",
+   "book": "The Sift",
+   "tier3": "Defeating an enemy has a 40% chance to create a Fortifying well for allies."
+  },
+  {
+   "name": "Shockwave",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Shockwave deals 50% of weapon damage and increases knockback by 75%."
+  },
+  {
+   "name": "Somersault",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Rolling",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Grants 3 additional rolls."
+  },
+  {
+   "name": "Soul Blast",
+   "slots": [
+    "Melee"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack",
+   "book": "Ravines",
+   "tier3": "Wave deals 75% of weapon damage and deals additional soul damage over time."
+  },
+  {
+   "name": "Springload",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Utility",
+   "triggers": "Using an artifact",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Artifact usage grants the Hurrying status for 6 seconds, increasing movement speed."
+  },
+  {
+   "name": "Swirling",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Final combo hit, Jump attack, Projectiles",
+   "book": "The Sift",
+   "tier3": "Swirl deals an additional 100% of weapon damage to nearby enemies."
+  },
+  {
+   "name": "Tempo Theft",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Utility",
+   "triggers": "Defeating an enemy",
+   "book": "Dungeon (The Deep Dark)",
+   "tier3": "Grants a 50% chance to increase movement speed when defeating enemies."
+  },
+  {
+   "name": "Thundering",
+   "slots": [
+    "Melee",
+    "Ranged"
+   ],
+   "category": "Attack",
+   "triggers": "Dealing damage",
+   "book": "Any area",
+   "tier3": "Grants a 50% chance for 50% of weapon damage to spread as lightning damage."
+  },
+  {
+   "name": "Tumbleshot",
+   "slots": [
+    "Armor"
+   ],
+   "category": "Attack",
+   "triggers": "Rolling, Projectiles",
+   "book": "The Sift",
+   "tier3": "Rolling fires a barrage of arrows targeting nearby enemies."
+  }
+ ]
+}

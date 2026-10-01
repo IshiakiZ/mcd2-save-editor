@@ -22,18 +22,20 @@ import math
 import random
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 GAME_ITEMS_FILE = Path(__file__).resolve().parent / "data" / "items.json"  # made by tools/build_item_catalog.py
+ENCHANTMENTS_FILE = GAME_ITEMS_FILE.with_name("enchantments.json")
 
 ITEM_PREFIX = "SW.Item."
 COSMETIC_PREFIX = "SW.Item.Cosmetic."
 RARITY_PREFIX = "SW.Rarity."
 RARITIES = ("Common", "Rare", "Special", "Unique")
 UNSEEN_TAG = "SW.Item.Property.Dynamic.Unseen"
+EMPTY_SLOT = "None"  # an entry's EquippedSlot when it isn't equipped
 MAX_STAT = 2_147_483_647
 MAX_ITEM_POWER = 1_000_000
 MAX_STACK = 9_999
@@ -115,19 +117,49 @@ class GameItem:
     confirmed: bool  # the ID has been seen in real saves
     unique: str | None = None  # name of the item at Unique rarity
     slot: str | None = None  # armor slot
+    set: str | None = None  # armor set
+    unique_effect: str | None = None  # what the Unique does
+    effect: str | None = None  # what a talisman does at level 3
+
+
+@dataclass(frozen=True)
+class Enchantment:
+    """An enchantment (dungeons2_editor/data/enchantments.json)."""
+
+    name: str
+    slots: tuple[str, ...]  # Melee, Ranged, Armor (any piece) or Chestplate
+    book: str  # where its book drops
+    tier3: str  # what it does at tier III
+
+
+def _load(path: Path, key: str) -> list:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    entries = data.get(key, []) if isinstance(data, dict) else data
+    return [entry for entry in entries if isinstance(entry, dict) and entry.get("name")]
 
 
 @lru_cache(maxsize=1)
 def game_items() -> tuple[GameItem, ...]:
-    try:
-        entries = json.loads(GAME_ITEMS_FILE.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return ()
     return tuple(
-        GameItem(e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"))
-        for e in entries
-        if isinstance(e, dict) and e.get("name") and e.get("id")
+        GameItem(
+            e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
+            e.get("set"), e.get("unique_effect"), e.get("effect"),
+        )
+        for e in _load(GAME_ITEMS_FILE, "items")
+        if e.get("id") and e.get("kind")
     )
+
+
+@lru_cache(maxsize=1)
+def enchantments() -> dict[str, Enchantment]:
+    """Every enchantment by name."""
+    return {
+        e["name"]: Enchantment(e["name"], tuple(e.get("slots") or ()), e.get("book", ""), e.get("tier3", ""))
+        for e in _load(ENCHANTMENTS_FILE, "enchantments")
+    }
 
 
 @lru_cache(maxsize=1)
@@ -150,6 +182,65 @@ def item_group(tag: str) -> str:
     """'Gear' for weapons and armor (SW.Item.<Name>), else the group named in the tag (Artifact, Talisman, ...)."""
     parts = tag.split(".")
     return parts[2] if len(parts) > 3 else "Gear"
+
+
+def tag_kind(tag: str) -> str:
+    """Melee, Ranged, Armor, Artifact, Talisman, ...: from the game's item list, else from the ID."""
+    known = _game_items_by_id().get(tag)
+    return known.kind if known else item_kind(tag)
+
+
+_PIECE_WORDS = {"Helmet": "Helmet", "Chest": "Chestplate", "Chestplate": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
+
+
+def armor_piece(tag: str) -> str | None:
+    """Helmet, Chestplate, Leggings or Boots for armor, else None."""
+    known = _game_items_by_id().get(tag)
+    if known is not None:
+        return known.slot if known.kind == "Armor" else None
+    match = re.search(r"(Helmet|Chestplate|Chest|Leggings|Boots)$", tag)
+    return _PIECE_WORDS[match.group(1)] if match and item_kind(tag) == "Armor" else None
+
+
+@dataclass(frozen=True)
+class GearSlot:
+    """A place on the hero that gear goes."""
+
+    tag: str  # the save's name for it, as an inventory entry's EquippedSlot
+    kind: str  # Melee, Ranged, Armor, Artifact or Talisman
+    label: str
+    piece: str | None = None  # the armor piece that goes here
+    level: int = 1  # the hero level it opens at
+    confirmed: bool = False  # the name has been seen in a real save
+
+
+# The hero's 12 gear slots. Only the weapon slots' names have been seen in real saves; the others
+# follow their pattern and stay best guesses until a save shows the real name (see gear_slots).
+# Artifact slots 2 and 3 open at levels 5 and 10 (community datamines; mcd2-research/README.md).
+GEAR_SLOTS = (
+    GearSlot("SW.ItemSlot.Equipment.MeleeWeapon", "Melee", "Melee weapon", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.RangedWeapon", "Ranged", "Ranged weapon", confirmed=True),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Helmet", "Armor", "Helmet", piece="Helmet"),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Chest", "Armor", "Chestplate", piece="Chestplate"),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Leggings", "Armor", "Leggings", piece="Leggings"),
+    GearSlot("SW.ItemSlot.Equipment.Armor.Boots", "Armor", "Boots", piece="Boots"),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot1", "Artifact", "Artifact 1"),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot2", "Artifact", "Artifact 2", level=5),
+    GearSlot("SW.ItemSlot.Equipment.Artifact.Slot3", "Artifact", "Artifact 3", level=10),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot1", "Talisman", "Talisman 1"),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot2", "Talisman", "Talisman 2"),
+    GearSlot("SW.ItemSlot.Equipment.Talisman.Slot3", "Talisman", "Talisman 3"),
+)
+
+
+def _slot_number(tag: str) -> int | None:
+    match = re.search(r"(\d+)$", tag)
+    return int(match.group(1)) if match else None
+
+
+def slots_for(kind: str, piece: str | None, slots: list[GearSlot] | tuple[GearSlot, ...]) -> list[GearSlot]:
+    """The slots an item of this kind (and armor piece) goes in."""
+    return [slot for slot in slots if slot.kind == kind and (slot.piece is None or slot.piece == piece)]
 
 
 def format_amount(value: Any) -> str:
@@ -196,8 +287,11 @@ class Item:
 
     @property
     def kind(self) -> str:
-        known = _game_items_by_id().get(self.tag)
-        return known.kind if known else item_kind(self.tag)
+        return tag_kind(self.tag)
+
+    @property
+    def piece(self) -> str | None:
+        return armor_piece(self.tag)
 
     @property
     def is_cosmetic(self) -> bool:
@@ -257,6 +351,9 @@ class Item:
     @property
     def where(self) -> str:
         if self.equipped_slot:
+            known = next((slot for slot in GEAR_SLOTS if slot.tag == self.equipped_slot), None)
+            if known is not None:
+                return f"Equipped ({known.label.lower()})"
             parts = self.equipped_slot.split(".")
             slot = re.fullmatch(r"Slot(\d+)", parts[-1])
             place = f"{parts[-2]} slot {slot.group(1)}" if slot and len(parts) > 1 else words(parts[-1])
@@ -389,7 +486,7 @@ class Hero:
             if tag != item.tag:
                 _check_addable_tag(tag)
                 if item.equipped_slot:
-                    raise ValueError(f"Unequip the {item.name} in the game before changing what it is.")
+                    raise ValueError(f"Unequip the {item.name} before changing what it is.")
         if rarity is not None and rarity != item.rarity and rarity not in RARITIES:
             raise ValueError(f"Rarity must be one of {', '.join(RARITIES)}.")
         if power is not None:
@@ -443,10 +540,20 @@ class Hero:
         self._make_new(clone)
         return self._add_entry(clone)
 
-    def add_item(self, tag: str, template: dict, *, rarity: str | None = "Common", power: int | None = 1, count: int = 1) -> int:
+    def add_item(
+        self,
+        tag: str,
+        template: dict,
+        *,
+        rarity: str | None = "Common",
+        power: int | None = 1,
+        count: int = 1,
+        slot: GearSlot | None = None,
+        check_level: bool = True,
+    ) -> int:
         """Add a brand-new item, laid out like ``template`` (an existing inventory entry). Returns its index.
 
-        ``rarity`` or ``power`` of None keeps the template's.
+        ``rarity`` or ``power`` of None keeps the template's. With ``slot`` the item is equipped there.
         """
         tag = tag.strip()
         _check_addable_tag(tag)
@@ -455,6 +562,8 @@ class Hero:
         if power is not None:
             _check_number(power, 0, MAX_ITEM_POWER, "Power", whole=True)
         _check_number(count, 1, MAX_STACK, "Count", whole=True)
+        if slot is not None:
+            self._check_slot(display_name(tag, rarity or ""), tag_kind(tag), armor_piece(tag), slot, check_level)
 
         entry = copy.deepcopy(template)
         data = entry.setdefault("ItemData", {})
@@ -483,6 +592,8 @@ class Hero:
         loot = (self.body.get("LootProgression") or {}).get("DiscoveredLoot")
         if isinstance(loot, list) and tag not in loot:
             loot.append(tag)
+        if slot is not None:
+            self.equip(index, slot, check_level)
         return index
 
     def best_power(self) -> int:
@@ -493,8 +604,43 @@ class Hero:
     def remove_item(self, index: int) -> None:
         item = self._gear(index)
         if item.equipped_slot:
-            raise ValueError(f"Unequip the {item.name} in the game before removing it.")
+            raise ValueError(f"Unequip the {item.name} before deleting it.")
         del self._entries()[index]
+
+    # ---------------------------------------------------------- equipment
+
+    def equipped(self, slot_tag: str) -> Item | None:
+        """The item in a gear slot, if any."""
+        return next((item for item in self.items() if item.equipped_slot == slot_tag), None)
+
+    def _check_slot(self, name: str, kind: str, piece: str | None, slot: GearSlot, check_level: bool) -> None:
+        if not slots_for(kind, piece, [slot]):
+            raise ValueError(f"The {name} doesn't go in the {slot.label.lower()} slot.")
+        if check_level and isinstance(self.level, int) and self.level < slot.level:
+            raise ValueError(f"The {slot.label.lower()} slot opens at level {slot.level}, and this hero is level {self.level}.")
+
+    def equip(self, index: int, slot: GearSlot, check_level: bool = True) -> Item | None:
+        """Put an item on, in ``slot``. Returns the item that was there, which goes back to the inventory.
+
+        With ``check_level`` a slot the hero's level hasn't opened yet is refused.
+        """
+        item = self._gear(index)
+        if item.stock_slot:
+            raise ValueError(f"The {item.name} is in the Village Merchant's stock. Make a copy to get one for yourself.")
+        self._check_slot(item.name, item.kind, item.piece, slot, check_level)
+        current = self.equipped(slot.tag)
+        if current is not None and current.index == index:
+            return None
+        if current is not None:
+            current.entry["EquippedSlot"] = EMPTY_SLOT
+        item.entry["EquippedSlot"] = slot.tag
+        return current
+
+    def unequip(self, index: int) -> None:
+        """Take an item off. It stays in the inventory."""
+        item = self._gear(index)
+        if item.equipped_slot:
+            item.entry["EquippedSlot"] = EMPTY_SLOT
 
     def seen_item_types(self) -> set[str]:
         """Every item ID in this save: inventory, discovered loot and collections."""
@@ -520,6 +666,7 @@ class CatalogItem:
     title: str | None = None  # in-game name, when known
     unique: str | None = None  # name of the item at Unique rarity
     kind_name: str | None = None
+    unique_effect: str | None = None  # what the Unique does
 
     @property
     def name(self) -> str:
@@ -528,6 +675,43 @@ class CatalogItem:
     @property
     def kind(self) -> str:
         return self.kind_name or item_kind(self.tag)
+
+    @property
+    def piece(self) -> str | None:
+        return armor_piece(self.tag) if self.kind == "Armor" else None
+
+
+def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
+    """GEAR_SLOTS, corrected by the slot names these heroes' saves show.
+
+    A name seen in a save is confirmed. An armor slot takes the name seen for the same piece, and
+    an artifact or talisman slot the name seen for the same slot number, or else another slot's
+    name with the number swapped in (still a guess, but a better one).
+    """
+    seen: dict[str, Item] = {}
+    for hero in heroes:
+        for item in hero.items():
+            if item.equipped_slot and not item.is_cosmetic:
+                seen.setdefault(item.equipped_slot, item)
+    slots = []
+    for slot in GEAR_SLOTS:
+        same_kind = [(tag, item) for tag, item in seen.items() if item.kind == slot.kind]
+        numbered = [(tag, _slot_number(tag)) for tag, _item in same_kind if _slot_number(tag) is not None]
+        if slot.tag in seen:
+            slot = replace(slot, confirmed=True)
+        elif slot.piece is not None:
+            tag = next((tag for tag, item in same_kind if item.piece == slot.piece), None)
+            if tag is not None:
+                slot = replace(slot, tag=tag, confirmed=True)
+        elif numbered and _slot_number(slot.tag) is not None:
+            number = _slot_number(slot.tag)
+            tag = next((tag for tag, seen_number in numbered if seen_number == number), None)
+            if tag is not None:
+                slot = replace(slot, tag=tag, confirmed=True)
+            else:
+                slot = replace(slot, tag=re.sub(r"\d+$", str(number), numbered[0][0]))
+        slots.append(slot)
+    return slots
 
 
 def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
@@ -563,6 +747,7 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
             title=game_item.name,
             unique=game_item.unique,
             kind_name=game_item.kind,
+            unique_effect=game_item.unique_effect,
         )
     for tag in seen:
         if tag not in catalog and item_group(tag) not in NOT_ADDABLE_GROUPS and template(tag) is not None:
@@ -603,11 +788,14 @@ def describe_changes(before: dict, after: dict) -> list[str]:
             parts.append(f"power {format_amount(item.power)} → {format_amount(other.power)}")
         if other.count != item.count:
             parts.append(f"count {item.count} → {other.count}")
+        if other.equipped_slot != item.equipped_slot:
+            parts.append(other.where[0].lower() + other.where[1:] if other.equipped_slot else "unequipped")
         if parts:
             lines.append(f"{item.name}: {', '.join(parts)}")
     for key, item in new_items.items():
         if key not in old_items:
-            lines.append(f"Added {item.name} ({item.rarity}, power {format_amount(item.power)})")
+            equipped = f", {item.where[0].lower() + item.where[1:]}" if item.equipped_slot else ""
+            lines.append(f"Added {item.name} ({item.rarity}, power {format_amount(item.power)}){equipped}")
     return lines
 
 

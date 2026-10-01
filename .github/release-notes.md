@@ -1,11 +1,22 @@
-## What's new in 1.1.0
+## What's new in 1.2.0
 
-- **Add any item in the game**: all 170+ weapons, armor pieces, artifacts and talismans, not just ones you've found.
-  Items whose internal name has been seen in a real save are marked Confirmed; the rest are best guesses and the
-  editor asks before adding them.
-- **In-game names**: the save's `MysticHelmet` now shows as the Mystic Circlet, and as the Oracle Crown at Unique rarity.
-- **Uniques**: pick Unique rarity to get an item's Unique version (a Unique Battle Hammer is the Emerald Hammer).
-- Presets can add unconfirmed items if you tick the box.
+- **Equip gear**: an **Equip / Unequip** button on the Hero tab, and **Equip it** when adding items, so new gear goes
+  straight onto your hero. Whatever was in that slot goes back to your inventory.
+- **Most powerful gear presets**: the best melee weapon, ranged weapon, armor, artifacts and talismans, added at the
+  power and rarity you pick.
+- **Kits**: six complete loadouts from [MetaBot](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds)'s
+  data-backed builds (Melee damage, Greatbow sharpshooter, Close-range crossbow, Humbler tank, Soul caster and
+  Companion support). Each has a full set of armor, weapons, three artifacts and three talismans, Unique by
+  default, at the power you choose, and equipped in one click.
+- **Enchantment suggestions**: presets list the best enchantment for every weapon and armor piece, what it does and
+  where its book drops. The editor can't add enchantments itself yet, so you put them on at the Enchantsmith.
+- **Better item list**: names now come from [MetaBot](https://metabot.gg/en/minecraft-dungeons-2/uniques)'s
+  database built from the game files: 181 items, all 116 Uniques with what they do, and the right names where the
+  wiki still had placeholders. For example, the Unique War Hammer is the Heartbreaker.
+- **Fixed**: the Add items window could cut off text and hide its Add button.
+
+Equipping weapons uses slot names seen in real saves. For armor, artifacts and talismans the slot names are best
+guesses until the editor sees one in a save: equip one of each in the game and it learns them.
 
 ## Download
 

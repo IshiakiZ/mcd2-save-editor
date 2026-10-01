@@ -1,8 +1,9 @@
 # Minecraft Dungeons II Save Editor
 
 An unofficial save editor for **Minecraft Dungeons II** on Windows (Xbox app / PC Game Pass). Change your offline
-hero's stats and gear, add items, apply ready-made presets, and sort everything by power, XP and more, without
-having to know anything about save files. Advanced mode shows the full save for people who want it.
+hero's stats and gear, add and equip items, apply ready-made presets and complete kits from top builds, and sort
+everything by power, XP and more, without having to know anything about save files. Advanced mode shows the full
+save for people who want it.
 
 ![The Hero tab](docs/screenshots/hero-tab.png)
 
@@ -10,12 +11,20 @@ having to know anything about save files. Advanced mode shows the full save for 
 
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
   levels. Changes apply as you type, and mistakes show up in red next to the field.
-- **Items:** change rarity, power and count, turn an item into another one, make copies or delete them.
-- **Add items:** pick any of the game's 170+ weapons, armor pieces, artifacts and talismans, with pictures, search
-  and a category filter. Uniques are there too: pick Unique rarity and a Battle Hammer becomes the Emerald Hammer.
-  Items show their in-game names.
-- **Presets:** Most money, Most XP, Best loot, Most powerful, Fully upgraded town, Secret talisman hunt and Max
-  level. Each shows exactly what it will change, why, and where to find items you haven't picked up yet.
+- **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
+  delete them.
+- **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
+  and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
+  Unique rarity and a War Hammer becomes the Heartbreaker. Items show their in-game names.
+- **Presets:**
+  - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town, Secret talisman hunt and Max
+    level.
+  - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
+  - **Kits:** six complete loadouts from MetaBot's data-backed builds (Melee damage, Greatbow sharpshooter,
+    Close-range crossbow, Humbler tank, Soul caster and Companion support).
+
+  Pick the item power and rarity, and the preset adds and equips everything. Each one shows what it will change,
+  and lists the best enchantment for every piece, what it does and where its book drops.
 - **Sorting:** items by most powerful, highest item level, most item XP, rarest, most enchantments, newest, name,
   kind or location; heroes by power, level, XP or emeralds.
 - **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own.
@@ -24,9 +33,9 @@ having to know anything about save files. Advanced mode shows the full save for 
 - **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
   after writing, and an automatic rollback if anything fails.
 
-| Add items | Presets |
+| Add items | Kits |
 |---|---|
-| ![Add items](docs/screenshots/add-items.png) | ![Presets](docs/screenshots/presets-most-powerful.png) |
+| ![Add items](docs/screenshots/add-items.png) | ![A kit preset](docs/screenshots/presets-kit.png) |
 
 | Before saving | Advanced mode |
 |---|---|
@@ -65,7 +74,11 @@ your sign-in token, so don't share them.
   drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
   game become confirmed automatically. Found a wrong or missing one? `python -m dungeons2_editor items` lists them
   all, so please open an issue with the correct name from your save (Advanced mode shows it).
-- **Enchantments and Unique signature effects** can't be added yet.
+- **Equipping armor, artifacts and talismans is a best guess.** A save names each equipment slot, and only the
+  weapon slots have been seen in a real save so far. The editor guesses the others from them and learns the real
+  names as soon as a save shows one, so equip one of each in the game first if you can.
+- **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
+  at the Enchantsmith instead.
 - Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
 - Level, XP, item power caps and some other numbers come from community datamines, not from the game's own tables.
   The **Max level** preset is experimental.
@@ -119,8 +132,9 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/codec.py` | The two JSON formats, reproduced exactly |
 | `dungeons2_editor/saves.py` | Finding saves, backups, restore, safe saving |
 | `dungeons2_editor/hero.py` | Hero stats and items, the add-item catalog, change summaries |
-| `dungeons2_editor/presets.py` | The presets and the facts behind them |
-| `dungeons2_editor/gui.py`, `hero_tab.py`, `item_picker.py`, `presets_dialog.py` | The window |
+| `dungeons2_editor/presets.py` | The presets, kits and the facts behind them |
+| `dungeons2_editor/data/` | The item and enchantment lists (`tools/build_item_catalog.py` rebuilds them) |
+| `dungeons2_editor/gui.py`, `hero_tab.py`, `item_picker.py`, `presets_dialog.py`, `layout.py` | The window |
 | `dungeons2_editor/icons.py`, `wiki.py` | Pictures and the Minecraft Wiki downloader |
 
 ## Credits and disclaimer
@@ -128,8 +142,16 @@ python -m unittest discover -s tests -t .
 This is a fan project. It is **not affiliated with or endorsed by Mojang Studios or Microsoft**. Minecraft is a
 trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 
-- The item list (names, kinds, armor sets and Unique versions) comes from the [Minecraft Wiki](https://minecraft.wiki);
-  `tools/build_item_catalog.py` rebuilds it.
+- Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
+  [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
+  [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
+  [artifacts](https://metabot.gg/en/minecraft-dungeons-2/artifacts),
+  [talismans](https://metabot.gg/en/minecraft-dungeons-2/talismans) and
+  [enchantments](https://metabot.gg/en/minecraft-dungeons-2/enchantments). `tools/build_item_catalog.py` rebuilds the
+  lists from those pages.
+- The best gear, the kits and the numbers in the presets come from MetaBot.GG's
+  [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
+  [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
 - Item pictures come from the [Minecraft Wiki](https://minecraft.wiki) and are downloaded on your PC when you ask;
   none are included here. The screenshots use a made-up demo save.
 - The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky

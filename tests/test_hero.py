@@ -164,6 +164,75 @@ class HeroTests(unittest.TestCase):
         talisman = catalog["SW.Item.Talisman.LuckyClover"]
         self.assertEqual(talisman.template["ItemData"]["TypeTag"], "SW.Item.MysticHelmet")  # borrows a gear layout
 
+    def test_equip_swaps_what_is_in_the_slot(self):
+        slots = {slot.label: slot for slot in heroes.GEAR_SLOTS}
+        sword, axe = self.item_index("SW.Item.Sword"), self.hero.duplicate_item(self.item_index("SW.Item.Sword"))
+        self.hero.update_item(axe, tag="SW.Item.Axe")
+        replaced = self.hero.equip(axe, slots["Melee weapon"])
+        self.assertEqual(replaced.index, sword)
+        self.assertEqual(self.hero.item(axe).where, "Equipped (melee weapon)")
+        self.assertEqual(self.hero.item(sword).entry["EquippedSlot"], "None")
+        self.assertEqual(self.hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon").index, axe)
+        self.assertIsNone(self.hero.equip(axe, slots["Melee weapon"]))  # already there
+
+    def test_equip_checks_the_slot(self):
+        slots = {slot.label: slot for slot in heroes.GEAR_SLOTS}
+        before = hero_save()
+        helmet = self.item_index("SW.Item.MysticHelmet")
+        bad = [
+            (helmet, slots["Boots"]),  # wrong piece
+            (helmet, slots["Melee weapon"]),
+            (self.item_index("SW.Item.CurvedGreatsword"), slots["Melee weapon"]),  # merchant stock
+            (self.item_index("SW.Item.Cosmetic.Cape.Hero"), slots["Melee weapon"]),
+        ]
+        for index, slot in bad:
+            with self.assertRaises(ValueError, msg=slot.label):
+                self.hero.equip(index, slot)
+        self.assertEqual(self.document, before)
+        self.hero.equip(helmet, slots["Helmet"])
+        self.assertEqual(self.hero.item(helmet).where, "Equipped (helmet)")
+
+    def test_locked_slots_need_the_level_unless_told_otherwise(self):
+        slots = {slot.label: slot for slot in heroes.GEAR_SLOTS}
+        template = self.entry("SW.Item.MysticHelmet")
+        with self.assertRaises(ValueError):
+            self.hero.add_item("SW.Item.Artifact.FireworkQuiver", template, slot=slots["Artifact 3"])  # opens at level 10
+        self.assertEqual(len(self.hero.items()), 5)
+        index = self.hero.add_item("SW.Item.Artifact.FireworkQuiver", template, slot=slots["Artifact 3"], check_level=False)
+        self.assertEqual(self.hero.item(index).where, "Equipped (artifact 3)")
+        self.hero.set_attributes({"Level": 10})
+        self.hero.equip(index, slots["Artifact 2"])
+        self.assertIsNone(self.hero.equipped(slots["Artifact 3"].tag))
+
+    def test_unequip_then_delete(self):
+        sword = self.item_index("SW.Item.Sword")
+        self.hero.unequip(sword)
+        self.assertEqual(self.hero.item(sword).where, "Inventory")
+        self.hero.remove_item(sword)
+        self.assertNotIn("SW.Item.Sword", [item.tag for item in self.hero.items()])
+
+    def test_armor_pieces(self):
+        self.assertEqual(heroes.armor_piece("SW.Item.MysticHelmet"), "Helmet")
+        self.assertEqual(heroes.armor_piece("SW.Item.HoneyChest"), "Chestplate")
+        self.assertEqual(heroes.armor_piece("SW.Item.SomethingBoots"), "Boots")  # not in the game list: from the ID
+        self.assertIsNone(heroes.armor_piece("SW.Item.Sword"))
+        self.assertEqual([slot.label for slot in heroes.slots_for("Armor", "Leggings", heroes.GEAR_SLOTS)], ["Leggings"])
+        self.assertEqual(len(heroes.slots_for("Talisman", None, heroes.GEAR_SLOTS)), 3)
+
+    def test_slot_names_are_learned_from_saves(self):
+        default = {slot.label: slot for slot in heroes.gear_slots([self.hero])}
+        self.assertTrue(default["Melee weapon"].confirmed)
+        self.assertFalse(default["Helmet"].confirmed)
+        self.entry("SW.Item.MysticHelmet")["EquippedSlot"] = "SW.ItemSlot.Equipment.Head"
+        other = Hero(hero_save())
+        other.body["Inventory"]["Entries"].append(dict(self.entry("SW.Item.Longbow"), EquippedSlot="SW.ItemSlot.Equipment.Artifact2"))
+        other.body["Inventory"]["Entries"][-1]["ItemData"] = dict(other.body["Inventory"]["Entries"][-1]["ItemData"], TypeTag="SW.Item.Artifact.FireworkQuiver")
+        learned = {slot.label: slot for slot in heroes.gear_slots([self.hero, other])}
+        self.assertEqual((learned["Helmet"].tag, learned["Helmet"].confirmed), ("SW.ItemSlot.Equipment.Head", True))
+        self.assertEqual((learned["Artifact 2"].tag, learned["Artifact 2"].confirmed), ("SW.ItemSlot.Equipment.Artifact2", True))
+        self.assertEqual((learned["Artifact 3"].tag, learned["Artifact 3"].confirmed), ("SW.ItemSlot.Equipment.Artifact3", False))
+        self.assertEqual(learned["Boots"], default["Boots"])
+
     def test_hero_sorting(self):
         rich, poor = Hero(hero_save(emeralds=900, level=2)), Hero(hero_save(emeralds=10, level=30))
         by = lambda sort: sorted([rich, poor], key=heroes.HERO_SORTS[sort], reverse=True)  # noqa: E731

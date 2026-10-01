@@ -242,6 +242,59 @@ class HeroTabTests(WindowTestCase):
         self.assertTrue(self.tab.delete_button.instate(["disabled"]))
         self.assertTrue(self.tab.change_button.instate(["disabled"]))
 
+    def test_equip_and_unequip_on_the_hero_tab(self):
+        self.select_item("Sword")
+        self.assertEqual(self.tab.equip_button.cget("text"), "Unequip")
+        self.tab.equip_item()
+        self.assertFalse(self.tab.delete_button.instate(["disabled"]))
+        self.assertEqual(self.tab.equip_button.cget("text"), "Equip")
+        self.select_item("Mystic Circlet")
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            self.tab.equip_item()  # the helmet slot's name is a best guess, so it asks first
+        ask.assert_called_once()
+        self.assertEqual(self.tab.hero.item(self.tab._shown).where, "Inventory")
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            self.tab.equip_item()
+        self.assertIn("Equipped (helmet)", self.tab.item_message_var.get())
+        self.select_item("Curved Greatsword")  # merchant stock
+        self.assertTrue(self.tab.equip_button.instate(["disabled"]))
+        summary = self.save()
+        self.assertIn("Sword: unequipped", summary)
+        self.assertIn("Mystic Circlet: equipped (helmet)", summary)
+        self.assertEqual(self.saved_hero().equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Mystic Circlet")
+
+    def test_add_and_equip_from_the_picker(self):
+        picker, _row = self.open_picker_on("Axe")
+        picker.equip_var.set(True)
+        picker._show_slot()
+        self.assertEqual(picker.slot_var.get(), "Melee weapon: Sword")
+        self.assertIn("Your Sword goes back to your inventory.", picker.slot_note.get())
+        self.assertEqual(picker.confirm_button.cget("text"), "Add and equip")
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            picker._confirm()  # the melee slot's name is confirmed: no question
+        ask.assert_not_called()
+        self.assertIn("equipped it (melee weapon)", picker.message_var.get())
+        self.assertEqual(picker.slot_var.get(), "Melee weapon: Axe")
+        picker.destroy()
+        summary = self.save()
+        self.assertIn("Added Axe (Common, power 2), equipped (melee weapon)", summary)  # power starts at your best item's
+        self.assertIn("Sword: unequipped", summary)
+
+    def test_slots_that_open_later_are_offered_but_locked(self):
+        picker, _row = self.open_picker_on("Firework Arrow")
+        picker.equip_var.set(True)
+        picker._show_slot()
+        self.assertEqual(list(picker.slot_box["values"]), ["Artifact 1: empty", "Artifact 2: opens at level 5", "Artifact 3: opens at level 10"])
+        picker.slot_var.set("Artifact 3: opens at level 10")
+        picker._pick_slot()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            picker._confirm()
+        ask.assert_called_once()  # artifact slot names are best guesses
+        self.assertEqual(str(picker.message.cget("style")), "Error.TLabel")
+        self.assertIn("opens at level 10", picker.message_var.get())
+        picker.destroy()
+        self.assertEqual(self.app.change_count, 0)
+
     def test_add_items_from_the_picker(self):
         self.tab.open_add_items()
         self.root.update()
@@ -260,10 +313,10 @@ class HeroTabTests(WindowTestCase):
         picker.power_var.set("40")
         picker.count_var.set("2")
         picker._confirm()
-        self.assertIn("Added Axe", picker.message_var.get())
+        self.assertIn("Added Hunter's Hatchet", picker.message_var.get())  # the Axe's Unique
         picker.destroy()
         summary = self.save()
-        self.assertIn("Added Axe (Unique, power 40)", summary)
+        self.assertIn("Added Hunter's Hatchet (Unique, power 40)", summary)
         axe = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Axe")
         self.assertEqual((axe.rarity, axe.power, axe.count, axe.where), ("Unique", 40, 2, "Inventory"))
 
@@ -363,12 +416,59 @@ class HeroTabTests(WindowTestCase):
         dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
         text = dialog.text.get("1.0", "end")
         self.assertIn("Emeralds: 55 → 9,999", text)
-        self.assertIn("Find these in the game first", text)
+        self.assertIn("Unconfirmed items", text)
+        self.assertFalse(dialog.rarity_row.winfo_manager())  # Most money doesn't ask for a rarity
         dialog._apply()
         self.assertTrue(dialog.message_var.get().startswith("Applied Most money"))
         dialog.destroy()
         self.assertEqual(self.tab.stat_vars["Emeralds"].get(), "9999")
         self.assertIn("Emeralds: 55 → 9,999", self.save())
+
+    def test_kit_preset_adds_and_equips_a_loadout(self):
+        from dungeons2_editor import presets
+        from dungeons2_editor.presets_dialog import PresetsDialog
+
+        self.tab.open_presets()
+        self.root.update()
+        dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
+        number = next(i for i, p in enumerate(presets.PRESETS) if p.title == "Melee damage")
+        dialog.listing.selection_set(str(number))
+        self.root.update()
+        self.assertEqual(dialog.title_var.get(), "Melee damage")
+        self.assertTrue(dialog.rarity_row.winfo_manager())
+        self.assertTrue(dialog.equip_var.get())
+        self.assertTrue(dialog.include_unconfirmed.get())  # gear presets ask on Apply instead
+        text = dialog.text.get("1.0", "end")
+        self.assertIn("Enchantments to pick in the game", text)
+        self.assertIn("Melee weapon\tLightning Surge (book: Any area)", text)
+        dialog.power_var.set("40")
+        dialog._refresh()
+        text = dialog.text.get("1.0", "end")
+        self.assertIn("Unique gear at power 40, equipped:", text)
+        self.assertIn("\tMelee weapon\tPride of the Plains\n", text)
+        # This hero is level 1, and artifact slots 2 and 3 open at levels 5 and 10.
+        self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom (inventory), Grindstone (inventory)\n", text)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            dialog._apply()
+        ask.assert_called_once()  # armor, artifact and talisman slot names are best guesses
+        self.assertTrue(dialog.message_var.get().startswith("Applied Melee damage"))
+        dialog.destroy()
+        hero = self.tab.hero
+        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon").name, "Pride of the Plains")
+        self.assertEqual(hero.equipped("SW.ItemSlot.Equipment.Armor.Helmet").name, "Twisted Warden Blindfold")
+        self.assertIsNone(hero.equipped("SW.ItemSlot.Equipment.Artifact.Slot2"))  # this hero is level 1
+        self.assertIn("Pride of the Plains", self.rows())
+
+    def test_group_rows_pick_their_first_preset(self):
+        from dungeons2_editor.presets_dialog import PresetsDialog
+
+        self.tab.open_presets()
+        self.root.update()
+        dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
+        dialog.listing.selection_set("group:Kits")
+        self.root.update()
+        self.assertEqual(dialog.title_var.get(), "Melee damage")
+        dialog.destroy()
 
     def test_simple_mode_stops_stats_at_the_game_cap(self):
         self.tab.stat_vars["Emeralds"].set("50000")
