@@ -1,3 +1,10 @@
+## What's new in 1.2.2
+
+- **No more "changed on disk" dead end.** If the game saves your hero while the editor is open (for example, you
+  played to check a change), the editor now loads the new version by itself. If you have unsaved changes, pressing
+  **Save to game** re-applies them to the newer save, matching items by their unique seed, and shows you the list
+  of changes before saving. Your progress from playing and your edits are both kept.
+
 ## What's new in 1.2.1
 
 - **Equipping is exact for every slot.** The game's own script cache (a readable file in the game's folder) names

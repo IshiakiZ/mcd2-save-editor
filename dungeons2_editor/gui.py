@@ -17,7 +17,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, paths, saves, wgs, wiki
+from . import __version__, codec, merge, paths, saves, wgs, wiki
 from . import document as doc
 from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document
 from .hero_tab import HeroTab
@@ -65,6 +65,8 @@ HELP_SECTIONS = [
         "Staying safe",
         "• Close Minecraft Dungeons II before saving. The editor will not save while the game is running.\n"
         "• Every save first copies your whole save folder into the backups folder. Restore… puts one back.\n"
+        "• If the game saves your hero while the editor is open (say you played to check a change), the editor loads "
+        "the new version. If you have unsaved changes, it re-applies them to the new version when you save.\n"
         "• Changes are written the same way the game writes them and are marked for upload, so the Xbox cloud "
         "keeps the edited version.\n"
         "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
@@ -137,6 +139,9 @@ class EditorApp:
         self._auto_profiles: set[Path] = set()
         self._containers_by_iid: dict[str, saves.Container] = {}
         self._game_results: queue.Queue[list[str]] = queue.Queue()
+        self._index_stamp: tuple | None = None  # containers.index as last loaded, to notice the game saving
+        self._newer_on_disk = False  # the game saved the container on screen after it was loaded
+        self._polls = 0
         self._search_job: str | None = None
         self._poll_job: str | None = None
         self._raw_stale = True
@@ -404,15 +409,18 @@ class EditorApp:
             return f"Xbox user {path.name.split('_', 1)[0]}"
         return str(path)
 
-    def _open_profile(self, path: Path, keep: str | None = None) -> None:
+    def _open_profile(self, path: Path, keep: str | None = None, profile: saves.SaveProfile | None = None) -> None:
+        stamp = self._read_index_stamp(path)
         try:
-            profile = saves.SaveProfile(path)
+            profile = profile or saves.SaveProfile(path)
         except (OSError, wgs.WgsFormatError) as exc:
             messagebox.showerror(APP_TITLE, f"Could not read the saves in\n{path}\n\n{exc}", parent=self.root)
             if self.profile is not None and self.profile.path in self._profile_paths:
                 self.profile_box.current(self._profile_paths.index(self.profile.path))
             return
         self.profile = profile
+        self._index_stamp = stamp
+        self._newer_on_disk = False
         self._fill_container_list()
         containers = profile.containers
         advanced = self.advanced_var.get()
@@ -886,7 +894,10 @@ class EditorApp:
         name = self.container.name
         try:
             backup = self.profile.save(name, self.document, self.backup_root)
-        except (saves.GameRunningError, saves.StaleSaveError) as exc:
+        except saves.StaleSaveError:
+            self._reapply_to_newer_save(name)
+            return
+        except saves.GameRunningError as exc:
             messagebox.showwarning(APP_TITLE, str(exc), parent=self.root)
             return
         except saves.SaveFailedError as exc:
@@ -905,6 +916,50 @@ class EditorApp:
             f"The previous version was backed up to:\n{backup}",
             parent=self.root,
         )
+
+    def _reapply_to_newer_save(self, name: str) -> None:
+        """The game saved this container after it was loaded: re-apply the edits to the newer save."""
+        label = self.container.label
+        if not messagebox.askyesno(
+            "Newer save found",
+            f"Minecraft Dungeons II saved {label} after the editor loaded it, probably while you were playing.\n\n"
+            "The editor will load that newer save and re-apply your changes to it, so you keep both. You'll see the "
+            "list of changes again before anything is saved.",
+            parent=self.root,
+        ):
+            return
+        try:
+            newer = saves.SaveProfile(self.profile.path)
+        except (OSError, wgs.WgsFormatError) as exc:
+            messagebox.showerror(APP_TITLE, f"Could not read the newer save:\n{exc}", parent=self.root)
+            return
+        container = newer.get(name)
+        if container is None or container.kind is not saves.Kind.EDITABLE or container.decoded is None:
+            messagebox.showerror(APP_TITLE, f"{label} can't be edited any more.", parent=self.root)
+            return
+        merged, problems = merge.reapply(self.original, self.document, container.decoded.document)
+        self.change_count = 0  # the edits now live in ``merged``
+        self._open_profile(newer.path, keep=name, profile=newer)
+        self._set_document(merged)
+        if problems:
+            shown = problems[:12] + ([f"… and {len(problems) - 12} more"] if len(problems) > 12 else [])
+            messagebox.showwarning(
+                "Some changes couldn't be re-applied", "\n".join(f"• {problem}" for problem in shown), parent=self.root
+            )
+        if self.change_count:
+            self.save_to_game()
+        else:
+            messagebox.showinfo(APP_TITLE, "The newer save already has all of your changes. Nothing to save.", parent=self.root)
+
+    def _set_document(self, document: Any) -> None:
+        """Show ``document`` as the edited version of the container on screen."""
+        self.document = document
+        self._rebuild_tree()
+        self._load_hero_tab()
+        self._update_changes()
+        self._raw_stale = True
+        if self._raw_tab_visible():
+            self._refresh_raw()
 
     # ---------------------------------------------------------------- raw JSON
 
@@ -1137,7 +1192,40 @@ class EditorApp:
                 self.game_var.set("●  Game is closed. Saving is allowed.")
                 self.game_label.configure(style="Closed.TLabel")
             self._update_buttons()
+        self._polls += 1
+        if self._polls % 4 == 0:  # every 2 seconds
+            self._check_disk()
         self._poll_job = self.root.after(500, self._poll_game_results)
+
+    @staticmethod
+    def _read_index_stamp(path: Path) -> tuple | None:
+        try:
+            stat = (Path(path) / wgs.INDEX_FILE).stat()
+        except OSError:
+            return None
+        return stat.st_mtime_ns, stat.st_size
+
+    def _check_disk(self) -> None:
+        """Notice when the game saved the container on screen after it was loaded. With nothing
+        unsaved, load the new version; otherwise say so (saving then re-applies the edits)."""
+        if self.profile is None or self.container is None or self.game_running is None or self.game_running:
+            return  # while the game runs it keeps saving; look again once it's closed
+        stamp = self._read_index_stamp(self.profile.path)
+        if stamp is None or stamp == self._index_stamp:
+            return
+        try:
+            entry = wgs.read_index(self.profile.path).find(self.container.name)
+        except (OSError, wgs.WgsFormatError):
+            return  # caught in the middle of a write; look again next time
+        self._index_stamp = stamp
+        if entry is None or entry.revision == self.container.entry.revision:
+            return  # only the upload state changed
+        if self.change_count == 0 and not self.hero_tab.has_pending_input():
+            self._open_profile(self.profile.path, keep=self.container.name)
+            self.status_var.set("The game saved this hero since it was loaded, so the editor loaded the new version.")
+        elif not self._newer_on_disk:
+            self._newer_on_disk = True
+            self.status_var.set("The game saved this hero after you loaded it. When you save, your changes are re-applied to the new version.")
 
     def _on_close(self) -> None:
         if self._confirm_discard():

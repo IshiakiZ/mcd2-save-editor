@@ -776,7 +776,7 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         name, value = attribute["AttributeName"], attribute.get("CurrentValue")
         if name in old_stats and old_stats[name] != value:
             lines.append(f"{attribute_label(name)}: {format_amount(old_stats[name])} → {format_amount(value)}")
-    old_items, new_items = _items_by_identity(old), _items_by_identity(new)
+    old_items, new_items = items_by_identity(old), items_by_identity(new)
     for key, item in old_items.items():
         other = new_items.get(key)
         if other is None:
@@ -802,7 +802,7 @@ def describe_changes(before: dict, after: dict) -> list[str]:
     return lines
 
 
-def _items_by_identity(hero: Hero) -> dict[tuple, Item]:
+def items_by_identity(hero: Hero) -> dict[tuple, Item]:
     """Items keyed by their random seed (unique per item), so edits can be matched up."""
     found: dict[tuple, Item] = {}
     for item in hero.items():

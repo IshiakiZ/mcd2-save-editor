@@ -1,3 +1,4 @@
+import copy
 import gc
 import json
 import tempfile
@@ -7,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from dungeons2_editor import gui, saves
+from dungeons2_editor.hero import Hero
 from dungeons2_editor.item_picker import ItemPicker
 
 from .helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode
@@ -466,6 +468,34 @@ class HeroTabTests(WindowTestCase):
         self.root.update()
         self.assertEqual(dialog.title_var.get(), "Melee damage")
         dialog.destroy()
+
+    def game_saves(self, change):
+        """The game saves the hero while the editor has it open (a play session, or the Xbox app syncing)."""
+        game = saves.SaveProfile(self.profile_path)
+        document = copy.deepcopy(game.get(HERO).decoded.document)
+        change(Hero(document))
+        game.save(HERO, document, self.dir / "game-backups", check_game=lambda: [])
+        self.app.game_running = []
+
+    def test_reloads_when_the_game_saves_and_nothing_is_unsaved(self):
+        self.game_saves(lambda hero: hero.set_attributes({"XP": 3000}))
+        self.app._check_disk()
+        self.assertEqual(self.tab.stat_vars["XP"].get(), "3000")
+        self.assertIn("loaded the new version", self.app.status_var.get())
+
+    def test_saving_after_the_game_saved_reapplies_your_changes(self):
+        self.tab.stat_vars["Emeralds"].set("5000")
+        self.assertTrue(self.tab._apply_stat("Emeralds"))
+        self.game_saves(lambda hero: hero.set_attributes({"XP": 3000}))
+        self.app._check_disk()
+        self.assertIn("re-applied", self.app.status_var.get())
+        self.assertEqual(self.tab.stat_vars["Emeralds"].get(), "5000")  # your change is kept
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertEqual([call.args[0] for call in ask.call_args_list], ["Save to game", "Newer save found", "Save to game"])
+        self.assertIn("Emeralds: 55 → 5,000", ask.call_args_list[2].args[1])
+        hero = self.saved_hero()
+        self.assertEqual((hero.attribute("Emeralds"), hero.attribute("XP")), (5000, 3000))  # yours and the game's
 
     def test_simple_mode_stops_stats_at_the_game_cap(self):
         self.tab.stat_vars["Emeralds"].set("50000")

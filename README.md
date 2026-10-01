@@ -31,7 +31,8 @@ save for people who want it.
 - **Simple and Advanced modes:** Simple keeps numbers within the game's caps and hides the technical parts.
   Advanced adds a tree of every value in the save, the raw JSON, the settings save and raw item IDs.
 - **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
-  after writing, and an automatic rollback if anything fails.
+  after writing, and an automatic rollback if anything fails. If the game saves your hero while the editor is open,
+  the editor loads the new version, or re-applies your unsaved changes to it, so neither side's progress is lost.
 
 | Add items | Kits |
 |---|---|

@@ -251,6 +251,19 @@ class HeroTab(ttk.Frame):
         self._shown = None
         self._fill_items()
 
+    def has_pending_input(self) -> bool:
+        """Whether something has been typed into a field but not applied yet."""
+        if self.hero is None:
+            return False
+        if any(var.get().strip() != _number_text(self.hero.attribute(name)) for name, var in self.stat_vars.items()):
+            return True
+        if self._shown is None or self._shown >= len(self.hero.items()):
+            return False
+        item = self.hero.item(self._shown)
+        return not item.is_cosmetic and (
+            self.power_var.get().strip() != _number_text(item.power) or self.count_var.get().strip() != str(item.count)
+        )
+
     def commit_pending(self) -> bool:
         """Apply anything typed but not applied yet. False if something typed is invalid."""
         ok = all([self._apply_stat(name) for name in list(self.stat_vars)])
