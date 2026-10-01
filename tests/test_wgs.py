@@ -73,8 +73,9 @@ class WriteContainerTests(unittest.TestCase):
         self.assertEqual((after.package, after.account, after.footer), (before.package, before.account, before.footer))
 
         new_blob = wgs.read_manifest(self.profile, new_entry).blobs[0]
-        self.assertEqual(new_blob.cloud_guid, old_blob.cloud_guid)
-        self.assertNotEqual(new_blob.local_guid, old_blob.local_guid)
+        # Like every revision the game writes: one new ID, used as both the cloud name and the file name.
+        self.assertEqual(new_blob.cloud_guid, new_blob.local_guid)
+        self.assertNotIn(new_blob.cloud_guid, (old_blob.cloud_guid, old_blob.local_guid))
         self.assertEqual(wgs.read_blobs(self.profile, new_entry), {"Data": b"new data!"})
         folder = self.profile / new_entry.folder_name
         self.assertEqual(sorted(path.name for path in folder.iterdir()), sorted([new_blob.file_name, "container.5"]))

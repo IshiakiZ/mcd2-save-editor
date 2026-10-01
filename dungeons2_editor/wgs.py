@@ -272,7 +272,10 @@ def write_container(profile: Path, name: str, blobs: dict[str, bytes]) -> IndexE
     if sorted(blob.name for blob in old_manifest.blobs) != sorted(blobs):
         raise ValueError(f"container {name!r} holds blobs {[b.name for b in old_manifest.blobs]}, got {sorted(blobs)}")
 
-    new_refs = [BlobRef(blob.name, blob.cloud_guid, uuid.uuid4()) for blob in old_manifest.blobs]
+    # Every revision the game writes gives each blob one new ID, used both as its cloud name and its
+    # file name. Keeping the old cloud name (as earlier versions of this editor did) tells the Xbox
+    # app the cloud already has the data, so it can bring the old data back and lose the edit.
+    new_refs = [BlobRef(blob.name, guid, guid) for blob, guid in ((blob, uuid.uuid4()) for blob in old_manifest.blobs)]
     now = filetime_now()
     new_entry = dataclasses.replace(
         entry,

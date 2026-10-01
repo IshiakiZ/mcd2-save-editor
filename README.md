@@ -64,6 +64,12 @@ double-click **Start Save Editor.bat**. Run that way, backups, pictures and sett
 save first copies your whole save folder into `backups\`, and **Restore…** puts any of those back. Backups contain
 your sign-in token, so don't share them.
 
+> **Versions before 1.2.3 could lose edits and progress.** They wrote save files differently from the game (they
+> kept the old cloud ID), so the Xbox app's cloud sync could bring the old data back. Edits then didn't show up in
+> the game, and in one case the hero went back to a much older copy. 1.2.3 writes saves the way the game does. The
+> game's own cloud save (on by default) can also bring back an older copy of a hero, so check one small change in
+> the game before making more.
+
 ## What it can't do
 
 - **Online heroes** are stored on the game's servers, so no save editor can change them. When you create a hero,

@@ -1,3 +1,13 @@
+## What's new in 1.2.3: important fix, please update
+
+- **Saves are now written exactly the way the game writes them.** Earlier versions gave each new save file a new
+  local name but kept its old cloud ID. The game always uses one new ID for both. Because of that, the Xbox app's
+  cloud sync could bring back the old data: edits didn't show up in the game, and in one case the hero went back
+  to a much older copy, losing progress.
+- If an edited hero lost progress, the editor's backups hold your saves from just before each edit. Use an
+  unedited backup, made before your first edit, and check one small change in the game before making more. The
+  game's own cloud save, on by default, can also bring back an older copy of a hero.
+
 ## What's new in 1.2.2
 
 - **No more "changed on disk" dead end.** If the game saves your hero while the editor is open (for example, you
