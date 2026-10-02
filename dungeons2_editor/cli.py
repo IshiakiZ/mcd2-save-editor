@@ -16,7 +16,7 @@ def _pick_profile(explicit: Path | None) -> saves.SaveProfile:
         return saves.SaveProfile(explicit)
     profiles = saves.find_profiles()
     if not profiles:
-        raise SystemExit("No Minecraft Dungeons II saves found. Use --profile to point at a folder with containers.index.")
+        raise SystemExit("No Minecraft Dungeons II saves found. Use --profile to point at a save folder (Xbox: has containers.index; Steam: has Character….sav files).")
     return saves.SaveProfile(profiles[0])
 
 
@@ -37,11 +37,14 @@ def _confirm(question: str, assume_yes: bool) -> bool:
 
 def cmd_list(args: argparse.Namespace) -> int:
     profile = _pick_profile(args.profile)
-    print(f"Profile: {profile.path}")
+    print(f"Profile: {profile.path}  ({'Steam' if profile.is_steam else 'Xbox app'} layout)")
     for container in profile.containers:
         entry = container.entry
-        sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, str(entry.sync_state))
-        print(f"  {container.name:<28} {container.kind.value:<10} rev {entry.revision:<4} {entry.size:>9,} bytes  {sync}")
+        if profile.is_steam:
+            print(f"  {container.name:<28} {container.kind.value:<10} {entry.size:>9,} bytes  {container.note}")
+        else:
+            sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, str(entry.sync_state))
+            print(f"  {container.name:<28} {container.kind.value:<10} rev {entry.revision:<4} {entry.size:>9,} bytes  {sync}")
     return 0
 
 
@@ -127,9 +130,11 @@ def cmd_items(args: argparse.Namespace) -> int:
 def cmd_verify(args: argparse.Namespace) -> int:
     """Check, without writing anything, that every editable container re-encodes byte for byte."""
     profile = _pick_profile(args.profile)
-    index_bytes = (profile.path / wgs.INDEX_FILE).read_bytes()
-    ok = wgs.serialize_index(wgs.parse_index(index_bytes)) == index_bytes
-    print(f"containers.index round trip: {'exact' if ok else 'DIFFERENT'}")
+    ok = True
+    if not profile.is_steam:
+        index_bytes = (profile.path / wgs.INDEX_FILE).read_bytes()
+        ok = wgs.serialize_index(wgs.parse_index(index_bytes)) == index_bytes
+        print(f"containers.index round trip: {'exact' if ok else 'DIFFERENT'}")
     for container in profile.containers:
         if container.kind is saves.Kind.EDITABLE:
             exact = container.decoded.exact
@@ -165,7 +170,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     # The folder options work before or after the command: "--profile X list" and "list --profile X".
     shared = argparse.ArgumentParser(add_help=False)
-    shared.add_argument("--profile", type=Path, default=argparse.SUPPRESS, help="save folder that contains containers.index (default: auto-detect)")
+    shared.add_argument("--profile", type=Path, default=argparse.SUPPRESS, help="save folder: contains containers.index (Xbox app) or Character….sav files (Steam). Default: auto-detect")
     shared.add_argument("--backups", type=Path, default=argparse.SUPPRESS, help="where backups are kept")
     shared.add_argument("--icons", type=Path, default=argparse.SUPPRESS, help="folder of item pictures")
     parser = argparse.ArgumentParser(prog="dungeons2_editor", description="Minecraft Dungeons II save editor.", parents=[shared])

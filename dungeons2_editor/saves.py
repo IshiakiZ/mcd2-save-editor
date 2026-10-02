@@ -6,6 +6,7 @@ import csv
 import enum
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -13,11 +14,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from . import codec, paths, wgs
+from . import codec, paths, steam, wgs
 from .hero import Hero, is_hero_document
 
 PACKAGE_PATTERN = "Microsoft.MinecraftDungeons2_*"
-GAME_EXECUTABLES = ("Dungeons-WinGDK-Shipping.exe", "Dungeons.exe")
+GAME_EXECUTABLES = ("Dungeons-WinGDK-Shipping.exe", "Dungeons-Win64-Shipping.exe", "Dungeons.exe")
+# The Steam build's executable name isn't known for certain, so any Dungeons "...-Shipping.exe" counts too.
+_GAME_PROCESS = re.compile(r"^dungeons[\w.-]*shipping\.exe$", re.IGNORECASE)
 DEFAULT_BACKUP_ROOT = paths.data_dir() / "backups"
 BACKUP_INFO_FILE = "backup-info.json"
 
@@ -62,37 +65,99 @@ class SaveFailedError(RuntimeError):
         self.rolled_back = rolled_back
 
 
+def _is_game_process(name: str) -> bool:
+    return name.lower() in {exe.lower() for exe in GAME_EXECUTABLES} or bool(_GAME_PROCESS.match(name))
+
+
+def _linux_process_names() -> set[str]:
+    """Executable names of every running process. Under Proton the game is a Wine process, so the name that
+    matters is the .exe in the command line (``Z:\\...\\Dungeons-Win64-Shipping.exe``), not the process name."""
+    names: set[str] = set()
+    proc = Path("/proc")
+    try:
+        entries = [entry for entry in proc.iterdir() if entry.name.isdigit()]
+    except OSError:
+        return names
+    for entry in entries:
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        for argument in raw.split(b"\0")[:3]:
+            text = argument.decode("utf-8", errors="replace")
+            if text.lower().endswith(".exe"):
+                names.add(re.split(r"[\\/]", text)[-1])
+    return names
+
+
 def running_game_processes() -> list[str]:
     """Names of Minecraft Dungeons II processes that are currently running."""
-    if os.name != "nt":
-        return []
-    try:
-        result = subprocess.run(
-            ["tasklist", "/FO", "CSV", "/NH"],
-            capture_output=True,
-            text=True,
-            errors="replace",
-            timeout=15,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        )
-    except (OSError, subprocess.SubprocessError):
-        return []
-    running = {row[0].lower() for row in csv.reader(result.stdout.splitlines()) if row}
-    return [exe for exe in GAME_EXECUTABLES if exe.lower() in running]
+    if os.name == "nt":
+        try:
+            result = subprocess.run(
+                ["tasklist", "/FO", "CSV", "/NH"],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=15,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+        except (OSError, subprocess.SubprocessError):
+            return []
+        names = {row[0] for row in csv.reader(result.stdout.splitlines()) if row}
+    else:
+        names = _linux_process_names()
+    return sorted(name for name in names if _is_game_process(name))
+
+
+def layout_of(path: Path) -> str:
+    """``"steam"`` for a folder of ``.sav`` files, ``"xbox"`` for a folder with ``containers.index``."""
+    return "steam" if steam.is_steam_folder(Path(path)) else "xbox"
 
 
 def find_profiles() -> list[Path]:
-    """Save folders (one per Xbox user) of the installed game, most recently used first."""
+    """Save folders of the installed game (Xbox app: one per Xbox user; Steam: the SaveGames folder), most
+    recently used first."""
+    found: list[tuple[float, Path]] = []
     local = os.environ.get("LOCALAPPDATA")
-    if not local:
-        return []
-    indexes = Path(local, "Packages").glob(f"{PACKAGE_PATTERN}/SystemAppData/wgs/*/{wgs.INDEX_FILE}")
-    return [index.parent for index in sorted(indexes, key=lambda p: p.stat().st_mtime, reverse=True)]
+    if local:
+        indexes = Path(local, "Packages").glob(f"{PACKAGE_PATTERN}/SystemAppData/wgs/*/{wgs.INDEX_FILE}")
+        found += [(index.stat().st_mtime, index.parent) for index in indexes]
+    for folder in steam.find_folders():
+        try:
+            newest = max(entry.revision for entry in steam.read_entries(folder)) / 1e9
+        except (OSError, ValueError):
+            continue
+        found.append((newest, folder))
+    return [path for _, path in sorted(found, key=lambda pair: pair[0], reverse=True)]
+
+
+def profile_stamp(path: Path) -> tuple | None:
+    """A value that changes when the game (or anything) writes to the save folder; None if unreadable."""
+    path = Path(path)
+    if layout_of(path) == "steam":
+        return steam.stamp(path)
+    try:
+        stat = (path / wgs.INDEX_FILE).stat()
+    except OSError:
+        return None
+    return stat.st_mtime_ns, stat.st_size
+
+
+def current_revision(path: Path, name: str) -> int | None:
+    """The revision of container ``name`` on disk now, or None if it's gone. May raise OSError or
+    ``wgs.WgsFormatError`` when the folder is caught mid-write."""
+    path = Path(path)
+    if layout_of(path) == "steam":
+        entry = steam.find_entry(path, name)
+    else:
+        entry = wgs.read_index(path).find(name)
+    return None if entry is None else entry.revision
 
 
 @dataclass
 class Container:
-    entry: wgs.IndexEntry
+    entry: wgs.IndexEntry | steam.LooseEntry
     kind: Kind
     note: str
     blobs: dict[str, bytes]  # raw blob bytes as loaded; empty for protected containers
@@ -129,23 +194,43 @@ class Backup:
 
 
 class SaveProfile:
-    """The containers of one Xbox user's Minecraft Dungeons II saves."""
+    """The containers of one set of Minecraft Dungeons II saves: one Xbox user's containers, or the Steam
+    version's folder of .sav files. ``layout`` says which."""
 
     def __init__(self, path: Path):
         self.path = Path(path)
+        self.layout = layout_of(self.path)
         self.reload()
 
-    def reload(self) -> None:
-        self.index = wgs.read_index(self.path)
-        self.containers = [self._load(entry) for entry in self.index.entries]
+    @property
+    def is_steam(self) -> bool:
+        return self.layout == "steam"
 
-    def _load(self, entry: wgs.IndexEntry) -> Container:
+    def reload(self) -> None:
+        if self.is_steam:
+            self.index = None
+            entries = steam.read_entries(self.path)
+        else:
+            self.index = wgs.read_index(self.path)
+            entries = self.index.entries
+        self.containers = [self._load(entry) for entry in entries]
+
+    def _read_blobs(self, entry) -> dict[str, bytes]:
+        return steam.read_blobs(self.path, entry) if self.is_steam else wgs.read_blobs(self.path, entry)
+
+    def _write_blobs(self, name: str, blobs: dict[str, bytes]) -> None:
+        if self.is_steam:
+            steam.write_file(self.path, name, blobs)
+        else:
+            wgs.write_container(self.path, name, blobs)
+
+    def _load(self, entry) -> Container:
         if entry.name in PROTECTED_CONTAINERS:
             return Container(entry, Kind.PROTECTED, PROTECTED_CONTAINERS[entry.name], blobs={})
         if entry.sync_state == wgs.DELETED:
             return Container(entry, Kind.UNSUPPORTED, "Marked as deleted.", blobs={})
         try:
-            blobs = wgs.read_blobs(self.path, entry)
+            blobs = self._read_blobs(entry)
         except (OSError, wgs.WgsFormatError) as exc:
             return Container(entry, Kind.UNSUPPORTED, f"Could not be read: {exc}", blobs={})
         for blob_name, raw in blobs.items():
@@ -156,6 +241,8 @@ class SaveProfile:
             if is_hero_document(decoded.document) and Hero(decoded.document).is_online:
                 return Container(entry, Kind.PROTECTED, ONLINE_HERO_NOTE, blobs, blob_name, decoded)
             return Container(entry, Kind.EDITABLE, "Save data", blobs, blob_name, decoded)
+        if any(raw.startswith(b"GVAS") for raw in blobs.values()):
+            return Container(entry, Kind.UNSUPPORTED, "Unreal Engine binary save (GVAS). This format isn't supported yet.", blobs)
         return Container(entry, Kind.UNSUPPORTED, "Encrypted or unknown format. Not shown.", blobs)
 
     def get(self, name: str) -> Container | None:
@@ -187,7 +274,7 @@ class SaveProfile:
         backup = make_backup(self.path, backup_root, f"Before saving {container.label}")
 
         def write() -> None:
-            wgs.write_container(self.path, name, {**container.blobs, container.blob_name: raw})
+            self._write_blobs(name, {**container.blobs, container.blob_name: raw})
             written = SaveProfile(self.path).get(name)
             if written is None or written.decoded is None or written.decoded.document != document:
                 raise RuntimeError("the saved data did not read back correctly")
@@ -204,9 +291,9 @@ class SaveProfile:
     ) -> list[str]:
         """Write the editable containers stored in ``backup`` back as new revisions.
 
-        Writing them as new revisions (instead of copying the old files back)
-        makes Gaming Services upload them rather than re-download the cloud
-        copy. Returns the names of the containers that were restored.
+        On the Xbox layout, writing them as new revisions (instead of copying the
+        old files back) makes Gaming Services upload them rather than
+        re-download the cloud copy. On Steam the files are simply replaced. Returns the names of the containers that were restored.
         """
         self._ensure_game_closed(check_game)
         current = SaveProfile(self.path)
@@ -229,7 +316,7 @@ class SaveProfile:
 
         def write() -> None:
             for container in to_restore:
-                wgs.write_container(self.path, container.name, container.blobs)
+                self._write_blobs(container.name, container.blobs)
             written = SaveProfile(self.path)
             for container in to_restore:
                 if written.get(container.name).blobs != container.blobs:
@@ -247,8 +334,11 @@ class SaveProfile:
             )
 
     def _ensure_unchanged(self, container: Container) -> None:
-        entry = wgs.read_index(self.path).find(container.name)
-        if entry is None or entry.revision != container.entry.revision or wgs.read_blobs(self.path, entry) != container.blobs:
+        if self.is_steam:
+            entry = steam.find_entry(self.path, container.name)
+        else:
+            entry = wgs.read_index(self.path).find(container.name)
+        if entry is None or entry.revision != container.entry.revision or self._read_blobs(entry) != container.blobs:
             raise StaleSaveError(
                 f"{container.label} changed on disk after it was loaded (the game probably saved). Reload and make your edits again."
             )
@@ -279,7 +369,7 @@ def list_backups(backup_root: Path = DEFAULT_BACKUP_ROOT) -> list[Backup]:
     for folder in root.iterdir():
         try:
             info = json.loads((folder / BACKUP_INFO_FILE).read_text(encoding="utf-8"))
-            copy = next(child for child in folder.iterdir() if (child / wgs.INDEX_FILE).is_file())
+            copy = next(child for child in folder.iterdir() if child.is_dir() and ((child / wgs.INDEX_FILE).is_file() or steam.is_steam_folder(child)))
             created = datetime.fromisoformat(info["created"])
         except (OSError, ValueError, KeyError, StopIteration):
             continue

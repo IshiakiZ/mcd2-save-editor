@@ -86,3 +86,29 @@ class DetectionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NumberLiteralTests(unittest.TestCase):
+    """Numbers are written back as read, unless they were changed."""
+
+    TEXT = '{"Z":4100.0001169648413,"X":15850,"Y":0.218016,"List":[1.5,2.25]}'
+
+    def test_unusual_number_text_survives_a_round_trip(self):
+        decoded = codec.decode_blob(self.TEXT.encode())
+        self.assertTrue(decoded.exact)
+        self.assertEqual(codec.encode_blob(decoded.document, decoded.style).decode(), self.TEXT)
+
+    def test_it_survives_a_deep_copy(self):
+        import copy
+
+        decoded = codec.decode_blob(self.TEXT.encode())
+        clone = copy.deepcopy(decoded.document)
+        self.assertEqual(clone, decoded.document)
+        self.assertEqual(codec.encode_blob(clone, decoded.style).decode(), self.TEXT)
+
+    def test_a_changed_number_is_written_in_the_usual_form(self):
+        decoded = codec.decode_blob(self.TEXT.encode())
+        decoded.document["Z"] = 4100.0001169648413 + 1
+        decoded.document["List"][0] = 2.5
+        out = codec.encode_blob(decoded.document, decoded.style).decode()
+        self.assertEqual(out, '{"Z":4101.000116964841,"X":15850,"Y":0.218016,"List":[2.5,2.25]}')

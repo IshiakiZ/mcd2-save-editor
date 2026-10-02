@@ -50,7 +50,7 @@ PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")  # newest first
 NOT_WRITTEN = "Nothing is written to the game until save_changes."
 
 INSTRUCTIONS = (
-    "Edits Minecraft Dungeons II heroes saved on this PC (the Xbox app / PC Game Pass version). Start with "
+    "Edits Minecraft Dungeons II heroes saved on this PC (the Xbox app / PC Game Pass or the Steam version). Start with "
     "list_heroes and get_hero. set_stats, add_item, change_item, equip_item, unequip_item, copy_item, delete_item "
     "and apply_preset collect changes in a draft, like unsaved changes in the editor window: nothing reaches the "
     "game until save_changes, which needs Minecraft Dungeons II to be closed and backs up the whole save folder "
@@ -207,7 +207,7 @@ class EditorServer:
         if path is None:
             found = saves.find_profiles()
             if not found:
-                raise ToolError("No Minecraft Dungeons II saves were found on this PC. Play the game once (Xbox app version), then try again.")
+                raise ToolError("No Minecraft Dungeons II saves were found on this PC. Play the game once (Xbox app or Steam version), then try again.")
             path = found[0]
         try:
             return saves.SaveProfile(path)
