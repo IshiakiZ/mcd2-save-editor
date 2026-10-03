@@ -150,6 +150,65 @@ class SaveProfileTests(unittest.TestCase):
         self.assertEqual(snapshot(self.profile_path), before)
 
 
+class SteamSaveTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.profile_path = self.root / saves.STEAM_SAVE_DIR
+        self.profile_path.mkdir(parents=True)
+        self.save_path = self.profile_path / "Character00000000-0000-1000-8000-000000000002.sav"
+        self.original = hero_save_text().encode("utf-8")
+        self.save_path.write_bytes(self.original)
+        self.backups = self.root / "backups"
+
+    def test_finds_steam_profile_from_local_appdata(self):
+        with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.root)}):
+            self.assertEqual(saves.find_profiles(), [self.profile_path])
+
+    def test_steam_auth_and_device_files_are_never_decoded(self):
+        protected_path = self.root / "protected"
+        protected_path.mkdir()
+        names = ("auth_dynamic_ent.jwt.bin", "entitlements.jwt.bin", "Guid.bin")
+        for name in names:
+            (protected_path / f"{name}.sav").write_bytes(b"private platform data")
+
+        with mock.patch.object(codec, "decode_blob", side_effect=AssertionError("protected data was read")):
+            profile = saves.SaveProfile(protected_path)
+
+        self.assertTrue(all(container.kind is saves.Kind.PROTECTED for container in profile.containers))
+        self.assertTrue(all(container.blobs == {} for container in profile.containers))
+
+    def test_loads_and_saves_standalone_hero_file_with_backup(self):
+        profile = saves.SaveProfile(self.profile_path)
+        container = profile.containers[0]
+        self.assertTrue(profile.is_steam)
+        self.assertEqual(container.kind, saves.Kind.EDITABLE)
+        self.assertEqual(container.hero.level, 1)
+
+        document = copy.deepcopy(container.decoded.document)
+        document["CharacterSaveV1"]["Ability"]["Attributes"][1]["CurrentValue"] = 777
+        backup = profile.save(container.name, document, self.backups, check_game=NOT_RUNNING)
+
+        saved = saves.SaveProfile(self.profile_path).get(container.name)
+        self.assertEqual(saved.decoded.document, document)
+        self.assertEqual(codec.decode_blob(self.save_path.read_bytes()).document, document)
+        self.assertEqual((backup / self.profile_path.name / self.save_path.name).read_bytes(), self.original)
+        self.assertEqual(len(list(self.profile_path.glob("*.sav"))), 1)
+
+    def test_lists_and_restores_steam_backup(self):
+        profile = saves.SaveProfile(self.profile_path)
+        document = copy.deepcopy(profile.containers[0].decoded.document)
+        document["CharacterSaveV1"]["MetaData"]["Level"] = 9
+        profile.save(profile.containers[0].name, document, self.backups, check_game=NOT_RUNNING)
+
+        backup = saves.list_backups(self.backups)[0]
+        restored = saves.SaveProfile(self.profile_path).restore(backup, self.backups, check_game=NOT_RUNNING)
+
+        self.assertEqual(restored, [profile.containers[0].name])
+        self.assertEqual(self.save_path.read_bytes(), self.original)
+
+
 class HeroContainerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

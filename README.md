@@ -129,7 +129,8 @@ your sign-in, account or device data.
   GitHub issue with just those IDs, nothing else from your save.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
-- Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
+- The **Xbox app / PC Game Pass** and **Steam** versions are supported. Steam saves are individual `.sav` files under
+  `%LOCALAPPDATA%\Dungeons\Saved\SaveGames`; the editor backs up the folder and replaces only the selected file.
 - **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
   all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
   removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
@@ -138,7 +139,7 @@ your sign-in, account or device data.
 
 ## How it works
 
-The game stores saves in the Xbox app's standard layout under
+The Xbox app stores saves in its standard layout under
 `%LOCALAPPDATA%\Packages\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\SystemAppData\wgs\`: `containers.index`
 lists named containers, each container folder has a `container.<N>` file naming its data blob, and the blobs hold
 the data.
@@ -151,6 +152,10 @@ the data.
   (`container.<N+1>`), and the container is marked modified so Gaming Services uploads it to the Xbox cloud. Only
   then is the old revision deleted.
 - Sign-in, entitlement and device-ID containers are never read or changed.
+
+The Steam version stores standalone `Character<id>.sav` files under
+`%LOCALAPPDATA%\Dungeons\Saved\SaveGames`. The same save-document codec is used, while backups and writes operate on
+those files directly.
 
 ## Command line
 
@@ -167,7 +172,7 @@ python -m dungeons2_editor ids                                  # item IDs in yo
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 ```
 
-Add `--profile <folder>` to point at a save folder somewhere else.
+Add `--profile <folder>` to point at an Xbox or Steam save folder somewhere else.
 
 ## Research: the fastest way to gear, XP and emeralds
 

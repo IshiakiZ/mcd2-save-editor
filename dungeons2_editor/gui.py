@@ -48,9 +48,8 @@ _SAFE_TEXT = (
     "• Every save first copies your whole save folder into the backups folder. {restore} puts one back.\n"
     "• If the game saves your hero while the editor is open (say you played to check a change), the editor loads "
     "the new version. If you have unsaved changes, it re-applies them to the new version when you save.\n"
-    "• Changes are written the same way the game writes them and are marked for upload, so the Xbox cloud "
-    "keeps the edited version.\n"
-    "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
+    "• Changes are written in the platform's save format, so Xbox and Steam cloud sync can keep the edited version.\n"
+    "• Xbox sign-in, entitlement and device-ID containers are never read or changed.\n"
     "• Backups contain your sign-in token, so don't share them."
 )
 _DATA_TEXT = (
@@ -60,7 +59,8 @@ _DATA_TEXT = (
     "pages. Item pictures: the Minecraft Wiki."
 )
 _FILES_TEXT = (
-    "Saves: %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
+    "Xbox saves: %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
+    "Steam saves: %LOCALAPPDATA%\\Dungeons\\Saved\\SaveGames\n"
     "Backups: {backups}"
 )
 
@@ -229,7 +229,7 @@ class EditorApp:
         self._auto_profiles: set[Path] = set()
         self._containers_by_iid: dict[str, saves.Container] = {}
         self._game_results: queue.Queue[list[str]] = queue.Queue()
-        self._index_stamp: tuple | None = None  # containers.index as last loaded, to notice the game saving
+        self._index_stamp: tuple | None = None  # profile files as last loaded, to notice the game saving
         self._newer_on_disk = False  # the game saved the container on screen after it was loaded
         self._polls = 0
         self._search_job: str | None = None
@@ -677,7 +677,9 @@ class EditorApp:
 
     def _profile_label(self, path: Path) -> str:
         if path in self._auto_profiles:
-            return f"Xbox user {path.name.split('_', 1)[0]}"
+            if (path / wgs.INDEX_FILE).is_file():
+                return f"Xbox user {path.name.split('_', 1)[0]}"
+            return "Steam saves"
         return str(path)
 
     def _open_profile(self, path: Path, keep: str | None = None, profile: saves.SaveProfile | None = None) -> None:
@@ -898,12 +900,12 @@ class EditorApp:
             self._open_profile(self.profile.path, keep=self.container.name if self.container else None)
 
     def _open_folder(self) -> None:
-        chosen = filedialog.askdirectory(title="Choose a folder that contains containers.index", parent=self.root)
+        chosen = filedialog.askdirectory(title="Choose an Xbox or Steam save folder", parent=self.root)
         if not chosen:
             return
         path = Path(chosen)
-        if not (path / wgs.INDEX_FILE).is_file():
-            messagebox.showerror(APP_TITLE, f"{path} has no {wgs.INDEX_FILE} file.", parent=self.root)
+        if not (path / wgs.INDEX_FILE).is_file() and not any(path.glob("*.sav")):
+            messagebox.showerror(APP_TITLE, f"{path} has no {wgs.INDEX_FILE} file or Steam .sav files.", parent=self.root)
             return
         if self._confirm_discard():
             self._load_profiles(select=path)
@@ -965,13 +967,16 @@ class EditorApp:
         when = datetime.fromtimestamp(wgs.filetime_to_unix(entry.mtime))
         self.title_var.set(container.label)
         if self.advanced_var.get():
-            sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, f"sync state {entry.sync_state}")
-            meta = f"{container.name} · revision {entry.revision} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M} · {sync}"
+            if self.profile is not None and self.profile.is_steam:
+                meta = f"{container.name} · Steam save · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M}"
+            else:
+                sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, f"sync state {entry.sync_state}")
+                meta = f"{container.name} · revision {entry.revision} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M} · {sync}"
             if container.decoded is not None and not container.decoded.exact:
                 meta += " · formatting will be tidied when saved"
         else:
             meta = f"Last saved {when:%d %B %Y at %H:%M}"
-            if entry.sync_state != wgs.SYNCED:
+            if self.profile is not None and not self.profile.is_steam and entry.sync_state != wgs.SYNCED:
                 meta += " · waiting to upload to the Xbox cloud (it will next time you play)"
         self.meta_var.set(meta)
 
@@ -1566,11 +1571,7 @@ class EditorApp:
 
     @staticmethod
     def _read_index_stamp(path: Path) -> tuple | None:
-        try:
-            stat = (Path(path) / wgs.INDEX_FILE).stat()
-        except OSError:
-            return None
-        return stat.st_mtime_ns, stat.st_size
+        return saves.profile_stamp(path)
 
     def _check_disk(self) -> None:
         """Notice when the game saved the container on screen after it was loaded. With nothing
@@ -1579,6 +1580,21 @@ class EditorApp:
             return  # while the game runs it keeps saving; look again once it's closed
         stamp = self._read_index_stamp(self.profile.path)
         if stamp is None or stamp == self._index_stamp:
+            return
+        if self.profile.is_steam:
+            try:
+                latest = saves.SaveProfile(self.profile.path).get(self.container.name)
+            except OSError:
+                return
+            self._index_stamp = stamp
+            if latest is None or latest.blobs == self.container.blobs:
+                return
+            if self.change_count == 0 and not self._hero_editor().has_pending_input():
+                self._open_profile(self.profile.path, keep=self.container.name)
+                self.status_var.set("The game saved this hero since it was loaded, so the editor loaded the new version.")
+            elif not self._newer_on_disk:
+                self._newer_on_disk = True
+                self.status_var.set("The game saved this hero after you loaded it. When you save, your changes are re-applied to the new version.")
             return
         try:
             entry = wgs.read_index(self.profile.path).find(self.container.name)
