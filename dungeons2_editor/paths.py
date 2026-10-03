@@ -26,6 +26,17 @@ def data_dir() -> Path:
     return SOURCE_ROOT
 
 
+def open_in_file_manager(folder: Path) -> None:
+    """Show a folder in Explorer (Windows), Finder (macOS) or the desktop's file manager (Linux)."""
+    import subprocess
+
+    folder = Path(folder)
+    if os.name == "nt":
+        os.startfile(folder)  # type: ignore[attr-defined]
+    else:
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(folder)])
+
+
 def resource(relative: str) -> Path:
     """A file that ships with the editor (bundled inside the .exe, or in the source tree)."""
     return Path(getattr(sys, "_MEIPASS", SOURCE_ROOT)) / relative

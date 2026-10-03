@@ -463,13 +463,25 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         for widget in (self.power_entry, self.count_entry):
             widget.bind("<Return>", lambda _event: self._apply_numbers())
             widget.bind("<FocusOut>", lambda _event: self._apply_numbers())
+
+        self.item_id_row = ttk.Frame(self.item_box, style="Card.TFrame")
+        self.item_id_row.grid(row=3, column=0, sticky="ew", pady=(8, 0))
+        ttk.Label(self.item_id_row, text="ITEM ID", style="CardHeading.TLabel").pack(side="left")
+        self.type_var = tk.StringVar()
+        self.type_box = ttk.Combobox(self.item_id_row, textvariable=self.type_var, width=28)
+        self.type_box.pack(side="left", padx=(8, 0))
+        self.type_box.bind("<Return>", lambda _event: self._apply_type())
+        self.type_box.bind("<FocusOut>", lambda _event: self._apply_type())
+        self.type_box.bind("<<ComboboxSelected>>", lambda _event: self._apply_type())
+        self.item_id_row.grid_remove()
+
         self.power_hint = tk.StringVar()
         ttk.Label(self.item_box, textvariable=self.power_hint, style="CardMuted.TLabel", wraplength=wrap, justify="left").grid(
-            row=3, column=0, sticky="w", pady=(3, 0)
+            row=4, column=0, sticky="w", pady=(3, 0)
         )
 
         self.enchant_box = ttk.Frame(self.item_box, style="Box.TFrame", padding=(10, 8))
-        self.enchant_box.grid(row=4, column=0, sticky="ew", pady=(12, 0))
+        self.enchant_box.grid(row=5, column=0, sticky="ew", pady=(12, 0))
         self.enchant_box.columnconfigure(1, weight=1)
         diamond = self.art.px(34)
         ttk.Label(self.enchant_box, image=self.art.diamond(diamond, gs.CARD_BOX, "#5d6a71"), style="Box.TLabel").grid(
@@ -483,7 +495,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         )
 
         actions = ttk.Frame(self.item_box, style="Card.TFrame")
-        actions.grid(row=5, column=0, sticky="ew", pady=(14, 0))
+        actions.grid(row=6, column=0, sticky="ew", pady=(14, 0))
         actions.columnconfigure((0, 1), weight=1, uniform="actions")
         self.equip_button = ttk.Button(actions, text="EQUIP", style="Card.TButton", command=self.equip_item)
         self.equip_button.grid(row=0, column=0, sticky="ew", padx=(0, 3), pady=(0, 6))
@@ -529,6 +541,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.active = active
         if active:
             self.refresh()
+
+    def set_advanced(self, advanced: bool) -> None:
+        self.advanced = advanced
+        if self.active and self.hero is not None:
+            self._fill_items()
 
     def refresh(self) -> None:
         """Re-read everything from the document, e.g. after it was edited elsewhere."""
@@ -718,8 +735,9 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             x = pad + column * cell_width + (cell_width - size) // 2
             y = pad + row * cell_height
             self._draw_item_tile(canvas, x, y, item)
-            name = fit_lines(item.name, self.fonts.small, cell_width - 4)
-            canvas.create_text(x + size // 2, y + size + self.art.px(3), text=name, anchor="n", justify="center", fill=gs.SOFT, font=self.fonts.small)
+            display = item.tag if self.advanced else item.name
+            label = fit_lines(display, self.fonts.small, cell_width - 4)
+            canvas.create_text(x + size // 2, y + size + self.art.px(3), text=label, anchor="n", justify="center", fill=gs.SOFT, font=self.fonts.small)
             self._item_hits.append(((x, y, x + size, y + size + caption), (x, y, x + size, y + size), item.index))
         if not items:
             canvas.create_text(pad, pad, anchor="nw", text=self._nothing_here(), fill=gs.MUTED, font=self.fonts.body, width=max(width - 2 * pad, 100))
@@ -1016,10 +1034,21 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         elif not slots_for(item.kind, item.piece, self._slot_list or self._slots()):
             self.equip_button.state(["disabled"])
         self._show_parts(self.item_box)
+        if self.advanced:
+            self.type_box["values"] = [entry.tag for entry in self._catalog()]
+            self.type_var.set(item.tag)
+            self.item_id_row.grid()
+            locked = item.equipped_slot or item.is_cosmetic
+            self.type_box.state(["disabled"] if locked else ["!disabled"])
+        else:
+            self.item_id_row.grid_remove()
 
     def _show_stats_card(self) -> None:
         self._shown = None
-        caps = "Simple mode stops at the game's caps, because anything above them is lost in the game."
+        if self.advanced:
+            caps = "Advanced mode: stats can go past the game's caps. The game may lower them on the next save."
+        else:
+            caps = "Simple mode stops at the game's caps, because anything above them is lost in the game."
         self._card_head("YOUR HERO", "STATS & TOWN", f"Changes are kept as you go. {SAVE_REMINDER}", None, caps)
         for child in self.stats_box.winfo_children():
             child.destroy()
@@ -1042,6 +1071,12 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             row=len(self.hero.attributes()), column=0, sticky="w", pady=(10, 0)
         )
         self._show_parts(self.stats_box)
+
+    def _apply_type(self) -> None:
+        if self.hero is not None and self._shown is not None:
+            new_tag = self.type_var.get().strip()
+            if new_tag and new_tag != self.hero.item(self._shown).tag:
+                self._apply_item(tag=new_tag)
 
     # ---------------------------------------------- your own pictures and names
 
@@ -1145,7 +1180,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             return None
         item = self.hero.equipped(slot.tag)
         if item is not None:
-            return f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
+            tip = f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
+            if self.advanced:
+                tip += f"\n{item.tag}"
+            return tip
         if not slot_open(slot, self._hero_level()):
             return f"{slot.label}: opens at level {slot.level}"
         return f"{slot.label}: empty. Double-click to put an item here."
@@ -1155,4 +1193,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if index is None or self.hero is None:
             return None
         item = self.hero.item(index)
-        return f"{item.name}\n{item.rarity} {(item.piece or KIND_NAMES.get(item.kind, item.kind)).lower()} · power {number_text(item.power)}"
+        tip = f"{item.name}\n{item.rarity} {(item.piece or KIND_NAMES.get(item.kind, item.kind)).lower()} · power {number_text(item.power)}"
+        if self.advanced:
+            tip += f"\n{item.tag}"
+        return tip

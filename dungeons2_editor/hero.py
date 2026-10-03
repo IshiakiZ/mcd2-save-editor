@@ -57,7 +57,7 @@ _WHOLE_NUMBER_ATTRIBUTES = set(ATTRIBUTE_LABELS) - {"XP"}
 # The game's caps, from community datamines of build 1.1.1.0 (MetaBot, Maxroll; see
 # mcd2-research/README.md). Anything above a cap is lost in the game, so Simple mode stops there.
 STAT_CAPS = {
-    "Emeralds": 9_999,
+    "Emeralds": 99_999,
     "SpringStone": 100,
     "Level": 100,
     "EnchantmentPoints": 99,  # one per level-up
@@ -70,6 +70,7 @@ STAT_MINIMUMS = {"Level": 1, "VillageMerchantUpgradeLevel": 1, "EnchantsmithUpgr
 # Item groups (SW.Item.<Group>.<Name>) that can't be added: they come from editions and
 # pre-orders, drive quests, or are really currencies.
 NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
+UNIQUE_SUFFIX = "_Unique1"  # the game appends this to a base item ID for its Unique variant
 _ITEM_TAG = re.compile(r"SW\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
 
 _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, Crossbow, ...
@@ -172,8 +173,9 @@ def _game_items_by_id() -> dict[str, GameItem]:
 
 
 def game_item(tag: str) -> GameItem | None:
-    """What the game's item list says about an item ID, if it lists it."""
-    return _game_items_by_id().get(tag)
+    """What the game's item list says about an item ID. For _Unique1 IDs, looks up the base item."""
+    base = tag[: -len(UNIQUE_SUFFIX)] if tag.endswith(UNIQUE_SUFFIX) else tag
+    return _game_items_by_id().get(base)
 
 
 _LOCAL_NAMES: dict[str, str] = {}  # item ID -> the name you gave it (my_items.py)
@@ -191,20 +193,28 @@ def local_name(tag: str) -> str | None:
 
 def name_is_known(tag: str) -> bool:
     """Whether the editor knows what the game calls this item (from the game's item list, or from you)."""
-    known = _game_items_by_id().get(tag)
-    return tag in _LOCAL_NAMES or (known is not None and not known.name_from_id)
+    if tag in _LOCAL_NAMES:
+        return True
+    base = tag[: -len(UNIQUE_SUFFIX)] if tag.endswith(UNIQUE_SUFFIX) else tag
+    known = _game_items_by_id().get(base)
+    return known is not None and not known.name_from_id
 
 
 def display_name(tag: str, rarity: str = "") -> str:
-    """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity."""
-    known = _game_items_by_id().get(tag)
+    """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity.
+    _Unique1 IDs are always treated as Unique variants of the base item."""
+    is_unique_tag = tag.endswith(UNIQUE_SUFFIX)
+    base = tag[: -len(UNIQUE_SUFFIX)] if is_unique_tag else tag
+    known = _game_items_by_id().get(base)
     if known is None or known.name_from_id:
         mine = _LOCAL_NAMES.get(tag)
         if mine:
             return mine
     if known is None:
         return item_name(tag)
-    return known.unique if rarity == "Unique" and known.unique else known.name
+    if (is_unique_tag or rarity == "Unique") and known.unique:
+        return known.unique
+    return known.name
 
 
 def item_group(tag: str) -> str:
@@ -215,7 +225,8 @@ def item_group(tag: str) -> str:
 
 def tag_kind(tag: str) -> str:
     """Melee, Ranged, Armor, Artifact, Talisman, ...: from the game's item list, else from the ID."""
-    known = _game_items_by_id().get(tag)
+    base = tag[: -len(UNIQUE_SUFFIX)] if tag.endswith(UNIQUE_SUFFIX) else tag
+    known = _game_items_by_id().get(base)
     return known.kind if known else item_kind(tag)
 
 
@@ -224,7 +235,8 @@ _PIECE_WORDS = {"Helmet": "Helmet", "Chest": "Chestplate", "Chestplate": "Chestp
 
 def armor_piece(tag: str) -> str | None:
     """Helmet, Chestplate, Leggings or Boots for armor, else None."""
-    known = _game_items_by_id().get(tag)
+    base = tag[: -len(UNIQUE_SUFFIX)] if tag.endswith(UNIQUE_SUFFIX) else tag
+    known = _game_items_by_id().get(base)
     if known is not None:
         return known.slot if known.kind == "Armor" else None
     match = re.search(r"(Helmet|Chestplate|Chest|Leggings|Boots)$", tag)

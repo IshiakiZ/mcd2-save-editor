@@ -1421,7 +1421,7 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.MedallionOfMomentum",
    "confirmed": false,
-   "effect": "Increases movement speed by 300% if moving for more than {1} seconds."
+   "effect": "Increases movement speed by 30% if moving for more than 3 seconds."
   },
   {
    "name": "Ocelot's Paw",
@@ -1468,7 +1468,7 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.TendrilsOfTheSprout",
    "confirmed": false,
-   "effect": "Grants a 300% damage increase while health is above {1}."
+   "effect": "Grants a 300% damage increase while health is above …"
   },
   {
    "name": "The Eye of Experience",
@@ -1482,7 +1482,7 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.ThriftyPendant",
    "confirmed": false,
-   "effect": "Grants up to a 200% damage bonus based on emeralds held, effective to a maximum of {1} emeralds."
+   "effect": "Grants up to a 200% damage bonus based on emeralds held."
   },
   {
    "name": "Twig of Dark Oak",

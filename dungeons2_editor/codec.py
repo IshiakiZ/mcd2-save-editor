@@ -30,6 +30,26 @@ _FLOAT_LITERAL = re.compile(r"(?<=[:,\[])-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?(?=[,\]
 NUMBER_FORMATS = ("g17", "shortest")
 
 
+class _Literal(float):
+    """A decimal number that remembers the text it was read from.
+
+    The game doesn't print every number the same way (one hero save has ``4100.0001169648413`` where the shortest
+    form is ``4100.000116964841``). Both are the same number, but writing a number back exactly as it was read
+    keeps an unedited save byte for byte identical. Any number the editor sets is a plain float and is written
+    in the style's usual form.
+    """
+
+    literal: str | None
+
+    def __new__(cls, value: float, literal: str | None = None):
+        number = super().__new__(cls, value)
+        number.literal = literal
+        return number
+
+    def __reduce__(self):  # copy.deepcopy and pickle
+        return (_Literal, (float(self), self.literal))
+
+
 class NotASaveDocument(ValueError):
     """The blob is not JSON, shifted or plain (it may be encrypted or binary)."""
 
@@ -81,7 +101,8 @@ def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str) -> None:
     elif isinstance(value, int):
         parts.append(str(value))
     elif isinstance(value, float):
-        parts.append(format_number(value, style.numbers))
+        literal = getattr(value, "literal", None)
+        parts.append(literal if literal is not None else format_number(value, style.numbers))
     elif isinstance(value, str):
         parts.append(json.dumps(value, ensure_ascii=style.ensure_ascii))
     elif isinstance(value, list):
@@ -137,7 +158,7 @@ def decode_blob(raw: bytes) -> DecodedBlob:
         if not text.lstrip().startswith(("{", "[")):
             continue
         try:
-            document = json.loads(text)
+            document = json.loads(text, parse_float=lambda literal: _Literal(float(literal), literal))
         except json.JSONDecodeError:
             continue
         style = detect_style(text, document, shifted)

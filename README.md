@@ -1,6 +1,7 @@
 # Minecraft Dungeons II Save Editor
 
-An unofficial save editor for **Minecraft Dungeons II** on Windows (Xbox app / PC Game Pass). Change your offline
+An unofficial save editor for **Minecraft Dungeons II** on Windows and Linux: the **Xbox app / PC Game Pass** version and the **Steam** version (including Steam on Linux
+through Proton). Change your offline
 hero's stats and gear, add and equip items, and apply ready-made presets and complete kits from top builds, without
 having to know anything about save files. It looks like the game's own inventory screen, so you already know your
 way around. Advanced mode shows the full save for people who want it.
@@ -77,6 +78,14 @@ double-click **Start Save Editor.bat**. Run that way, backups, pictures and sett
 Install [Pillow](https://pypi.org/project/pillow/) too (`py -m pip install pillow`) for smoother item pictures; the
 .exe includes it.
 
+**Steam version:** the editor finds your saves by itself, on Windows
+(`%LOCALAPPDATA%\Dungeons2\Saved\SaveGames`) and on Linux inside the game's Proton prefix
+(`~/.local/share/Steam/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames`,
+also for Flatpak/Snap Steam and games on other Steam library drives). Hero saves are the `Character<id>.sav` files.
+If it can't find them, use **Menu → Open a save folder…** or `--profile <folder>`. On Linux, run
+**Start Save Editor.sh** (needs Python 3.10+ with Tkinter: `sudo apt install python3-tk` on Debian/Ubuntu). Close the
+game, and let Steam finish syncing, before saving.
+
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
 back. Backups contain your sign-in token, so don't share them.
@@ -129,7 +138,9 @@ your sign-in, account or device data.
   GitHub issue with just those IDs, nothing else from your save.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
-- Only the **Xbox app / PC Game Pass** version is supported; the Steam version keeps its saves differently.
+- **Steam support is new.** It has been tested on a real offline hero save from the Steam version (Linux/Proton):
+  loading, editing, saving and restoring. If your Steam saves are the Unreal Engine binary kind (they start with
+  `GVAS`) instead of JSON, they show up as read-only. Steam Cloud, if on, uploads the edited file when the game closes.
 - **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
   all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
   removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
@@ -138,7 +149,12 @@ your sign-in, account or device data.
 
 ## How it works
 
-The game stores saves in the Xbox app's standard layout under
+**Steam version:** each save is its own file, `Character<id>.sav` for a hero, in the `SaveGames` folder above. The
+content is the same plain JSON the Xbox build keeps in a blob, so the same codec reads it. The editor replaces the
+file in one step (write a temporary file, then swap it in), and numbers the game writes in an unusual form are
+written back exactly as they were, so an unedited save comes out byte for byte identical.
+
+**Xbox app version:** the game stores saves in the Xbox app's standard layout under
 `%LOCALAPPDATA%\Packages\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\SystemAppData\wgs\`: `containers.index`
 lists named containers, each container folder has a `container.<N>` file naming its data blob, and the blobs hold
 the data.
@@ -167,7 +183,8 @@ python -m dungeons2_editor ids                                  # item IDs in yo
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 ```
 
-Add `--profile <folder>` to point at a save folder somewhere else.
+Add `--profile <folder>` to point at a save folder somewhere else (the Xbox folder with `containers.index`, or the
+Steam `SaveGames` folder).
 
 ## Research: the fastest way to gear, XP and emeralds
 
@@ -184,8 +201,9 @@ python -m unittest discover -s tests -t .
 | Path | What's in it |
 |---|---|
 | `dungeons2_editor/wgs.py` | Xbox save containers: reading, and writing new revisions |
+| `dungeons2_editor/steam.py` | Steam saves (loose `.sav` files): finding the folders, reading, writing |
 | `dungeons2_editor/codec.py` | The two JSON formats, reproduced exactly |
-| `dungeons2_editor/saves.py` | Finding saves, backups, restore, safe saving |
+| `dungeons2_editor/saves.py` | Finding saves (both layouts), backups, restore, safe saving |
 | `dungeons2_editor/hero.py` | Hero stats and items, the add-item catalog, change summaries |
 | `dungeons2_editor/presets.py` | The presets, kits and the facts behind them |
 | `dungeons2_editor/data/` | The item and enchantment lists (`tools/build_item_catalog.py` rebuilds them) |

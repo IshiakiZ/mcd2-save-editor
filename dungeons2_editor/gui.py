@@ -48,8 +48,9 @@ _SAFE_TEXT = (
     "• Every save first copies your whole save folder into the backups folder. {restore} puts one back.\n"
     "• If the game saves your hero while the editor is open (say you played to check a change), the editor loads "
     "the new version. If you have unsaved changes, it re-applies them to the new version when you save.\n"
-    "• Changes are written the same way the game writes them and are marked for upload, so the Xbox cloud "
-    "keeps the edited version.\n"
+    "• Xbox app: changes are written the way the game writes them and marked for upload, so the Xbox cloud "
+    "keeps the edited version. Steam: the .sav file is replaced in place; if Steam Cloud is on, Steam uploads "
+    "it the next time the game closes.\n"
     "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
     "• Backups contain your sign-in token, so don't share them."
 )
@@ -60,7 +61,8 @@ _DATA_TEXT = (
     "pages. Item pictures: the Minecraft Wiki."
 )
 _FILES_TEXT = (
-    "Saves: %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
+    "Saves (Xbox app): %LOCALAPPDATA%\\Packages\\Microsoft.MinecraftDungeons2_8wekyb3d8bbwe\\SystemAppData\\wgs\n"
+    "Saves (Steam): %LOCALAPPDATA%\\Dungeons2\\Saved\\SaveGames (on Linux, inside the game's Proton prefix)\n"
     "Backups: {backups}"
 )
 
@@ -82,7 +84,7 @@ SIMPLE_HELP_SECTIONS = [
         "pick. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
         "money, the most powerful gear, or complete kits from top builds, with the best enchantments for each piece.\n"
         "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
         "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
     ),
@@ -137,7 +139,7 @@ HELP_SECTIONS = [
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
         "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
     ),
@@ -644,7 +646,7 @@ class EditorApp:
         ConnectAiDialog(self.root)
 
     def _open_icons_folder(self) -> None:
-        os.startfile(self.icons.ensure_folder())
+        paths.open_in_file_manager(self.icons.ensure_folder())
 
     # ---------------------------------------------------------------- profiles
 
@@ -677,6 +679,8 @@ class EditorApp:
 
     def _profile_label(self, path: Path) -> str:
         if path in self._auto_profiles:
+            if saves.layout_of(path) == "steam":
+                return "Steam"
             return f"Xbox user {path.name.split('_', 1)[0]}"
         return str(path)
 
@@ -732,33 +736,19 @@ class EditorApp:
         self._show_meta()
 
     def _apply_mode(self) -> None:
-        """Simple mode shows the game-style screen in the game's colours; Advanced mode, the technical one."""
+        """Always shows the game-style inventory screen; Advanced mode adds item IDs and lifts caps."""
         advanced = self.advanced_var.get()
-        game_style.use(self.root, simple=not advanced, light_theme=self.light_theme)
-        self.root.configure(background=self.light_background if advanced else game_style.BG)
-        if advanced:
-            self.simple_screen.grid_remove()
-            self.advanced_screen.grid()
-        else:
-            self.advanced_screen.grid_remove()
-            self.simple_screen.grid()
-        if not advanced and self.notebook.select() in (str(self.edit_tab), str(self.raw_tab)):
-            hero_shown = self.notebook.tab(self.hero_tab, "state") == "normal"
-            self.notebook.select(self.hero_tab if hero_shown else self.help_tab)
-        for tab in (self.edit_tab, self.raw_tab):
-            self.notebook.tab(tab, state="normal" if advanced else "hidden")
-        self.hero_tab.set_advanced(advanced)
-        if advanced:
-            self.hero_tab.refresh()  # Simple mode may have changed the hero
-        self.inventory.set_active(not advanced)
+        game_style.use(self.root, simple=True, light_theme=self.light_theme)
+        self.root.configure(background=game_style.BG)
+        self.advanced_screen.grid_remove()
+        self.simple_screen.grid()
+        self.inventory.set_advanced(advanced)
+        self.inventory.set_active(True)
         self._fit_window()
 
     def _fit_window(self) -> None:
-        """Simple mode's screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
-        window big enough for it, within the screen. Advanced mode keeps its usual minimum."""
-        if self.advanced_var.get():
-            self.root.minsize(*MIN_SIZE)
-            return
+        """The inventory screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
+        window big enough for it, within the screen."""
         self.root.update_idletasks()
         most_width = self.root.winfo_screenwidth() - 40
         most_height = self.root.winfo_screenheight() - 80
@@ -898,12 +888,16 @@ class EditorApp:
             self._open_profile(self.profile.path, keep=self.container.name if self.container else None)
 
     def _open_folder(self) -> None:
-        chosen = filedialog.askdirectory(title="Choose a folder that contains containers.index", parent=self.root)
+        chosen = filedialog.askdirectory(
+            title="Choose a save folder (Xbox: has containers.index; Steam: has Character….sav files)", parent=self.root
+        )
         if not chosen:
             return
         path = Path(chosen)
-        if not (path / wgs.INDEX_FILE).is_file():
-            messagebox.showerror(APP_TITLE, f"{path} has no {wgs.INDEX_FILE} file.", parent=self.root)
+        if not (path / wgs.INDEX_FILE).is_file() and not saves.steam.is_steam_folder(path):
+            messagebox.showerror(
+                APP_TITLE, f"{path} has no {wgs.INDEX_FILE} file and no .sav files, so it isn't a Minecraft Dungeons II save folder.", parent=self.root
+            )
             return
         if self._confirm_discard():
             self._load_profiles(select=path)
@@ -965,13 +959,16 @@ class EditorApp:
         when = datetime.fromtimestamp(wgs.filetime_to_unix(entry.mtime))
         self.title_var.set(container.label)
         if self.advanced_var.get():
-            sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, f"sync state {entry.sync_state}")
-            meta = f"{container.name} · revision {entry.revision} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M} · {sync}"
+            if self.profile is not None and self.profile.is_steam:
+                meta = f"{container.name}.sav · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M}"
+            else:
+                sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, f"sync state {entry.sync_state}")
+                meta = f"{container.name} · revision {entry.revision} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M} · {sync}"
             if container.decoded is not None and not container.decoded.exact:
                 meta += " · formatting will be tidied when saved"
         else:
             meta = f"Last saved {when:%d %B %Y at %H:%M}"
-            if entry.sync_state != wgs.SYNCED:
+            if not (self.profile is not None and self.profile.is_steam) and entry.sync_state != wgs.SYNCED:
                 meta += " · waiting to upload to the Xbox cloud (it will next time you play)"
         self.meta_var.set(meta)
 
@@ -998,9 +995,8 @@ class EditorApp:
         self._update_changes()
         self._show_hero_choice()  # the level may have changed
 
-    def _hero_editor(self) -> HeroTab | InventoryScreen:
-        """Whichever shows the hero in this mode."""
-        return self.hero_tab if self.advanced_var.get() else self.inventory
+    def _hero_editor(self) -> InventoryScreen:
+        return self.inventory
 
     def _locked_message(self, container: saves.Container | None) -> str:
         if container is None:
@@ -1389,7 +1385,7 @@ class EditorApp:
 
     def _open_backups_folder(self) -> None:
         self.backup_root.mkdir(parents=True, exist_ok=True)
-        os.startfile(self.backup_root)
+        paths.open_in_file_manager(self.backup_root)
 
     def _restore_dialog(self) -> None:
         if self.profile is None:
@@ -1566,11 +1562,7 @@ class EditorApp:
 
     @staticmethod
     def _read_index_stamp(path: Path) -> tuple | None:
-        try:
-            stat = (Path(path) / wgs.INDEX_FILE).stat()
-        except OSError:
-            return None
-        return stat.st_mtime_ns, stat.st_size
+        return saves.profile_stamp(path)
 
     def _check_disk(self) -> None:
         """Notice when the game saved the container on screen after it was loaded. With nothing
@@ -1581,11 +1573,11 @@ class EditorApp:
         if stamp is None or stamp == self._index_stamp:
             return
         try:
-            entry = wgs.read_index(self.profile.path).find(self.container.name)
+            revision = saves.current_revision(self.profile.path, self.container.name)
         except (OSError, wgs.WgsFormatError):
             return  # caught in the middle of a write; look again next time
         self._index_stamp = stamp
-        if entry is None or entry.revision == self.container.entry.revision:
+        if revision is None or revision == self.container.entry.revision:
             return  # only the upload state changed
         if self.change_count == 0 and not self._hero_editor().has_pending_input():
             self._open_profile(self.profile.path, keep=self.container.name)

@@ -1,3 +1,3 @@
-"""Save editor for Minecraft Dungeons II (Xbox app / PC Game Pass version)."""
+"""Save editor for Minecraft Dungeons II (Xbox app / PC Game Pass and Steam versions)."""
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
