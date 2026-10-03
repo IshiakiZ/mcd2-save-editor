@@ -7,7 +7,7 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from . import document as doc
-from .hero import MAX_ITEM_POWER, MAX_STACK, RARITIES, CatalogItem, GearSlot, slots_for
+from .hero import MAX_ITEM_POWER, MAX_STACK, RARITIES, UNIQUE_SUFFIX, CatalogItem, GearSlot, slots_for
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -267,21 +267,25 @@ class ItemPicker(tk.Toplevel):
                 var.set("")
             self._show_slot()
             return
-        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
-        shown_name = item.unique if as_unique else item.name
+        melee_unique = item.kind == "Melee"  # only melee weapons use the _Unique1 ID suffix
+        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique"
+        shown_name = (item.unique or item.name) if (as_unique and melee_unique) else item.name
         self.preview.configure(image=self.icons.item_image(item.tag, "", PREVIEW_SIZE, shown_name))
         self.name_var.set(shown_name)
         kind = item.kind + (f"  ·  {item.piece.lower()}" if item.piece else "")
-        self.kind_text.set(kind + (f"  ·  {item.tag}" if self.advanced else ""))
+        unique_id = (item.tag + UNIQUE_SUFFIX) if (as_unique and melee_unique) else item.tag
+        self.kind_text.set(kind + (f"  ·  {unique_id}" if self.advanced else ""))
         if item.confirmed:
             self.status_text.set("Confirmed: seen in real saves, so the game knows it.")
             self.status_label.configure(style="Success.TLabel")
         else:
             self.status_text.set("Unconfirmed: the game's name for this item is a best guess.")
             self.status_label.configure(style="Warn.TLabel")
-        if as_unique:
+        if as_unique and melee_unique and item.unique:
             effect = f" {item.unique_effect}" if item.unique_effect else ""
             self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).{effect}")
+        elif as_unique and melee_unique:
+            self.unique_text.set(f"At Unique rarity this uses the ID {item.tag + UNIQUE_SUFFIX}.")
         elif item.unique and self.mode == "add":
             self.unique_text.set(f"Pick Unique to get the {item.unique}.")
         else:
@@ -350,8 +354,10 @@ class ItemPicker(tk.Toplevel):
         slot = self._chosen_slot() if self.mode == "add" and self.equip_var.get() else None
         if not self._accept_guesses(item, slot):
             return
-        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
-        self._finish(item.tag, item.unique if as_unique else item.name, slot)
+        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.kind == "Melee"
+        tag = (item.tag + UNIQUE_SUFFIX) if as_unique else item.tag
+        name = (item.unique or item.name) if as_unique else item.name
+        self._finish(tag, name, slot)
 
     def _accept_guesses(self, item: CatalogItem, slot: GearSlot | None) -> bool:
         """Ask once per window before using an item, or a slot, whose name in the game is a best guess."""

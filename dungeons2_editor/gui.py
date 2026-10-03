@@ -84,7 +84,7 @@ SIMPLE_HELP_SECTIONS = [
         "pick. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
         "money, the most powerful gear, or complete kits from top builds, with the best enchantments for each piece.\n"
         "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
         "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
     ),
@@ -139,7 +139,7 @@ HELP_SECTIONS = [
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
         "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
     ),
@@ -736,33 +736,19 @@ class EditorApp:
         self._show_meta()
 
     def _apply_mode(self) -> None:
-        """Simple mode shows the game-style screen in the game's colours; Advanced mode, the technical one."""
+        """Always shows the game-style inventory screen; Advanced mode adds item IDs and lifts caps."""
         advanced = self.advanced_var.get()
-        game_style.use(self.root, simple=not advanced, light_theme=self.light_theme)
-        self.root.configure(background=self.light_background if advanced else game_style.BG)
-        if advanced:
-            self.simple_screen.grid_remove()
-            self.advanced_screen.grid()
-        else:
-            self.advanced_screen.grid_remove()
-            self.simple_screen.grid()
-        if not advanced and self.notebook.select() in (str(self.edit_tab), str(self.raw_tab)):
-            hero_shown = self.notebook.tab(self.hero_tab, "state") == "normal"
-            self.notebook.select(self.hero_tab if hero_shown else self.help_tab)
-        for tab in (self.edit_tab, self.raw_tab):
-            self.notebook.tab(tab, state="normal" if advanced else "hidden")
-        self.hero_tab.set_advanced(advanced)
-        if advanced:
-            self.hero_tab.refresh()  # Simple mode may have changed the hero
-        self.inventory.set_active(not advanced)
+        game_style.use(self.root, simple=True, light_theme=self.light_theme)
+        self.root.configure(background=game_style.BG)
+        self.advanced_screen.grid_remove()
+        self.simple_screen.grid()
+        self.inventory.set_advanced(advanced)
+        self.inventory.set_active(True)
         self._fit_window()
 
     def _fit_window(self) -> None:
-        """Simple mode's screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
-        window big enough for it, within the screen. Advanced mode keeps its usual minimum."""
-        if self.advanced_var.get():
-            self.root.minsize(*MIN_SIZE)
-            return
+        """The inventory screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
+        window big enough for it, within the screen."""
         self.root.update_idletasks()
         most_width = self.root.winfo_screenwidth() - 40
         most_height = self.root.winfo_screenheight() - 80
@@ -1009,9 +995,8 @@ class EditorApp:
         self._update_changes()
         self._show_hero_choice()  # the level may have changed
 
-    def _hero_editor(self) -> HeroTab | InventoryScreen:
-        """Whichever shows the hero in this mode."""
-        return self.hero_tab if self.advanced_var.get() else self.inventory
+    def _hero_editor(self) -> InventoryScreen:
+        return self.inventory
 
     def _locked_message(self, container: saves.Container | None) -> str:
         if container is None:
