@@ -168,7 +168,7 @@ your sign-in, account or device data.
 - **Some added items may not work yet.** A save stores each item under an internal name, which often isn't the
   name you see: the Riftslasher is `SW.Item.CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst
   Lens is `SW.Item.Talisman.RangedBuff`. The game's list of those names is in its encrypted content files, and the
-  editor doesn't break that encryption, so it knows the names players have reported from their saves (133 of the 181
+  editor doesn't break that encryption, so it knows the names players have reported from their saves (150 of the 181
   items so far) and works the rest out from the in-game name. (The equipment slots are different: the game's
   readable script cache names all 12, so equipping is exact.) In testing, the game removed items whose name was a
   wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
@@ -178,7 +178,7 @@ your sign-in, account or device data.
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs, nothing else from your save.
 - **Most Uniques are best guesses.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
-  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Twelve of those IDs have been
+  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Thirty of those IDs have been
   seen in real saves. The others follow the same pattern, so the editor adds them as Unconfirmed and asks first.
   Making an item you already own Unique only turns it into its Unique when that ID has been seen; otherwise it keeps
   its name and just gets Unique rarity, because a wrong guess would cost you the item.
@@ -272,8 +272,10 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [icicle1133](https://github.com/icicle1133) ([#1](https://github.com/IshiakiZ/mcd2-save-editor/pull/1)); keeping the
   Steam build's sign-in files unread comes from [douglas-93](https://github.com/douglas-93)'s Steam support
   ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)).
-- Most of the item IDs marked Confirmed come from a list [icicle1133](https://github.com/icicle1133) collected
-  from real saves ([#2](https://github.com/IshiakiZ/mcd2-save-editor/issues/2)).
+- Most of the item IDs marked Confirmed come from lists that [icicle1133](https://github.com/icicle1133)
+  ([#2](https://github.com/IshiakiZ/mcd2-save-editor/issues/2)) and
+  [MEGASLAVMAN](https://github.com/MEGASLAVMAN) ([#7](https://github.com/IshiakiZ/mcd2-save-editor/issues/7))
+  collected from real saves.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

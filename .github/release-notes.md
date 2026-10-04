@@ -8,6 +8,9 @@
 - To know about new versions, the editor asks GitHub which version is the latest each time its window opens. That
   request says nothing about you or your saves; the README's privacy policy spells out everything the editor
   contacts.
+- **More confirmed items.** A second player's saves (thank you, [MEGASLAVMAN](https://github.com/MEGASLAVMAN))
+  confirmed 17 more items and 18 more Uniques' own IDs, among them the whole Oracle, Hivemind, Sharpshooter and
+  Dauntless sets. 150 of the 181 items and 30 of the 116 Uniques are confirmed now.
 
 ## What's new in 1.6.0
 

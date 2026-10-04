@@ -45,8 +45,8 @@ DATA = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data"
 PREFIX = "SW.Item."
 BOOK = "Enchantment Book"
 
-# IDs seen in real saves, without the SW.Item. in front: the developer's own, and the 150 a player sent in
-# https://github.com/IshiakiZ/mcd2-save-editor/issues/2.
+# IDs seen in real saves, without the SW.Item. in front: the developer's own, and the ones players sent in
+# https://github.com/IshiakiZ/mcd2-save-editor/issues/2 and /issues/7.
 CONFIRMED_IDS = {
     PREFIX + name
     for name in """
@@ -54,7 +54,7 @@ CONFIRMED_IDS = {
     Axe Claws Claymore Cleaver Crossbow CurvedGreatsword CurvedLongsword Dagger Daggers DualCrossbow
     Gauntlet GiantClub Glaive GreatAxe Greatbow Greatsword Hammer Mace MoonSword Pickaxe Pike Powerbow
     RapidCrossbow Rapier Sabre ScatterCrossbow Scythe ShortSpear Shortbow Shovel Sickles StraightSword
-    Trickbow WarHammer
+    Trickbow WarHammer Battlestaff
 
     CaveCrawlerBoots CaveCrawlerChest CaveCrawlerHelmet CaveCrawlerLeggings DiscipleBoots DiscipleChest
     DiscipleHelmet DiscipleLeggings EvocationBoots EvocationHelmet FrostRimeChest FrostRimeLeggings
@@ -65,6 +65,9 @@ CONFIRMED_IDS = {
     StalwartBoots StalwartChest StalwartHelmet StalwartLeggings TimewornBoots TimewornChest
     UndauntedChest UndauntedHelmet VoyagerBoots VoyagerHelmet VoyagerLeggings WellspringBoots
     WellspringHelmet WolfclutchBoots WolfclutchChest WolfclutchLeggings
+    HewnBarkChest HewnBarkHelmet HewnBarkLeggings HoneyChest HoneyHelmet ScampHelmet ScampLeggings
+    ScavengerBoots ScavengerHelmet UndauntedBoots UndauntedLeggings VoyagerChest WellspringLeggings
+    WolfclutchHelmet
 
     Artifact.BlizzardStaff Artifact.CarapaceOcarina Artifact.ConductiveBracelet Artifact.CorruptedSeeds
     Artifact.CreeperCandle Artifact.FightersFife Artifact.FireBracelet Artifact.FireworkQuiver
@@ -74,7 +77,7 @@ CONFIRMED_IDS = {
     Artifact.RedstoneMines Artifact.Satchel.Conductive Artifact.Satchel.Fire Artifact.Satchel.Freezing
     Artifact.Satchel.Poison Artifact.SmokeBomb Artifact.SoulHarvester Artifact.TotemOfCasting
     Artifact.TotemOfRegeneration Artifact.TotemOfShielding Artifact.WarBanner Artifact.WardingChimes
-    Artifact.WarriorsDrums Artifact.WitchesBrew
+    Artifact.WarriorsDrums Artifact.WitchesBrew Artifact.CorruptedBeacon Artifact.FrostQuiver
 
     Talisman.AmmoCapacity Talisman.Brawling Talisman.HealthBoost Talisman.PotionCooldown
     Talisman.RangedBuff Talisman.SoulGather Talisman.Wolf
@@ -85,8 +88,12 @@ UNIQUE_IDS = {
     PREFIX + name
     for name in """
     Axe_Unique1 Claws_Unique1 Pickaxe_Unique1 Sabre_Unique1 Sword_Unique1 Trickbow_Unique1
-    CaveCrawlerChest_Unique HoneyHelmet_Unique MysticLeggings_Unique RealmreacherChest_Unique
-    UndauntedHelmet_Unique VoyagerLeggings_Unique
+    Bow_Unique1 Greatsword_Unique1 Mace_Unique1 Powerbow_Unique1 Rapier_Unique1 Sickles_Unique1
+    CaveCrawlerChest_Unique VoyagerLeggings_Unique
+    HoneyBoots_Unique HoneyChest_Unique HoneyHelmet_Unique HoneyLeggings_Unique
+    MysticBoots_Unique MysticChest_Unique MysticHelmet_Unique MysticLeggings_Unique
+    RealmreacherBoots_Unique RealmreacherChest_Unique RealmreacherHelmet_Unique RealmreacherLeggings_Unique
+    UndauntedBoots_Unique UndauntedChest_Unique UndauntedHelmet_Unique UndauntedLeggings_Unique
     """.split()
 }
 # What a save calls an item, where that isn't the name players see with the spaces taken out.
@@ -116,6 +123,7 @@ KNOWN_IDS = {
     "Fighting Fungus": "Artifact.MaimingMushroom",
     "Firework Arrow": "Artifact.FireworkQuiver",
     "Flaming Quiver": "Artifact.FlameQuiver",
+    "Freezing Quiver": "Artifact.FrostQuiver",  # by its name: the report that had it didn't say what the game calls it
     "Honey Dipper": "Artifact.Honeypot",
     "Humbling Horn": "Artifact.RallyingHorn",
     "Pouch of Ember": "Artifact.Satchel.Fire",
@@ -162,6 +170,7 @@ BOOK_IDS = {
     "Ancient Alchemy": "SoulInfusedPotion",
     "Buddy Brew": "PotionSharing",
     "Ender Quiver": "ExpandedQuiver",
+    "Frost Crescent": "FrostCrescent",
     "Piercing": "Piercing",
     "Ricochet": "Ricochet",
     "Shockwave": "Shockwave",

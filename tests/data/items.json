@@ -13,8 +13,7 @@
    "slot": "Boots",
    "set": "Beekeeper",
    "unique": "Hivemind Stingers",
-   "unique_effect": "Reduces artifact cooldown time by 30%.",
-   "unique_id": "SW.Item.HoneyBoots_Unique"
+   "unique_effect": "Reduces artifact cooldown time by 30%."
   },
   {
    "name": "Beekeeper Leggings",
@@ -24,25 +23,23 @@
    "slot": "Leggings",
    "set": "Beekeeper",
    "unique": "Hivemind Trousers",
-   "unique_effect": "Recover from negative statuses 50% faster.",
-   "unique_id": "SW.Item.HoneyLeggings_Unique"
+   "unique_effect": "Recover from negative statuses 50% faster."
   },
   {
    "name": "Beekeeper Suit",
    "kind": "Armor",
    "id": "SW.Item.HoneyChest",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Chestplate",
    "set": "Beekeeper",
    "unique": "Hivemind Thorax",
-   "unique_effect": "Increases healing given to yourself and allies by 50%.",
-   "unique_id": "SW.Item.HoneyChest_Unique"
+   "unique_effect": "Increases healing given to yourself and allies by 50%."
   },
   {
    "name": "Beekeeper Veil",
    "kind": "Armor",
    "id": "SW.Item.HoneyHelmet",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Helmet",
    "set": "Beekeeper",
    "unique": "Hivemind Hardhat",
@@ -53,12 +50,11 @@
    "name": "Bounty Hunter Boots",
    "kind": "Armor",
    "id": "SW.Item.UndauntedBoots",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Boots",
    "set": "Bounty Hunter",
    "unique": "Dauntless Sabatons",
-   "unique_effect": "Increases Soul capacity by 50%.",
-   "unique_id": "SW.Item.UndauntedBoots_Unique"
+   "unique_effect": "Increases Soul capacity by 50%."
   },
   {
    "name": "Bounty Hunter Chestplate",
@@ -68,8 +64,7 @@
    "slot": "Chestplate",
    "set": "Bounty Hunter",
    "unique": "Dauntless Pauldrons",
-   "unique_effect": "Take 25% less damage from ranged attacks.",
-   "unique_id": "SW.Item.UndauntedChest_Unique"
+   "unique_effect": "Take 25% less damage from ranged attacks."
   },
   {
    "name": "Bounty Hunter Helmet",
@@ -86,12 +81,11 @@
    "name": "Bounty Hunter Shinguards",
    "kind": "Armor",
    "id": "SW.Item.UndauntedLeggings",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Leggings",
    "set": "Bounty Hunter",
    "unique": "Dauntless Greaves",
-   "unique_effect": "Deal 60% more damage to enemies who are at full health.",
-   "unique_id": "SW.Item.UndauntedLeggings_Unique"
+   "unique_effect": "Deal 60% more damage to enemies who are at full health."
   },
   {
    "name": "Disciple Leggings",
@@ -181,8 +175,7 @@
    "slot": "Boots",
    "set": "Mystic",
    "unique": "Oracle Sandals",
-   "unique_effect": "Grants a 5% chance of higher rarity loot drops.",
-   "unique_id": "SW.Item.MysticBoots_Unique"
+   "unique_effect": "Grants a 5% chance of higher rarity loot drops."
   },
   {
    "name": "Mystic Circlet",
@@ -192,8 +185,7 @@
    "slot": "Helmet",
    "set": "Mystic",
    "unique": "Oracle Crown",
-   "unique_effect": "Lightning attacks deal 25% more damage.",
-   "unique_id": "SW.Item.MysticHelmet_Unique"
+   "unique_effect": "Lightning attacks deal 25% more damage."
   },
   {
    "name": "Mystic Leggings",
@@ -214,8 +206,7 @@
    "slot": "Chestplate",
    "set": "Mystic",
    "unique": "Oracle Mantle",
-   "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
-   "unique_id": "SW.Item.MysticChest_Unique"
+   "unique_effect": "Increases duration of negative statuses on enemies by 100%."
   },
   {
    "name": "Nomad Boots",
@@ -231,7 +222,7 @@
    "name": "Nomad Chestplate",
    "kind": "Armor",
    "id": "SW.Item.VoyagerChest",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Chestplate",
    "set": "Nomad",
    "unique": "Rover Pauldrons",
@@ -346,8 +337,7 @@
    "slot": "Boots",
    "set": "Ranger",
    "unique": "Sharpshooter Spurs",
-   "unique_effect": "Carry 45% more ammo.",
-   "unique_id": "SW.Item.RealmreacherBoots_Unique"
+   "unique_effect": "Carry 45% more ammo."
   },
   {
    "name": "Ranger Cap",
@@ -357,8 +347,7 @@
    "slot": "Helmet",
    "set": "Ranger",
    "unique": "Sharpshooter Fedora",
-   "unique_effect": "Grants a 60% chance to fire additional projectiles.",
-   "unique_id": "SW.Item.RealmreacherHelmet_Unique"
+   "unique_effect": "Grants a 60% chance to fire additional projectiles."
   },
   {
    "name": "Ranger Jacket",
@@ -379,8 +368,7 @@
    "slot": "Leggings",
    "set": "Ranger",
    "unique": "Sharpshooter Chaps",
-   "unique_effect": "Reduces ranged ammo cooldown time by 35%.",
-   "unique_id": "SW.Item.RealmreacherLeggings_Unique"
+   "unique_effect": "Reduces ranged ammo cooldown time by 35%."
   },
   {
    "name": "Realmreacher Boots",
@@ -466,7 +454,7 @@
    "name": "Scamp Hood",
    "kind": "Armor",
    "id": "SW.Item.ScampHelmet",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Helmet",
    "set": "Scamp",
    "unique": "Scoundrel Cowl",
@@ -486,7 +474,7 @@
    "name": "Scamp Leggings",
    "kind": "Armor",
    "id": "SW.Item.ScampLeggings",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Leggings",
    "set": "Scamp",
    "unique": "Scoundrel Chaps",
@@ -547,7 +535,7 @@
    "name": "Sculker Boots",
    "kind": "Armor",
    "id": "SW.Item.ScavengerBoots",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Boots",
    "set": "Sculker",
    "unique": "Monarch Talons",
@@ -557,7 +545,7 @@
    "name": "Sculker Mask",
    "kind": "Armor",
    "id": "SW.Item.ScavengerHelmet",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Helmet",
    "set": "Sculker",
    "unique": "Monarch Crown",
@@ -607,7 +595,7 @@
    "name": "Sifter Leggings",
    "kind": "Armor",
    "id": "SW.Item.WellspringLeggings",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Leggings",
    "set": "Sifter",
    "unique": "Mad Sifter Slacks",
@@ -707,7 +695,7 @@
    "name": "Treehugger Chestplate",
    "kind": "Armor",
    "id": "SW.Item.HewnBarkChest",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Chestplate",
    "set": "Treehugger",
    "unique": "Woodsprite Barkpiece",
@@ -727,7 +715,7 @@
    "name": "Treehugger Leggings",
    "kind": "Armor",
    "id": "SW.Item.HewnBarkLeggings",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Leggings",
    "set": "Treehugger",
    "unique": "Woodsprite Trunks",
@@ -737,7 +725,7 @@
    "name": "Treehugger Mask",
    "kind": "Armor",
    "id": "SW.Item.HewnBarkHelmet",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Helmet",
    "set": "Treehugger",
    "unique": "Woodsprite Crown",
@@ -757,7 +745,7 @@
    "name": "Wolfpack Hood",
    "kind": "Armor",
    "id": "SW.Item.WolfclutchHelmet",
-   "confirmed": true,
+   "confirmed": false,
    "slot": "Helmet",
    "set": "Wolfpack",
    "unique": "Packleader Muzzle",
@@ -823,7 +811,7 @@
    "name": "Corrupted Beacon",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CorruptedBeacon",
-   "confirmed": true
+   "confirmed": false
   },
   {
    "name": "Corrupted Seeds",
@@ -888,8 +876,8 @@
   {
    "name": "Freezing Quiver",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.FrostQuiver",
-   "confirmed": true
+   "id": "SW.Item.Artifact.FreezingQuiver",
+   "confirmed": false
   },
   {
    "name": "Grindstone",
@@ -1051,7 +1039,7 @@
    "name": "Battlestaff",
    "kind": "Melee",
    "id": "SW.Item.Battlestaff",
-   "confirmed": true,
+   "confirmed": false,
    "unique": "Elemental Staff",
    "unique_effect": "Chance to grant random elemental melee buff when defeating an enemy."
   },
@@ -1093,8 +1081,7 @@
    "id": "SW.Item.Sickles",
    "confirmed": true,
    "unique": "Sift Sickles",
-   "unique_effect": "Increases healing given to yourself and allies by 50%.",
-   "unique_id": "SW.Item.Sickles_Unique1"
+   "unique_effect": "Increases healing given to yourself and allies by 50%."
   },
   {
    "name": "Gauntlets",
@@ -1126,8 +1113,7 @@
    "id": "SW.Item.Greatsword",
    "confirmed": true,
    "unique": "The Darkshard",
-   "unique_effect": "Attacks have a chance to pull all enemies within 5 blocks toward you.",
-   "unique_id": "SW.Item.Greatsword_Unique1"
+   "unique_effect": "Attacks have a chance to pull all enemies within 5 blocks toward you."
   },
   {
    "name": "Longsword",
@@ -1143,8 +1129,7 @@
    "id": "SW.Item.Mace",
    "confirmed": true,
    "unique": "Carapace Mace",
-   "unique_effect": "Increases attack damage by 35% when jumping or rolling.",
-   "unique_id": "SW.Item.Mace_Unique1"
+   "unique_effect": "Increases attack damage by 35% when jumping or rolling."
   },
   {
    "name": "Meat Cleaver",
@@ -1185,8 +1170,7 @@
    "id": "SW.Item.Rapier",
    "confirmed": true,
    "unique": "The Thousand Cuts",
-   "unique_effect": "Increases melee attack speed by 30%.",
-   "unique_id": "SW.Item.Rapier_Unique1"
+   "unique_effect": "Increases melee attack speed by 30%."
   },
   {
    "name": "Riftslasher",
@@ -1277,8 +1261,7 @@
    "id": "SW.Item.Bow",
    "confirmed": true,
    "unique": "Ranger's Promise",
-   "unique_effect": "Increases chance of critical hits from ranged attacks by 25%.",
-   "unique_id": "SW.Item.Bow_Unique1"
+   "unique_effect": "Increases chance of critical hits from ranged attacks by 25%."
   },
   {
    "name": "Crossbow",
@@ -1326,8 +1309,7 @@
    "id": "SW.Item.Powerbow",
    "confirmed": true,
    "unique": "Paragon",
-   "unique_effect": "Ranged attacks deal 30% more damage.",
-   "unique_id": "SW.Item.Powerbow_Unique1"
+   "unique_effect": "Ranged attacks deal 30% more damage."
   },
   {
    "name": "Rapid Crossbow",
@@ -1541,12 +1523,6 @@
    "name": "Ender Quiver",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.ExpandedQuiver",
-   "confirmed": true
-  },
-  {
-   "name": "Frost Crescent",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.FrostCrescent",
    "confirmed": true
   },
   {
