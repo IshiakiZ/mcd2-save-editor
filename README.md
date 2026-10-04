@@ -105,6 +105,20 @@ You don't have to take anyone's word for what's in the download:
   minecraft.wiki, or to open a link in your browser.
 - **You can skip the .exe** and run it from source, as above.
 
+### Code signing policy
+
+**Status: applied for, not active yet. Releases up to 1.5.0 are not signed.**
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org).
+
+- Committers and reviewers: [Ishiaki](https://github.com/IshiakiZ)
+- Approvers: [Ishiaki](https://github.com/IshiakiZ)
+
+Privacy policy: this program will not transfer any information to other networked systems unless specifically
+requested by the user or the person installing or operating it. It downloads item pictures from minecraft.wiki when
+you ask for them, and opens links in your browser.
+
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
 back. Backups contain your sign-in token, so don't share them.
