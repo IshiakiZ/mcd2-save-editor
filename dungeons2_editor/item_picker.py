@@ -267,13 +267,14 @@ class ItemPicker(tk.Toplevel):
                 var.set("")
             self._show_slot()
             return
-        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
-        shown_name = item.unique if as_unique else item.name
+        rarity = self._rarity()
+        as_unique = rarity == "Unique" and bool(item.unique)
+        shown_name = item.name_at(rarity)
         self.preview.configure(image=self.icons.item_image(item.tag, "", PREVIEW_SIZE, shown_name))
         self.name_var.set(shown_name)
         kind = item.kind + (f"  ·  {item.piece.lower()}" if item.piece else "")
-        self.kind_text.set(kind + (f"  ·  {item.tag}" if self.advanced else ""))
-        if item.confirmed:
+        self.kind_text.set(kind + (f"  ·  {item.tag_at(rarity)}" if self.advanced else ""))
+        if item.confirmed_at(rarity):
             self.status_text.set("Confirmed: seen in real saves, so the game knows it.")
             self.status_label.configure(style="Success.TLabel")
         else:
@@ -348,14 +349,18 @@ class ItemPicker(tk.Toplevel):
         if item is None:
             return
         slot = self._chosen_slot() if self.mode == "add" and self.equip_var.get() else None
-        if not self._accept_guesses(item, slot):
+        rarity = self._rarity()
+        if not self._accept_guesses(item, slot, rarity):
             return
-        as_unique = self.mode == "add" and self.rarity_var.get() == "Unique" and item.unique
-        self._finish(item.tag, item.unique if as_unique else item.name, slot)
+        self._finish(item.tag_at(rarity), item.name_at(rarity), slot)
 
-    def _accept_guesses(self, item: CatalogItem, slot: GearSlot | None) -> bool:
+    def _rarity(self) -> str | None:
+        """The rarity being added at. A Unique has an ID of its own, so the rarity decides which item this is."""
+        return self.rarity_var.get() if self.mode == "add" else None
+
+    def _accept_guesses(self, item: CatalogItem, slot: GearSlot | None, rarity: str | None = None) -> bool:
         """Ask once per window before using an item, or a slot, whose name in the game is a best guess."""
-        guessed_item = not item.confirmed and not self._unconfirmed_ok
+        guessed_item = not item.confirmed_at(rarity) and not self._unconfirmed_ok
         guessed_slot = slot is not None and not slot.confirmed and not self._guessed_slot_ok
         if not guessed_item and not guessed_slot:
             return True

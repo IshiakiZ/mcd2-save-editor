@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 GAME_ITEMS_FILE = Path(__file__).resolve().parent / "data" / "items.json"  # made by tools/build_item_catalog.py
 ENCHANTMENTS_FILE = GAME_ITEMS_FILE.with_name("enchantments.json")
@@ -72,6 +72,8 @@ STAT_MINIMUMS = {"Level": 1, "VillageMerchantUpgradeLevel": 1, "EnchantsmithUpgr
 # pre-orders, drive quests, or are really currencies.
 NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
 _ITEM_TAG = re.compile(r"SW\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
+_UNIQUE_SUFFIX = re.compile(r"_Unique\d*$")  # on a Unique's own ID: SW.Item.Sword_Unique1, SW.Item.MysticHelmet_Unique
+BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
 
 _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, Crossbow, ...
 _ARMOR = re.compile(r"Helmet|Helm|Hood|Hat|Mask|Chest|Armor|Armour|Mail|Robe|Tunic|Vest|Leggings|Pants|Greaves|Boots|Shoes|Gauntlets|Gloves")
@@ -122,6 +124,7 @@ class GameItem:
     unique_effect: str | None = None  # what the Unique does
     effect: str | None = None  # what a talisman does at level 3
     name_from_id: bool = False  # the name is made from the ID; what the game calls it isn't known yet
+    unique_id: str | None = None  # the Unique's own save ID, once it has been seen in a real save
 
 
 @dataclass(frozen=True)
@@ -148,7 +151,7 @@ def game_items() -> tuple[GameItem, ...]:
     return tuple(
         GameItem(
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
-            e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")),
+            e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")), e.get("unique_id"),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")
@@ -172,9 +175,52 @@ def _game_items_by_id() -> dict[str, GameItem]:
     return found
 
 
+@lru_cache(maxsize=1)
+def _uniques_by_id() -> dict[str, GameItem]:
+    return {game_item.unique_id: game_item for game_item in game_items() if game_item.unique_id}
+
+
+def _known(tag: str) -> tuple[GameItem | None, bool]:
+    """The game's item for an ID, and whether the ID is that item's Unique version. A Unique has an ID of its
+    own: its base item's with _Unique1 (weapons) or _Unique (armor) on the end, so SW.Item.Sword_Unique1 is the
+    Burning Blade, the Unique Sword."""
+    found = _game_items_by_id().get(tag)
+    if found is not None:
+        return found, False
+    found = _uniques_by_id().get(tag)
+    if found is None and _UNIQUE_SUFFIX.search(tag):
+        found = _game_items_by_id().get(_UNIQUE_SUFFIX.sub("", tag))
+    return (found, True) if found is not None and found.unique else (None, False)
+
+
 def game_item(tag: str) -> GameItem | None:
-    """What the game's item list says about an item ID, if it lists it."""
-    return _game_items_by_id().get(tag)
+    """What the game's item list says about an item ID, if it lists it. A Unique's own ID gives its base item."""
+    return _known(tag)[0]
+
+
+def is_unique_version(tag: str) -> bool:
+    """Whether the ID is a Unique's own (SW.Item.Sword_Unique1), not a base item's."""
+    return _known(tag)[1]
+
+
+def base_tag(tag: str) -> str:
+    """The base item's ID for a Unique's own ID; any other ID as it is."""
+    known, unique = _known(tag)
+    return known.id if known is not None and unique else tag
+
+
+def unique_tag(tag: str, seen: Iterable[str] = ()) -> str | None:
+    """The ID of an item's Unique version, when that ID is known to be real: the game's item list has it, or it
+    is in ``seen`` (IDs from real saves). None for an item with no Unique, or one whose Unique hasn't been seen:
+    its ID could be guessed, but the game removes items whose ID it doesn't know."""
+    known, unique = _known(tag)
+    if known is None or not known.unique:
+        return None
+    if unique:
+        return tag
+    if known.unique_id:
+        return known.unique_id
+    return next((other for other in sorted(seen) if _known(other) == (known, True)), None)
 
 
 _LOCAL_NAMES: dict[str, str] = {}  # item ID -> the name you gave it (my_items.py)
@@ -192,20 +238,21 @@ def local_name(tag: str) -> str | None:
 
 def name_is_known(tag: str) -> bool:
     """Whether the editor knows what the game calls this item (from the game's item list, or from you)."""
-    known = _game_items_by_id().get(tag)
+    known = game_item(tag)
     return tag in _LOCAL_NAMES or (known is not None and not known.name_from_id)
 
 
-def display_name(tag: str, rarity: str = "") -> str:
-    """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, or the Oracle Crown at Unique rarity."""
-    known = _game_items_by_id().get(tag)
+def display_name(tag: str) -> str:
+    """The in-game name: 'SW.Item.MysticHelmet' is the Mystic Circlet, and its Unique's own ID,
+    'SW.Item.MysticHelmet_Unique', is the Oracle Crown. (A base item's ID is the base item at any rarity.)"""
+    known, unique = _known(tag)
     if known is None or known.name_from_id:
         mine = _LOCAL_NAMES.get(tag)
         if mine:
             return mine
     if known is None:
         return item_name(tag)
-    return known.unique if rarity == "Unique" and known.unique else known.name
+    return known.unique if unique and known.unique else known.name
 
 
 def item_group(tag: str) -> str:
@@ -216,7 +263,7 @@ def item_group(tag: str) -> str:
 
 def tag_kind(tag: str) -> str:
     """Melee, Ranged, Armor, Artifact, Talisman, ...: from the game's item list, else from the ID."""
-    known = _game_items_by_id().get(tag)
+    known = game_item(tag)
     return known.kind if known else item_kind(tag)
 
 
@@ -225,7 +272,7 @@ _PIECE_WORDS = {"Helmet": "Helmet", "Chest": "Chestplate", "Chestplate": "Chestp
 
 def armor_piece(tag: str) -> str | None:
     """Helmet, Chestplate, Leggings or Boots for armor, else None."""
-    known = _game_items_by_id().get(tag)
+    known = game_item(tag)
     if known is not None:
         return known.slot if known.kind == "Armor" else None
     match = re.search(r"(Helmet|Chestplate|Chest|Leggings|Boots)$", tag)
@@ -314,7 +361,7 @@ class Item:
 
     @property
     def name(self) -> str:
-        return display_name(self.tag, self.rarity)
+        return display_name(self.tag)
 
     @property
     def kind(self) -> str:
@@ -509,7 +556,10 @@ class Hero:
         """Change an item. Nothing changes unless every given value is valid.
 
         Setting the power also sets the range it was rolled from, so the game
-        can't re-roll it to something else.
+        can't re-roll it to something else. A Unique has an ID of its own, so
+        making an item Unique gives it that ID when it's known to be real, and
+        taking an item's Unique rarity away gives it back its base item's ID.
+        A ``tag`` that's given is otherwise kept exactly.
         """
         item = self._gear(index)
         if tag is not None:
@@ -527,8 +577,13 @@ class Hero:
         if count is not None:
             _check_number(count, 1, MAX_STACK, "Count", whole=True)
 
-        if tag is not None and tag != item.tag:
-            item.data["TypeTag"] = tag
+        wanted = item.tag if tag is None else tag
+        if rarity == "Unique":
+            wanted = unique_tag(wanted, self.seen_item_types()) or wanted
+        elif rarity is not None and tag is None:
+            wanted = base_tag(wanted)
+        if wanted != item.tag:
+            item.data["TypeTag"] = wanted
         if rarity is not None and rarity != item.rarity:
             item.data["RarityTag"] = RARITY_PREFIX + rarity
         if power is not None and power != item.power:
@@ -585,16 +640,19 @@ class Hero:
         """Add a brand-new item, laid out like ``template`` (an existing inventory entry). Returns its index.
 
         ``rarity`` or ``power`` of None keeps the template's. With ``slot`` the item is equipped there.
+        At Unique rarity the item gets its Unique's own ID, when that ID is known to be real.
         """
         tag = tag.strip()
         _check_addable_tag(tag)
+        if rarity == "Unique":
+            tag = unique_tag(tag, self.seen_item_types()) or tag
         if rarity is not None and rarity not in RARITIES:
             raise ValueError(f"Rarity must be one of {', '.join(RARITIES)}.")
         if power is not None:
             _check_number(power, 0, MAX_ITEM_POWER, "Power", whole=True)
         _check_number(count, 1, MAX_STACK, "Count", whole=True)
         if slot is not None:
-            self._check_slot(display_name(tag, rarity or ""), tag_kind(tag), armor_piece(tag), slot, check_level)
+            self._check_slot(display_name(tag), tag_kind(tag), armor_piece(tag), slot, check_level)
 
         entry = copy.deepcopy(template)
         data = entry.setdefault("ItemData", {})
@@ -698,6 +756,7 @@ class CatalogItem:
     unique: str | None = None  # name of the item at Unique rarity
     kind_name: str | None = None
     unique_effect: str | None = None  # what the Unique does
+    unique_tag: str | None = None  # the Unique's own ID, when it's known to be real
 
     @property
     def name(self) -> str:
@@ -710,6 +769,20 @@ class CatalogItem:
     @property
     def piece(self) -> str | None:
         return armor_piece(self.tag) if self.kind == "Armor" else None
+
+    def tag_at(self, rarity: str | None) -> str:
+        """The ID to add it under. At Unique rarity that's its Unique's own ID: the one seen in real saves, or
+        else a guess after the pattern every Unique seen so far follows."""
+        if rarity != "Unique" or not self.unique:
+            return self.tag
+        return self.unique_tag or self.tag + ("_Unique" if self.kind == "Armor" else "_Unique1")
+
+    def confirmed_at(self, rarity: str | None) -> bool:
+        """Whether the game is known to have the ID it's added under at this rarity."""
+        return self.unique_tag is not None if rarity == "Unique" and self.unique else self.confirmed
+
+    def name_at(self, rarity: str | None) -> str:
+        return self.unique if rarity == "Unique" and self.unique else self.name
 
 
 def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
@@ -772,11 +845,13 @@ def gear_power(hero: Hero, slots: list[GearSlot]) -> tuple[int | None, dict[str,
 
 def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     """Items that can be added: every item in the game's item list, plus any other item ID
-    the game has saved for these heroes. Cosmetics, quest items and currencies are left out.
+    the game has saved for these heroes. Cosmetics, quest items and currencies are left out,
+    and so is an enchantment book unless a hero has that book to copy.
 
     IDs seen in saves are confirmed; the game list's other IDs are best guesses from the
     items' names (see tools/build_item_catalog.py). Each item borrows the layout of a saved
-    inventory entry: the same item, the same group, or any gear.
+    inventory entry: the same item, the same group, or any gear. A Unique isn't an entry of
+    its own: its base item's entry carries the Unique's ID, once that has been seen.
     """
     seen: set[str] = set()
     by_tag: dict[str, dict] = {}
@@ -796,6 +871,8 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     for game_item in game_items():
         if game_item.id in catalog or item_group(game_item.id) in NOT_ADDABLE_GROUPS or template(game_item.id) is None:
             continue
+        if game_item.kind == BOOK_KIND and game_item.id not in by_tag:
+            continue
         catalog[game_item.id] = CatalogItem(
             game_item.id,
             template(game_item.id),
@@ -804,16 +881,20 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
             unique=game_item.unique,
             kind_name=game_item.kind,
             unique_effect=game_item.unique_effect,
+            unique_tag=unique_tag(game_item.id, seen),
         )
     for tag in seen:
-        if tag not in catalog and item_group(tag) not in NOT_ADDABLE_GROUPS and template(tag) is not None:
-            catalog[tag] = CatalogItem(tag, template(tag))
+        if tag in catalog or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
+            continue
+        catalog[tag] = CatalogItem(tag, template(tag))
     return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
 
 
 def template_for(tag: str, catalog: list[CatalogItem]) -> dict | None:
-    """An entry to lay a typed-in item ID out like: same item, same group, or any gear."""
-    for match in (lambda c: c.tag == tag, lambda c: item_group(c.tag) == item_group(tag), lambda c: True):
+    """An entry to lay an item ID out like: the same item (its base item, for a Unique), the same group, or
+    any gear."""
+    base = base_tag(tag)
+    for match in (lambda c: c.tag == tag, lambda c: c.tag == base, lambda c: item_group(c.tag) == item_group(tag), lambda c: True):
         found = next((c.template for c in catalog if match(c)), None)
         if found is not None:
             return found

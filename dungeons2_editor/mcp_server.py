@@ -40,6 +40,7 @@ from .hero import (
     game_item,
     gear_power,
     gear_slots,
+    is_unique_version,
     items_by_identity,
     slots_for,
     template_for,
@@ -409,12 +410,12 @@ class EditorServer:
         def change(hero: Hero, profile: saves.SaveProfile, container: saves.Container) -> tuple[str, dict]:
             catalog = self._catalog(hero, profile, container.name)
             entry, unique_name = _catalog_item(args["item"], catalog)
-            if not entry.confirmed and not args.get("allow_unconfirmed"):
-                raise ToolError(
-                    f"The game's save ID for the {entry.name} ({entry.tag}) is a best guess, and in testing the game removed "
-                    "items whose guess was wrong. Pass allow_unconfirmed to add it anyway, or pick a confirmed item."
-                )
             rarity = args.get("rarity") or ("Unique" if unique_name else "Common")
+            if not entry.confirmed_at(rarity) and not args.get("allow_unconfirmed"):
+                raise ToolError(
+                    f"The game's save ID for the {entry.name_at(rarity)} ({entry.tag_at(rarity)}) is a best guess, and in testing "
+                    "the game removed items whose guess was wrong. Pass allow_unconfirmed to add it anyway, or pick a confirmed item."
+                )
             power = _number(args, "power", hero.best_power(), 0, MAX_ITEM_POWER)
             count = _number(args, "count", 1, 1, MAX_STACK)
             slot = None
@@ -428,7 +429,7 @@ class EditorServer:
             if template is None:
                 raise ToolError("There's no item in your saves to copy the layout from yet. Pick up any item in the game first.")
             index = hero.add_item(
-                entry.tag, template, rarity=rarity, power=power, count=count, slot=slot, check_level=not args.get("ignore_slot_levels")
+                entry.tag_at(rarity), template, rarity=rarity, power=power, count=count, slot=slot, check_level=not args.get("ignore_slot_levels")
             )
             item = hero.item(index)
             text = f"Added the {item.name} ({item.rarity}, power {format_amount(item.power)})"
@@ -444,9 +445,10 @@ class EditorServer:
             changes: dict[str, Any] = {}
             if args.get("change_into"):
                 entry, unique_name = _catalog_item(args["change_into"], self._catalog(hero, profile, container.name))
-                if not entry.confirmed and not args.get("allow_unconfirmed"):
-                    raise ToolError(f"The save ID for the {entry.name} is a best guess. Pass allow_unconfirmed to use it anyway.")
-                changes["tag"] = entry.tag
+                rarity = args.get("rarity") or ("Unique" if unique_name else hero.item(index).rarity)
+                if not entry.confirmed_at(rarity) and not args.get("allow_unconfirmed"):
+                    raise ToolError(f"The save ID for the {entry.name_at(rarity)} is a best guess. Pass allow_unconfirmed to use it anyway.")
+                changes["tag"] = entry.tag_at(rarity)
                 if unique_name and not args.get("rarity"):
                     changes["rarity"] = "Unique"
             if args.get("rarity"):
@@ -586,7 +588,7 @@ class EditorServer:
                  "Merchant's stock. Each item has a ref to use in the other tools. Shows unsaved changes too.",
                  {"hero": HERO}, self.get_hero, ("hero",), read_only=True),
             Tool("find_items", "Find items", "Search every weapon, armor piece, artifact and talisman in the game by name (Uniques included). "
-                 "confirmed: false means the save ID is a best guess.",
+                 "confirmed: false means the save ID is a best guess; unique_confirmed says the same about the item's Unique.",
                  {"query": _string("Part of a name, e.g. 'mystic' or 'Oracle Crown'."),
                   "kind": _string("Melee, Ranged, Armor, Artifact or Talisman.", enum=["Melee", "Ranged", "Armor", "Artifact", "Talisman"]),
                   "confirmed_only": _flag("Only items whose save ID has been seen in a real save."),
@@ -601,7 +603,8 @@ class EditorServer:
                   "ignore_caps": _flag("Go past the game's caps (anything above them is lost in the game).")},
                  self.set_stats, ("hero", "stats")),
             Tool("add_item", "Add an item", "Add any item from find_items to the inventory, optionally equipped. A Unique's own name (e.g. Oracle "
-                 "Crown) adds the base item at Unique rarity. Power defaults to the hero's strongest item.",
+                 "Crown), or its base item at Unique rarity, adds the Unique, which has a save ID of its own. Power defaults to "
+                 "the hero's strongest item.",
                  {"hero": HERO, "item": _string("The item's name or save ID from find_items."), "rarity": RARITY, "power": POWER,
                   "count": COUNT, "equip": {"type": ["boolean", "string"], "description": "true to equip it in the first free slot, or a slot name."},
                   "allow_unconfirmed": UNCONFIRMED, "ignore_slot_levels": LOCKED},
@@ -710,8 +713,9 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         info["item_level"] = item.level
     if item.enchantments:
         info["enchantments"] = item.enchantments
-    if known is not None and item.rarity == "Unique" and known.unique_effect:
-        info["unique_effect"] = known.unique_effect
+    if known is not None and is_unique_version(item.tag):
+        if known.unique_effect:
+            info["unique_effect"] = known.unique_effect
     elif known is not None and known.unique:
         info["at_unique"] = known.unique
     if entry is not None and not entry.confirmed:
@@ -725,6 +729,7 @@ def _catalog_info(entry: CatalogItem) -> dict:
         info["piece"] = entry.piece
     if entry.unique:
         info["unique"] = entry.unique
+        info["unique_confirmed"] = entry.unique_tag is not None
     if entry.unique_effect:
         info["unique_effect"] = entry.unique_effect
     known = game_item(entry.tag)

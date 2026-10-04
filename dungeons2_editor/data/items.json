@@ -43,12 +43,13 @@
    "slot": "Helmet",
    "set": "Beekeeper",
    "unique": "Hivemind Hardhat",
-   "unique_effect": "Positive statuses you apply to yourself and allies last 70% longer."
+   "unique_effect": "Positive statuses you apply to yourself and allies last 70% longer.",
+   "unique_id": "SW.Item.HoneyHelmet_Unique"
   },
   {
    "name": "Bounty Hunter Boots",
    "kind": "Armor",
-   "id": "SW.Item.BountyHunterBoots",
+   "id": "SW.Item.UndauntedBoots",
    "confirmed": false,
    "slot": "Boots",
    "set": "Bounty Hunter",
@@ -58,8 +59,8 @@
   {
    "name": "Bounty Hunter Chestplate",
    "kind": "Armor",
-   "id": "SW.Item.BountyHunterChest",
-   "confirmed": false,
+   "id": "SW.Item.UndauntedChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Bounty Hunter",
    "unique": "Dauntless Pauldrons",
@@ -68,17 +69,18 @@
   {
    "name": "Bounty Hunter Helmet",
    "kind": "Armor",
-   "id": "SW.Item.BountyHunterHelmet",
-   "confirmed": false,
+   "id": "SW.Item.UndauntedHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Bounty Hunter",
    "unique": "Dauntless Horns",
-   "unique_effect": "Attacks do 40% more knockback."
+   "unique_effect": "Attacks do 40% more knockback.",
+   "unique_id": "SW.Item.UndauntedHelmet_Unique"
   },
   {
    "name": "Bounty Hunter Shinguards",
    "kind": "Armor",
-   "id": "SW.Item.BountyHunterLeggings",
+   "id": "SW.Item.UndauntedLeggings",
    "confirmed": false,
    "slot": "Leggings",
    "set": "Bounty Hunter",
@@ -89,7 +91,7 @@
    "name": "Disciple Leggings",
    "kind": "Armor",
    "id": "SW.Item.DiscipleLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Disciple",
    "unique": "Sage Belt",
@@ -99,7 +101,7 @@
    "name": "Disciple mask",
    "kind": "Armor",
    "id": "SW.Item.DiscipleHelmet",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Disciple",
    "unique": "Sage Headband",
@@ -109,7 +111,7 @@
    "name": "Disciple Robe",
    "kind": "Armor",
    "id": "SW.Item.DiscipleChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Disciple",
    "unique": "Sage Tunic",
@@ -119,7 +121,7 @@
    "name": "Disciple Wraps",
    "kind": "Armor",
    "id": "SW.Item.DiscipleBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Disciple",
    "unique": "Sage Wraps",
@@ -129,7 +131,7 @@
    "name": "Mushroom Boots",
    "kind": "Armor",
    "id": "SW.Item.MushroomBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Mushroom",
    "unique": "Fly Agaric Galoshes",
@@ -139,7 +141,7 @@
    "name": "Mushroom Cap",
    "kind": "Armor",
    "id": "SW.Item.MushroomHelmet",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Mushroom",
    "unique": "Fly Agaric Cap",
@@ -149,7 +151,7 @@
    "name": "Mushroom Leggings",
    "kind": "Armor",
    "id": "SW.Item.MushroomLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Mushroom",
    "unique": "Fly Agaric Trousers",
@@ -159,7 +161,7 @@
    "name": "Mushroom Robe",
    "kind": "Armor",
    "id": "SW.Item.MushroomChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Mushroom",
    "unique": "Fly Agaric Coat",
@@ -189,17 +191,18 @@
    "name": "Mystic Leggings",
    "kind": "Armor",
    "id": "SW.Item.MysticLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Mystic",
    "unique": "Oracle Tights",
-   "unique_effect": "Reduces artifact cooldown time by 30%."
+   "unique_effect": "Reduces artifact cooldown time by 30%.",
+   "unique_id": "SW.Item.MysticLeggings_Unique"
   },
   {
    "name": "Mystic Robe",
    "kind": "Armor",
    "id": "SW.Item.MysticChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Mystic",
    "unique": "Oracle Mantle",
@@ -208,8 +211,8 @@
   {
    "name": "Nomad Boots",
    "kind": "Armor",
-   "id": "SW.Item.NomadBoots",
-   "confirmed": false,
+   "id": "SW.Item.VoyagerBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Nomad",
    "unique": "Rover Sabatons",
@@ -218,7 +221,7 @@
   {
    "name": "Nomad Chestplate",
    "kind": "Armor",
-   "id": "SW.Item.NomadChest",
+   "id": "SW.Item.VoyagerChest",
    "confirmed": false,
    "slot": "Chestplate",
    "set": "Nomad",
@@ -228,8 +231,8 @@
   {
    "name": "Nomad Hood",
    "kind": "Armor",
-   "id": "SW.Item.NomadHelmet",
-   "confirmed": false,
+   "id": "SW.Item.VoyagerHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Nomad",
    "unique": "Rover Visor",
@@ -238,18 +241,19 @@
   {
    "name": "Nomad Leggings",
    "kind": "Armor",
-   "id": "SW.Item.NomadLeggings",
-   "confirmed": false,
+   "id": "SW.Item.VoyagerLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Nomad",
    "unique": "Rover Gaiters",
-   "unique_effect": "Increases chance to stagger enemies on hit by 60%."
+   "unique_effect": "Increases chance to stagger enemies on hit by 60%.",
+   "unique_id": "SW.Item.VoyagerLeggings_Unique"
   },
   {
    "name": "Phantom Boots",
    "kind": "Armor",
    "id": "SW.Item.PhantomBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Phantom",
    "unique": "Dreamruler Slippers",
@@ -259,7 +263,7 @@
    "name": "Phantom Chestplate",
    "kind": "Armor",
    "id": "SW.Item.PhantomChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Phantom",
    "unique": "Dreamruler Cover",
@@ -269,7 +273,7 @@
    "name": "Phantom Helmet",
    "kind": "Armor",
    "id": "SW.Item.PhantomHelmet",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Phantom",
    "unique": "Dreamruler Crown",
@@ -279,7 +283,7 @@
    "name": "Phantom Pants",
    "kind": "Armor",
    "id": "SW.Item.PhantomLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Phantom",
    "unique": "Dreamruler Pyjamas",
@@ -288,8 +292,8 @@
   {
    "name": "Protector Boots",
    "kind": "Armor",
-   "id": "SW.Item.ProtectorBoots",
-   "confirmed": false,
+   "id": "SW.Item.StalwartBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Protector",
    "unique": "Humbler Tarsi",
@@ -298,8 +302,8 @@
   {
    "name": "Protector Chestplate",
    "kind": "Armor",
-   "id": "SW.Item.ProtectorChest",
-   "confirmed": false,
+   "id": "SW.Item.StalwartChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Protector",
    "unique": "Humbler Carapace",
@@ -308,8 +312,8 @@
   {
    "name": "Protector Helmet",
    "kind": "Armor",
-   "id": "SW.Item.ProtectorHelmet",
-   "confirmed": false,
+   "id": "SW.Item.StalwartHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Protector",
    "unique": "Humbler Antenna",
@@ -318,8 +322,8 @@
   {
    "name": "Protector Shinguards",
    "kind": "Armor",
-   "id": "SW.Item.ProtectorLeggings",
-   "confirmed": false,
+   "id": "SW.Item.StalwartLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Protector",
    "unique": "Humbler Greaves",
@@ -328,8 +332,8 @@
   {
    "name": "Ranger Boots",
    "kind": "Armor",
-   "id": "SW.Item.RangerBoots",
-   "confirmed": false,
+   "id": "SW.Item.RealmreacherBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Ranger",
    "unique": "Sharpshooter Spurs",
@@ -338,8 +342,8 @@
   {
    "name": "Ranger Cap",
    "kind": "Armor",
-   "id": "SW.Item.RangerHelmet",
-   "confirmed": false,
+   "id": "SW.Item.RealmreacherHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Ranger",
    "unique": "Sharpshooter Fedora",
@@ -348,18 +352,19 @@
   {
    "name": "Ranger Jacket",
    "kind": "Armor",
-   "id": "SW.Item.RangerChest",
-   "confirmed": false,
+   "id": "SW.Item.RealmreacherChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Ranger",
    "unique": "Sharpshooter Duster",
-   "unique_effect": "Ranged attacks deal 30% more damage."
+   "unique_effect": "Ranged attacks deal 30% more damage.",
+   "unique_id": "SW.Item.RealmreacherChest_Unique"
   },
   {
    "name": "Ranger Leggings",
    "kind": "Armor",
-   "id": "SW.Item.RangerLeggings",
-   "confirmed": false,
+   "id": "SW.Item.RealmreacherLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Ranger",
    "unique": "Sharpshooter Chaps",
@@ -368,8 +373,8 @@
   {
    "name": "Realmreacher Boots",
    "kind": "Armor",
-   "id": "SW.Item.RealmreacherBoots",
-   "confirmed": false,
+   "id": "SW.Item.TimewornBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Realmreacher",
    "unique": "Soul Corruptor Sandals",
@@ -378,7 +383,7 @@
   {
    "name": "Realmreacher Hat",
    "kind": "Armor",
-   "id": "SW.Item.RealmreacherHelmet",
+   "id": "SW.Item.TimewornHelmet",
    "confirmed": false,
    "slot": "Helmet",
    "set": "Realmreacher",
@@ -388,7 +393,7 @@
   {
    "name": "Realmreacher Leggings",
    "kind": "Armor",
-   "id": "SW.Item.RealmreacherLeggings",
+   "id": "SW.Item.TimewornLeggings",
    "confirmed": false,
    "slot": "Leggings",
    "set": "Realmreacher",
@@ -398,8 +403,8 @@
   {
    "name": "Realmreacher Robe",
    "kind": "Armor",
-   "id": "SW.Item.RealmreacherChest",
-   "confirmed": false,
+   "id": "SW.Item.TimewornChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Realmreacher",
    "unique": "Soul Corruptor Duster",
@@ -409,7 +414,7 @@
    "name": "Redstone Boots",
    "kind": "Armor",
    "id": "SW.Item.RedstoneBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Redstone",
    "unique": "Monstrosity Stompers",
@@ -419,7 +424,7 @@
    "name": "Redstone Chestplate",
    "kind": "Armor",
    "id": "SW.Item.RedstoneChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Redstone",
    "unique": "Monstrosity Armor",
@@ -429,7 +434,7 @@
    "name": "Redstone Helmet",
    "kind": "Armor",
    "id": "SW.Item.RedstoneHelmet",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Redstone",
    "unique": "Monstrosity Horns",
@@ -439,7 +444,7 @@
    "name": "Redstone Shinguards",
    "kind": "Armor",
    "id": "SW.Item.RedstoneLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Redstone",
    "unique": "Monstrosity Greaves",
@@ -459,7 +464,7 @@
    "name": "Scamp Jacket",
    "kind": "Armor",
    "id": "SW.Item.ScampChest",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Scamp",
    "unique": "Scoundrel Blazer",
@@ -479,7 +484,7 @@
    "name": "Scamp Sneakers",
    "kind": "Armor",
    "id": "SW.Item.ScampBoots",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Boots",
    "set": "Scamp",
    "unique": "Scoundrel Sneakers",
@@ -488,8 +493,8 @@
   {
    "name": "Sculk Digger Boots",
    "kind": "Armor",
-   "id": "SW.Item.SculkDiggerBoots",
-   "confirmed": false,
+   "id": "SW.Item.CaveCrawlerBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Sculk Digger",
    "unique": "Twisted Warden Sneakers",
@@ -498,8 +503,8 @@
   {
    "name": "Sculk Digger Hood",
    "kind": "Armor",
-   "id": "SW.Item.SculkDiggerHelmet",
-   "confirmed": false,
+   "id": "SW.Item.CaveCrawlerHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Sculk Digger",
    "unique": "Twisted Warden Blindfold",
@@ -508,8 +513,8 @@
   {
    "name": "Sculk Digger Leggings",
    "kind": "Armor",
-   "id": "SW.Item.SculkDiggerLeggings",
-   "confirmed": false,
+   "id": "SW.Item.CaveCrawlerLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Sculk Digger",
    "unique": "Twisted Warden Tights",
@@ -518,17 +523,18 @@
   {
    "name": "Sculk Digger Robe",
    "kind": "Armor",
-   "id": "SW.Item.SculkDiggerChest",
-   "confirmed": false,
+   "id": "SW.Item.CaveCrawlerChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Sculk Digger",
    "unique": "Twisted Warden Vest",
-   "unique_effect": "Grants a 20% chance to evade melee damage."
+   "unique_effect": "Grants a 20% chance to evade melee damage.",
+   "unique_id": "SW.Item.CaveCrawlerChest_Unique"
   },
   {
    "name": "Sculker Boots",
    "kind": "Armor",
-   "id": "SW.Item.SculkerBoots",
+   "id": "SW.Item.ScavengerBoots",
    "confirmed": false,
    "slot": "Boots",
    "set": "Sculker",
@@ -538,7 +544,7 @@
   {
    "name": "Sculker Mask",
    "kind": "Armor",
-   "id": "SW.Item.SculkerHelmet",
+   "id": "SW.Item.ScavengerHelmet",
    "confirmed": false,
    "slot": "Helmet",
    "set": "Sculker",
@@ -548,7 +554,7 @@
   {
    "name": "Sculker Robe",
    "kind": "Armor",
-   "id": "SW.Item.SculkerChest",
+   "id": "SW.Item.ScavengerChest",
    "confirmed": false,
    "slot": "Chestplate",
    "set": "Sculker",
@@ -558,8 +564,8 @@
   {
    "name": "Sculker Slacks",
    "kind": "Armor",
-   "id": "SW.Item.SculkerLeggings",
-   "confirmed": false,
+   "id": "SW.Item.ScavengerLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Sculker",
    "unique": "Monarch Sash",
@@ -568,8 +574,8 @@
   {
    "name": "Sifter Boots",
    "kind": "Armor",
-   "id": "SW.Item.SifterBoots",
-   "confirmed": false,
+   "id": "SW.Item.WellspringBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Sifter",
    "unique": "Mad Sifter Paws",
@@ -578,8 +584,8 @@
   {
    "name": "Sifter Hood",
    "kind": "Armor",
-   "id": "SW.Item.SifterHelmet",
-   "confirmed": false,
+   "id": "SW.Item.WellspringHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Sifter",
    "unique": "Mad Sifter Mask",
@@ -588,7 +594,7 @@
   {
    "name": "Sifter Leggings",
    "kind": "Armor",
-   "id": "SW.Item.SifterLeggings",
+   "id": "SW.Item.WellspringLeggings",
    "confirmed": false,
    "slot": "Leggings",
    "set": "Sifter",
@@ -598,7 +604,7 @@
   {
    "name": "Sifter Robe",
    "kind": "Armor",
-   "id": "SW.Item.SifterChest",
+   "id": "SW.Item.WellspringChest",
    "confirmed": false,
    "slot": "Chestplate",
    "set": "Sifter",
@@ -608,8 +614,8 @@
   {
    "name": "Sorcerer Boots",
    "kind": "Armor",
-   "id": "SW.Item.SorcererBoots",
-   "confirmed": false,
+   "id": "SW.Item.EvocationBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Sorcerer",
    "unique": "Alchemist Loafers",
@@ -618,8 +624,8 @@
   {
    "name": "Sorcerer Hat",
    "kind": "Armor",
-   "id": "SW.Item.SorcererHelmet",
-   "confirmed": false,
+   "id": "SW.Item.EvocationHelmet",
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Sorcerer",
    "unique": "Alchemist Top Hat",
@@ -628,7 +634,7 @@
   {
    "name": "Sorcerer Leggings",
    "kind": "Armor",
-   "id": "SW.Item.SorcererLeggings",
+   "id": "SW.Item.EvocationLeggings",
    "confirmed": false,
    "slot": "Leggings",
    "set": "Sorcerer",
@@ -638,7 +644,7 @@
   {
    "name": "Sorcerer Robe",
    "kind": "Armor",
-   "id": "SW.Item.SorcererChest",
+   "id": "SW.Item.EvocationChest",
    "confirmed": false,
    "slot": "Chestplate",
    "set": "Sorcerer",
@@ -648,7 +654,7 @@
   {
    "name": "Steel Wool Boots",
    "kind": "Armor",
-   "id": "SW.Item.SteelWoolBoots",
+   "id": "SW.Item.FrostRimeBoots",
    "confirmed": false,
    "slot": "Boots",
    "set": "Steel Wool",
@@ -658,7 +664,7 @@
   {
    "name": "Steel Wool Cap",
    "kind": "Armor",
-   "id": "SW.Item.SteelWoolHelmet",
+   "id": "SW.Item.FrostRimeHelmet",
    "confirmed": false,
    "slot": "Helmet",
    "set": "Steel Wool",
@@ -668,8 +674,8 @@
   {
    "name": "Steel Wool Leggings",
    "kind": "Armor",
-   "id": "SW.Item.SteelWoolLeggings",
-   "confirmed": false,
+   "id": "SW.Item.FrostRimeLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Steel Wool",
    "unique": "Rimefrost Longjohns",
@@ -678,8 +684,8 @@
   {
    "name": "Steel Wool Sweater",
    "kind": "Armor",
-   "id": "SW.Item.SteelWoolChest",
-   "confirmed": false,
+   "id": "SW.Item.FrostRimeChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Steel Wool",
    "unique": "Rimefrost Armor",
@@ -688,7 +694,7 @@
   {
    "name": "Treehugger Chestplate",
    "kind": "Armor",
-   "id": "SW.Item.TreehuggerChest",
+   "id": "SW.Item.HewnBarkChest",
    "confirmed": false,
    "slot": "Chestplate",
    "set": "Treehugger",
@@ -698,8 +704,8 @@
   {
    "name": "Treehugger Clogs",
    "kind": "Armor",
-   "id": "SW.Item.TreehuggerBoots",
-   "confirmed": false,
+   "id": "SW.Item.HewnBarkBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Treehugger",
    "unique": "Woodsprite Root Boots",
@@ -708,7 +714,7 @@
   {
    "name": "Treehugger Leggings",
    "kind": "Armor",
-   "id": "SW.Item.TreehuggerLeggings",
+   "id": "SW.Item.HewnBarkLeggings",
    "confirmed": false,
    "slot": "Leggings",
    "set": "Treehugger",
@@ -718,7 +724,7 @@
   {
    "name": "Treehugger Mask",
    "kind": "Armor",
-   "id": "SW.Item.TreehuggerHelmet",
+   "id": "SW.Item.HewnBarkHelmet",
    "confirmed": false,
    "slot": "Helmet",
    "set": "Treehugger",
@@ -726,18 +732,10 @@
    "unique_effect": "Companions take 20% less damage."
   },
   {
-   "name": "Undaunted Helmet",
-   "kind": "Armor",
-   "id": "SW.Item.UndauntedHelmet",
-   "confirmed": true,
-   "slot": "Helmet",
-   "name_from_id": true
-  },
-  {
    "name": "Wolfpack Boots",
    "kind": "Armor",
-   "id": "SW.Item.WolfpackBoots",
-   "confirmed": false,
+   "id": "SW.Item.WolfclutchBoots",
+   "confirmed": true,
    "slot": "Boots",
    "set": "Wolfpack",
    "unique": "Packleader Paws",
@@ -746,7 +744,7 @@
   {
    "name": "Wolfpack Hood",
    "kind": "Armor",
-   "id": "SW.Item.WolfpackHelmet",
+   "id": "SW.Item.WolfclutchHelmet",
    "confirmed": false,
    "slot": "Helmet",
    "set": "Wolfpack",
@@ -756,8 +754,8 @@
   {
    "name": "Wolfpack Jacket",
    "kind": "Armor",
-   "id": "SW.Item.WolfpackChest",
-   "confirmed": false,
+   "id": "SW.Item.WolfclutchChest",
+   "confirmed": true,
    "slot": "Chestplate",
    "set": "Wolfpack",
    "unique": "Packleader Hide",
@@ -766,8 +764,8 @@
   {
    "name": "Wolfpack Leggings",
    "kind": "Armor",
-   "id": "SW.Item.WolfpackLeggings",
-   "confirmed": false,
+   "id": "SW.Item.WolfclutchLeggings",
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Wolfpack",
    "unique": "Packleader Fur Chaps",
@@ -776,20 +774,20 @@
   {
    "name": "Battle Banner",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.BattleBanner",
-   "confirmed": false
+   "id": "SW.Item.Artifact.WarBanner",
+   "confirmed": true
   },
   {
    "name": "Blaze Bangle",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.BlazeBangle",
-   "confirmed": false
+   "id": "SW.Item.Artifact.FireBracelet",
+   "confirmed": true
   },
   {
    "name": "Blight Bangle",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.BlightBangle",
-   "confirmed": false
+   "id": "SW.Item.Artifact.PoisonBracelet",
+   "confirmed": true
   },
   {
    "name": "Blizzard Bangle",
@@ -800,8 +798,8 @@
   {
    "name": "Cinder Scepter",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.CinderScepter",
-   "confirmed": false
+   "id": "SW.Item.Artifact.FlameSceptre",
+   "confirmed": true
   },
   {
    "name": "Conductive Quiver",
@@ -819,13 +817,13 @@
    "name": "Corrupted Seeds",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CorruptedSeeds",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Creeper Candle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CreeperCandle",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Death Cap Mushroom",
@@ -836,32 +834,32 @@
   {
    "name": "Echo Ocarina",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.EchoOcarina",
-   "confirmed": false
+   "id": "SW.Item.Artifact.CarapaceOcarina",
+   "confirmed": true
   },
   {
    "name": "Electric Bangle",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.ElectricBangle",
-   "confirmed": false
+   "id": "SW.Item.Artifact.ConductiveBracelet",
+   "confirmed": true
   },
   {
    "name": "Ender Fog",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.EnderFog",
-   "confirmed": false
+   "id": "SW.Item.Artifact.SmokeBomb",
+   "confirmed": true
   },
   {
    "name": "Fighter's Flute",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.FightersFlute",
-   "confirmed": false
+   "id": "SW.Item.Artifact.FightersFife",
+   "confirmed": true
   },
   {
    "name": "Fighting Fungus",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.FightingFungus",
-   "confirmed": false
+   "id": "SW.Item.Artifact.MaimingMushroom",
+   "confirmed": true
   },
   {
    "name": "Firework Arrow",
@@ -872,8 +870,8 @@
   {
    "name": "Flaming Quiver",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.FlamingQuiver",
-   "confirmed": false
+   "id": "SW.Item.Artifact.FlameQuiver",
+   "confirmed": true
   },
   {
    "name": "Freezing Quiver",
@@ -885,25 +883,32 @@
    "name": "Grindstone",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Grindstone",
-   "confirmed": false
+   "confirmed": true
+  },
+  {
+   "name": "Haste Mushroom",
+   "kind": "Artifact",
+   "id": "SW.Item.Artifact.HasteMushroom",
+   "confirmed": true,
+   "name_from_id": true
   },
   {
    "name": "Honey Dipper",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.HoneyDipper",
-   "confirmed": false
+   "id": "SW.Item.Artifact.Honeypot",
+   "confirmed": true
   },
   {
    "name": "Humbling Horn",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.HumblingHorn",
-   "confirmed": false
+   "id": "SW.Item.Artifact.RallyingHorn",
+   "confirmed": true
   },
   {
    "name": "Lightning Rod",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.LightningRod",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Picnic Basket",
@@ -914,51 +919,44 @@
   {
    "name": "Pouch of Ember",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.PouchOfEmber",
-   "confirmed": false
+   "id": "SW.Item.Artifact.Satchel.Fire",
+   "confirmed": true
   },
   {
    "name": "Pouch of Frost",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.PouchOfFrost",
-   "confirmed": false
+   "id": "SW.Item.Artifact.Satchel.Freezing",
+   "confirmed": true
   },
   {
    "name": "Pouch of Poison",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.PouchOfPoison",
-   "confirmed": false
+   "id": "SW.Item.Artifact.Satchel.Poison",
+   "confirmed": true
   },
   {
    "name": "Pouch of Thunder",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.PouchOfThunder",
-   "confirmed": false
+   "id": "SW.Item.Artifact.Satchel.Conductive",
+   "confirmed": true
   },
   {
    "name": "Powershaker",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Powershaker",
-   "confirmed": false
-  },
-  {
-   "name": "Rallying Horn",
-   "kind": "Artifact",
-   "id": "SW.Item.Artifact.RallyingHorn",
-   "confirmed": true,
-   "name_from_id": true
+   "confirmed": true
   },
   {
    "name": "Redstone Mine Launcher",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.RedstoneMineLauncher",
-   "confirmed": false
+   "id": "SW.Item.Artifact.RedstoneMines",
+   "confirmed": true
   },
   {
    "name": "Soul Harvester",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.SoulHarvester",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Tempo Truffle",
@@ -970,69 +968,70 @@
    "name": "Totem of Casting",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfCasting",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Totem of Regeneration",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfRegeneration",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Totem of Shielding",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfShielding",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Turtle Master's Mandolin",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.TurtleMastersMandolin",
-   "confirmed": false
+   "id": "SW.Item.Artifact.IronHideLute",
+   "confirmed": true
   },
   {
    "name": "Venomous Quiver",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.VenomousQuiver",
-   "confirmed": false
+   "id": "SW.Item.Artifact.PoisonQuiver",
+   "confirmed": true
   },
   {
    "name": "Warding Chimes",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.WardingChimes",
-   "confirmed": false
+   "confirmed": true
   },
   {
    "name": "Warrior Drums",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.WarriorDrums",
-   "confirmed": false
+   "id": "SW.Item.Artifact.WarriorsDrums",
+   "confirmed": true
   },
   {
    "name": "Winter Staff",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.WinterStaff",
-   "confirmed": false
+   "id": "SW.Item.Artifact.BlizzardStaff",
+   "confirmed": true
   },
   {
    "name": "Witch Brew",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.WitchBrew",
-   "confirmed": false
+   "id": "SW.Item.Artifact.WitchesBrew",
+   "confirmed": true
   },
   {
    "name": "Axe",
    "kind": "Melee",
    "id": "SW.Item.Axe",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Hunter's Hatchet",
-   "unique_effect": "Reduces ranged ammo cooldown time by 35%."
+   "unique_effect": "Reduces ranged ammo cooldown time by 35%.",
+   "unique_id": "SW.Item.Axe_Unique1"
   },
   {
    "name": "Battle Hammer",
    "kind": "Melee",
-   "id": "SW.Item.BattleHammer",
-   "confirmed": false,
+   "id": "SW.Item.Hammer",
+   "confirmed": true,
    "unique": "Emerald Hammer",
    "unique_effect": "Grants a 5% chance of higher rarity loot drops."
   },
@@ -1048,54 +1047,47 @@
    "name": "Claymore",
    "kind": "Melee",
    "id": "SW.Item.Claymore",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Slaymore",
    "unique_effect": "Melee attacks deal 50% more damage to secondary targets."
   },
   {
    "name": "Clobberer",
    "kind": "Melee",
-   "id": "SW.Item.Clobberer",
-   "confirmed": false,
+   "id": "SW.Item.GiantClub",
+   "confirmed": true,
    "unique": "Redstone Wrecker",
    "unique_effect": "Wave deals 80% of weapon damage and sets mobs on fire for a short time."
   },
   {
    "name": "Cookiecutter",
    "kind": "Melee",
-   "id": "SW.Item.Cookiecutter",
-   "confirmed": false,
+   "id": "SW.Item.CurvedGreatsword",
+   "confirmed": true,
    "unique": "Lullaby Blade",
    "unique_effect": "Applies Soulsick status to enemies on hit."
   },
   {
-   "name": "Curved Greatsword",
-   "kind": "Melee",
-   "id": "SW.Item.CurvedGreatsword",
-   "confirmed": true,
-   "name_from_id": true
-  },
-  {
    "name": "Double Daggers",
    "kind": "Melee",
-   "id": "SW.Item.DoubleDaggers",
-   "confirmed": false,
+   "id": "SW.Item.Daggers",
+   "confirmed": true,
    "unique": "Venomous Fangs",
    "unique_effect": "Poison attacks deal 20% more damage."
   },
   {
    "name": "Double Sickles",
    "kind": "Melee",
-   "id": "SW.Item.DoubleSickles",
-   "confirmed": false,
+   "id": "SW.Item.Sickles",
+   "confirmed": true,
    "unique": "Sift Sickles",
    "unique_effect": "Increases healing given to yourself and allies by 50%."
   },
   {
    "name": "Gauntlets",
    "kind": "Melee",
-   "id": "SW.Item.Gauntlets",
-   "confirmed": false,
+   "id": "SW.Item.Gauntlet",
+   "confirmed": true,
    "unique": "Prime Enchanter's Gauntlets",
    "unique_effect": "Jump attacks create waves of lightning and ice that damages enemies."
   },
@@ -1103,15 +1095,15 @@
    "name": "Glaive",
    "kind": "Melee",
    "id": "SW.Item.Glaive",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Golden Glaive",
    "unique_effect": "Deal 60% more damage to enemies who are at full health."
   },
   {
    "name": "Greataxe",
    "kind": "Melee",
-   "id": "SW.Item.Greataxe",
-   "confirmed": false,
+   "id": "SW.Item.GreatAxe",
+   "confirmed": true,
    "unique": "Awesomeaxe",
    "unique_effect": "Attacks have a 6% chance to grant the Strength status on hit."
   },
@@ -1119,15 +1111,15 @@
    "name": "Greatsword",
    "kind": "Melee",
    "id": "SW.Item.Greatsword",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Darkshard",
    "unique_effect": "Attacks have a chance to pull all enemies within 5 blocks toward you."
   },
   {
    "name": "Longsword",
    "kind": "Melee",
-   "id": "SW.Item.Longsword",
-   "confirmed": false,
+   "id": "SW.Item.StraightSword",
+   "confirmed": true,
    "unique": "Frostbiter",
    "unique_effect": "Frost attacks deal 30% more damage."
   },
@@ -1135,15 +1127,15 @@
    "name": "Mace",
    "kind": "Melee",
    "id": "SW.Item.Mace",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Carapace Mace",
    "unique_effect": "Increases attack damage by 35% when jumping or rolling."
   },
   {
    "name": "Meat Cleaver",
    "kind": "Melee",
-   "id": "SW.Item.MeatCleaver",
-   "confirmed": false,
+   "id": "SW.Item.Cleaver",
+   "confirmed": true,
    "unique": "Cacaphonous Cleaver",
    "unique_effect": "Restores 7% of max health for each soul gathered."
   },
@@ -1159,15 +1151,16 @@
    "name": "Pickaxe",
    "kind": "Melee",
    "id": "SW.Item.Pickaxe",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Prospector's Pick",
-   "unique_effect": "Grants a 20% chance to receive additional emeralds."
+   "unique_effect": "Grants a 20% chance to receive additional emeralds.",
+   "unique_id": "SW.Item.Pickaxe_Unique1"
   },
   {
    "name": "Pike",
    "kind": "Melee",
    "id": "SW.Item.Pike",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Stormcaller",
    "unique_effect": "Lightning attacks deal 25% more damage."
   },
@@ -1175,15 +1168,15 @@
    "name": "Rapier",
    "kind": "Melee",
    "id": "SW.Item.Rapier",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Thousand Cuts",
    "unique_effect": "Increases melee attack speed by 30%."
   },
   {
    "name": "Riftslasher",
    "kind": "Melee",
-   "id": "SW.Item.Riftslasher",
-   "confirmed": false,
+   "id": "SW.Item.CurvedLongsword",
+   "confirmed": true,
    "unique": "Pride of the Plains",
    "unique_effect": "Melee attacks deal 40% more damage to primary targets."
   },
@@ -1191,15 +1184,16 @@
    "name": "Sabre",
    "kind": "Melee",
    "id": "SW.Item.Sabre",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Rascal's Razor",
-   "unique_effect": "Reduces rolling cooldown time by 40%."
+   "unique_effect": "Reduces rolling cooldown time by 40%.",
+   "unique_id": "SW.Item.Sabre_Unique1"
   },
   {
    "name": "Scythe",
    "kind": "Melee",
    "id": "SW.Item.Scythe",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Soul Reaper",
    "unique_effect": "Increases souls gained by 60%."
   },
@@ -1207,7 +1201,7 @@
    "name": "Short Spear",
    "kind": "Melee",
    "id": "SW.Item.ShortSpear",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Spectral Spear",
    "unique_effect": "Wave deals 90% of weapon damage and deals additional soul damage for a short time."
   },
@@ -1215,7 +1209,7 @@
    "name": "Shovel",
    "kind": "Melee",
    "id": "SW.Item.Shovel",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Diamond Shovel",
    "unique_effect": "Shockwave deals 20% of weapon damage and increases knockback by 100%."
   },
@@ -1225,21 +1219,22 @@
    "id": "SW.Item.Sword",
    "confirmed": true,
    "unique": "The Burning Blade",
-   "unique_effect": "Fire attacks deal 20% more damage."
+   "unique_effect": "Fire attacks deal 20% more damage.",
+   "unique_id": "SW.Item.Sword_Unique1"
   },
   {
    "name": "Tidal Sickle",
    "kind": "Melee",
-   "id": "SW.Item.TidalSickle",
-   "confirmed": false,
+   "id": "SW.Item.MoonSword",
+   "confirmed": true,
    "unique": "Lunar Sickle",
    "unique_effect": "Increases chance to stagger enemies on hit by 60%."
   },
   {
    "name": "Twilight Dagger",
    "kind": "Melee",
-   "id": "SW.Item.TwilightDagger",
-   "confirmed": false,
+   "id": "SW.Item.Dagger",
+   "confirmed": true,
    "unique": "Sculker's Bane",
    "unique_effect": "Soul attacks deal 20% more damage."
   },
@@ -1247,17 +1242,18 @@
    "name": "War Hammer",
    "kind": "Melee",
    "id": "SW.Item.WarHammer",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Heartbreaker",
    "unique_effect": "Hits with this weapon explode on impact!"
   },
   {
    "name": "Wolf Claws",
    "kind": "Melee",
-   "id": "SW.Item.WolfClaws",
-   "confirmed": false,
+   "id": "SW.Item.Claws",
+   "confirmed": true,
    "unique": "Sculker Claws",
-   "unique_effect": "Grants a 15% chance to enter Shadowcloaking when attacking enemies."
+   "unique_effect": "Grants a 15% chance to enter Shadowcloaking when attacking enemies.",
+   "unique_id": "SW.Item.Claws_Unique1"
   },
   {
    "name": "Bow",
@@ -1271,15 +1267,15 @@
    "name": "Crossbow",
    "kind": "Ranged",
    "id": "SW.Item.Crossbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Shackler",
    "unique_effect": "Attacks have a 30% chance to inflict the Chained status on hits."
   },
   {
    "name": "Dual Crossbows",
    "kind": "Ranged",
-   "id": "SW.Item.DualCrossbows",
-   "confirmed": false,
+   "id": "SW.Item.DualCrossbow",
+   "confirmed": true,
    "unique": "Double Crossers",
    "unique_effect": "Rolling applies 50% damage amplification to your next melee or ranged attack."
   },
@@ -1287,7 +1283,7 @@
    "name": "Greatbow",
    "kind": "Ranged",
    "id": "SW.Item.Greatbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Humbler Heartstring",
    "unique_effect": "Projectiles can pierce up to 10 enemies."
   },
@@ -1311,7 +1307,7 @@
    "name": "Powerbow",
    "kind": "Ranged",
    "id": "SW.Item.Powerbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Paragon",
    "unique_effect": "Ranged attacks deal 30% more damage."
   },
@@ -1319,7 +1315,7 @@
    "name": "Rapid Crossbow",
    "kind": "Ranged",
    "id": "SW.Item.RapidCrossbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "The Cross Pollinator",
    "unique_effect": "Reduces time between shots with ranged weapons by 40%."
   },
@@ -1327,7 +1323,7 @@
    "name": "Scatter Crossbow",
    "kind": "Ranged",
    "id": "SW.Item.ScatterCrossbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Harp Crossbow",
    "unique_effect": "Grants a 60% chance to fire additional projectiles."
   },
@@ -1335,7 +1331,7 @@
    "name": "Shortbow",
    "kind": "Ranged",
    "id": "SW.Item.Shortbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Shooting Star",
    "unique_effect": "Grants a 20% chance to evade melee damage."
   },
@@ -1343,15 +1339,16 @@
    "name": "Trickbow",
    "kind": "Ranged",
    "id": "SW.Item.Trickbow",
-   "confirmed": false,
+   "confirmed": true,
    "unique": "Phantom Wing",
-   "unique_effect": "Increases jump shot damage dealt by 6%."
+   "unique_effect": "Increases jump shot damage dealt by 6%.",
+   "unique_id": "SW.Item.Trickbow_Unique1"
   },
   {
    "name": "Amethyst Lens",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.AmethystLens",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.RangedBuff",
+   "confirmed": true,
    "effect": "Ranged attacks deal 25% more damage."
   },
   {
@@ -1378,15 +1375,15 @@
   {
    "name": "Fist of Iron",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.FistOfIron",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.Brawling",
+   "confirmed": true,
    "effect": "Melee attacks deal 35% more damage."
   },
   {
    "name": "Glowstone Flask",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.GlowstoneFlask",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.PotionCooldown",
+   "confirmed": true,
    "effect": "Reduces potion cooldown time by 25%."
   },
   {
@@ -1421,7 +1418,7 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.MedallionOfMomentum",
    "confirmed": false,
-   "effect": "Increases movement speed by 300% if moving for more than {1} seconds."
+   "effect": "Increases movement speed by 30% if moving for more than 3 seconds."
   },
   {
    "name": "Ocelot's Paw",
@@ -1446,8 +1443,8 @@
   {
    "name": "Sigil of Beeswax",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.SigilOfBeeswax",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.HealthBoost",
+   "confirmed": true,
    "effect": "Increases the player's maximum health by 35%."
   },
   {
@@ -1460,15 +1457,15 @@
   {
    "name": "Tasty Bone",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.TastyBone",
-   "confirmed": false
+   "id": "SW.Item.Talisman.Wolf",
+   "confirmed": true
   },
   {
    "name": "Tendrils of the Sprout",
    "kind": "Talisman",
    "id": "SW.Item.Talisman.TendrilsOfTheSprout",
    "confirmed": false,
-   "effect": "Grants a 300% damage increase while health is above {1}."
+   "effect": "Grants a 300% damage increase while health is above …"
   },
   {
    "name": "The Eye of Experience",
@@ -1482,20 +1479,20 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.ThriftyPendant",
    "confirmed": false,
-   "effect": "Grants up to a 200% damage bonus based on emeralds held, effective to a maximum of {1} emeralds."
+   "effect": "Grants up to a 200% damage bonus based on emeralds held."
   },
   {
    "name": "Twig of Dark Oak",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.TwigOfDarkOak",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.AmmoCapacity",
+   "confirmed": true,
    "effect": "Carry 60% more ammo."
   },
   {
    "name": "Twisted Tooth",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.TwistedTooth",
-   "confirmed": false,
+   "id": "SW.Item.Talisman.SoulGather",
+   "confirmed": true,
    "effect": "Increases souls gained by 140%."
   },
   {
@@ -1509,6 +1506,60 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.WonderfulWheat",
    "confirmed": false
+  },
+  {
+   "name": "Ancient Alchemy",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.SoulInfusedPotion",
+   "confirmed": true
+  },
+  {
+   "name": "Buddy Brew",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.PotionSharing",
+   "confirmed": true
+  },
+  {
+   "name": "Ender Quiver",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.ExpandedQuiver",
+   "confirmed": true
+  },
+  {
+   "name": "Piercing",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Piercing",
+   "confirmed": true
+  },
+  {
+   "name": "Ricochet",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Ricochet",
+   "confirmed": true
+  },
+  {
+   "name": "Shockwave",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Shockwave",
+   "confirmed": true
+  },
+  {
+   "name": "Somersault",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.MultiRoll",
+   "confirmed": true
+  },
+  {
+   "name": "Springload",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.SpringLoaded",
+   "confirmed": true
+  },
+  {
+   "name": "Thundering",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Thundering",
+   "confirmed": true
   }
  ]
 }

@@ -131,9 +131,10 @@ PRESETS: tuple[Preset, ...] = (
         "Upgrade my gear",
         "Turn everything you own into top-rarity gear at the power you pick.",
         "Makes every weapon and armor piece in your inventory Unique and every artifact Special (artifacts and "
-        "talismans can't be Unique), at the power you choose. It also fills your emeralds for the Thrifty Pendant, "
-        "which adds more damage the more emeralds you carry. Uniques made by the editor work (a Unique Sword stuck "
-        "in testing), but keep the power close to your level: in a test, the game removed items at power 135.",
+        "talismans can't be Unique), at the power you choose. An item whose Unique has been seen in a real save "
+        "becomes that Unique (a Sword becomes The Burning Blade); the others keep their name and get Unique rarity. "
+        "It also fills your emeralds for the Thrifty Pendant, which adds more damage the more emeralds you carry. "
+        "Keep the power close to your level: in a test, the game removed items at power 135.",
         stats={"Emeralds": STAT_CAPS["Emeralds"]},
         items=(THRIFTY_PENDANT,),
         upgrade_gear=True,
@@ -470,8 +471,17 @@ class Addition:
 
     @property
     def name(self) -> str:
-        """Its in-game name: a base item at Unique rarity goes by its Unique's name."""
+        """Its in-game name: at Unique rarity it's the item's Unique."""
         return self.found.unique if self.rarity == "Unique" and self.found.unique else self.kit.name
+
+    @property
+    def tag(self) -> str:
+        """The ID it's added under: a Unique has an ID of its own."""
+        return self.found.tag_at(self.rarity)
+
+    @property
+    def confirmed(self) -> bool:
+        return self.found.confirmed_at(self.rarity)
 
 
 @dataclass
@@ -520,7 +530,7 @@ def _owned_copy(hero: Hero, kit_item: KitItem, found: CatalogItem | None, result
         rarity = rarity_for(kit_item, found, result.rarity)
         matches = [
             item for item in mine
-            if item.tag == found.tag and (rarity is None or item.rarity == rarity) and (item.power or 0) >= result.power
+            if item.tag == found.tag_at(rarity) and (rarity is None or item.rarity == rarity) and (item.power or 0) >= result.power
         ]
     return max(matches, key=lambda item: (item.equipped_slot is not None, item.power or 0), default=None)
 
@@ -554,7 +564,7 @@ def plan(
             result.have.append(Owned(kit_item, mine.index))
         elif found is None:
             result.find.append(kit_item)
-        elif found.confirmed or include_unconfirmed:
+        elif found.confirmed_at(rarity_for(kit_item, found, result.rarity)) or include_unconfirmed:
             result.add.append(Addition(kit_item, found, rarity_for(kit_item, found, result.rarity)))
         else:
             result.unconfirmed.append((kit_item, found))
@@ -631,7 +641,7 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
         if addition.name != addition.kit.name:
             why = _UNIQUE_INTRO.sub("", why)  # "At Unique it's the Heartbreaker: hits explode." -> "hits explode."
             why = why[:1].upper() + why[1:]
-        lines.append(f"{line}: {why}" + ("" if addition.found.confirmed else " (unconfirmed)"))
+        lines.append(f"{line}: {why}" + ("" if addition.confirmed else " (unconfirmed)"))
     for owned in preset_plan.have:
         item = hero.item(owned.index)
         if owned.slot is not None:
@@ -664,7 +674,7 @@ def loadout(preset: Preset, preset_plan: Plan, hero: Hero, catalog: list[Catalog
     by_kit: dict[int, LoadoutRow] = {}
     for addition in preset_plan.add:
         place = place_of(addition.found.kind, addition.found.piece)
-        by_kit[id(addition.kit)] = LoadoutRow(place, addition.name, "add", addition.slot is not None, addition.found.confirmed)
+        by_kit[id(addition.kit)] = LoadoutRow(place, addition.name, "add", addition.slot is not None, addition.confirmed)
     for owned in preset_plan.have:
         item = hero.item(owned.index)
         by_kit[id(owned.kit)] = LoadoutRow(place_of(item.kind, item.piece), item.name, "yours", owned.slot is not None or bool(item.equipped_slot))
@@ -698,7 +708,7 @@ def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: 
         # Without a picked rarity, a saved copy of the item already has the right power; otherwise use the preset's.
         keep_power = exact and preset_plan.rarity is None
         hero.add_item(
-            addition.found.tag,
+            addition.tag,
             template,
             rarity=addition.rarity,
             power=None if keep_power else preset_plan.power,

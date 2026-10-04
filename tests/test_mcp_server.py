@@ -141,7 +141,7 @@ class ReadingTests(ServerTestCase):
         self.assertEqual(gear["Melee weapon"]["item"]["name"], "Sword")
         self.assertFalse(gear["Artifact 2"]["open"])  # opens at level 5
         self.assertEqual([item["name"] for item in hero["inventory"]], ["Mystic Circlet", "Longbow"])
-        self.assertEqual([item["name"] for item in hero["merchant_stock"]], ["Curved Greatsword"])
+        self.assertEqual([item["name"] for item in hero["merchant_stock"]], ["Cookiecutter"])
         self.assertEqual(hero["inventory"][0]["at_unique"], "Oracle Crown")
         self.assertTrue(all(item["ref"] for item in hero["inventory"]))
         self.assertEqual(hero["unsaved_changes"], [])
@@ -179,16 +179,23 @@ class EditingTests(ServerTestCase):
         self.assertIn("no stat", self.call("set_stats", hero="00000000", stats={"Echo shards": 50}))  # this hero has none yet
 
     def test_add_a_unique_by_its_name_and_equip_it(self):
-        result = self.call("add_item", hero="00000000", item="Oracle Crown", power=3, equip=True)
-        self.assertEqual(result["done"], "Added the Oracle Crown (Unique, power 3) and equipped it (helmet).")
+        result = self.call("add_item", hero="00000000", item="Oracle Tights", power=3, equip=True)
+        self.assertEqual(result["done"], "Added the Oracle Tights (Unique, power 3) and equipped it (leggings).")
         gear = {slot["slot"]: slot["item"] for slot in self.call("get_hero", hero="00000000")["gear"]}
-        self.assertEqual((gear["Helmet"]["name"], gear["Helmet"]["unique_effect"]), ("Oracle Crown", "Lightning attacks deal 25% more damage."))
+        # A Unique has a save ID of its own; this one has been seen in a real save.
+        self.assertEqual((gear["Leggings"]["name"], gear["Leggings"]["id"]), ("Oracle Tights", "SW.Item.MysticLeggings_Unique"))
+        self.assertTrue(gear["Leggings"]["unique_effect"])
+        # The Oracle Crown's hasn't, so its ID is a guess after the same pattern, and needs a yes.
+        self.assertIn("SW.Item.MysticHelmet_Unique) is a best guess", self.call("add_item", hero="00000000", item="Oracle Crown"))
+        crown = self.call("add_item", hero="00000000", item="Mystic Circlet", rarity="Unique", allow_unconfirmed=True)["item"]
+        self.assertEqual((crown["name"], crown["id"], crown["unique_effect"]), ("Oracle Crown", "SW.Item.MysticHelmet_Unique", "Lightning attacks deal 25% more damage."))
         self.assertEqual(self.call("add_item", hero="00000000", item="Longbow")["item"]["power"], 3)  # power defaults to the best item's
         self.assertIn("Did you mean", self.call("add_item", hero="00000000", item="mystic"))
 
     def test_guessed_ids_and_locked_slots_need_permission(self):
-        self.assertIn("best guess", self.call("add_item", hero="00000000", item="Claymore"))
-        self.assertNotIn("best guess", json.dumps(self.call("add_item", hero="00000000", item="Claymore", allow_unconfirmed=True)))
+        self.assertIn("best guess", self.call("add_item", hero="00000000", item="Battlestaff"))
+        self.assertNotIn("best guess", json.dumps(self.call("add_item", hero="00000000", item="Battlestaff", allow_unconfirmed=True)))
+        self.assertNotIn("best guess", json.dumps(self.call("add_item", hero="00000000", item="Riftslasher")))  # reported from a real save
         self.assertIn("opens at level 10", self.call("add_item", hero="00000000", item="Firework Arrow", equip="Artifact 3"))
         result = self.call("add_item", hero="00000000", item="Firework Arrow", equip="artifact3", ignore_slot_levels=True)
         self.assertIn("equipped it (artifact 3)", result["done"])
@@ -206,7 +213,7 @@ class EditingTests(ServerTestCase):
         self.assertIn("Unequip the Sword", self.call("change_item", hero="00000000", item=sword, change_into="Axe"))
         self.call("unequip_item", hero="00000000", item=sword)
         self.call("change_item", hero="00000000", item=sword, change_into="Axe")
-        copy_ref = self.call("copy_item", hero="00000000", item=self.ref_of("Curved Greatsword"))["item"]["ref"]
+        copy_ref = self.call("copy_item", hero="00000000", item=self.ref_of("Cookiecutter"))["item"]["ref"]
         self.call("delete_item", hero="00000000", item=copy_ref)
         self.assertIn("no item with ref", self.call("delete_item", hero="00000000", item=copy_ref))
         changes = self.call("preview_changes", hero="00000000")["unsaved_changes"]

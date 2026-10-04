@@ -55,12 +55,11 @@ class CardTextTests(unittest.TestCase):
         return Hero(save).item(0)
 
     def test_says_what_the_item_does(self):
-        unique = self.item("SW.Item.MysticHelmet", "Unique")
+        unique = self.item("SW.Item.MysticHelmet_Unique", "Unique")  # the Oracle Crown has an ID of its own
         self.assertEqual(describe(unique, game_item(unique.tag)), "Lightning attacks deal 25% more damage.")
-        common = self.item("SW.Item.MysticHelmet", "Common")
-        self.assertEqual(
-            describe(common, game_item(common.tag)), "Make it Unique to get the Oracle Crown. Lightning attacks deal 25% more damage."
-        )
+        for rarity in ("Common", "Unique"):  # the Mystic Circlet stays a Mystic Circlet, whatever its rarity
+            base = self.item("SW.Item.MysticHelmet", rarity)
+            self.assertEqual(describe(base, game_item(base.tag)), "Its Unique is the Oracle Crown. Lightning attacks deal 25% more damage.")
         talisman = self.item("SW.Item.Talisman.LuckyClover", "Common")
         self.assertTrue(describe(talisman, game_item(talisman.tag)).startswith("At level 3: "))
         unknown = self.item("SW.Item.SomethingNew", "Rare")

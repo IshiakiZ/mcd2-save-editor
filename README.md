@@ -24,7 +24,7 @@ the full save for people who want it.
   delete them. Every gear slot is shown, including the ones your level hasn't opened yet.
 - **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
-  Unique rarity and a War Hammer becomes the Heartbreaker. Items show their in-game names.
+  Unique rarity and a Sword is added as The Burning Blade. Items show their in-game names.
 - **Presets:**
   - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
   - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
@@ -158,19 +158,24 @@ your sign-in, account or device data.
 
 - **Online heroes** are stored on the game's servers, so no save editor can change them. When you create a hero,
   the game makes you pick online or offline for good; this editor works with **offline** heroes.
-- **Some added items may not work yet.** A save stores each item under an internal name (the Mystic Circlet is
-  `SW.Item.MysticHelmet`). The game's list of those names is in its encrypted content files, and the editor doesn't
-  break that encryption, so for most items it works the name out from the in-game name, following the pattern of the
-  names seen in real saves. (The equipment slots are different: the game's readable script cache names all 12, so
-  equipping is exact.) In testing, the game removed items whose name was a wrong guess and kept the rest of the
-  hero. Items whose internal name has
-  been seen in a real save are marked **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may
-  drop the item. The editor asks before adding an unconfirmed item, and Restore… undoes it. Items you find in the
-  game become confirmed automatically. To help everyone else, press **Share item IDs…** on the Help page (or run
+- **Some added items may not work yet.** A save stores each item under an internal name, which often isn't the
+  name you see: the Riftslasher is `SW.Item.CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst
+  Lens is `SW.Item.Talisman.RangedBuff`. The game's list of those names is in its encrypted content files, and the
+  editor doesn't break that encryption, so it knows the names players have reported from their saves (133 of the 181
+  items so far) and works the rest out from the in-game name. (The equipment slots are different: the game's
+  readable script cache names all 12, so equipping is exact.) In testing, the game removed items whose name was a
+  wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
+  **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may drop the item. The editor asks
+  before adding an unconfirmed item, and Restore… undoes it. Items you find in the game become confirmed
+  automatically. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs, nothing else from your save.
-- **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
-  at the Enchantsmith instead.
+- **Most Uniques are best guesses.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
+  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Twelve of those IDs have been
+  seen in real saves. The others follow the same pattern, so the editor adds them as Unconfirmed and asks first.
+  Making an item you already own Unique only turns it into its Unique when that ID has been seen; otherwise it keeps
+  its name and just gets Unique rarity, because a wrong guess would cost you the item.
+- **Enchantments** can't be added yet. Presets tell you which enchantments to put on at the Enchantsmith instead.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
@@ -258,6 +263,8 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [icicle1133](https://github.com/icicle1133) ([#1](https://github.com/IshiakiZ/mcd2-save-editor/pull/1)); keeping the
   Steam build's sign-in files unread comes from [douglas-93](https://github.com/douglas-93)'s Steam support
   ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)).
+- Most of the item IDs marked Confirmed come from a list [icicle1133](https://github.com/icicle1133) collected
+  from real saves ([#2](https://github.com/IshiakiZ/mcd2-save-editor/issues/2)).
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

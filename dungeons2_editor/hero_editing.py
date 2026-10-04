@@ -11,7 +11,10 @@ from tkinter import messagebox
 from typing import Any
 
 from . import document as doc
-from .hero import MAX_STAT, STAT_CAPS, GearSlot, Hero, attribute_label, build_catalog, format_amount, gear_slots, slots_for, template_for
+from .hero import (
+    MAX_STAT, STAT_CAPS, GearSlot, Hero, attribute_label, build_catalog, format_amount, game_item, gear_slots,
+    is_unique_version, slots_for, template_for,
+)
 from .item_picker import ItemPicker, slot_choice, slot_open
 from .presets_dialog import PresetsDialog
 
@@ -93,9 +96,24 @@ class HeroEditing:
             self._say_item(str(exc), error=True)
             return False
         self._fill_items()  # keeps whichever item is selected
-        self._say_item(f"Changed. {SAVE_REMINDER}")
+        self._say_item(f"Changed. {self._unique_note(index, changes)}{SAVE_REMINDER}")
         self.on_change()
         return True
+
+    def _unique_note(self, index: int, changes: dict) -> str:
+        """What making an item Unique did: a Unique has an ID of its own, and the editor only uses one it knows."""
+        if changes.get("rarity") != "Unique":
+            return ""
+        item = self.hero.item(index)
+        known = game_item(item.tag)
+        if known is None or not known.unique:
+            return ""
+        if is_unique_version(item.tag):
+            return f"It's {'' if item.name.startswith('The ') else 'the '}{item.name} now. "
+        return (
+            f"It's a Unique-rarity {item.name}, not the {known.unique}: the editor hasn't seen that Unique's own ID in a "
+            "save yet. Add items can add one as a best guess. "
+        )
 
     def _apply_numbers(self) -> bool:
         if self.hero is None or self._shown is None:

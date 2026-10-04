@@ -92,14 +92,20 @@ class PresetTests(unittest.TestCase):
                 "SW.Item.Sword": ("Unique", 60),
                 "SW.Item.Artifact.FireworkQuiver": ("Special", 60),
             },
-        )  # not the merchant's Curved Greatsword, not the cape
+        )  # not the merchant's Cookiecutter, not the cape
         self.assertIn("Sword: Common → Unique, power 1 → 60", presets.describe(plan, self.hero))
         presets.apply(plan, self.hero, self.catalog)
-        sword = next(item for item in self.hero.items() if item.tag == "SW.Item.Sword")
-        self.assertEqual((sword.rarity, sword.power, sword.equipped_slot), ("Unique", 60, "SW.ItemSlot.Equipment.MeleeWeapon"))
+        # The Sword's Unique has an ID of its own that has been seen in a save, so the Sword becomes that item.
+        sword = self.hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon")
+        self.assertEqual((sword.tag, sword.name, sword.rarity, sword.power), ("SW.Item.Sword_Unique1", "The Burning Blade", "Unique", 60))
+        # The Oracle Crown's hasn't, so the Mystic Circlet only changes rarity: a wrong guess would cost the item.
+        helmet = next(item for item in self.hero.items() if item.tag == "SW.Item.MysticHelmet")
+        self.assertEqual((helmet.name, helmet.rarity, helmet.power), ("Mystic Circlet", "Unique", 60))
 
     def test_unique_names_and_unconfirmed_items(self):
-        self.assertEqual(presets.find_item("Emerald Hammer", self.catalog).tag, "SW.Item.BattleHammer")
+        found = presets.find_item("Emerald Hammer", self.catalog)
+        # The Battle Hammer's ID is known; its Unique's own ID is a guess after the usual pattern.
+        self.assertEqual((found.tag, found.confirmed, found.tag_at("Unique"), found.confirmed_at("Unique")), ("SW.Item.Hammer", True, "SW.Item.Hammer_Unique1", False))
         careful = presets.plan(by_title("Best loot"), self.hero, self.catalog, power=30)
         self.assertIn("Emerald Hammer", [kit.name for kit, _ in careful.unconfirmed])
         self.assertNotIn("Emerald Hammer", [addition.kit.name for addition in careful.add])
@@ -107,7 +113,7 @@ class PresetTests(unittest.TestCase):
         self.assertIn("Emerald Hammer", [addition.kit.name for addition in bold.add])
         self.assertTrue(any(line.endswith("(unconfirmed)") for line in presets.describe(bold, self.hero)))
         presets.apply(bold, self.hero, self.catalog)
-        hammer = next(item for item in self.hero.items() if item.tag == "SW.Item.BattleHammer")
+        hammer = next(item for item in self.hero.items() if item.tag == "SW.Item.Hammer_Unique1")
         self.assertEqual((hammer.name, hammer.rarity, hammer.power), ("Emerald Hammer", "Unique", 30))
 
     def test_best_gear_at_the_picked_rarity_and_power_equipped(self):
@@ -117,7 +123,7 @@ class PresetTests(unittest.TestCase):
         self.assertIn("Add Riftslasher (Rare, power 45) and equip it (melee weapon)", presets.describe(plan, self.hero)[0])
         presets.apply(plan, self.hero, self.catalog)
         blade = self.hero.equipped("SW.ItemSlot.Equipment.MeleeWeapon")
-        self.assertEqual((blade.tag, blade.rarity, blade.power), ("SW.Item.Riftslasher", "Rare", 45))
+        self.assertEqual((blade.tag, blade.rarity, blade.power), ("SW.Item.CurvedLongsword", "Rare", 45))
         sword = next(item for item in self.hero.items() if item.tag == "SW.Item.Sword")
         self.assertEqual(sword.where, "Inventory")
 
@@ -149,7 +155,7 @@ class PresetTests(unittest.TestCase):
 
     def test_a_good_enough_copy_you_own_is_equipped_instead(self):
         body = self.document["CharacterSaveV1"]
-        body["Inventory"]["Entries"].append(hero_item("SW.Item.Riftslasher", power=80, rarity="Unique", seed=21))
+        body["Inventory"]["Entries"].append(hero_item("SW.Item.CurvedLongsword_Unique1", power=80, rarity="Unique", seed=21))
         plan = presets.plan(by_title("Best melee weapon"), self.hero, self.catalog, power=50, include_unconfirmed=True, rarity="Unique", equip=True)
         self.assertFalse(plan.add)
         self.assertEqual(plan.have[0].slot.label, "Melee weapon")

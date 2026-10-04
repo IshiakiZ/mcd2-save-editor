@@ -10,7 +10,7 @@ import urllib.parse
 import webbrowser
 from tkinter import ttk
 
-from .hero import NOT_ADDABLE_GROUPS, Hero, game_items, item_group, item_kind, local_name
+from .hero import NOT_ADDABLE_GROUPS, Hero, game_item, is_unique_version, item_group, item_kind, local_name
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
@@ -21,8 +21,7 @@ ISSUE_TEMPLATE = "item-ids.yml"
 def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
     """(item ID, note) for each ID in these saves that the editor's item list doesn't confirm, or confirms
     without knowing the item's name in the game. A name you gave the item (NAME IT…) is the note. Cosmetics, quest
-    items and currencies are left out."""
-    known = {item.id: item for item in game_items()}
+    items and currencies are left out. A Unique has an ID of its own, which counts as known once the list has it."""
     seen = set()
     for hero in heroes:
         seen |= hero.seen_item_types()
@@ -30,13 +29,17 @@ def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
     for tag in sorted(seen):
         if item_group(tag) in NOT_ADDABLE_GROUPS:
             continue
-        item = known.get(tag)
+        item = game_item(tag)
+        unique = item is not None and is_unique_version(tag)
+        confirmed = item is not None and (item.unique_id == tag if unique else item.confirmed)
         mine = local_name(tag)
-        if mine and (item is None or item.name_from_id or not item.confirmed):
+        if mine and (item is None or item.name_from_id or not confirmed):
             found.append((tag, mine))
         elif item is None:
             found.append((tag, f"new to the editor ({item_kind(tag).lower()}), what's it called in the game?"))
-        elif not item.confirmed:
+        elif unique and not confirmed:
+            found.append((tag, f"{item.unique} (the Unique {item.name}): confirms the editor's guess"))
+        elif not confirmed:
             found.append((tag, f"{item.name}: confirms the editor's guess"))
         elif item.name_from_id:
             found.append((tag, f"the editor calls it {item.name}; what's it called in the game?"))

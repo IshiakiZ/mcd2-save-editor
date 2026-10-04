@@ -12,14 +12,19 @@ class ShareIdsTests(unittest.TestCase):
         save = hero_save()
         save["CharacterSaveV1"]["Inventory"]["Entries"] += [
             hero_item("SW.Item.SomethingNew", seed=31),  # not in the editor's list
-            hero_item("SW.Item.Claymore", seed=32),  # in the list as a guess
+            hero_item("SW.Item.Battlestaff", seed=32),  # in the list as a guess
             hero_item("SW.Item.Cosmetic.Cape.Other", seed=33),  # cosmetics are left out
+            hero_item("SW.Item.Artifact.HasteMushroom", seed=34),  # in the list, but its name comes from its ID
+            hero_item("SW.Item.Mace_Unique1", rarity="Unique", seed=35),  # a Unique's own ID that hasn't been seen before
+            hero_item("SW.Item.Sword_Unique1", rarity="Unique", seed=36),  # one the list already has
         ]
         found = dict(share_ids.unknown_ids([Hero(save)]))
         self.assertIn("new to the editor", found["SW.Item.SomethingNew"])
-        self.assertEqual(found["SW.Item.Claymore"], "Claymore: confirms the editor's guess")
-        self.assertIn("what's it called in the game?", found["SW.Item.CurvedGreatsword"])  # its name comes from its ID
-        self.assertNotIn("SW.Item.Sword", found)  # confirmed, with its name
+        self.assertEqual(found["SW.Item.Battlestaff"], "Battlestaff: confirms the editor's guess")
+        self.assertIn("what's it called in the game?", found["SW.Item.Artifact.HasteMushroom"])
+        self.assertEqual(found["SW.Item.Mace_Unique1"], "Carapace Mace (the Unique Mace): confirms the editor's guess")
+        for known in ("SW.Item.Sword", "SW.Item.Sword_Unique1", "SW.Item.CurvedGreatsword"):  # confirmed, with their names
+            self.assertNotIn(known, found)
         self.assertFalse([tag for tag in found if "Cosmetic" in tag])
 
     def test_report_holds_only_item_ids(self):

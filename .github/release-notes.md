@@ -1,3 +1,19 @@
+## What's new in 1.6.0
+
+- **Far more added items stick.** A save stores each item under an internal name, and for most items the editor used
+  to work it out from the name you see. A player sent in 150 names from real saves (thank you,
+  [icicle1133](https://github.com/icicle1133)), and about 60 of the editor's guesses were wrong: the Riftslasher is
+  really `CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst Lens is `Talisman.RangedBuff`.
+  133 of the 181 items are now **Confirmed** (it was 12), so kits, presets and Add items put far more gear on your
+  hero that the game keeps.
+- **Uniques are added as the real item.** A Unique has a name of its own in a save: The Burning Blade, the Unique
+  Sword, is `Sword_Unique1`. Pick Unique rarity in Add items, a preset or a kit and the editor now adds that item.
+  Twelve of those names have been seen in real saves. The others follow the same pattern and count as Unconfirmed, so
+  the editor asks first. Making an item you already own Unique only turns it into its Unique when that name has been
+  seen; otherwise it keeps its name and gets Unique rarity, because a wrong guess would cost you the item.
+- **Real names for items you've found:** the Curved Greatsword is the Cookiecutter, the Rallying Horn is the
+  Humbling Horn, and enchantment books are called after their enchantment.
+
 ## What's new in 1.5.0
 
 - **The Steam version is supported**, on Windows and on Linux (Steam through Proton). The editor finds the Steam

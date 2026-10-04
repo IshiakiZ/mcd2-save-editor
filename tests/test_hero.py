@@ -6,7 +6,7 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import my_items
 from dungeons2_editor.hero import Hero
 
-from .helpers import hero_save
+from .helpers import hero_item, hero_save
 
 
 class HeroTests(unittest.TestCase):
@@ -145,9 +145,73 @@ class HeroTests(unittest.TestCase):
 
     def test_in_game_names(self):
         self.assertEqual(heroes.display_name("SW.Item.MysticHelmet"), "Mystic Circlet")
-        self.assertEqual(heroes.display_name("SW.Item.MysticHelmet", "Unique"), "Oracle Crown")
         self.assertEqual(heroes.display_name("SW.Item.Artifact.FireworkQuiver"), "Firework Arrow")
         self.assertEqual(heroes.display_name("SW.Item.SomethingNew"), "Something New")
+        # What a save calls an item often isn't what players see.
+        self.assertEqual(heroes.display_name("SW.Item.CurvedLongsword"), "Riftslasher")
+        self.assertEqual(heroes.display_name("SW.Item.CaveCrawlerHelmet"), "Sculk Digger Hood")
+        self.assertEqual(heroes.display_name("SW.Item.Talisman.RangedBuff"), "Amethyst Lens")
+        self.assertEqual(heroes.display_name("SW.Item.Artifact.Satchel.Fire"), "Pouch of Ember")
+        self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.MultiRoll"), "Somersault")
+        self.assertEqual(heroes.tag_kind("SW.Item.EnchantmentBook.MultiRoll"), heroes.BOOK_KIND)
+
+    def test_a_unique_has_an_id_of_its_own(self):
+        # Seen in real saves: weapons end in _Unique1, armor in _Unique.
+        self.assertEqual(heroes.display_name("SW.Item.Sword_Unique1"), "The Burning Blade")
+        self.assertEqual(heroes.display_name("SW.Item.MysticLeggings_Unique"), "Oracle Tights")
+        self.assertEqual((heroes.tag_kind("SW.Item.Trickbow_Unique1"), heroes.armor_piece("SW.Item.UndauntedHelmet_Unique")), ("Ranged", "Helmet"))
+        self.assertEqual(heroes.display_name("SW.Item.Sword"), "Sword")  # the base item, whatever its rarity
+        # A Unique's ID that hasn't been seen still reads as that Unique, but isn't written until it has been.
+        self.assertEqual(heroes.display_name("SW.Item.Mace_Unique1"), "Carapace Mace")
+        self.assertEqual(heroes.unique_tag("SW.Item.Sword"), "SW.Item.Sword_Unique1")
+        self.assertIsNone(heroes.unique_tag("SW.Item.Mace"))
+        self.assertEqual(heroes.unique_tag("SW.Item.Mace", {"SW.Item.Mace_Unique1", "SW.Item.Sword"}), "SW.Item.Mace_Unique1")
+        self.assertIsNone(heroes.unique_tag("SW.Item.Artifact.Grindstone"))  # artifacts have no Unique
+        self.assertEqual(heroes.base_tag("SW.Item.Sword_Unique1"), "SW.Item.Sword")
+        self.assertEqual(heroes.base_tag("SW.Item.NotInTheList_Unique1"), "SW.Item.NotInTheList_Unique1")
+        self.assertFalse(heroes.is_unique_version("SW.Item.Sword"))
+
+    def test_making_an_item_unique_gives_it_the_uniques_id_when_thats_known(self):
+        sword = self.item_index("SW.Item.Sword")
+        self.hero.update_item(sword, rarity="Unique")
+        self.assertEqual((self.hero.item(sword).tag, self.hero.item(sword).name), ("SW.Item.Sword_Unique1", "The Burning Blade"))
+        self.assertEqual(self.hero.item(sword).equipped_slot, "SW.ItemSlot.Equipment.MeleeWeapon")  # it stays on
+        self.hero.update_item(sword, rarity="Rare")
+        self.assertEqual((self.hero.item(sword).tag, self.hero.item(sword).name), ("SW.Item.Sword", "Sword"))
+        helmet = self.item_index("SW.Item.MysticHelmet")
+        self.hero.update_item(helmet, rarity="Unique")  # the Oracle Crown's own ID hasn't been seen in a save
+        self.assertEqual((self.hero.item(helmet).tag, self.hero.item(helmet).rarity, self.hero.item(helmet).name), ("SW.Item.MysticHelmet", "Unique", "Mystic Circlet"))
+        longbow = self.item_index("SW.Item.Longbow")
+        self.hero.update_item(longbow, tag="SW.Item.Mace_Unique1")  # an ID that's typed in is kept exactly
+        self.assertEqual((self.hero.item(longbow).tag, self.hero.item(longbow).rarity), ("SW.Item.Mace_Unique1", "Rare"))
+
+    def test_an_item_added_at_unique_rarity_is_the_unique(self):
+        catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
+        sword, mace = catalog["SW.Item.Sword"], catalog["SW.Item.Mace"]
+        self.assertEqual((sword.tag_at("Unique"), sword.confirmed_at("Unique"), sword.name_at("Unique")), ("SW.Item.Sword_Unique1", True, "The Burning Blade"))
+        self.assertEqual((sword.tag_at("Rare"), sword.name_at("Rare")), ("SW.Item.Sword", "Sword"))
+        # The Carapace Mace's own ID is a guess after the pattern, so it counts as unconfirmed.
+        self.assertEqual((mace.tag_at("Unique"), mace.confirmed_at("Unique"), mace.confirmed_at("Rare")), ("SW.Item.Mace_Unique1", False, True))
+        self.assertEqual(catalog["SW.Item.MysticHelmet"].tag_at("Unique"), "SW.Item.MysticHelmet_Unique")  # armor: no 1
+        grindstone = catalog["SW.Item.Artifact.Grindstone"]
+        self.assertEqual((grindstone.tag_at("Unique"), grindstone.confirmed_at("Unique")), ("SW.Item.Artifact.Grindstone", True))
+        index = self.hero.add_item("SW.Item.Sword", sword.template, rarity="Unique", power=5)  # even from the base ID
+        self.assertEqual((self.hero.item(index).tag, self.hero.item(index).name), ("SW.Item.Sword_Unique1", "The Burning Blade"))
+        self.assertIn("SW.Item.Sword_Unique1", self.document["CharacterSaveV1"]["LootProgression"]["DiscoveredLoot"])
+
+    def test_a_unique_found_in_the_game_is_its_base_items_unique(self):
+        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.Mace_Unique1", rarity="Unique", seed=77))
+        catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
+        self.assertNotIn("SW.Item.Mace_Unique1", catalog)  # not an item of its own
+        self.assertEqual((catalog["SW.Item.Mace"].unique_tag, catalog["SW.Item.Mace"].confirmed_at("Unique")), ("SW.Item.Mace_Unique1", True))
+        self.assertEqual(heroes.template_for("SW.Item.Sword_Unique1", list(catalog.values())), catalog["SW.Item.Sword"].template)
+
+    def test_enchantment_books_are_only_offered_when_the_hero_has_one(self):
+        book = "SW.Item.EnchantmentBook.MultiRoll"
+        self.assertNotIn(book, {entry.tag for entry in heroes.build_catalog([self.hero])})
+        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item(book, seed=78))
+        entry = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == book)
+        self.assertEqual((entry.name, entry.kind, entry.template["ItemData"]["TypeTag"]), ("Somersault", heroes.BOOK_KIND, book))
 
     def test_the_game_item_list(self):
         items = heroes.game_items()
@@ -161,8 +225,9 @@ class HeroTests(unittest.TestCase):
         self.assertGreater(len(catalog), 150)
         self.assertTrue(catalog["SW.Item.Axe"].confirmed)  # in this save's collections
         self.assertTrue(catalog["SW.Item.MysticHelmet"].confirmed)
-        self.assertFalse(catalog["SW.Item.Claymore"].confirmed)  # a best guess from its name
-        self.assertEqual(catalog["SW.Item.BattleHammer"].unique, "Emerald Hammer")
+        self.assertTrue(catalog["SW.Item.CaveCrawlerChest"].confirmed)  # reported from a real save
+        self.assertFalse(catalog["SW.Item.Battlestaff"].confirmed)  # a best guess from its name
+        self.assertEqual(catalog["SW.Item.Hammer"].unique, "Emerald Hammer")  # the Battle Hammer
         self.assertNotIn("SW.Item.Cosmetic.Cape.Hero", catalog)
         talisman = catalog["SW.Item.Talisman.LuckyClover"]
         self.assertEqual(talisman.template["ItemData"]["TypeTag"], "SW.Item.MysticHelmet")  # borrows a gear layout
@@ -248,11 +313,11 @@ class LocalNameTests(unittest.TestCase):
         self.addCleanup(heroes.use_local_names, {})
 
     def test_your_names_fill_in_for_names_made_from_ids(self):
-        self.assertEqual(heroes.display_name("SW.Item.UndauntedHelmet"), "Undaunted Helmet")
-        self.assertFalse(heroes.name_is_known("SW.Item.UndauntedHelmet"))
-        heroes.use_local_names({"SW.Item.UndauntedHelmet": "Bounty Hunter Helmet", "SW.Item.Sword": "Not a sword"})
-        self.assertEqual(heroes.display_name("SW.Item.UndauntedHelmet"), "Bounty Hunter Helmet")
-        self.assertTrue(heroes.name_is_known("SW.Item.UndauntedHelmet"))
+        self.assertEqual(heroes.display_name("SW.Item.Artifact.HasteMushroom"), "Haste Mushroom")
+        self.assertFalse(heroes.name_is_known("SW.Item.Artifact.HasteMushroom"))
+        heroes.use_local_names({"SW.Item.Artifact.HasteMushroom": "Tempo Truffle", "SW.Item.Sword": "Not a sword"})
+        self.assertEqual(heroes.display_name("SW.Item.Artifact.HasteMushroom"), "Tempo Truffle")
+        self.assertTrue(heroes.name_is_known("SW.Item.Artifact.HasteMushroom"))
         self.assertEqual(heroes.display_name("SW.Item.Sword"), "Sword")  # the game's list wins
         self.assertEqual(heroes.display_name("SW.Item.BrandNew"), "Brand New")
 

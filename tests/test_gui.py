@@ -186,7 +186,7 @@ class HeroTabTests(WindowTestCase):
         self.assertTrue(self.app.meta_var.get().startswith(HERO))
 
     def test_lists_items_most_powerful_first_with_pictures(self):
-        self.assertEqual(self.rows(), ["Longbow", "Mystic Circlet", "Curved Greatsword", "Sword"])
+        self.assertEqual(self.rows(), ["Longbow", "Mystic Circlet", "Cookiecutter", "Sword"])
         images = {self.tab.tree.item(i, "text").strip(): self.tab.tree.item(i, "image") for i in self.tab.tree.get_children()}
         self.assertTrue(all(images.values()))
         self.select_item("Mystic Circlet")
@@ -195,7 +195,7 @@ class HeroTabTests(WindowTestCase):
     def test_sorting_and_filters(self):
         self.tab.sort_var.set("Name")
         self.tab._fill_items()
-        self.assertEqual(self.rows(), ["Curved Greatsword", "Longbow", "Mystic Circlet", "Sword"])
+        self.assertEqual(self.rows(), ["Cookiecutter", "Longbow", "Mystic Circlet", "Sword"])
         self.tab._sort_by_heading("rarity")
         self.assertEqual(self.rows()[0], "Longbow")
         self.assertTrue(self.tab.tree.heading("rarity", "text").endswith("▼"))
@@ -236,13 +236,13 @@ class HeroTabTests(WindowTestCase):
         self.tab._apply_item(rarity="Unique")
         self.select_item("Longbow")
         self.tab.copy_item()
-        self.select_item("Curved Greatsword")
+        self.select_item("Cookiecutter")
         with mock.patch("tkinter.messagebox.askyesno", return_value=True):
             self.tab.delete_item()
         summary = self.save()
         self.assertIn("Mystic Circlet: Common → Unique, power 1 → 50", summary)
         self.assertIn("Added Longbow (Rare, power 2)", summary)
-        self.assertIn("Removed Curved Greatsword", summary)
+        self.assertIn("Removed Cookiecutter", summary)
         hero = self.saved_hero()
         tags = [item.tag for item in hero.items()]
         self.assertEqual(tags.count("SW.Item.Longbow"), 2)
@@ -271,7 +271,7 @@ class HeroTabTests(WindowTestCase):
             self.tab.equip_item()  # the game's files name every gear slot, so there's nothing to ask
         ask.assert_not_called()
         self.assertIn("Equipped (helmet)", self.tab.item_message_var.get())
-        self.select_item("Curved Greatsword")  # merchant stock
+        self.select_item("Cookiecutter")  # merchant stock
         self.assertTrue(self.tab.equip_button.instate(["disabled"]))
         summary = self.save()
         self.assertIn("Sword: unequipped", summary)
@@ -367,8 +367,8 @@ class HeroTabTests(WindowTestCase):
         picker.destroy()
         summary = self.save()
         self.assertIn("Added Hunter's Hatchet (Unique, power 40)", summary)
-        axe = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Axe")
-        self.assertEqual((axe.rarity, axe.power, axe.count, axe.where), ("Unique", 40, 2, "Inventory"))
+        axe = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Axe_Unique1")  # the Unique's own ID
+        self.assertEqual((axe.name, axe.rarity, axe.power, axe.count, axe.where), ("Hunter's Hatchet", "Unique", 40, 2, "Inventory"))
 
     def open_picker_on(self, name):
         self.tab.open_add_items()
@@ -382,7 +382,7 @@ class HeroTabTests(WindowTestCase):
         return picker, row
 
     def test_unconfirmed_items_warn_once_before_adding(self):
-        picker, row = self.open_picker_on("Claymore")
+        picker, row = self.open_picker_on("Battlestaff")
         self.assertEqual(picker.tree.item(row, "values")[1], "Unconfirmed")
         with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
             picker._confirm()
@@ -393,26 +393,37 @@ class HeroTabTests(WindowTestCase):
             picker._confirm()  # asked only once per window
         ask.assert_called_once()
         picker.destroy()
-        claymores = [item for item in self.app.hero_tab.hero.items() if item.tag == "SW.Item.Claymore"]
-        self.assertEqual(len(claymores), 2)
+        staffs = [item for item in self.app.hero_tab.hero.items() if item.tag == "SW.Item.Battlestaff"]
+        self.assertEqual(len(staffs), 2)
 
-    def test_uniques_are_their_base_item_at_unique_rarity(self):
+    def test_a_unique_is_added_under_its_own_id(self):
         picker, _row = self.open_picker_on("Battle Hammer")
+        self.assertTrue(picker.status_text.get().startswith("Confirmed"))  # SW.Item.Hammer, reported from a real save
         picker.rarity_var.set("Unique")
         picker._show_selected()
         self.assertEqual(picker.name_var.get(), "Emerald Hammer")
         self.assertIn("Unique Battle Hammer", picker.unique_text.get())
-        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+        self.assertIn("SW.Item.Hammer_Unique1", picker.kind_text.get())
+        self.assertTrue(picker.status_text.get().startswith("Unconfirmed"))  # the Emerald Hammer's own ID is a guess
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             picker._confirm()
+        ask.assert_called_once()
         picker.destroy()
         self.assertIn("Added Emerald Hammer (Unique", self.save())
-        hammer = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.BattleHammer")
+        hammer = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Hammer_Unique1")
         self.assertEqual((hammer.rarity, hammer.name), ("Unique", "Emerald Hammer"))
 
-    def test_rarity_unique_shows_the_unique_name_in_the_list(self):
+    def test_making_an_item_unique_renames_it_only_when_the_uniques_id_is_known(self):
+        self.select_item("Sword")
+        self.tab._apply_item(rarity="Unique")
+        self.assertIn("The Burning Blade", self.rows())  # SW.Item.Sword_Unique1 has been seen in real saves
+        self.assertIn("It's The Burning Blade now.", self.tab.item_message_var.get())
         self.select_item("Mystic Circlet")
         self.tab._apply_item(rarity="Unique")
-        self.assertIn("Oracle Crown", self.rows())
+        self.assertNotIn("Oracle Crown", self.rows())  # its own ID hasn't: guessing wrong would cost the item
+        self.assertIn("a Unique-rarity Mystic Circlet, not the Oracle Crown", self.tab.item_message_var.get())
+        hero = self.tab.hero
+        self.assertEqual(sorted(item.tag for item in hero.items() if item.rarity == "Unique"), ["SW.Item.MysticHelmet", "SW.Item.Sword_Unique1"])
 
     def test_picker_reports_bad_input_inline(self):
         self.tab.open_add_items()
@@ -534,10 +545,13 @@ class HeroTabTests(WindowTestCase):
         from dungeons2_editor.share_ids import ShareIdsDialog
 
         with mock.patch("webbrowser.open") as browser:
+            # Something the game has found that the editor has never heard of.
+            self.app.profile.get(HERO).decoded.document["CharacterSaveV1"]["LootProgression"]["DiscoveredLoot"].append("SW.Item.SomethingNew")
             self.app._share_ids()
             self.root.update()
             dialog = next(w for w in self.root.winfo_children() if isinstance(w, ShareIdsDialog))
-            self.assertIn("SW.Item.CurvedGreatsword", dialog.report())
+            self.assertIn("SW.Item.SomethingNew", dialog.report())
+            self.assertNotIn("SW.Item.CurvedGreatsword", dialog.report())  # known: the Cookiecutter
             dialog.open_issue()
         self.assertIn("template=item-ids.yml", browser.call_args.args[0])
         dialog.destroy()
@@ -615,7 +629,7 @@ class SimpleModeTests(WindowTestCase):
         self.assertEqual(self.shown(), ["Longbow", "Mystic Circlet"])  # not the worn Sword, the merchant's stock or cosmetics
         self.assertEqual(len(self.screen._item_hits), 2)
         self.show("Merchant")
-        self.assertEqual(self.shown(), ["Curved Greatsword"])
+        self.assertEqual(self.shown(), ["Cookiecutter"])
         self.show("Armor")
         self.assertEqual(self.shown(), ["Mystic Circlet"])
         self.assertEqual(self.screen.count_text.get(), "1 ITEM")
@@ -625,11 +639,13 @@ class SimpleModeTests(WindowTestCase):
     def test_change_rarity_and_power_on_the_card(self):
         self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
         self.assertEqual((self.screen.banner_text, self.screen.card_name_var.get()), ("INVENTORY", "MYSTIC CIRCLET"))
-        self.assertIn("Make it Unique to get the Oracle Crown.", self.screen.card_text_var.get())
+        self.assertIn("Its Unique is the Oracle Crown.", self.screen.card_text_var.get())
         unique = next(button for button in self.screen.rarity_buttons if str(button.cget("value")) == "Unique")
         unique.invoke()
-        self.assertEqual(self.screen.card_name_var.get(), "ORACLE CROWN")
-        self.assertEqual(self.screen.card_text_var.get(), "Lightning attacks deal 25% more damage.")
+        # The Oracle Crown has an ID of its own that hasn't been seen in a save, so this stays a Mystic Circlet.
+        self.assertEqual(self.screen.card_name_var.get(), "MYSTIC CIRCLET")
+        self.assertIn("not the Oracle Crown", self.screen.item_message_var.get())
+        self.assertEqual(self.screen.hero.item(self.index_of("SW.Item.MysticHelmet")).rarity, "Unique")
         self.screen.power_var.set("50")
         self.assertTrue(self.screen._apply_numbers())
         self.assertEqual(self.screen.card_power_var.get(), "50")
@@ -663,7 +679,7 @@ class SimpleModeTests(WindowTestCase):
         self.assertIn("Copied", self.screen.item_message_var.get())
         self.assertEqual(self.screen.banner_text, "INVENTORY")  # the copy is yours
         self.show("All")
-        self.assertIn("Curved Greatsword", self.shown())
+        self.assertIn("Cookiecutter", self.shown())
 
     def test_delete_from_the_card(self):
         self.screen.pick_item(self.index_of("SW.Item.Longbow"))
@@ -879,15 +895,18 @@ class SimpleModeTests(WindowTestCase):
     def test_name_an_item_the_editor_doesnt_know(self):
         self.screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
         self.assertTrue(self.screen.name_button.instate(["disabled"]))  # the game's list names it
-        self.show("Merchant")
-        self.screen.pick_item(self.index_of("SW.Item.CurvedGreatsword"))
+        # The Longbow turns into an artifact that's been seen in saves, but that nobody has named yet.
+        longbow = self.index_of("SW.Item.Longbow")
+        self.screen.hero.update_item(longbow, tag="SW.Item.Artifact.HasteMushroom")
+        self.screen.refresh()
+        self.screen.pick_item(longbow)
         self.assertIn("name made from its save ID", self.screen.card_kind_var.get())
         self.assertTrue(self.screen.name_button.instate(["!disabled"]))
-        with mock.patch.object(self.screen, "_ask_text", return_value="Cookiecutter"):
+        with mock.patch.object(self.screen, "_ask_text", return_value="Tempo Truffle"):
             self.screen.name_button.invoke()
-        self.assertEqual(self.screen.card_name_var.get(), "COOKIECUTTER")
-        self.assertEqual(json.loads(self.names_file.read_text(encoding="utf-8")), {"SW.Item.CurvedGreatsword": "Cookiecutter"})
-        self.assertIn("SW.Item.CurvedGreatsword - Cookiecutter", share_ids.report_text([self.screen.hero], "9"))
+        self.assertEqual(self.screen.card_name_var.get(), "TEMPO TRUFFLE")
+        self.assertEqual(json.loads(self.names_file.read_text(encoding="utf-8")), {"SW.Item.Artifact.HasteMushroom": "Tempo Truffle"})
+        self.assertIn("SW.Item.Artifact.HasteMushroom - Tempo Truffle", share_ids.report_text([self.screen.hero], "9"))
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")

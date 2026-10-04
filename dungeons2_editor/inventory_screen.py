@@ -33,6 +33,7 @@ from .hero import (
     format_amount,
     game_item,
     gear_power,
+    is_unique_version,
     local_name,
     name_is_known,
     slots_for,
@@ -90,15 +91,15 @@ ENCHANTABLE = ("Melee", "Ranged", "Armor")  # artifacts and talismans can't be e
 
 
 def describe(item: Item, known: GameItem | None) -> str:
-    """What the item does, for its card: a Unique's effect, a talisman's, or what Unique rarity would give."""
+    """What the item does, for its card: a Unique's effect, a talisman's, or what the item's Unique is."""
     if known is None:
         return ""
     if item.kind == "Talisman" and known.effect:
         return f"At level 3: {known.effect}"
-    if item.rarity == "Unique" and known.unique_effect:
-        return known.unique_effect
+    if is_unique_version(item.tag):
+        return known.unique_effect or ""
     if known.unique:
-        return f"Make it Unique to get the {known.unique}." + (f" {known.unique_effect}" if known.unique_effect else "")
+        return f"Its Unique is the {known.unique}." + (f" {known.unique_effect}" if known.unique_effect else "")
     return ""
 
 

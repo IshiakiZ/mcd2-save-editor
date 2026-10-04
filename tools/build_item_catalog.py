@@ -11,16 +11,20 @@ links are in each file this writes and in the README:
     enchantments  every enchantment, the gear it goes on and where its book drops
 
 The game's own item IDs aren't published anywhere the editor can use, so each item's save ID
-is worked out from its name, following the patterns seen in real saves:
+comes from real saves where players have reported it, and is otherwise worked out from its
+name, following the patterns seen in those saves:
 
     weapons     SW.Item.<Name>               (Sword, Bow, Longbow)
     armor       SW.Item.<Set><Slot>          (MysticHelmet is the Mystic Circlet)
     artifacts   SW.Item.Artifact.<Name>
     talismans   SW.Item.Talisman.<Name>
+    Uniques     the base item's ID with _Unique1 (weapons) or _Unique (armor) on the end
+    books       SW.Item.EnchantmentBook.<Name>
 
 IDs seen in real saves are marked "confirmed". The rest are best guesses, and plenty will be
-wrong: the game's internal names don't always match the names players see (the Firework Arrow
-is saved as FireworkQuiver, the Beekeeper set as Honey).
+wrong: the game's internal names often aren't the names players see (the Riftslasher is saved
+as CurvedLongsword, the Sculk Digger set as CaveCrawler, the Amethyst Lens as
+Talisman.RangedBuff). A Unique's own ID is only listed once it has been seen.
 
 Run from the repository root:  python tools/build_item_catalog.py
 """
@@ -38,37 +42,141 @@ BASE_URL = "https://metabot.gg/en/minecraft-dungeons-2/"
 PAGES = ("uniques", "artifacts", "talismans", "enchantments")
 HEADERS = {"User-Agent": "Dungeons2SaveEditor/1.2 (item catalog builder; +https://github.com/IshiakiZ/mcd2-save-editor)"}
 DATA = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data"
+PREFIX = "SW.Item."
+BOOK = "Enchantment Book"
 
-# IDs seen in real saves, and the in-game names they belong to where those differ from the ID.
+# IDs seen in real saves, without the SW.Item. in front: the developer's own, and the 150 a player sent in
+# https://github.com/IshiakiZ/mcd2-save-editor/issues/2.
 CONFIRMED_IDS = {
-    "SW.Item.Sword",
-    "SW.Item.Bow",
-    "SW.Item.Longbow",
-    "SW.Item.CurvedGreatsword",
-    "SW.Item.MysticHelmet",
-    "SW.Item.HoneyLeggings",
-    "SW.Item.HoneyBoots",
-    "SW.Item.Artifact.FireworkQuiver",
-    "SW.Item.HeavyCrossbow",  # added by the editor and kept by the game (2026-10-01)
-    "SW.Item.MysticBoots",
-    "SW.Item.UndauntedHelmet",
-    "SW.Item.Artifact.RallyingHorn",
+    PREFIX + name
+    for name in """
+    Sword Bow Longbow HeavyCrossbow
+    Axe Claws Claymore Cleaver Crossbow CurvedGreatsword CurvedLongsword Dagger Daggers DualCrossbow
+    Gauntlet GiantClub Glaive GreatAxe Greatbow Greatsword Hammer Mace MoonSword Pickaxe Pike Powerbow
+    RapidCrossbow Rapier Sabre ScatterCrossbow Scythe ShortSpear Shortbow Shovel Sickles StraightSword
+    Trickbow WarHammer
+
+    CaveCrawlerBoots CaveCrawlerChest CaveCrawlerHelmet CaveCrawlerLeggings DiscipleBoots DiscipleChest
+    DiscipleHelmet DiscipleLeggings EvocationBoots EvocationHelmet FrostRimeChest FrostRimeLeggings
+    HewnBarkBoots HoneyBoots HoneyLeggings MushroomBoots MushroomChest MushroomHelmet MushroomLeggings
+    MysticBoots MysticChest MysticHelmet MysticLeggings PhantomBoots PhantomChest PhantomHelmet
+    PhantomLeggings RealmreacherBoots RealmreacherChest RealmreacherHelmet RealmreacherLeggings
+    RedstoneBoots RedstoneChest RedstoneHelmet RedstoneLeggings ScampBoots ScampChest ScavengerLeggings
+    StalwartBoots StalwartChest StalwartHelmet StalwartLeggings TimewornBoots TimewornChest
+    UndauntedChest UndauntedHelmet VoyagerBoots VoyagerHelmet VoyagerLeggings WellspringBoots
+    WellspringHelmet WolfclutchBoots WolfclutchChest WolfclutchLeggings
+
+    Artifact.BlizzardStaff Artifact.CarapaceOcarina Artifact.ConductiveBracelet Artifact.CorruptedSeeds
+    Artifact.CreeperCandle Artifact.FightersFife Artifact.FireBracelet Artifact.FireworkQuiver
+    Artifact.FlameQuiver Artifact.FlameSceptre Artifact.Grindstone Artifact.HasteMushroom
+    Artifact.Honeypot Artifact.IronHideLute Artifact.LightningRod Artifact.MaimingMushroom
+    Artifact.PoisonBracelet Artifact.PoisonQuiver Artifact.Powershaker Artifact.RallyingHorn
+    Artifact.RedstoneMines Artifact.Satchel.Conductive Artifact.Satchel.Fire Artifact.Satchel.Freezing
+    Artifact.Satchel.Poison Artifact.SmokeBomb Artifact.SoulHarvester Artifact.TotemOfCasting
+    Artifact.TotemOfRegeneration Artifact.TotemOfShielding Artifact.WarBanner Artifact.WardingChimes
+    Artifact.WarriorsDrums Artifact.WitchesBrew
+
+    Talisman.AmmoCapacity Talisman.Brawling Talisman.HealthBoost Talisman.PotionCooldown
+    Talisman.RangedBuff Talisman.SoulGather Talisman.Wolf
+    """.split()
 }
-KNOWN_IDS = {"Firework Arrow": "SW.Item.Artifact.FireworkQuiver"}
-# Armor sets named differently in saves: the save's HoneyLeggings and HoneyBoots are the Beekeeper pieces.
-SET_NAMES = {"Beekeeper": "Honey"}
-# Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them
-# (Helmet, Leggings and Boots as in the confirmed MysticHelmet, HoneyLeggings and HoneyBoots; Chest is a guess).
+# Uniques' own IDs seen in real saves. Each is its base item's ID with _Unique1 (weapons) or _Unique (armor).
+UNIQUE_IDS = {
+    PREFIX + name
+    for name in """
+    Axe_Unique1 Claws_Unique1 Pickaxe_Unique1 Sabre_Unique1 Sword_Unique1 Trickbow_Unique1
+    CaveCrawlerChest_Unique HoneyHelmet_Unique MysticLeggings_Unique RealmreacherChest_Unique
+    UndauntedHelmet_Unique VoyagerLeggings_Unique
+    """.split()
+}
+# What a save calls an item, where that isn't the name players see with the spaces taken out.
+KNOWN_IDS = {
+    "Battle Hammer": "Hammer",
+    "Clobberer": "GiantClub",
+    "Cookiecutter": "CurvedGreatsword",
+    "Double Daggers": "Daggers",
+    "Double Sickles": "Sickles",
+    "Gauntlets": "Gauntlet",
+    "Greataxe": "GreatAxe",
+    "Longsword": "StraightSword",
+    "Meat Cleaver": "Cleaver",
+    "Riftslasher": "CurvedLongsword",
+    "Tidal Sickle": "MoonSword",
+    "Twilight Dagger": "Dagger",
+    "Wolf Claws": "Claws",  # its Unique, the Sculker Claws, is saved as Claws_Unique1
+    "Dual Crossbows": "DualCrossbow",
+    "Battle Banner": "Artifact.WarBanner",
+    "Blaze Bangle": "Artifact.FireBracelet",
+    "Blight Bangle": "Artifact.PoisonBracelet",
+    "Cinder Scepter": "Artifact.FlameSceptre",
+    "Echo Ocarina": "Artifact.CarapaceOcarina",
+    "Electric Bangle": "Artifact.ConductiveBracelet",
+    "Ender Fog": "Artifact.SmokeBomb",
+    "Fighter's Flute": "Artifact.FightersFife",
+    "Fighting Fungus": "Artifact.MaimingMushroom",
+    "Firework Arrow": "Artifact.FireworkQuiver",
+    "Flaming Quiver": "Artifact.FlameQuiver",
+    "Honey Dipper": "Artifact.Honeypot",
+    "Humbling Horn": "Artifact.RallyingHorn",
+    "Pouch of Ember": "Artifact.Satchel.Fire",
+    "Pouch of Frost": "Artifact.Satchel.Freezing",
+    "Pouch of Poison": "Artifact.Satchel.Poison",
+    "Pouch of Thunder": "Artifact.Satchel.Conductive",
+    "Redstone Mine Launcher": "Artifact.RedstoneMines",
+    "Turtle Master's Mandolin": "Artifact.IronHideLute",
+    "Venomous Quiver": "Artifact.PoisonQuiver",
+    "Warrior Drums": "Artifact.WarriorsDrums",
+    "Winter Staff": "Artifact.BlizzardStaff",
+    "Witch Brew": "Artifact.WitchesBrew",
+    # Talismans are saved by what they do, so the ones not seen yet are almost certainly guessed wrong.
+    "Amethyst Lens": "Talisman.RangedBuff",
+    "Fist of Iron": "Talisman.Brawling",
+    "Glowstone Flask": "Talisman.PotionCooldown",
+    "Sigil of Beeswax": "Talisman.HealthBoost",
+    "Tasty Bone": "Talisman.Wolf",
+    "Twig of Dark Oak": "Talisman.AmmoCapacity",
+    "Twisted Tooth": "Talisman.SoulGather",
+}
+# Armor sets named differently in saves. Two come from their Uniques' IDs rather than from a report of the set
+# itself: RealmreacherChest_Unique is the Sharpshooter Duster, the Unique Ranger Jacket, and UndauntedHelmet_Unique
+# is the Dauntless Horns, the Unique Bounty Hunter Helmet. The set players see as Realmreacher is saved as Timeworn.
+# Treehugger is by elimination: HewnBark is the one set name in saves left over, and Treehugger the one set.
+SET_NAMES = {
+    "Beekeeper": "Honey",
+    "Bounty Hunter": "Undaunted",
+    "Nomad": "Voyager",
+    "Protector": "Stalwart",
+    "Ranger": "Realmreacher",
+    "Realmreacher": "Timeworn",
+    "Sculk Digger": "CaveCrawler",
+    "Sculker": "Scavenger",
+    "Sifter": "Wellspring",
+    "Sorcerer": "Evocation",
+    "Steel Wool": "FrostRime",
+    "Treehugger": "HewnBark",
+    "Wolfpack": "Wolfclutch",
+}
+# Enchantment books seen in real saves, by the enchantment's name. They're listed so the editor can name them;
+# it only offers to add one a hero already has.
+BOOK_IDS = {
+    "Ancient Alchemy": "SoulInfusedPotion",
+    "Buddy Brew": "PotionSharing",
+    "Ender Quiver": "ExpandedQuiver",
+    "Piercing": "Piercing",
+    "Ricochet": "Ricochet",
+    "Shockwave": "Shockwave",
+    "Somersault": "MultiRoll",
+    "Springload": "SpringLoaded",
+    "Thundering": "Thundering",
+}
+# Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them.
 SLOTS = {"Helmet": "Helmet", "Chest": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
 SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings", "Boots": "Boots"}
 RANGED_TYPES = {"Bow", "Crossbow"}
 ENCHANT_SLOTS = {"Melee": "Melee", "Ranged": "Ranged", "Armor": "Armor", "Chest": "Chestplate"}
-# In saves, but under a name MetaBot doesn't list.
-# Names until someone reports what the game calls these (the names below come from the IDs).
+# In saves, but nobody has said what the game calls them (the names below come from the IDs).
 EXTRA = [
-    {"name": "Curved Greatsword", "kind": "Melee", "id": "SW.Item.CurvedGreatsword"},
-    {"name": "Undaunted Helmet", "kind": "Armor", "id": "SW.Item.UndauntedHelmet", "slot": "Helmet"},
-    {"name": "Rallying Horn", "kind": "Artifact", "id": "SW.Item.Artifact.RallyingHorn"},
+    {"name": "Haste Mushroom", "kind": "Artifact", "id": PREFIX + "Artifact.HasteMushroom"},
 ]
 
 
@@ -131,9 +239,13 @@ def pascal(name: str) -> str:
     return "".join(word[0].upper() + word[1:] for word in re.findall(r"[A-Za-z0-9]+", name.replace("'", "")))
 
 
-def entry(name: str, kind: str, item_id: str, **extra: str) -> dict:
-    item_id = KNOWN_IDS.get(name, item_id)
-    return {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS, **{k: v for k, v in extra.items() if v}}
+def entry(name: str, kind: str, item_id: str, unique_suffix: str = "", **extra: str) -> dict:
+    if name in KNOWN_IDS:
+        item_id = PREFIX + KNOWN_IDS[name]
+    made = {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS, **{k: v for k, v in extra.items() if v}}
+    if unique_suffix and item_id + unique_suffix in UNIQUE_IDS:
+        made["unique_id"] = item_id + unique_suffix
+    return made
 
 
 def main() -> None:
@@ -148,17 +260,17 @@ def main() -> None:
         if kind in SLOTS:
             slot = SLOTS[kind]
             armor_set = base.rsplit(" ", 1)[0]  # "Sculk Digger Hood" is in the Sculk Digger set
-            item_id = f"SW.Item.{pascal(SET_NAMES.get(armor_set, armor_set))}{SLOT_WORDS[slot]}"
-            items[base] = entry(base, "Armor", item_id, slot=slot, set=armor_set, unique=unique, unique_effect=effect)
+            item_id = f"{PREFIX}{pascal(SET_NAMES.get(armor_set, armor_set))}{SLOT_WORDS[slot]}"
+            items[base] = entry(base, "Armor", item_id, "_Unique", slot=slot, set=armor_set, unique=unique, unique_effect=effect)
         else:
             weapon = "Ranged" if kind in RANGED_TYPES else "Melee"
-            items[base] = entry(base, weapon, f"SW.Item.{pascal(base)}", unique=unique, unique_effect=effect)
+            items[base] = entry(base, weapon, PREFIX + pascal(base), "_Unique1", unique=unique, unique_effect=effect)
     for row in rows(pages["artifacts"], "ARTIFACT", "TYPE"):
         name = row["ARTIFACT"]
-        items.setdefault(name, entry(name, "Artifact", f"SW.Item.Artifact.{pascal(name)}"))
+        items.setdefault(name, entry(name, "Artifact", f"{PREFIX}Artifact.{pascal(name)}"))
     for row in rows(pages["talismans"], "TALISMAN", "EFFECT AT LEVEL 3"):
         name, effect = row["TALISMAN"], row["EFFECT AT LEVEL 3"]
-        items.setdefault(name, entry(name, "Talisman", f"SW.Item.Talisman.{pascal(name)}", effect="" if effect == "—" else effect))
+        items.setdefault(name, entry(name, "Talisman", f"{PREFIX}Talisman.{pascal(name)}", effect="" if effect == "—" else effect))
     for extra in EXTRA:
         items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"], slot=extra.get("slot", ""), name_from_id=True))
 
@@ -173,14 +285,25 @@ def main() -> None:
         }
         for row in rows(pages["enchantments"], "ENCHANTMENT", "SLOT", "CATEGORY")
     ]
+    books = [
+        {"name": name, "kind": BOOK, "id": f"{PREFIX}EnchantmentBook.{BOOK_IDS[name]}", "confirmed": True}
+        for name in sorted(BOOK_IDS)
+    ]
+    for book in books:
+        if book["name"] not in {enchantment["name"] for enchantment in enchantments}:
+            print(f"warning: {book['name']} has a book in saves but isn't one of MetaBot's enchantments")
 
-    catalog = sorted(items.values(), key=lambda e: (e["kind"], e["name"].lower()))
+    catalog = sorted(items.values(), key=lambda e: (e["kind"], e["name"].lower())) + books
     by_id: dict[str, list[str]] = {}
     for item in catalog:
         by_id.setdefault(item["id"], []).append(item["name"])
     for item_id, same in by_id.items():
         if len(same) > 1:
             print(f"warning: {' and '.join(same)} would share the ID {item_id}; the editor offers only the first")
+    for item_id in sorted(CONFIRMED_IDS - set(by_id)):
+        print(f"warning: {item_id} was seen in a save, but no item in the list has it")
+    for item_id in sorted(UNIQUE_IDS - {item.get("unique_id") for item in catalog}):
+        print(f"warning: {item_id} was seen in a save, but no item in the list has a Unique with that ID")
     sources = [BASE_URL + page for page in PAGES]
     DATA.mkdir(parents=True, exist_ok=True)
     (DATA / "items.json").write_text(json.dumps({"sources": sources[:3], "items": catalog}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -188,8 +311,8 @@ def main() -> None:
         json.dumps({"sources": sources[3:], "enchantments": sorted(enchantments, key=lambda e: e["name"])}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     counts = {kind: sum(item["kind"] == kind for item in catalog) for kind in sorted({item["kind"] for item in catalog})}
-    print(f"{len(catalog)} items ({sum(item['confirmed'] for item in catalog)} confirmed IDs, {sum('unique' in item for item in catalog)} with a Unique), "
-          f"{len(enchantments)} enchantments -> {DATA}\n{counts}")
+    print(f"{len(catalog)} items ({sum(item['confirmed'] for item in catalog)} confirmed IDs, {sum('unique' in item for item in catalog)} with a Unique, "
+          f"{sum('unique_id' in item for item in catalog)} of those with the Unique's own ID), {len(enchantments)} enchantments -> {DATA}\n{counts}")
 
 
 if __name__ == "__main__":
