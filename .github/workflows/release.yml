@@ -1,7 +1,7 @@
 name: Build and release
 
-# Push a tag like v1.0.1 to build MCD2SaveEditor.exe and publish it as a GitHub Release.
-# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the .exe as an artifact.
+# Push a tag like v1.0.1 to build the editor and publish MCD2SaveEditor.zip as a GitHub Release.
+# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the zip as an artifact.
 on:
   push:
     tags: ["v*"]
@@ -9,6 +9,9 @@ on:
 
 permissions:
   contents: write
+  # For the build attestation: a signed record that the zip was built here, from this commit.
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -28,32 +31,68 @@ jobs:
       - name: Run the tests
         run: python -m unittest discover -s tests -t .
 
-      - name: Build the .exe
+      # PyInstaller's ready-made launcher is the same file in every PyInstaller app, malware included, so
+      # antivirus engines flag whatever carries it. Compiling it here gives the editor a launcher of its own.
+      - name: Install PyInstaller, compiling its launcher here
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: "1"
         run: |
-          python -m pip install --upgrade "pyinstaller>=6.10,<7"
-          pyinstaller --noconfirm --onefile --windowed --name MCD2SaveEditor --icon assets/app.ico --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data;dungeons2_editor/data" mcd2_save_editor.py
+          python -m pip install --no-binary=PyInstaller "pyinstaller>=6.10,<7"
+          $version = python -c "import PyInstaller; print(PyInstaller.__version__)"
+          python -m pip download --no-deps --only-binary=:all: --dest build/stock "pyinstaller==$version"
+          python tools/check_launcher.py build/stock
 
-      - name: Check the .exe reads a save and opens its window
+      # A folder (the .exe next to its files) rather than one self-unpacking .exe: nothing is unpacked into the
+      # temporary folder at every start, which is quicker and is the other thing antivirus engines flag.
+      - name: Build the editor's folder
+        run: |
+          python tools/make_version_info.py build/version-info.txt
+          pyinstaller --noconfirm --onedir --windowed --noupx --name MCD2SaveEditor --icon assets/app.ico --version-file build/version-info.txt --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data;dungeons2_editor/data" mcd2_save_editor.py
+
+      - name: Check the .exe reads a save, opens its window and says which version it is
         shell: pwsh
         run: |
+          $exe = "dist/MCD2SaveEditor/MCD2SaveEditor.exe"
           $saves = python -c "import tempfile; from pathlib import Path; from tests.helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode; print(make_profile(Path(tempfile.mkdtemp()), {'Character00000000-0000-1000-8000-000000000002': hero_save_text().encode(), 'GlobalSaveDataDefault': shift_encode(SETTINGS_TEXT)}))"
           foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4")) {
-            $run = Start-Process dist/MCD2SaveEditor.exe -ArgumentList $arguments -Wait -PassThru
+            $run = Start-Process $exe -ArgumentList $arguments -Wait -PassThru
             if ($run.ExitCode -ne 0) { throw "MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
             Write-Output "OK: MCD2SaveEditor.exe $arguments"
           }
+          $version = python -c "from dungeons2_editor import __version__; print(__version__)"
+          $details = (Get-Item $exe).VersionInfo
+          if ($details.ProductVersion -ne $version) { throw "The .exe says it is version '$($details.ProductVersion)', not $version" }
+          Write-Output "OK: $($details.ProductName) $($details.ProductVersion)"
 
       - name: Check the .exe answers as an MCP server
-        run: python tools/check_exe_mcp.py dist/MCD2SaveEditor.exe
+        run: python tools/check_exe_mcp.py dist/MCD2SaveEditor/MCD2SaveEditor.exe
 
-      - name: Keep the .exe
+      - name: Zip the folder
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/MCD2SaveEditor -DestinationPath dist/MCD2SaveEditor.zip
+          "### SHA-256", '```' >> $env:GITHUB_STEP_SUMMARY
+          foreach ($file in "dist/MCD2SaveEditor.zip", "dist/MCD2SaveEditor/MCD2SaveEditor.exe") {
+            "$((Get-FileHash $file -Algorithm SHA256).Hash.ToLower())  $(Split-Path $file -Leaf)" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          }
+          '```' >> $env:GITHUB_STEP_SUMMARY
+
+      # Lets anyone check a download: gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor
+      - name: Attest where the zip and the .exe were built
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            dist/MCD2SaveEditor.zip
+            dist/MCD2SaveEditor/MCD2SaveEditor.exe
+
+      - name: Keep the zip
         uses: actions/upload-artifact@v4
         with:
           name: MCD2SaveEditor
-          path: dist/MCD2SaveEditor.exe
+          path: dist/MCD2SaveEditor.zip
 
       - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.exe --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md

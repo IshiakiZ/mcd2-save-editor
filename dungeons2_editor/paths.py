@@ -18,8 +18,8 @@ def is_frozen() -> bool:
 def data_dir() -> Path:
     """Backups, pictures and settings.
 
-    From source they live next to the code. The .exe unpacks itself into a temporary
-    folder that's deleted when it closes, so it uses %LOCALAPPDATA%\\MCD2 Save Editor.
+    From source they live next to the code. The packaged editor's folder is replaced when
+    you update it, so it uses %LOCALAPPDATA%\\MCD2 Save Editor.
     """
     if is_frozen():
         return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / APP_NAME

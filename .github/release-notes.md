@@ -1,3 +1,21 @@
+## What's new in 1.5.0
+
+- **The Steam version is supported**, on Windows and on Linux (Steam through Proton). The editor finds the Steam
+  saves by itself and edits offline heroes the same way, with the same backups, restore and checks. Thanks to
+  [icicle1133](https://github.com/icicle1133), who wrote and tested it, and [douglas-93](https://github.com/douglas-93).
+  It's new, so try a small change first and report anything odd.
+- **The download is now a zip with a folder in it**, not a single .exe. Unzip it and open **MCD2SaveEditor.exe**
+  inside. The single .exe unpacked itself every time it started; the folder starts quicker. Your backups, pictures
+  and settings stay where they were.
+- **Fewer antivirus false alarms, and a way to check your download.** A few antivirus engines flagged the 1.4.0 .exe
+  (6 of 71 on VirusTotal, all generic or machine-learning verdicts), because it was packaged the way a lot of malware
+  is. The folder no longer unpacks itself, its launcher is compiled during the build, and the .exe says what it is
+  and which version. Each release now comes with a build attestation: with the [GitHub CLI](https://cli.github.com),
+  `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms the zip was built by this
+  repository's workflow from its source.
+- Numbers the game writes in an unusual form are written back exactly as they were, so an unedited save stays
+  byte for byte identical.
+
 ## What's new in 1.4.0
 
 - **Let an AI customise your hero.** The editor can run as an MCP server, so Claude Desktop, Claude Code or another
@@ -90,16 +108,19 @@ best guesses (marked Unconfirmed). See 1.2.0 below for equipping, the new preset
 
 ## Download
 
-Download **MCD2SaveEditor.exe** below and double-click it. There's nothing to install.
+Download **MCD2SaveEditor.zip** below, unzip it (right-click → **Extract All…**), open the **MCD2SaveEditor** folder
+and double-click **MCD2SaveEditor.exe**. There's nothing to install. Leave the .exe in its folder: it needs the
+`_internal` folder next to it.
 
 - **"Windows protected your PC"?** The .exe isn't code-signed, so Windows may warn about it. Click **More info → Run
   anyway**. It's built by GitHub Actions straight from this repository's source ([the workflow](https://github.com/IshiakiZ/mcd2-save-editor/blob/main/.github/workflows/release.yml)),
   or you can run the source instead (see below).
 - **Close Minecraft Dungeons II before saving.** Every save makes a backup first, and **Restore…** puts one back.
 - Backups, item pictures and settings are kept in `%LOCALAPPDATA%\MCD2 Save Editor`.
-- Works with the Xbox app / PC Game Pass version of the game, and edits **offline** heroes (online heroes live on the
-  game's servers).
+- Works with the Xbox app / PC Game Pass and Steam versions of the game, and edits **offline** heroes (online heroes
+  live on the game's servers).
 
-Prefer Python? Download the source code below and double-click **Start Save Editor.bat** (needs Python 3.10+).
+Prefer Python? Download the source code below and double-click **Start Save Editor.bat** (needs Python 3.10+; on
+Linux, run **Start Save Editor.sh**).
 
 See the [README](https://github.com/IshiakiZ/mcd2-save-editor/blob/main/README.md) for what it can and can't do.

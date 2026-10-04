@@ -1,6 +1,6 @@
 """Release check: the built .exe answers as an MCP server over stdin and stdout.
 
-    python tools/check_exe_mcp.py dist/MCD2SaveEditor.exe
+    python tools/check_exe_mcp.py dist/MCD2SaveEditor/MCD2SaveEditor.exe
 """
 
 import json

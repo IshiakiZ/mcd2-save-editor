@@ -1,10 +1,10 @@
 # Minecraft Dungeons II Save Editor
 
-An unofficial save editor for **Minecraft Dungeons II** on Windows and Linux: the **Xbox app / PC Game Pass** version and the **Steam** version (including Steam on Linux
-through Proton). Change your offline
-hero's stats and gear, add and equip items, and apply ready-made presets and complete kits from top builds, without
-having to know anything about save files. It looks like the game's own inventory screen, so you already know your
-way around. Advanced mode shows the full save for people who want it.
+An unofficial save editor for **Minecraft Dungeons II** on PC: the **Xbox app / PC Game Pass** version and the
+**Steam** version, on Windows and on Linux (Steam through Proton). Change your offline hero's stats and gear, add and
+equip items, and apply ready-made presets and complete kits from top builds, without having to know anything about
+save files. It looks like the game's own inventory screen, so you already know your way around. Advanced mode shows
+the full save for people who want it.
 
 ![Simple mode, laid out like the game's inventory](docs/screenshots/inventory.png)
 
@@ -60,17 +60,17 @@ way around. Advanced mode shows the full save for people who want it.
 
 ## Download
 
-**[⬇ Download MCD2SaveEditor.exe](https://github.com/IshiakiZ/mcd2-save-editor/releases/latest)** from the latest
-release and double-click it. There's nothing to install, and it finds your saves automatically.
+**[⬇ Download MCD2SaveEditor.zip](https://github.com/IshiakiZ/mcd2-save-editor/releases/latest)** from the latest
+release. There's nothing to install, and it finds your saves automatically.
 
-1. **Close the game.**
-2. Open **MCD2SaveEditor.exe**.
-3. Your hero opens (pick another at the top left), make your changes, and press **Save to game**.
+1. Unzip it (right-click → **Extract All…**) and open the **MCD2SaveEditor** folder.
+2. **Close the game.**
+3. Open **MCD2SaveEditor.exe**. Leave it in its folder: it needs the `_internal` folder next to it.
+4. Your hero opens (pick another at the top left), make your changes, and press **Save to game**.
 
 Windows may say **"Windows protected your PC"** because the .exe isn't code-signed. Click **More info → Run
-anyway**. The .exe is built by GitHub Actions straight from this repository's source
-([the workflow](.github/workflows/release.yml)). The .exe keeps backups, pictures and settings in
-`%LOCALAPPDATA%\MCD2 Save Editor`.
+anyway**. The editor keeps backups, pictures and settings in `%LOCALAPPDATA%\MCD2 Save Editor`, not in its own
+folder, so a newer version can simply replace the folder.
 
 **Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
 installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
@@ -82,9 +82,28 @@ Install [Pillow](https://pypi.org/project/pillow/) too (`py -m pip install pillo
 (`%LOCALAPPDATA%\Dungeons2\Saved\SaveGames`) and on Linux inside the game's Proton prefix
 (`~/.local/share/Steam/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames`,
 also for Flatpak/Snap Steam and games on other Steam library drives). Hero saves are the `Character<id>.sav` files.
-If it can't find them, use **Menu → Open a save folder…** or `--profile <folder>`. On Linux, run
+If it can't find them, use **Menu → Open a save folder…** or `--profile <folder>`. On Linux, run it from source with
 **Start Save Editor.sh** (needs Python 3.10+ with Tkinter: `sudo apt install python3-tk` on Debian/Ubuntu). Close the
 game, and let Steam finish syncing, before saving.
+
+### Antivirus warnings, and checking the download
+
+The editor is a Python program, packaged for Windows with PyInstaller. Scanners that judge a file by its shape flag
+many PyInstaller programs, because malware gets packaged the same way: the 1.4.0 .exe was flagged by 6 of 71 engines
+on VirusTotal, all of them generic or machine-learning verdicts. To give them less to trip over, the download is now a
+plain folder (the .exe no longer unpacks itself every time it starts), its launcher is compiled during the build
+(not PyInstaller's ready-made one, which malware also carries), and the .exe says what it is and which version.
+
+You don't have to take anyone's word for what's in the download:
+
+- **Nobody builds it by hand.** GitHub Actions builds every release from this repository's source and attaches it
+  ([the workflow](.github/workflows/release.yml)).
+- **You can check that.** With the [GitHub CLI](https://cli.github.com),
+  `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms the zip you downloaded is the
+  one that workflow built, and from which commit. It works on the `MCD2SaveEditor.exe` inside as well.
+- **The source is all here.** The editor only goes online when you ask it to: to download item pictures from
+  minecraft.wiki, or to open a link in your browser.
+- **You can skip the .exe** and run it from source, as above.
 
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
@@ -107,12 +126,12 @@ the exact setup for your PC, with Copy buttons. In short:
   ```json
   {
     "mcpServers": {
-      "mcd2-save-editor": { "command": "C:\\path\\to\\MCD2SaveEditor.exe", "args": ["mcp"] }
+      "mcd2-save-editor": { "command": "C:\\path\\to\\MCD2SaveEditor\\MCD2SaveEditor.exe", "args": ["mcp"] }
     }
   }
   ```
 
-- **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor.exe" mcp`
+- **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor\MCD2SaveEditor.exe" mcp`
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
 set stats, add, change, equip, copy and delete items, and apply presets. Its changes collect in a draft, like unsaved
@@ -138,9 +157,11 @@ your sign-in, account or device data.
   GitHub issue with just those IDs, nothing else from your save.
 - **Enchantments and Unique signature effects** can't be added yet. Presets tell you which enchantments to put on
   at the Enchantsmith instead.
-- **Steam support is new.** It has been tested on a real offline hero save from the Steam version (Linux/Proton):
-  loading, editing, saving and restoring. If your Steam saves are the Unreal Engine binary kind (they start with
-  `GVAS`) instead of JSON, they show up as read-only. Steam Cloud, if on, uploads the edited file when the game closes.
+- **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
+  with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
+  change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
+  are the Unreal Engine binary kind (they start with `GVAS`) instead of JSON, they show up as read-only. Steam
+  Cloud, if on, uploads the edited file when the game closes.
 - **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
   all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
   removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
@@ -212,12 +233,17 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
 | `dungeons2_editor/icons.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the Minecraft Wiki downloader, and the names you give items |
 | `dungeons2_editor/mcp_server.py`, `ai_dialog.py` | The MCP server for AI assistants, and the window that shows how to connect one |
+| `tools/` | The item catalog builder, and the release build's helpers and checks |
 
 ## Credits and disclaimer
 
 This is a fan project. It is **not affiliated with or endorsed by Mojang Studios or Microsoft**. Minecraft is a
 trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 
+- Steam support, on Windows and on Linux with Proton, was written and tested by
+  [icicle1133](https://github.com/icicle1133) ([#1](https://github.com/IshiakiZ/mcd2-save-editor/pull/1)); keeping the
+  Steam build's sign-in files unread comes from [douglas-93](https://github.com/douglas-93)'s Steam support
+  ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)).
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
