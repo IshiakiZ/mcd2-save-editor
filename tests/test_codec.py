@@ -84,10 +84,6 @@ class DetectionTests(unittest.TestCase):
                 codec.decode_blob(raw)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class NumberLiteralTests(unittest.TestCase):
     """Numbers are written back as read, unless they were changed."""
 
@@ -112,3 +108,16 @@ class NumberLiteralTests(unittest.TestCase):
         decoded.document["List"][0] = 2.5
         out = codec.encode_blob(decoded.document, decoded.style).decode()
         self.assertEqual(out, '{"Z":4101.000116964841,"X":15850,"Y":0.218016,"List":[2.5,2.25]}')
+
+    def test_the_number_form_is_still_worked_out_from_the_text(self):
+        # Plain JSON usually has shortest numbers and shifted JSON 17 digits, but a file is followed, not assumed.
+        plain = codec.decode_blob(b'{"a":0.34999999999999998,"b":2.5}')
+        self.assertEqual((plain.style.shifted, plain.style.numbers, plain.exact), (False, "g17", True))
+        plain.document["b"] = 0.1
+        self.assertEqual(codec.encode_blob(plain.document, plain.style), b'{"a":0.34999999999999998,"b":0.10000000000000001}')
+        shifted = codec.decode_blob(shift_encode('{"a":0.35,"b":2.5}'))
+        self.assertEqual((shifted.style.shifted, shifted.style.numbers, shifted.exact), (True, "shortest", True))
+
+
+if __name__ == "__main__":
+    unittest.main()

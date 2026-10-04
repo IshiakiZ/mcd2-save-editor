@@ -44,6 +44,19 @@ FRIENDLY_NAMES = {
 ONLINE_HERO_NOTE = "Online hero. Its real data lives on the game's servers, so this copy is never changed."
 
 
+def _plain(name: str) -> str:
+    return "".join(character for character in name.lower() if character.isalnum())
+
+
+_PROTECTED_BY_PLAIN_NAME = {_plain(name): name for name in PROTECTED_CONTAINERS}
+
+
+def protected_name(name: str) -> str | None:
+    """The protected container that ``name`` is, or None. The Steam build spells these names with dots
+    (``auth_dynamic_ent.jwt.bin.sav``) where the Xbox build has none (``auth_dynamic_entjwtbin``)."""
+    return _PROTECTED_BY_PLAIN_NAME.get(_plain(name))
+
+
 class Kind(enum.Enum):
     EDITABLE = "Editable"
     PROTECTED = "Protected"
@@ -179,7 +192,7 @@ class Container:
     def label(self) -> str:
         hero = self.hero
         if hero is None:
-            return FRIENDLY_NAMES.get(self.name, self.name)
+            return FRIENDLY_NAMES.get(protected_name(self.name) or self.name, self.name)
         kind = "Online hero" if hero.is_online else "Offline hero"
         return f"{kind} ({hero.skin})" if hero.skin else f"{kind} {hero.character_id[:8]}"
 
@@ -225,8 +238,9 @@ class SaveProfile:
             wgs.write_container(self.path, name, blobs)
 
     def _load(self, entry) -> Container:
-        if entry.name in PROTECTED_CONTAINERS:
-            return Container(entry, Kind.PROTECTED, PROTECTED_CONTAINERS[entry.name], blobs={})
+        protected = protected_name(entry.name)
+        if protected is not None:
+            return Container(entry, Kind.PROTECTED, PROTECTED_CONTAINERS[protected], blobs={})
         if entry.sync_state == wgs.DELETED:
             return Container(entry, Kind.UNSUPPORTED, "Marked as deleted.", blobs={})
         try:

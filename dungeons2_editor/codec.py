@@ -85,13 +85,14 @@ def format_number(value: float, numbers: str = "g17") -> str:
     return "%.17g" % value
 
 
-def dumps(value: Any, style: JsonStyle = JsonStyle()) -> str:
+def dumps(value: Any, style: JsonStyle = JsonStyle(), as_read: bool = True) -> str:
+    """``as_read=False`` prints every number in the style's own form, even one that remembers how it was read."""
     parts: list[str] = []
-    _dump(value, parts, style, style.top_level_colon)
+    _dump(value, parts, style, style.top_level_colon, as_read)
     return "".join(parts)
 
 
-def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str) -> None:
+def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str, as_read: bool = True) -> None:
     if value is None:
         parts.append("null")
     elif value is True:
@@ -101,7 +102,7 @@ def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str) -> None:
     elif isinstance(value, int):
         parts.append(str(value))
     elif isinstance(value, float):
-        literal = getattr(value, "literal", None)
+        literal = getattr(value, "literal", None) if as_read else None
         parts.append(literal if literal is not None else format_number(value, style.numbers))
     elif isinstance(value, str):
         parts.append(json.dumps(value, ensure_ascii=style.ensure_ascii))
@@ -110,7 +111,7 @@ def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str) -> None:
         for position, item in enumerate(value):
             if position:
                 parts.append(",")
-            _dump(item, parts, style, ":")
+            _dump(item, parts, style, ":", as_read)
         parts.append("]")
     elif isinstance(value, dict):
         parts.append("{")
@@ -119,7 +120,7 @@ def _dump(value: Any, parts: list[str], style: JsonStyle, colon: str) -> None:
                 parts.append(",")
             parts.append(json.dumps(str(key), ensure_ascii=style.ensure_ascii))
             parts.append(colon)
-            _dump(item, parts, style, ":")
+            _dump(item, parts, style, ":", as_read)
         parts.append("}")
     else:
         raise TypeError(f"cannot store a {type(value).__name__} in a save")
@@ -131,10 +132,11 @@ def detect_style(text: str, document: Any = None, shifted: bool = True) -> JsonS
     style = JsonStyle(top_level_colon=match.group(1) if match else ":", ensure_ascii=text.isascii(), shifted=shifted)
     if document is None:
         return style
-    # Settings files use %.17g and hero files the shortest form; try the usual one first.
+    # Settings files use %.17g and hero files the shortest form; try the usual one first. The numbers are
+    # printed afresh here (not as read), or every form would seem to fit.
     candidates = NUMBER_FORMATS if shifted else tuple(reversed(NUMBER_FORMATS))
     for numbers in candidates:
-        if _dumps_or_none(document, replace(style, numbers=numbers)) == text:
+        if _dumps_or_none(document, replace(style, numbers=numbers), as_read=False) == text:
             return replace(style, numbers=numbers)
     # Not an exact match anyway, so follow whichever form most number literals use.
     literals = [literal for literal in _FLOAT_LITERAL.findall(text) if not literal.lstrip("-").isdigit()]
@@ -142,9 +144,9 @@ def detect_style(text: str, document: Any = None, shifted: bool = True) -> JsonS
     return replace(style, numbers=max(candidates, key=lambda numbers: votes[numbers]))
 
 
-def _dumps_or_none(document: Any, style: JsonStyle) -> str | None:
+def _dumps_or_none(document: Any, style: JsonStyle, as_read: bool = True) -> str | None:
     try:
-        return dumps(document, style)
+        return dumps(document, style, as_read)
     except ValueError:
         return None
 

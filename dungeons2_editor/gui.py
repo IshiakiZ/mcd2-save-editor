@@ -680,7 +680,7 @@ class EditorApp:
     def _profile_label(self, path: Path) -> str:
         if path in self._auto_profiles:
             if saves.layout_of(path) == "steam":
-                return "Steam"
+                return saves.steam.folder_label(path)
             return f"Xbox user {path.name.split('_', 1)[0]}"
         return str(path)
 

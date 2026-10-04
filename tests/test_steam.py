@@ -155,6 +155,19 @@ class SteamProfileTests(unittest.TestCase):
         self.assertEqual(entry.sync_state, wgs.SYNCED)
         self.assertEqual(entry.size, (self.folder / HERO_FILE).stat().st_size)
 
+    def test_sign_in_and_device_files_are_never_read(self):
+        private = ("auth_dynamic_ent.jwt.bin", "entitlements.jwt.bin", "Guid.bin", "OnlineDataTables")
+        files = {name + ".sav": b"private platform data" for name in private}
+        folder = make_steam_folder(self.root / "tokens", {HERO_FILE: hero_save_text().encode("utf-8"), **files})
+        with mock.patch.object(steam, "read_blobs", wraps=steam.read_blobs) as read:
+            profile = saves.SaveProfile(folder)
+        self.assertEqual([call.args[1].name for call in read.call_args_list], ["Character0123456789abcdef"])
+        for name in private:
+            container = profile.get(name)
+            self.assertIs(container.kind, saves.Kind.PROTECTED, name)
+            self.assertEqual(container.blobs, {}, name)
+        self.assertEqual(profile.get("Guid.bin").label, "Device ID")
+
 
 class SteamDiscoveryTests(unittest.TestCase):
     def setUp(self):
@@ -203,6 +216,20 @@ class SteamDiscoveryTests(unittest.TestCase):
         (folder / HERO_FILE).write_bytes(hero_save_text().encode("utf-8"))
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(local)}):
             self.assertEqual(steam.find_folders(), [folder.resolve()])
+
+    def test_the_other_reported_folder_counts_only_with_a_hero_save(self):
+        local = Path(self.temp.name) / "AppData" / "Local"
+        folder = local / "Dungeons" / "Saved" / "SaveGames"
+        folder.mkdir(parents=True)
+        (folder / "Options.sav").write_bytes(b"GVAS\x02\x00\x00\x00")  # the first game's project is "Dungeons" too
+        with mock.patch.dict(os.environ, {"LOCALAPPDATA": str(local)}):
+            self.assertEqual(steam.find_folders(), [])
+            (folder / HERO_FILE).write_bytes(hero_save_text().encode("utf-8"))
+            self.assertEqual(steam.find_folders(), [folder.resolve()])
+            self.assertEqual(saves.find_profiles(), [folder.resolve()])
+        self.assertEqual(steam.folder_label(folder), "Steam (Dungeons folder)")
+        self.assertEqual(steam.folder_label(local / "Dungeons2" / "Saved" / "SaveGames"), "Steam")
+        self.assertEqual(steam.folder_label(local / "Dungeons2" / "Saved" / "SaveGames" / "76561198000000000"), "Steam (76561198000000000)")
 
     def test_finds_a_per_account_subfolder(self):
         base = self.home / ".local/share/Steam" / PROTON_SAVES

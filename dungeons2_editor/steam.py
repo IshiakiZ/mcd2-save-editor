@@ -7,6 +7,8 @@ the Xbox build would use (``Character<id>.sav`` for a hero)::
     Linux     <steam>/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames
               (Proton; the folder inside the game's Wine prefix)
 
+``Dungeons\\Saved\\SaveGames`` (no 2) has been reported as well, so that folder is looked in too.
+
 There is no ``containers.index`` and no revision numbering: a file's content is the same JSON the Xbox build
 keeps in a blob (see ``codec.py``), and a file is replaced in place. This module gives those files the same
 shape ``wgs.py`` gives Xbox containers (an entry per save, and a single blob called ``Data``), so ``saves.py``
@@ -29,6 +31,10 @@ BLOB_NAME = "Data"
 _TEMP_SUFFIX = ".mcd2tmp"
 
 _SAVE_GAMES = Path("Dungeons2", "Saved", "SaveGames")
+# Also reported for the Steam build. The first Minecraft Dungeons is an Unreal project called "Dungeons" too and
+# may have left this folder behind, so here only a folder with a hero save in it counts.
+_OTHER_SAVE_GAMES = Path("Dungeons", "Saved", "SaveGames")
+_HERO_PREFIX = "character"
 _PREFIX_USERS = Path("steamapps", "compatdata", STEAM_APP_ID, "pfx", "drive_c", "users")
 _LIBRARY_PATH = re.compile(r'"path"\s+"((?:[^"\\]|\\.)*)"')
 
@@ -144,10 +150,10 @@ def _library_roots(steam_root: Path) -> list[Path]:
 
 
 def _candidate_folders() -> list[Path]:
-    candidates: list[Path] = []
+    app_data: list[Path] = []  # every "AppData\Local" the game could be saving under
     local = os.environ.get("LOCALAPPDATA")
     if local:
-        candidates.append(Path(local) / _SAVE_GAMES)
+        app_data.append(Path(local))
     home = Path.home()
     for relative in _LINUX_STEAM_ROOTS:
         steam_root = home / relative
@@ -157,8 +163,24 @@ def _candidate_folders() -> list[Path]:
                 prefix_users = sorted(users.iterdir()) if users.is_dir() else []
             except OSError:
                 continue
-            candidates.extend(user / "AppData" / "Local" / _SAVE_GAMES for user in prefix_users)
-    return candidates
+            app_data.extend(user / "AppData" / "Local" for user in prefix_users)
+    return [folder / save_games for folder in app_data for save_games in (_SAVE_GAMES, _OTHER_SAVE_GAMES)]
+
+
+def folder_label(folder: Path) -> str:
+    """What to call a folder ``find_folders`` found: "Steam", plus what sets it apart when it isn't the usual one."""
+    folder = Path(folder)
+    if folder.name != _SAVE_GAMES.name:
+        return f"Steam ({folder.name})"  # a folder per Steam account
+    game = folder.parent.parent.name
+    return "Steam" if game == _SAVE_GAMES.parts[0] else f"Steam ({game} folder)"
+
+
+def _has_hero_save(folder: Path) -> bool:
+    try:
+        return any(entry.name.lower().startswith(_HERO_PREFIX) for entry in read_entries(folder))
+    except OSError:
+        return False
 
 
 def find_folders() -> list[Path]:
@@ -169,6 +191,7 @@ def find_folders() -> list[Path]:
     """
     found: dict[Path, float] = {}
     for candidate in _candidate_folders():
+        ours_for_sure = candidate.parts[-len(_SAVE_GAMES.parts) :] == _SAVE_GAMES.parts
         try:
             if not candidate.is_dir():
                 continue
@@ -176,7 +199,7 @@ def find_folders() -> list[Path]:
         except OSError:
             continue
         for folder in folders:
-            if not is_steam_folder(folder):
+            if not is_steam_folder(folder) or not (ours_for_sure or _has_hero_save(folder)):
                 continue
             try:
                 newest = max(entry.revision for entry in read_entries(folder))
