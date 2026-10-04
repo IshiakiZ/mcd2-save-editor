@@ -6,8 +6,9 @@ body:
     attributes:
       value: |
         Thanks for helping! The editor's **Share item IDs…** button (on its Help tab) fills this in for you.
-        An item ID looks like `SW.Item.MysticHelmet`. Please don't paste anything else from your save: no
-        character IDs, account names or backup files.
+        An item ID looks like `SW.Item.MysticHelmet`. The button may also add what a talisman of yours does,
+        like `HealthBoost 1.2 (HealthBoost.I) / ...`: that's wanted too. Please don't paste anything else from
+        your save: no character IDs, account names or backup files.
   - type: textarea
     id: ids
     attributes:

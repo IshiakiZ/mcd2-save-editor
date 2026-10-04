@@ -153,10 +153,10 @@ def cmd_ids(args: argparse.Namespace) -> int:
     profile = _pick_profile(args.profile)
     report = report_text([c.hero for c in profile.containers if c.hero is not None], __version__)
     if not report:
-        print("Every item ID in your saves is already in the editor's list, with its name.")
+        print("Everything in your saves is already in the editor's list.")
         return 0
     print(report)
-    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs, nothing else).")
+    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs and talisman effects, nothing else).")
     return 0
 
 

@@ -73,6 +73,13 @@ STAT_MINIMUMS = {"Level": 1, "VillageMerchantUpgradeLevel": 1, "EnchantsmithUpgr
 NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
 _ITEM_TAG = re.compile(r"SW\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
 _UNIQUE_SUFFIX = re.compile(r"_Unique\d*$")  # on a Unique's own ID: SW.Item.Sword_Unique1, SW.Item.MysticHelmet_Unique
+NO_RARITY = "None"  # what a talisman has: SW.Rarity.None
+# A talisman has no power either. This is what the game saves in its place.
+_TALISMAN_POWER = {
+    "PlayerLevel": 1, "AreaThreatLevel": 1, "RecommendedThreatLevel": 1, "ThreatSliderOffset": 0,
+    "ItemPowerMin": 1, "ItemPowerMax": 11, "RNGRoll": 0, "ItemPower": -1, "ItemPowerOriginal": 0,
+}
+_UPGRADABLE = "SW.Item.Effect.Upgradable"  # the kind of effect batch a talisman's effect is saved in
 BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
 
 _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, Crossbow, ...
@@ -125,6 +132,7 @@ class GameItem:
     effect: str | None = None  # what a talisman does at level 3
     name_from_id: bool = False  # the name is made from the ID; what the game calls it isn't known yet
     unique_id: str | None = None  # the Unique's own save ID, once it has been seen in a real save
+    levels: tuple = ()  # a talisman's effect at each of its levels, once seen in a real save
 
 
 @dataclass(frozen=True)
@@ -152,6 +160,7 @@ def game_items() -> tuple[GameItem, ...]:
         GameItem(
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
             e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")), e.get("unique_id"),
+            tuple(e.get("levels") or ()),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")
@@ -253,6 +262,34 @@ def display_name(tag: str) -> str:
     if known is None:
         return item_name(tag)
     return known.unique if unique and known.unique else known.name
+
+
+def talisman_levels(tag: str) -> list[dict]:
+    """A talisman's levels as the game saves them (ItemProgression.ItemLevels): its effect at each one. Empty
+    when the item list doesn't know what the talisman does."""
+    known = game_item(tag)
+    return [
+        {
+            "LevelEffects": [
+                {
+                    "TypeTag": level["effect"],
+                    "Intensity": level["intensity"],
+                    "Quality": 0,
+                    "EnchantmentPointsInvested": 0,
+                    "GeneratorData": {"GeneratorParentTemplate": level["template"], "Locked": False},
+                }
+            ],
+            "LevelTags": [],
+        }
+        for level in (known.levels if known is not None else ())
+    ]
+
+
+def _item_levels(entry: dict) -> list:
+    """The levels saved with an inventory entry (ItemProgression.ItemLevels). A talisman the game handed over
+    has them; one an older version of the editor added doesn't."""
+    levels = ((entry.get("ItemData") or {}).get("ItemProgression") or {}).get("ItemLevels")
+    return levels if isinstance(levels, list) else []
 
 
 def item_group(tag: str) -> str:
@@ -374,6 +411,11 @@ class Item:
     @property
     def is_cosmetic(self) -> bool:
         return self.tag.startswith(COSMETIC_PREFIX)
+
+    @property
+    def is_talisman(self) -> bool:
+        """A talisman has no rarity or power (the game saves SW.Rarity.None and power -1): it levels up instead."""
+        return self.kind == "Talisman"
 
     @property
     def rarity(self) -> str:
@@ -559,9 +601,14 @@ class Hero:
         can't re-roll it to something else. A Unique has an ID of its own, so
         making an item Unique gives it that ID when it's known to be real, and
         taking an item's Unique rarity away gives it back its base item's ID.
-        A ``tag`` that's given is otherwise kept exactly.
+        A ``tag`` that's given is otherwise kept exactly. A talisman has no rarity
+        or power to change, and an item changed into one is laid out as one.
         """
         item = self._gear(index)
+        if item.is_talisman:
+            if (rarity is not None and rarity != item.rarity) or (power is not None and power != item.power):
+                raise ValueError(f"The {item.name} is a talisman: it has no rarity or power, and levels up from the XP you earn.")
+            rarity = power = None  # what it has already
         if tag is not None:
             tag = tag.strip()
             if tag != item.tag:
@@ -583,7 +630,11 @@ class Hero:
         elif rarity is not None and tag is None:
             wanted = base_tag(wanted)
         if wanted != item.tag:
+            levels = self._talisman_levels(wanted) if tag_kind(wanted) == "Talisman" else None
             item.data["TypeTag"] = wanted
+            if levels is not None:
+                self._as_talisman(item.data, levels)
+                rarity = power = None
         if rarity is not None and rarity != item.rarity:
             item.data["RarityTag"] = RARITY_PREFIX + rarity
         if power is not None and power != item.power:
@@ -640,10 +691,14 @@ class Hero:
         """Add a brand-new item, laid out like ``template`` (an existing inventory entry). Returns its index.
 
         ``rarity`` or ``power`` of None keeps the template's. With ``slot`` the item is equipped there.
-        At Unique rarity the item gets its Unique's own ID, when that ID is known to be real.
+        At Unique rarity the item gets its Unique's own ID, when that ID is known to be real. A talisman
+        has no rarity or power, so those are left out for one, and it gets its effect instead.
         """
         tag = tag.strip()
         _check_addable_tag(tag)
+        talisman = tag_kind(tag) == "Talisman"
+        if talisman:
+            rarity = power = None
         if rarity == "Unique":
             tag = unique_tag(tag, self.seen_item_types()) or tag
         if rarity is not None and rarity not in RARITIES:
@@ -656,6 +711,8 @@ class Hero:
 
         entry = copy.deepcopy(template)
         data = entry.setdefault("ItemData", {})
+        # A copy of this very talisman that the game made carries its levels; a new one is laid out like it.
+        own_levels = _item_levels(entry) if talisman and data.get("TypeTag") == tag else []
         data["TypeTag"] = tag
         if rarity is not None:
             data["RarityTag"] = RARITY_PREFIX + rarity
@@ -675,6 +732,8 @@ class Hero:
             for key in ("ItemPower", "ItemPowerOriginal", "ItemPowerMin", "ItemPowerMax"):
                 if key in values and power is not None:
                     values[key] = int(power)
+        if talisman:
+            self._as_talisman(data, own_levels or self._talisman_levels(tag))
         entry["StackCount"] = int(count)
         self._make_new(entry)
         index = self._add_entry(entry)
@@ -684,6 +743,27 @@ class Hero:
         if slot is not None:
             self.equip(index, slot, check_level)
         return index
+
+    @staticmethod
+    def _as_talisman(data: dict, levels: list) -> None:
+        """Lay a new talisman out the way the game saves one it has just handed over: no rarity, no power, and
+        its effect at level 1 with every level listed. Without ``levels`` (the editor doesn't know what this
+        talisman does) it has no effect at all, and may do nothing in the game."""
+        data["RarityTag"] = RARITY_PREFIX + NO_RARITY
+        data["Effects"] = [{"TypeTag": _UPGRADABLE, "EffectsInThisBatch": copy.deepcopy(levels[0].get("LevelEffects", []))}] if levels else []
+        progression = data.setdefault("ItemProgression", {})
+        progression.update(CurrentLevel=0, CurrentXP=0, ItemLevels=copy.deepcopy(levels))
+        values = (data.get("GeneratorData") or {}).get("PowerGeneratorValues")
+        if isinstance(values, dict):
+            values.update({key: value for key, value in _TALISMAN_POWER.items() if key in values})
+
+    def _talisman_levels(self, tag: str) -> list:
+        """What a talisman does at each level: from one the game gave this hero, else from the item list.
+        Empty when neither shows it."""
+        for item in self.items():
+            if item.tag == tag and _item_levels(item.entry):
+                return _item_levels(item.entry)
+        return talisman_levels(tag)
 
     def best_power(self) -> int:
         """Power of the hero's strongest item (at least 1)."""
@@ -757,6 +837,7 @@ class CatalogItem:
     kind_name: str | None = None
     unique_effect: str | None = None  # what the Unique does
     unique_tag: str | None = None  # the Unique's own ID, when it's known to be real
+    no_effect: bool = False  # a talisman the editor can only add without its effect: no save has shown it yet
 
     @property
     def name(self) -> str:
@@ -777,9 +858,25 @@ class CatalogItem:
             return self.tag
         return self.unique_tag or self.tag + ("_Unique" if self.kind == "Armor" else "_Unique1")
 
-    def confirmed_at(self, rarity: str | None) -> bool:
+    def id_known_at(self, rarity: str | None = None) -> bool:
         """Whether the game is known to have the ID it's added under at this rarity."""
         return self.unique_tag is not None if rarity == "Unique" and self.unique else self.confirmed
+
+    def confirmed_at(self, rarity: str | None = None) -> bool:
+        """Whether it's known to work when added at this rarity: the game knows its ID, and a talisman
+        gets its effect."""
+        return self.id_known_at(rarity) and not self.no_effect
+
+    def doubt(self, rarity: str | None = None) -> str:
+        """Why adding it at this rarity is a guess, as a sentence. Empty when it's known to work."""
+        if self.no_effect and not self.id_known_at(rarity):
+            return (
+                "The game's name for this talisman is a best guess, and the editor hasn't seen its effect in a "
+                "save yet, so it's added without one."
+            )
+        if self.no_effect:
+            return "The editor hasn't seen this talisman's effect in a save yet, so it's added without one and may do nothing in the game."
+        return "" if self.id_known_at(rarity) else "The game's name for this item is a best guess."
 
     def name_at(self, rarity: str | None) -> str:
         return self.unique if rarity == "Unique" and self.unique else self.name
@@ -851,7 +948,8 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     IDs seen in saves are confirmed; the game list's other IDs are best guesses from the
     items' names (see tools/build_item_catalog.py). Each item borrows the layout of a saved
     inventory entry: the same item, the same group, or any gear. A Unique isn't an entry of
-    its own: its base item's entry carries the Unique's ID, once that has been seen.
+    its own: its base item's entry carries the Unique's ID, once that has been seen. A talisman
+    also needs its effect: one that neither the item list nor a saved copy shows is ``no_effect``.
     """
     seen: set[str] = set()
     by_tag: dict[str, dict] = {}
@@ -860,12 +958,17 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
         seen |= hero.seen_item_types()
         for item in hero.items():
             if not item.is_cosmetic:
-                by_tag.setdefault(item.tag, item.entry)
+                # A talisman the game handed over carries its effect, so it's the better one to lay a new one out like.
+                if item.tag not in by_tag or (_item_levels(item.entry) and not _item_levels(by_tag[item.tag])):
+                    by_tag[item.tag] = item.entry
                 by_group.setdefault(item_group(item.tag), item.entry)
     fallback = by_group.get("Gear") or next(iter(by_group.values()), None)
 
     def template(tag: str) -> dict | None:
         return by_tag.get(tag) or by_group.get(item_group(tag)) or fallback
+
+    def no_effect(tag: str, levels: tuple = ()) -> bool:
+        return tag_kind(tag) == "Talisman" and not levels and not _item_levels(by_tag.get(tag) or {})
 
     catalog: dict[str, CatalogItem] = {}
     for game_item in game_items():
@@ -882,11 +985,12 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
             kind_name=game_item.kind,
             unique_effect=game_item.unique_effect,
             unique_tag=unique_tag(game_item.id, seen),
+            no_effect=no_effect(game_item.id, game_item.levels),
         )
     for tag in seen:
         if tag in catalog or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
             continue
-        catalog[tag] = CatalogItem(tag, template(tag))
+        catalog[tag] = CatalogItem(tag, template(tag), no_effect=no_effect(tag))
     return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
 
 
@@ -932,7 +1036,8 @@ def describe_changes(before: dict, after: dict) -> list[str]:
     for key, item in new_items.items():
         if key not in old_items:
             equipped = f", {item.where[0].lower() + item.where[1:]}" if item.equipped_slot else ""
-            lines.append(f"Added {item.name} ({item.rarity}, power {format_amount(item.power)}){equipped}")
+            grade = "" if item.is_talisman else f" ({item.rarity}, power {format_amount(item.power)})"
+            lines.append(f"Added {item.name}{grade}{equipped}")
     return lines
 
 

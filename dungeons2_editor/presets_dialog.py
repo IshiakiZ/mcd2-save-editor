@@ -16,6 +16,10 @@ from .layout import fit_to_contents, text_width
 
 GROUP_PREFIX = "group:"
 SIZE = (1000, 680)
+NO_EFFECT_NOTE = (
+    "A grey talisman can be one whose effect the editor hasn't seen in a real save yet: it could only add the "
+    "talisman without one, and it may do nothing in the game."
+)
 ENCHANTING_HELP = (
     "The editor can't add enchantments yet, so put these on at the Enchantsmith. Each weapon and armor piece takes "
     "one enchantment, and a book works on any number of items. Enchanting costs enchantment points and Echo Shards, "
@@ -123,7 +127,7 @@ class PresetsDialog(tk.Toplevel):
             ttk.Radiobutton(
                 self.rarity_row, text=rarity, value=rarity, variable=self.rarity_var, image=badge, compound="left", command=self._refresh
             ).pack(side="left", padx=(0, 12))
-        ttk.Label(self.rarity_row, text="(artifacts top out at Special, talismans are Common)", style="Muted.TLabel").pack(side="left")
+        ttk.Label(self.rarity_row, text="(artifacts top out at Special; talismans have no rarity or power)", style="Muted.TLabel").pack(side="left")
 
         self.equip_var = tk.BooleanVar(value=False)
         self.equip_check = ttk.Checkbutton(
@@ -133,7 +137,7 @@ class PresetsDialog(tk.Toplevel):
         self.include_unconfirmed = tk.BooleanVar(value=False)
         self.unconfirmed_check = ttk.Checkbutton(
             options,
-            text="Also add unconfirmed items (the game's name for them is a best guess)",
+            text="Also add unconfirmed items (the editor is guessing how the game saves them)",
             variable=self.include_unconfirmed,
             command=self._refresh,
         )
@@ -267,15 +271,21 @@ class PresetsDialog(tk.Toplevel):
             text.insert("end", "Nothing to change: this hero already matches.\n", "muted")
         if plan.unconfirmed:
             text.insert("end", "Unconfirmed items\n", "heading")
-            text.insert(
-                "end",
-                "These can be added, but the game's name for them hasn't been seen in a real save yet. If the editor's "
-                "guess is wrong, the game may drop them. Tick \"Also add unconfirmed items\" above to include them, "
-                "or find one in the game first.\n",
-                "muted",
-            )
+            if any(found.no_effect for _kit, found in plan.unconfirmed):
+                intro = (
+                    "These can be added, but only as best guesses: the game's name for the item hasn't been seen in a real "
+                    "save yet, or (where it says \"no effect yet\") the editor can only add the talisman without its effect. "
+                    "If a name is guessed wrong, the game may drop the item, and a talisman without its effect may do nothing. "
+                )
+            else:
+                intro = (
+                    "These can be added, but the game's name for them hasn't been seen in a real save yet. If the editor's "
+                    "guess is wrong, the game may drop them. "
+                )
+            text.insert("end", intro + "Tick \"Also add unconfirmed items\" above to include them, or find one in the game first.\n", "muted")
             for kit_item, found in plan.unconfirmed:
-                text.insert("end", f"•  {kit_item.name} ({found.kind.lower()})" + (f": {kit_item.why}" if kit_item.why else "") + "\n")
+                kind = found.kind.lower() + (", no effect yet" if found.no_effect else "")
+                text.insert("end", f"•  {kit_item.name} ({kind})" + (f": {kit_item.why}" if kit_item.why else "") + "\n")
                 if kit_item.where:
                     text.insert("end", f"   {kit_item.where}\n", "muted")
         if plan.find:
@@ -292,7 +302,9 @@ class PresetsDialog(tk.Toplevel):
         for name, value in plan.stats.items():
             text.insert("end", f"•  {attribute_label(name)}: {format_amount(self.hero.attribute(name))} → {format_amount(value)}\n")
         rows = presets.loadout(preset, plan, self.hero, self.catalog)
-        text.insert("end", f"•  {plan.rarity} gear at power {format_amount(plan.power)}, " + ("equipped:" if equip else "into your inventory:") + "\n")
+        only_talismans = all(item.kind == "Talisman" for item in preset.items)  # they have no rarity or power
+        what = "Talismans" if only_talismans else f"{plan.rarity} gear at power {format_amount(plan.power)}"
+        text.insert("end", f"•  {what}, " + ("equipped:" if equip else "into your inventory:") + "\n")
         places: dict[str, list[presets.LoadoutRow]] = {}
         for row in rows:
             places.setdefault(row.place, []).append(row)
@@ -311,13 +323,24 @@ class PresetsDialog(tk.Toplevel):
             text.insert("end", "\n", "row")
         notes = []
         if any(row.state == "left out" for row in rows):
+            guessed_ids = any(not found.id_known_at(presets.rarity_for(kit, found, plan.rarity)) for kit, found in plan.unconfirmed)
+            no_effect = any(found.no_effect for _kit, found in plan.unconfirmed)
+            if guessed_ids or not no_effect:
+                notes.append(
+                    "Grey items are unconfirmed (the editor has to guess the game's name for them), so they're left out: "
+                    "in a test, the game removed every unconfirmed item a kit added. Tick \"Also add unconfirmed items\" "
+                    "to try them anyway."
+                )
+            if no_effect:
+                notes.append(NO_EFFECT_NOTE + ("" if guessed_ids else " Tick \"Also add unconfirmed items\" to add it anyway."))
+        bare = sum(addition.found.no_effect for addition in plan.add)
+        if bare:
             notes.append(
-                "Grey items are unconfirmed (the editor has to guess the game's name for them), so they're left out: "
-                "in a test, the game removed every unconfirmed item a kit added. Tick \"Also add unconfirmed items\" "
-                "to try them anyway."
+                f"{bare} of these talismans {'is' if bare == 1 else 'are'} added without {'its' if bare == 1 else 'their'} effect, "
+                "which the editor hasn't seen in a real save yet, and may do nothing in the game."
             )
         guesses = []
-        guessed = sum(row.state == "add" and not row.confirmed for row in rows)
+        guessed = sum(not addition.found.id_known_at(addition.rarity) for addition in plan.add)
         if guessed:
             guesses.append(f"{guessed} of these items" if guessed < len(rows) else "these items")
         if any(not entry.slot.confirmed for entry in [*plan.add, *plan.have] if entry.slot is not None):
@@ -351,16 +374,23 @@ class PresetsDialog(tk.Toplevel):
             text.insert("end", f"{enchantment.name}: {enchantment.tier3}\n", "muted")
 
     def _accept_guesses(self) -> bool:
-        """Ask before adding items, or using slots, whose names in the game are best guesses."""
-        items = sum(not addition.found.confirmed for addition in self.plan.add)
+        """Ask before adding items, or using slots, whose names in the game are best guesses, and before adding
+        talismans without their effect."""
+        items = sum(not addition.found.id_known_at(addition.rarity) for addition in self.plan.add)
+        bare = sum(addition.found.no_effect for addition in self.plan.add)
         slots = sorted({entry.slot.label.lower() for entry in [*self.plan.add, *self.plan.have] if entry.slot and not entry.slot.confirmed})
-        if not items and not slots:
+        if not items and not bare and not slots:
             return True
         lines = []
         if items:
             lines.append(
                 f"{items} of the items {'is' if items == 1 else 'are'} unconfirmed: the game's name for "
                 f"{'it' if items == 1 else 'them'} is a best guess, and if a guess is wrong the game may drop the item."
+            )
+        if bare:
+            lines.append(
+                f"{bare} of the talismans {'is' if bare == 1 else 'are'} added without {'its' if bare == 1 else 'their'} effect, "
+                "which the editor hasn't seen in a real save yet, and may do nothing in the game."
             )
         if slots:
             lines.append(f"These slot names are best guesses too: {', '.join(slots)}. If one is wrong, the game may leave that item unequipped.")

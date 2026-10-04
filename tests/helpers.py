@@ -6,6 +6,7 @@ layout of a real Minecraft Dungeons II containers.index.
 
 from __future__ import annotations
 
+import copy
 import json
 import struct
 import uuid
@@ -58,6 +59,31 @@ def hero_item(tag, power=1, rarity="Common", equipped="None", slot="None", seed=
         "MerchantItemSold": False,
         "MerchantDiscount": 0,
     }
+
+
+def talisman_item(tag, effect, strengths=(1.2, 1.25, 1.35), level=0, xp=0, **more):
+    """A talisman shaped like one the game handed over: no rarity or power, and its effect at each of its levels."""
+    entry = hero_item(tag, power=-1, rarity="None", **more)
+    levels = [
+        {
+            "LevelEffects": [
+                {
+                    "TypeTag": f"SW.Effect.{effect}",
+                    "Intensity": strength,
+                    "Quality": 0,
+                    "EnchantmentPointsInvested": 0,
+                    "GeneratorData": {"GeneratorParentTemplate": f"SW.EffectTemplate.{effect}.{numeral}", "Locked": False},
+                }
+            ],
+            "LevelTags": [],
+        }
+        for numeral, strength in zip(("I", "II", "III"), strengths)
+    ]
+    data = entry["ItemData"]
+    data["Effects"] = [{"TypeTag": "SW.Item.Effect.Upgradable", "EffectsInThisBatch": copy.deepcopy(levels[level]["LevelEffects"])}]
+    data["ItemProgression"] = {"CurrentLevel": level, "CurrentXP": xp, "ItemLevels": levels}
+    data["GeneratorData"]["PowerGeneratorValues"].update(ItemPowerMax=11, RNGRoll=0, ItemPowerOriginal=0)
+    return entry
 
 
 def hero_save(online=False, emeralds=55, level=1):

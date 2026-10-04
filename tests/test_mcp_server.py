@@ -192,6 +192,28 @@ class EditingTests(ServerTestCase):
         self.assertEqual(self.call("add_item", hero="00000000", item="Longbow")["item"]["power"], 3)  # power defaults to the best item's
         self.assertIn("Did you mean", self.call("add_item", hero="00000000", item="mystic"))
 
+    def test_talismans_have_no_rarity_or_power_and_need_their_effect(self):
+        result = self.call("add_item", hero="00000000", item="Sigil of Beeswax", rarity="Unique", power=40, equip=True)
+        self.assertEqual(result["done"], "Added the Sigil of Beeswax and equipped it (talisman 1).")
+        self.assertEqual((result["item"]["kind"], "rarity" in result["item"], "power" in result["item"], "note" in result["item"]), ("Talisman", False, False, False))
+        self.assertEqual(result["unsaved_changes"], ["Added Sigil of Beeswax, equipped (talisman 1)"])
+        self.assertIn("is a talisman: it has no rarity or power", self.call("change_item", hero="00000000", item=result["item"]["ref"], rarity="Rare"))
+        # The Twig of Dark Oak's save ID is known, but not what the game saves as its effect.
+        found = {item["name"]: item for item in self.call("find_items", query="", kind="Talisman", limit=50)["items"]}
+        self.assertEqual((found["Twig of Dark Oak"]["confirmed"], found["Twig of Dark Oak"]["effect_known"]), (True, False))
+        self.assertNotIn("effect_known", found["Sigil of Beeswax"])
+        sure = [item["name"] for item in self.call("find_items", kind="Talisman", confirmed_only=True, limit=50)["items"]]
+        self.assertEqual(sure, ["Sigil of Beeswax"])
+        refused = self.call("add_item", hero="00000000", item="Twig of Dark Oak")
+        self.assertIn("hasn't seen the Twig of Dark Oak's effect", refused)
+        self.assertNotIn("best guess", refused)  # its ID isn't one
+        twig = self.call("add_item", hero="00000000", item="Twig of Dark Oak", allow_unconfirmed=True)
+        self.assertEqual(twig["done"], "Added the Twig of Dark Oak.")
+        self.assertIn("No effect is saved", twig["item"]["note"])
+        kit = self.call("apply_preset", hero="00000000", preset="Best talismans")
+        self.assertIn("Fist of Iron (effect not known yet)", kit["left_out"])
+        self.assertIn("Ocelot's Paw (best-guess save ID)", kit["left_out"])
+
     def test_guessed_ids_and_locked_slots_need_permission(self):
         self.assertIn("best guess", self.call("add_item", hero="00000000", item="Battlestaff"))
         self.assertNotIn("best guess", json.dumps(self.call("add_item", hero="00000000", item="Battlestaff", allow_unconfirmed=True)))

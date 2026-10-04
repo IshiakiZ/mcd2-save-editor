@@ -397,6 +397,44 @@ class HeroTabTests(WindowTestCase):
         staffs = [item for item in self.app.hero_tab.hero.items() if item.tag == "SW.Item.Battlestaff"]
         self.assertEqual(len(staffs), 2)
 
+    def test_a_talisman_without_a_known_effect_warns_before_adding(self):
+        picker, row = self.open_picker_on("Twig of Dark Oak")  # its ID has been seen in a save, its effect hasn't
+        self.assertEqual(picker.tree.item(row, "values")[1], "Unconfirmed")
+        self.assertIn("hasn't seen this talisman's effect", picker.status_text.get())
+        self.assertNotIn("best guess", picker.status_text.get())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            picker._confirm()
+        self.assertIn("adds the talisman without one", ask.call_args.args[1])
+        self.assertNotIn("best guess", ask.call_args.args[1])
+        self.assertEqual(self.app.change_count, 0)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            picker._confirm()
+            picker._confirm()  # asked only once per window
+        ask.assert_called_once()
+        picker.destroy()
+        # In the list a talisman shows no rarity or power, and its controls are off.
+        self.select_item("Twig of Dark Oak")
+        row = self.tab.tree.selection()[0]
+        self.assertEqual(self.tab.tree.item(row, "values")[:3], ("Talisman", "", ""))
+        self.assertTrue(self.tab.item_subtitle_var.get().startswith("Talisman  ·  Inventory"))
+        self.assertEqual(self.tab.power_var.get(), "")
+        self.assertTrue(self.tab.power_entry.instate(["disabled"]))
+        self.assertTrue(all(button.instate(["disabled"]) for button in self.tab.rarity_buttons))
+        self.assertFalse(self.tab.has_pending_input())
+        self.assertTrue(self.tab.commit_pending())
+        self.assertIn("This one has no effect saved", self.tab.item_message_var.get())
+        self.assertNotIn("Delete it and add it again", self.tab.item_message_var.get())  # a new one would be the same
+        # The Sigil of Beeswax's effect is known, so it's added without a question.
+        picker, row = self.open_picker_on("Sigil of Beeswax")
+        self.assertEqual(picker.tree.item(row, "values")[1], "Confirmed")
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            picker._confirm()
+        ask.assert_not_called()
+        picker.destroy()
+        summary = self.save()
+        self.assertIn("Added Sigil of Beeswax", summary)
+        self.assertNotIn("Added Sigil of Beeswax (", summary)  # no rarity or power to tell
+
     def test_a_unique_is_added_under_its_own_id(self):
         picker, _row = self.open_picker_on("Battle Hammer")
         self.assertTrue(picker.status_text.get().startswith("Confirmed"))  # SW.Item.Hammer, reported from a real save
@@ -502,6 +540,34 @@ class HeroTabTests(WindowTestCase):
         dialog.destroy()
         self.assertEqual(self.tab.hero.equipped("SW.ItemSlot.Equipment.Artifact.Slot3").name, "Grindstone")
         self.assertIn("Pride of the Plains", self.rows())
+
+    def test_talisman_preset_leaves_out_talismans_it_cant_give_an_effect(self):
+        from dungeons2_editor import presets
+        from dungeons2_editor.presets_dialog import PresetsDialog
+
+        self.tab.open_presets()
+        self.root.update()
+        dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
+        dialog.listing.selection_set(str(next(i for i, p in enumerate(presets.PRESETS) if p.title == "Best talismans")))
+        self.root.update()
+        text = dialog.text.get("1.0", "end")
+        self.assertIn("•  Talismans, ", text)  # no "Unique gear at power 1": they have neither
+        self.assertIn("\tTalismans\tFist of Iron, Ocelot's Paw, Sigil of Beeswax\n", text)
+        self.assertIn("A grey talisman can be one whose effect the editor hasn't seen", text)
+        self.assertEqual([a.kit.name for a in dialog.plan.add], ["Sigil of Beeswax"])
+        dialog.include_unconfirmed.set(True)
+        dialog._refresh()
+        self.assertIn("2 of these talismans are added without their effect", dialog.text.get("1.0", "end"))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            dialog._apply()
+        question = ask.call_args.args[1]
+        self.assertIn("1 of the items is unconfirmed", question)  # Ocelot's Paw's ID is a guess; Fist of Iron's isn't
+        self.assertIn("2 of the talismans are added without their effect", question)
+        dialog.destroy()
+        added = {item.name: item for item in self.tab.hero.items() if item.is_talisman}
+        self.assertEqual(sorted(added), ["Fist of Iron", "Ocelot's Paw", "Sigil of Beeswax"])
+        self.assertEqual([len(added[name].progression["ItemLevels"]) for name in sorted(added)], [0, 0, 3])
+        self.assertEqual({item.rarity for item in added.values()}, {"None"})
 
     def test_group_rows_pick_their_first_preset(self):
         from dungeons2_editor.presets_dialog import PresetsDialog
@@ -747,6 +813,28 @@ class SimpleModeTests(WindowTestCase):
         self.screen.equip_button.invoke()
         self.assertEqual(self.screen.banner_text, "INVENTORY")
         self.assertIn("Unequipped", self.screen.item_message_var.get())
+
+    def test_a_talisman_shows_no_rarity_or_power_to_change(self):
+        entry = next(entry for entry in self.screen._catalog() if entry.tag == "SW.Item.Talisman.HealthBoost")
+        index = self.screen.hero.add_item(entry.tag, entry.template, rarity="Rare", power=30)
+        self.screen.refresh()
+        self.screen.pick_item(index)
+        self.assertEqual((self.screen.card_name_var.get(), self.screen.card_power_var.get()), ("SIGIL OF BEESWAX", ""))
+        self.assertTrue(self.screen.power_entry.instate(["disabled"]))
+        self.assertTrue(all(button.instate(["disabled"]) for button in self.screen.rarity_buttons))
+        self.assertIn("no rarity or power", self.screen.power_hint.get())
+        self.assertNotIn("no effect saved", self.screen.power_hint.get())
+        self.assertEqual(self.screen.power_var.get(), "")
+        self.assertFalse(self.screen.has_pending_input())
+        self.assertTrue(self.screen.equip_button.instate(["!disabled"]))
+        # One an older version added (Common, with a power and no effect) is told apart, and can be replaced.
+        self.screen.hero.item(index).data.update(RarityTag="SW.Rarity.Common", Effects=[])
+        self.screen.hero.item(index).progression["ItemLevels"] = []
+        self.screen.refresh()
+        self.screen.pick_item(index)
+        self.assertIn("This one has no effect saved, so it may do nothing in the game. Delete it and add it again", self.screen.power_hint.get())
+        self.screen.pick_item(self.index_of("SW.Item.Longbow"))  # other items get their rarity and power back
+        self.assertTrue(self.screen.power_entry.instate(["!disabled"]))
 
     def test_merchant_stock_can_be_copied_but_not_worn(self):
         self.show("Merchant")

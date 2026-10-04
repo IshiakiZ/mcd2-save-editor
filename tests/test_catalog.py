@@ -53,6 +53,28 @@ class RealItemListTests(unittest.TestCase):
                 self.assertEqual(heroes.armor_piece(item.id), item.slot, item.id)
                 self.assertRegex(item.id, r"^SW\.Item\.[A-Za-z]+(Helmet|Chest|Leggings|Boots)$")
 
+    def test_a_talismans_levels_are_its_effect_as_a_save_holds_it(self):
+        sigil = heroes.game_item("SW.Item.Talisman.HealthBoost")  # seen in the developer's own save
+        self.assertEqual((sigil.name, sigil.confirmed), ("Sigil of Beeswax", True))
+        self.assertEqual(
+            [(level["effect"], level["intensity"], level["template"]) for level in sigil.levels],
+            [
+                ("SW.Effect.HealthBoost", 1.2, "SW.EffectTemplate.HealthBoost.I"),
+                ("SW.Effect.HealthBoost", 1.25, "SW.EffectTemplate.HealthBoost.II"),
+                ("SW.Effect.HealthBoost", 1.35, "SW.EffectTemplate.HealthBoost.III"),
+            ],
+        )
+        for item in self.items:
+            if not item.levels:
+                continue
+            self.assertEqual((item.kind, item.confirmed, len(item.levels)), ("Talisman", True, 3), item.name)
+            for level in item.levels:
+                self.assertTrue(level["effect"].startswith("SW.Effect.") and level["template"].startswith("SW.EffectTemplate."), item.name)
+                self.assertIsInstance(level["intensity"], (int, float))
+        catalog = {entry.tag: entry for entry in build_catalog([Hero(hero_save())])}
+        self.assertTrue(catalog["SW.Item.Talisman.HealthBoost"].confirmed_at())
+        self.assertTrue(all(entry.no_effect == (not heroes.game_item(entry.tag).levels) for entry in catalog.values() if entry.kind == "Talisman"))
+
     def test_books_are_named_after_enchantments(self):
         books = [item for item in self.items if item.kind == heroes.BOOK_KIND]
         self.assertTrue(books)

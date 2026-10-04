@@ -178,6 +178,12 @@ BOOK_IDS = {
     "Springload": "SpringLoaded",
     "Thundering": "Thundering",
 }
+# What a talisman does at each of its three levels, as a real save stores it: the effect is SW.Effect.<name>, its
+# level templates are SW.EffectTemplate.<name>.I to .III, and these are the strengths. A talisman that isn't here
+# can only be added without its effect, so the editor treats it as a guess even when its ID is known.
+TALISMAN_LEVELS = {
+    "Talisman.HealthBoost": ("HealthBoost", (1.2, 1.25, 1.35)),  # Sigil of Beeswax: +20 / 25 / 35% max health
+}
 # Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them.
 SLOTS = {"Helmet": "Helmet", "Chest": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
 SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings", "Boots": "Boots"}
@@ -254,6 +260,12 @@ def entry(name: str, kind: str, item_id: str, unique_suffix: str = "", **extra: 
     made = {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS, **{k: v for k, v in extra.items() if v}}
     if unique_suffix and item_id + unique_suffix in UNIQUE_IDS:
         made["unique_id"] = item_id + unique_suffix
+    if item_id[len(PREFIX):] in TALISMAN_LEVELS:
+        effect, strengths = TALISMAN_LEVELS[item_id[len(PREFIX):]]
+        made["levels"] = [
+            {"effect": f"SW.Effect.{effect}", "intensity": strength, "template": f"SW.EffectTemplate.{effect}.{numeral}"}
+            for numeral, strength in zip(("I", "II", "III"), strengths)
+        ]
     return made
 
 
@@ -309,6 +321,9 @@ def main() -> None:
     for item_id, same in by_id.items():
         if len(same) > 1:
             print(f"warning: {' and '.join(same)} would share the ID {item_id}; the editor offers only the first")
+    for item_id in sorted(PREFIX + name for name in TALISMAN_LEVELS):
+        if not any(item["id"] == item_id and "levels" in item for item in catalog):
+            print(f"warning: {item_id} has its levels listed, but no talisman in the list has that ID")
     for item_id in sorted(CONFIRMED_IDS - set(by_id)):
         print(f"warning: {item_id} was seen in a save, but no item in the list has it")
     for item_id in sorted(UNIQUE_IDS - {item.get("unique_id") for item in catalog}):

@@ -76,6 +76,7 @@ class ItemPicker(tk.Toplevel):
         self._slot_by_choice: dict[str, GearSlot] = {}
         self._chosen_slot_tag: str | None = for_slot.tag if for_slot else None
         self._unconfirmed_ok = False
+        self._no_effect_ok = False
         self._guessed_slot_ok = False
         self.title(f"Add items: {for_slot.label}" if for_slot else "Add items" if mode == "add" else "Change item")
         self.transient(parent)
@@ -204,7 +205,8 @@ class ItemPicker(tk.Toplevel):
         hint = (
             "Every item in the game is listed. Confirmed items have been seen in real saves, so the game knows them. "
             "For the others the editor has to guess the game's name for the item; if it guesses wrong, the game may "
-            "drop the item. Items you find in the game become confirmed automatically."
+            "drop the item. A talisman also needs its effect, which the editor learns from a save: until then it's added "
+            "without one. Items you find in the game become confirmed automatically."
         )
         ttk.Label(frame, text=hint, style="Muted.TLabel", wraplength=text_width(self, 110), justify="left").grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 0)
@@ -233,7 +235,8 @@ class ItemPicker(tk.Toplevel):
                 continue
             if self.for_slot is not None and not slots_for(item.kind, item.piece, [self.for_slot]):
                 continue
-            if self.confirmed_only.get() and not item.confirmed:
+            sure = item.confirmed_at()
+            if self.confirmed_only.get() and not sure:
                 continue
             words = f"{item.name} {item.unique or ''} {item.tag}".lower()
             if query and query not in words:
@@ -243,8 +246,8 @@ class ItemPicker(tk.Toplevel):
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, "", LIST_ICON_SIZE, item.name),
-                values=(item.kind, "Confirmed" if item.confirmed else "Unconfirmed"),
-                tags=() if item.confirmed else ("unconfirmed",),
+                values=(item.kind, "Confirmed" if sure else "Unconfirmed"),
+                tags=() if sure else ("unconfirmed",),
             )
             self._by_iid[iid] = item
         if not self._by_iid:
@@ -274,11 +277,12 @@ class ItemPicker(tk.Toplevel):
         self.name_var.set(shown_name)
         kind = item.kind + (f"  ·  {item.piece.lower()}" if item.piece else "")
         self.kind_text.set(kind + (f"  ·  {item.tag_at(rarity)}" if self.advanced else ""))
-        if item.confirmed_at(rarity):
+        doubt = item.doubt(rarity)
+        if not doubt:
             self.status_text.set("Confirmed: seen in real saves, so the game knows it.")
             self.status_label.configure(style="Success.TLabel")
         else:
-            self.status_text.set("Unconfirmed: the game's name for this item is a best guess.")
+            self.status_text.set("Unconfirmed: " + doubt[0].lower() + doubt[1:])
             self.status_label.configure(style="Warn.TLabel")
         if as_unique:
             effect = f" {item.unique_effect}" if item.unique_effect else ""
@@ -359,28 +363,39 @@ class ItemPicker(tk.Toplevel):
         return self.rarity_var.get() if self.mode == "add" else None
 
     def _accept_guesses(self, item: CatalogItem, slot: GearSlot | None, rarity: str | None = None) -> bool:
-        """Ask once per window before using an item, or a slot, whose name in the game is a best guess."""
-        guessed_item = not item.confirmed_at(rarity) and not self._unconfirmed_ok
+        """Ask once per window before using an item, or a slot, whose name in the game is a best guess, and
+        before adding a talisman without its effect."""
+        guessed_item = not item.id_known_at(rarity) and not self._unconfirmed_ok
         guessed_slot = slot is not None and not slot.confirmed and not self._guessed_slot_ok
-        if not guessed_item and not guessed_slot:
+        bare = item.no_effect and not self._no_effect_ok
+        if not guessed_item and not guessed_slot and not bare:
             return True
         if guessed_item and guessed_slot:
             what = f"this item and for the {slot.label.lower()} slot haven't"
         elif guessed_item:
             what = "this item hasn't"
-        else:
+        elif guessed_slot:
             what = f"the {slot.label.lower()} slot hasn't"
-        lines = [
-            f"The game's name for {what} been seen in a real save yet, so the editor is making a best guess.",
-            "If a guess is wrong, the game removes the item when it loads your hero (it did in testing) and keeps "
-            "the rest. Restore… undoes the change (a backup is made every time you save).",
-        ]
+        lines = []
+        if guessed_item or guessed_slot:
+            lines += [
+                f"The game's name for {what} been seen in a real save yet, so the editor is making a best guess.",
+                "If a guess is wrong, the game removes the item when it loads your hero (it did in testing) and keeps "
+                "the rest. Restore… undoes the change (a backup is made every time you save).",
+            ]
+        if bare:
+            lines.append(
+                "The editor hasn't seen this talisman's effect in a real save yet, so it adds the talisman without one, "
+                "and it may do nothing in the game. Find one in the game and the editor can copy it."
+            )
         if guessed_slot:
             lines.append(f"Equip any {slot.kind.lower()} in the game once and the editor learns the slot's real name.")
         lines.append("Add it anyway?")
-        if not messagebox.askyesno("Unconfirmed item" if guessed_item else "Unconfirmed slot", "\n\n".join(lines), parent=self):
+        title = "Unconfirmed item" if guessed_item or bare else "Unconfirmed slot"
+        if not messagebox.askyesno(title, "\n\n".join(lines), parent=self):
             return False
         self._unconfirmed_ok |= guessed_item
+        self._no_effect_ok |= bare
         self._guessed_slot_ok |= guessed_slot
         return True
 

@@ -1,10 +1,12 @@
 """Sharing item IDs: the IDs in your saves that the editor doesn't know yet, ready to post on GitHub.
 
-Only item IDs (like SW.Item.MysticHelmet) go into the report: nothing else from the save.
+Only item IDs (like SW.Item.MysticHelmet) go into the report, and what the game saved as the effect of a
+talisman the editor can't add with its effect yet: nothing else from the save.
 """
 
 from __future__ import annotations
 
+import json
 import tkinter as tk
 import urllib.parse
 import webbrowser
@@ -46,8 +48,50 @@ def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
     return found
 
 
+def _last_part(name: object, prefix: str) -> str:
+    name = str(name or "?")
+    return name[len(prefix):] if name.startswith(prefix) else name
+
+
+def effect_text(levels: list) -> str:
+    """A talisman's saved levels the short way: 'HealthBoost 1.2 (HealthBoost.I) / HealthBoost 1.25
+    (HealthBoost.II) / ...'. Each level's effects are named without their SW.Effect. and SW.EffectTemplate.
+    prefixes. Empty if the levels aren't laid out the way the editor knows."""
+    described = []
+    for level in levels:
+        effects = level.get("LevelEffects") if isinstance(level, dict) else None
+        if not isinstance(effects, list) or not all(isinstance(effect, dict) for effect in effects):
+            return ""
+        parts = []
+        for effect in effects:
+            template = (effect.get("GeneratorData") or {}).get("GeneratorParentTemplate")
+            part = f"{_last_part(effect.get('TypeTag'), 'SW.Effect.')} {json.dumps(effect.get('Intensity'))}"
+            if effect.get("Quality"):
+                part += f" quality {json.dumps(effect['Quality'])}"
+            parts.append(f"{part} ({_last_part(template, 'SW.EffectTemplate.')})")
+        described.append(" + ".join(parts) or "nothing")
+    return " / ".join(described)
+
+
+def talisman_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
+    """(talisman ID, its effect at each level) for each talisman in these saves whose effect the editor's item
+    list doesn't have. A talisman the game handed over carries its effect, and that's what the editor needs
+    to add that talisman so it works."""
+    found: dict[str, str] = {}
+    for hero in heroes:
+        for item in hero.items():
+            known = game_item(item.tag)
+            if not item.is_talisman or item.tag in found or (known is not None and known.levels):
+                continue
+            levels = item.progression.get("ItemLevels")
+            text = effect_text(levels) if isinstance(levels, list) and levels else ""
+            if text:
+                found[item.tag] = f"{item.name}'s effect: {text}"
+    return sorted(found.items())
+
+
 def report_text(heroes: list[Hero], version: str) -> str:
-    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes)]
+    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes)]
     return "\n".join(lines)
 
 
@@ -74,9 +118,10 @@ class ShareIdsDialog(tk.Toplevel):
         intro = (
             "These item IDs from your saves aren't in the editor's list yet, or are there without their in-game name. "
             "Add what the game calls each one after the dash if you know it, then open a GitHub issue (you need a "
-            "free GitHub account) or copy the list. Only item IDs are shared, nothing else from your saves."
+            "free GitHub account) or copy the list. Only item IDs are shared, and what your talismans do (so the "
+            "editor can add them with their effect): nothing else from your saves."
             if report
-            else "Every item ID in your saves is already in the editor's list, with its name. Thanks for checking!"
+            else "Everything in your saves is already in the editor's list. Thanks for checking!"
         )
         ttk.Label(frame, text=intro, wraplength=wrap, justify="left").grid(row=0, column=0, sticky="w")
         self.text = tk.Text(frame, height=10, width=80, wrap="none", font=("Consolas", 10))

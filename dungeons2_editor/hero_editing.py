@@ -12,8 +12,8 @@ from typing import Any
 
 from . import document as doc
 from .hero import (
-    MAX_STAT, STAT_CAPS, GearSlot, Hero, attribute_label, build_catalog, format_amount, game_item, gear_slots,
-    is_unique_version, slots_for, template_for,
+    MAX_STAT, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, format_amount, game_item, gear_slots,
+    is_unique_version, slots_for, talisman_levels, template_for,
 )
 from .item_picker import ItemPicker, slot_choice, slot_open
 from .presets_dialog import PresetsDialog
@@ -23,6 +23,20 @@ SAVE_REMINDER = "Press Save to game when you're done."
 
 def number_text(value: Any) -> str:
     return "" if value is None else doc.format_value(value)
+
+
+def power_text(item: Item) -> str:
+    """What an item's power box shows: nothing for a talisman, which has no power."""
+    return "" if item.is_talisman else number_text(item.power)
+
+
+def talisman_hint(item: Item) -> str:
+    """What to say about a talisman where other items show their rarity and power."""
+    hint = "A talisman has no rarity or power. It levels up from the XP you earn while you wear it."
+    if item.progression.get("ItemLevels"):
+        return hint
+    fix = " Delete it and add it again to get one with its effect." if talisman_levels(item.tag) else ""
+    return f"{hint} This one has no effect saved, so it may do nothing in the game.{fix}"
 
 
 class HeroEditing:
@@ -48,7 +62,7 @@ class HeroEditing:
             return False
         item = self.hero.item(self._shown)
         return not item.is_cosmetic and (
-            self.power_var.get().strip() != number_text(item.power) or self.count_var.get().strip() != str(item.count)
+            self.power_var.get().strip() != power_text(item) or self.count_var.get().strip() != str(item.count)
         )
 
     def commit_pending(self) -> bool:
@@ -123,7 +137,7 @@ class HeroEditing:
             return True
         changes = {}
         try:
-            if self.power_var.get().strip() != number_text(item.power):
+            if self.power_var.get().strip() != power_text(item):
                 changes["power"] = doc.parse_input(self.power_var.get(), item.power if item.power is not None else 0)
             if self.count_var.get().strip() != str(item.count):
                 changes["count"] = doc.parse_input(self.count_var.get(), item.count)

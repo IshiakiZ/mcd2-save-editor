@@ -1,3 +1,19 @@
+## What's new in 1.7.1
+
+- **Talismans are added the way the game saves them.** A talisman has no rarity or power: a save holds what it does
+  at each of its three levels instead. The editor used to add talismans as Common items with a power and no effect,
+  so a talisman it added probably did nothing in the game. A Sigil of Beeswax is now written exactly as the game
+  writes one (checked against a real save, character for character): +20% max health, rising to +35% as it levels
+  up. A talisman one of your heroes has found is added the same way, by copying yours.
+- **The other talismans are Unconfirmed for now.** The editor can't know what a talisman's effect is saved as until
+  it has seen one in a real save, and so far it has seen one. It still adds the others if you say so, but without
+  their effect, and it tells you that first. Kits leave them out unless you tick "Also add unconfirmed items".
+- **You can help with that.** **Share item IDs…** now also lists what the talismans in your saves do, so the editor
+  can learn them for everyone. If you've found talismans in the game, please send them in.
+- A talisman no longer shows a rarity of "None" or a power of -1, and those two can't be changed for one. A
+  talisman that an older version added has no effect saved; the editor says so when you pick it, and you can
+  delete it and add it again.
+
 ## What's new in 1.7.0
 
 - **The editor updates itself.** When a newer version is out, an **Update** button appears at the top. Press it and

@@ -40,7 +40,7 @@ from .hero import (
     sort_items,
     use_local_names,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, number_text
+from .hero_editing import SAVE_REMINDER, HeroEditing, number_text, power_text, talisman_hint
 from .icons import IconLibrary
 from .item_picker import slot_open
 from .layout import fit_to_contents
@@ -643,7 +643,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             picture = self.art.icon(icon_for(item.kind, item.piece), shade, 3)
         canvas.create_image(x + size // 2, y + size // 2, image=picture)
         inset = max(4, self.art.px(4)) + self.art.px(3)
-        if item.power is not None:
+        if item.power is not None and not item.is_talisman:
             self._shadow_text(canvas, x + size - inset, y + size - inset + 2, number_text(item.power), "se")
         if item.count > 1:
             self._shadow_text(canvas, x + inset, y + inset - 1, f"×{item.count}", "nw")
@@ -983,9 +983,13 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             color = gs.SOFT if item.kind == "Talisman" else RARITY_TILE.get(item.rarity, gs.HEADING)
             picture = self.art.icon(icon_for(item.kind, item.piece), color, 5)
         banner = "EQUIPPED" if item.equipped_slot else "MERCHANT STOCK" if item.stock_slot else "INVENTORY"
-        self._card_head(banner, item.name.upper(), " · ".join(details), picture, describe(item, known), number_text(item.power), item.rarity)
+        talisman = item.is_talisman  # no rarity or power to show or change
+        self._card_head(
+            banner, item.name.upper(), " · ".join(details), picture, describe(item, known),
+            "" if talisman else number_text(item.power), None if talisman else item.rarity,
+        )
         self.rarity_var.set(item.rarity)
-        self.power_var.set(number_text(item.power))
+        self.power_var.set(power_text(item))
         self.count_var.set(str(item.count))
         self.power_hint.set(f"Your strongest item has power {self.hero.best_power()}. Much higher may be removed by the game.")
         if item.kind in ENCHANTABLE:
@@ -1002,6 +1006,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         for widget in (self.power_entry, self.count_entry, *self.rarity_buttons, self.equip_button, self.change_button, self.copy_button,
                        self.delete_button, self.picture_button):
             widget.state(["!disabled"])
+        if talisman:
+            for widget in (self.power_entry, *self.rarity_buttons):
+                widget.state(["disabled"])
+            self.power_hint.set(talisman_hint(item))
         # Only items the game's list doesn't name can be named here (and renamed, if you named them).
         self.name_button.state(["!disabled"] if not name_is_known(item.tag) or local_name(item.tag) else ["disabled"])
         self.equip_button.configure(text="UNEQUIP" if item.equipped_slot else "EQUIP")
@@ -1146,7 +1154,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             return None
         item = self.hero.equipped(slot.tag)
         if item is not None:
-            return f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
+            return f"{item.name}\nTalisman" if item.is_talisman else f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
         if not slot_open(slot, self._hero_level()):
             return f"{slot.label}: opens at level {slot.level}"
         return f"{slot.label}: empty. Double-click to put an item here."
@@ -1156,4 +1164,6 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if index is None or self.hero is None:
             return None
         item = self.hero.item(index)
+        if item.is_talisman:
+            return f"{item.name}\nTalisman"
         return f"{item.name}\n{item.rarity} {(item.piece or KIND_NAMES.get(item.kind, item.kind)).lower()} · power {number_text(item.power)}"

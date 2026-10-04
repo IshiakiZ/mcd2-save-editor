@@ -1463,7 +1463,24 @@
    "kind": "Talisman",
    "id": "SW.Item.Talisman.HealthBoost",
    "confirmed": true,
-   "effect": "Increases the player's maximum health by 35%."
+   "effect": "Increases the player's maximum health by 35%.",
+   "levels": [
+    {
+     "effect": "SW.Effect.HealthBoost",
+     "intensity": 1.2,
+     "template": "SW.EffectTemplate.HealthBoost.I"
+    },
+    {
+     "effect": "SW.Effect.HealthBoost",
+     "intensity": 1.25,
+     "template": "SW.EffectTemplate.HealthBoost.II"
+    },
+    {
+     "effect": "SW.Effect.HealthBoost",
+     "intensity": 1.35,
+     "template": "SW.EffectTemplate.HealthBoost.III"
+    }
+   ]
   },
   {
    "name": "Soul Chip",

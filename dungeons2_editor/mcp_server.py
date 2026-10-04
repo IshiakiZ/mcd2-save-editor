@@ -57,7 +57,8 @@ INSTRUCTIONS = (
     "game until save_changes, which needs Minecraft Dungeons II to be closed and backs up the whole save folder "
     "first. Show the user preview_changes and get their OK before save_changes. Stay near the hero's level and "
     "gear power: in testing, the game put level 100 back to 1 and removed items at power 135. Items with "
-    "confirmed: false have a best-guess save ID, and the game may remove them. Online heroes are stored on the "
+    "confirmed: false have a best-guess save ID, and the game may remove them. Talismans have no rarity or power, "
+    "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
     "game's servers, so they can't be changed. Enchantments can't be added yet."
 )
 
@@ -123,7 +124,10 @@ RARITY = _string("Common, Rare, Special or Unique.", enum=list(RARITIES))
 POWER = {"type": "integer", "minimum": 0, "maximum": MAX_ITEM_POWER, "description": "Item power. Stay near the hero's own gear."}
 COUNT = {"type": "integer", "minimum": 1, "maximum": MAX_STACK, "description": "How many (a stack)."}
 SLOT = _string("A gear slot: Melee weapon, Ranged weapon, Helmet, Chestplate, Leggings, Boots, Artifact 1-3 or Talisman 1-3.")
-UNCONFIRMED = _flag("Allow an item whose save ID is a best guess (confirmed: false). The game may remove it.")
+UNCONFIRMED = _flag(
+    "Allow an item whose save ID is a best guess (confirmed: false), which the game may remove, or a talisman "
+    "whose effect isn't known (effect_known: false), which may do nothing."
+)
 LOCKED = _flag("Allow artifact slots the hero's level hasn't opened yet (2 opens at level 5, 3 at level 10).")
 
 
@@ -333,7 +337,7 @@ class EditorServer:
             words = f"{entry.name} {entry.unique or ''} {entry.tag}".lower()
             if (query and query not in words) or (kind and entry.kind.lower() != kind):
                 continue
-            if args.get("confirmed_only") and not entry.confirmed:
+            if args.get("confirmed_only") and not entry.confirmed_at():
                 continue
             found.append(_catalog_info(entry))
         note = "" if container is not None else "There's no offline hero to copy an item's layout from yet, so items can't be added."
@@ -412,10 +416,7 @@ class EditorServer:
             entry, unique_name = _catalog_item(args["item"], catalog)
             rarity = args.get("rarity") or ("Unique" if unique_name else "Common")
             if not entry.confirmed_at(rarity) and not args.get("allow_unconfirmed"):
-                raise ToolError(
-                    f"The game's save ID for the {entry.name_at(rarity)} ({entry.tag_at(rarity)}) is a best guess, and in testing "
-                    "the game removed items whose guess was wrong. Pass allow_unconfirmed to add it anyway, or pick a confirmed item."
-                )
+                raise ToolError(f"{_doubt(entry, rarity)} Pass allow_unconfirmed to add it anyway, or pick a confirmed item.")
             power = _number(args, "power", hero.best_power(), 0, MAX_ITEM_POWER)
             count = _number(args, "count", 1, 1, MAX_STACK)
             slot = None
@@ -432,7 +433,7 @@ class EditorServer:
                 entry.tag_at(rarity), template, rarity=rarity, power=power, count=count, slot=slot, check_level=not args.get("ignore_slot_levels")
             )
             item = hero.item(index)
-            text = f"Added the {item.name} ({item.rarity}, power {format_amount(item.power)})"
+            text = f"Added the {item.name}" + ("" if item.is_talisman else f" ({item.rarity}, power {format_amount(item.power)})")
             if slot is not None:
                 text += f" and equipped it ({slot.label.lower()})"
             return text + ".", {"item": _item_info(item, _refs(hero), {entry.tag: entry})}
@@ -447,7 +448,7 @@ class EditorServer:
                 entry, unique_name = _catalog_item(args["change_into"], self._catalog(hero, profile, container.name))
                 rarity = args.get("rarity") or ("Unique" if unique_name else hero.item(index).rarity)
                 if not entry.confirmed_at(rarity) and not args.get("allow_unconfirmed"):
-                    raise ToolError(f"The save ID for the {entry.name_at(rarity)} is a best guess. Pass allow_unconfirmed to use it anyway.")
+                    raise ToolError(f"{_doubt(entry, rarity)} Pass allow_unconfirmed to use it anyway.")
                 changes["tag"] = entry.tag_at(rarity)
                 if unique_name and not args.get("rarity"):
                     changes["rarity"] = "Unique"
@@ -462,7 +463,7 @@ class EditorServer:
             before = hero.item(index).name
             hero.update_item(index, **changes)
             item = hero.item(index)
-            text = f"Changed the {before}: now the {item.name}, {item.rarity}, power {format_amount(item.power)}."
+            text = f"Changed the {before}: now the {item.name}" + ("." if item.is_talisman else f", {item.rarity}, power {format_amount(item.power)}.")
             return text, {"item": _item_info(item, _refs(hero), {})}
 
         return self._edit(args["hero"], change)
@@ -535,9 +536,15 @@ class EditorServer:
                 raise ToolError(f"{preset.title} has nothing to change for this hero.")
             presets.apply(plan, hero, catalog, game_caps=True, check_level=check_level)
             more: dict[str, Any] = {"preset_did": lines}
-            left_out = [f"{kit.name} (best-guess save ID)" for kit, _found in plan.unconfirmed]
+            left_out = [
+                f"{kit.name} ({'effect not known yet' if found.id_known_at(presets.rarity_for(kit, found, plan.rarity)) else 'best-guess save ID'})"
+                for kit, found in plan.unconfirmed
+            ]
             if left_out:
-                more["left_out"] = left_out + ["Pass include_unconfirmed to add these anyway; the game may remove them."]
+                more["left_out"] = left_out + [
+                    "Pass include_unconfirmed to add these anyway; the game may remove a best-guess item, and a talisman "
+                    "without its effect may do nothing."
+                ]
             return f"Applied {preset.title}.", more
 
         return self._edit(args["hero"], change)
@@ -588,10 +595,11 @@ class EditorServer:
                  "Merchant's stock. Each item has a ref to use in the other tools. Shows unsaved changes too.",
                  {"hero": HERO}, self.get_hero, ("hero",), read_only=True),
             Tool("find_items", "Find items", "Search every weapon, armor piece, artifact and talisman in the game by name (Uniques included). "
-                 "confirmed: false means the save ID is a best guess; unique_confirmed says the same about the item's Unique.",
+                 "confirmed: false means the save ID is a best guess; unique_confirmed says the same about the item's Unique. "
+                 "effect_known: false marks a talisman the editor can only add without its effect.",
                  {"query": _string("Part of a name, e.g. 'mystic' or 'Oracle Crown'."),
                   "kind": _string("Melee, Ranged, Armor, Artifact or Talisman.", enum=["Melee", "Ranged", "Armor", "Artifact", "Talisman"]),
-                  "confirmed_only": _flag("Only items whose save ID has been seen in a real save."),
+                  "confirmed_only": _flag("Only items known to work: the save ID has been seen in a real save, and for a talisman its effect too."),
                   "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 25}},
                  self.find_items, read_only=True),
             Tool("list_presets", "List presets", "Ready-made goals (Most money, Most XP, ...), the most powerful gear, and complete kits from top builds.",
@@ -609,7 +617,8 @@ class EditorServer:
                   "count": COUNT, "equip": {"type": ["boolean", "string"], "description": "true to equip it in the first free slot, or a slot name."},
                   "allow_unconfirmed": UNCONFIRMED, "ignore_slot_levels": LOCKED},
                  self.add_item, ("hero", "item")),
-            Tool("change_item", "Change an item", "Change an item's rarity, power or count, or turn it into another item (not while equipped).",
+            Tool("change_item", "Change an item", "Change an item's rarity, power or count, or turn it into another item (not while equipped). "
+                 "A talisman has no rarity or power to change.",
                  {"hero": HERO, "item": ITEM, "rarity": RARITY, "power": POWER, "count": COUNT,
                   "change_into": _string("Another item's name or save ID."), "allow_unconfirmed": UNCONFIRMED},
                  self.change_item, ("hero", "item")),
@@ -622,10 +631,11 @@ class EditorServer:
             Tool("delete_item", "Delete an item", "Delete an item from the inventory (unequip it first).",
                  {"hero": HERO, "item": ITEM}, self.delete_item, ("hero", "item")),
             Tool("apply_preset", "Apply a preset", "Apply a preset from list_presets: set stats, and add and equip its gear at the power and rarity given. "
-                 "Items with best-guess save IDs are left out unless include_unconfirmed.",
+                 "Items with best-guess save IDs, and talismans whose effect isn't known, are left out unless include_unconfirmed.",
                  {"hero": HERO, "preset": _string("The preset's name from list_presets."), "power": POWER,
                   "rarity": RARITY, "equip": {"type": "boolean", "description": "Equip the gear it adds (kits and gear presets do by default)."},
-                  "include_unconfirmed": _flag("Also add items whose save ID is a best guess; the game may remove them."),
+                  "include_unconfirmed": _flag("Also add items whose save ID is a best guess (the game may remove them) and "
+                                               "talismans without their effect (they may do nothing)."),
                   "ignore_slot_levels": LOCKED},
                  self.apply_preset, ("hero", "preset")),
             Tool("preview_changes", "Preview changes", "The hero's unsaved changes in plain English. Show these to the user before save_changes.",
@@ -707,11 +717,15 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         "count": item.count,
         "where": item.where,
     }
+    if item.is_talisman:  # it has neither: the game saves SW.Rarity.None and power -1
+        del info["rarity"], info["power"]
+        if not item.progression.get("ItemLevels"):
+            info["note"] = "No effect is saved with this talisman, so it may do nothing in the game."
     if item.piece:
         info["piece"] = item.piece
     if item.level:
         info["item_level"] = item.level
-    if item.enchantments:
+    if item.enchantments and not item.is_talisman:
         info["enchantments"] = item.enchantments
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
@@ -723,8 +737,26 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
     return info
 
 
+def _doubt(entry: CatalogItem, rarity: str | None) -> str:
+    """Why adding this item is a best guess, for the assistant."""
+    parts = []
+    if not entry.id_known_at(rarity):
+        parts.append(
+            f"The game's save ID for the {entry.name_at(rarity)} ({entry.tag_at(rarity)}) is a best guess, and in testing "
+            "the game removed items whose guess was wrong."
+        )
+    if entry.no_effect:
+        parts.append(
+            f"The editor hasn't seen the {entry.name}'s effect in a real save yet, so it can only add this talisman "
+            "without one, and it may do nothing in the game."
+        )
+    return " ".join(parts)
+
+
 def _catalog_info(entry: CatalogItem) -> dict:
     info = {"name": entry.name, "id": entry.tag, "kind": entry.kind, "confirmed": entry.confirmed}
+    if entry.no_effect:
+        info["effect_known"] = False
     if entry.piece:
         info["piece"] = entry.piece
     if entry.unique:

@@ -1,3 +1,4 @@
+import copy
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,7 +7,7 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import my_items
 from dungeons2_editor.hero import Hero
 
-from .helpers import hero_item, hero_save
+from .helpers import hero_item, hero_save, talisman_item
 
 
 class HeroTests(unittest.TestCase):
@@ -205,6 +206,80 @@ class HeroTests(unittest.TestCase):
         self.assertNotIn("SW.Item.Mace_Unique1", catalog)  # not an item of its own
         self.assertEqual((catalog["SW.Item.Mace"].unique_tag, catalog["SW.Item.Mace"].confirmed_at("Unique")), ("SW.Item.Mace_Unique1", True))
         self.assertEqual(heroes.template_for("SW.Item.Sword_Unique1", list(catalog.values())), catalog["SW.Item.Sword"].template)
+
+    def test_a_talisman_is_added_the_way_the_game_saves_one(self):
+        catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
+        sigil = catalog["SW.Item.Talisman.HealthBoost"]  # the Sigil of Beeswax: its effect has been seen in a real save
+        self.assertTrue(sigil.confirmed)
+        index = self.hero.add_item(sigil.tag, sigil.template, rarity="Unique", power=40)  # a talisman has neither
+        item = self.hero.item(index)
+        self.assertEqual((item.rarity, item.power, item.data["RarityTag"]), ("None", -1, "SW.Rarity.None"))
+        (batch,) = item.data["Effects"]
+        (effect,) = batch["EffectsInThisBatch"]
+        self.assertEqual(batch["TypeTag"], "SW.Item.Effect.Upgradable")
+        self.assertEqual(
+            effect,
+            {
+                "TypeTag": "SW.Effect.HealthBoost", "Intensity": 1.2, "Quality": 0, "EnchantmentPointsInvested": 0,
+                "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.HealthBoost.I", "Locked": False},
+            },
+        )
+        levels = item.data["ItemProgression"]["ItemLevels"]
+        self.assertEqual([level["LevelEffects"][0]["Intensity"] for level in levels], [1.2, 1.25, 1.35])
+        self.assertEqual(levels[2]["LevelEffects"][0]["GeneratorData"]["GeneratorParentTemplate"], "SW.EffectTemplate.HealthBoost.III")
+        self.assertEqual(levels[0]["LevelEffects"][0], effect)
+        power = item.data["GeneratorData"]["PowerGeneratorValues"]
+        self.assertEqual({key: power[key] for key in ("PlayerLevel", "ItemPowerMin", "ItemPowerMax", "RNGRoll", "ItemPower", "ItemPowerOriginal")},
+                         {"PlayerLevel": 1, "ItemPowerMin": 1, "ItemPowerMax": 11, "RNGRoll": 0, "ItemPower": -1, "ItemPowerOriginal": 0})
+        for change in ({"rarity": "Rare"}, {"power": 5}):
+            with self.assertRaises(ValueError):
+                self.hero.update_item(index, **change)
+        self.hero.update_item(index, rarity="None", power=-1, count=1)  # nothing changes, so nothing is refused
+
+    def test_a_talisman_whose_effect_isnt_known_is_a_guess_unless_the_hero_has_one(self):
+        tag = "SW.Item.Talisman.AmmoCapacity"  # the Twig of Dark Oak: its ID has been seen in a save, its effect hasn't
+        twig = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == tag)
+        self.assertEqual((twig.confirmed, twig.no_effect, twig.confirmed_at()), (True, True, False))
+        self.assertIn("added without one and may do nothing", twig.doubt())
+        bare = self.hero.item(self.hero.add_item(tag, twig.template)).data
+        self.assertEqual((bare["RarityTag"], bare["Effects"], bare["ItemProgression"]["ItemLevels"]), ("SW.Rarity.None", [], []))
+        # One the game handed over carries its effect, and a new one is laid out like it, not like the bare one.
+        real = talisman_item(tag, "AmmoCapacity", (1.2, 1.4, 1.6), level=2, xp=500, seed=90)
+        self.body["Inventory"]["Entries"].append(real)
+        twig = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == tag)
+        self.assertEqual((twig.no_effect, twig.confirmed_at(), twig.doubt()), (False, True, ""))
+        self.assertIs(twig.template, real)
+        new = self.hero.item(self.hero.add_item(tag, twig.template)).data
+        levels = real["ItemData"]["ItemProgression"]["ItemLevels"]
+        self.assertEqual((new["ItemProgression"]["CurrentLevel"], new["ItemProgression"]["CurrentXP"]), (0, 0))  # a new one starts at level 1
+        self.assertEqual(new["ItemProgression"]["ItemLevels"], levels)
+        self.assertEqual(new["Effects"], [{"TypeTag": "SW.Item.Effect.Upgradable", "EffectsInThisBatch": levels[0]["LevelEffects"]}])
+        # The one you had is untouched.
+        self.assertEqual((real["ItemData"]["ItemProgression"]["CurrentLevel"], real["ItemData"]["Effects"][0]["EffectsInThisBatch"]), (2, levels[2]["LevelEffects"]))
+        # A talisman whose ID is a guess as well is doubtful twice over.
+        clover = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == "SW.Item.Talisman.LuckyClover")
+        self.assertEqual((clover.confirmed, clover.no_effect, clover.confirmed_at()), (False, True, False))
+        self.assertIn("best guess", clover.doubt())
+
+    def test_changing_an_item_into_a_talisman_lays_it_out_as_one(self):
+        catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
+        before = copy.deepcopy(self.document)
+        index = self.hero.add_item("SW.Item.Battlestaff", catalog["SW.Item.Battlestaff"].template, rarity="Rare", power=12)
+        self.hero.update_item(index, tag="SW.Item.Talisman.HealthBoost")
+        item = self.hero.item(index)
+        self.assertEqual((item.name, item.is_talisman, item.rarity, item.power), ("Sigil of Beeswax", True, "None", -1))
+        self.assertEqual([level["LevelEffects"][0]["Intensity"] for level in item.progression["ItemLevels"]], [1.2, 1.25, 1.35])
+        self.assertEqual(item.data["Effects"][0]["EffectsInThisBatch"], item.progression["ItemLevels"][0]["LevelEffects"])
+        self.assertEqual(heroes.describe_changes(before, self.document), ["Added Sigil of Beeswax"])  # no rarity or power to tell
+        # Into a talisman whose effect isn't known: laid out as one, without an effect.
+        self.hero.update_item(index, tag="SW.Item.Talisman.AmmoCapacity")
+        item = self.hero.item(index)
+        self.assertEqual((item.name, item.rarity, item.data["Effects"], item.progression["ItemLevels"]), ("Twig of Dark Oak", "None", [], []))
+        # And back into gear: it can have a rarity and a power again.
+        self.hero.update_item(index, tag="SW.Item.Battlestaff")
+        self.hero.update_item(index, rarity="Rare", power=12)
+        item = self.hero.item(index)
+        self.assertEqual((item.is_talisman, item.rarity, item.power), (False, "Rare", 12))
 
     def test_enchantment_books_are_only_offered_when_the_hero_has_one(self):
         book = "SW.Item.EnchantmentBook.MultiRoll"

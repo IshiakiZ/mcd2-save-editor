@@ -25,7 +25,7 @@ from .hero import (
     slots_for,
     sort_items,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, number_text
+from .hero_editing import SAVE_REMINDER, HeroEditing, number_text, power_text, talisman_hint
 from .icons import IconLibrary
 from .item_picker import slot_open
 
@@ -336,13 +336,13 @@ class HeroTab(HeroEditing, ttk.Frame):
             if (self.show_merchant.get() or not item.stock_slot) and (self.show_cosmetics.get() or not item.is_cosmetic)
         ]
         for item in sort_items(shown, self.sort_var.get()):
-            power = "" if item.is_cosmetic else number_text(item.power)
+            power = "" if item.is_cosmetic else power_text(item)
             iid = self.tree.insert(
                 "",
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name),
-                values=(item.kind, item.rarity, power, item.level, number_text(item.xp), item.enchantments, item.where),
+                values=(item.kind, "" if item.is_talisman else item.rarity, power, item.level, number_text(item.xp), item.enchantments, item.where),
                 tags=("locked",) if item.is_cosmetic else (),
             )
             self._index_by_iid[iid] = item.index
@@ -370,7 +370,7 @@ class HeroTab(HeroEditing, ttk.Frame):
             for slot in self._slots():
                 item = worn.get(slot.tag)
                 if item is not None:
-                    values = (item.name, f"{item.rarity}, power {number_text(item.power)}")
+                    values = (item.name, "" if item.is_talisman else f"{item.rarity}, power {number_text(item.power)}")
                     image = self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name)
                 else:
                     values = ("empty" if slot_open(slot, level) else f"opens at level {slot.level}", "")
@@ -465,14 +465,14 @@ class HeroTab(HeroEditing, ttk.Frame):
             return
         item = self.hero.item(index)
         self.item_title_var.set(item.name)
-        self.item_subtitle_var.set(f"{item.rarity} {item.kind.lower()}  ·  {item.where}")
+        self.item_subtitle_var.set(("Talisman" if item.is_talisman else f"{item.rarity} {item.kind.lower()}") + f"  ·  {item.where}")
         self.preview.configure(image=self.icons.item_image(item.tag, item.rarity, PREVIEW_SIZE, item.name))
         self.preview_source_var.set("Picture: minecraft.wiki" if self.icons.is_from_wiki(item.name, item.tag) else "")
         if self.advanced:
             self.type_box["values"] = [entry.tag for entry in self._catalog()]
         self.type_var.set(item.tag)
         self.rarity_var.set(item.rarity)
-        self.power_var.set(number_text(item.power))
+        self.power_var.set(power_text(item))
         self.count_var.set(str(item.count))
         locked = item.is_cosmetic
         for widget in inputs + buttons:
@@ -482,6 +482,13 @@ class HeroTab(HeroEditing, ttk.Frame):
             if not self.item_message_var.get():
                 self._say_item("Cosmetics come from your game edition, so they can't be changed or copied.")
             return
+        if item.is_talisman:  # no rarity or power: it levels up from the XP you earn
+            for widget in (self.power_entry, *self.rarity_buttons):
+                widget.state(["disabled"])
+            # Said unless there's something more pressing to say about a talisman that's fine.
+            pressing = (item.equipped_slot or item.stock_slot) and item.progression.get("ItemLevels")
+            if not self.item_message_var.get() and not pressing:
+                self._say_item(talisman_hint(item))
         if item.equipped_slot:
             self.change_button.state(["disabled"])
             self.delete_button.state(["disabled"])

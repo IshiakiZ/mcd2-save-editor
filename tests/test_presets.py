@@ -4,7 +4,7 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import presets
 from dungeons2_editor.hero import Hero, build_catalog
 
-from .helpers import hero_item, hero_save
+from .helpers import hero_item, hero_save, talisman_item
 
 
 def by_title(title):
@@ -18,8 +18,8 @@ class PresetTests(unittest.TestCase):
         # A second hero who has already found a Lucky Clover and The Eye of Experience.
         other = hero_save()
         other["CharacterSaveV1"]["Inventory"]["Entries"] += [
-            hero_item("SW.Item.Talisman.LuckyClover", power=-1, rarity="Common", seed=11),
-            hero_item("SW.Item.Talisman.EyeOfExperience", power=-1, rarity="Common", seed=12),
+            talisman_item("SW.Item.Talisman.LuckyClover", "LuckyClover", seed=11),
+            talisman_item("SW.Item.Talisman.EyeOfExperience", "EyeOfExperience", seed=12),
         ]
         self.other = Hero(other)
         self.catalog = build_catalog([self.hero, self.other])
@@ -75,6 +75,7 @@ class PresetTests(unittest.TestCase):
         presets.apply(plan, self.hero, self.catalog)
         added = next(item for item in self.hero.items() if item.tag == "SW.Item.Talisman.EyeOfExperience")
         self.assertEqual((added.power, added.where), (-1, "Inventory"))  # laid out like the saved copy
+        self.assertEqual(added.data["Effects"][0]["EffectsInThisBatch"][0]["TypeTag"], "SW.Effect.EyeOfExperience")  # with its effect
         again = presets.plan(by_title("Most XP"), self.hero, self.catalog, power=1)
         self.assertEqual([owned.kit.name for owned in again.have], ["The Eye of Experience"])
         self.assertFalse(again.changes_anything)
@@ -136,7 +137,28 @@ class PresetTests(unittest.TestCase):
         artifacts = presets.plan(by_title("Best artifacts"), self.hero, self.catalog, power=10, include_unconfirmed=True, rarity="Unique")
         self.assertEqual({a.rarity for a in artifacts.add}, {"Special"})
         talismans = presets.plan(by_title("Best talismans"), self.hero, self.catalog, power=10, include_unconfirmed=True, rarity="Unique")
-        self.assertEqual({a.rarity for a in talismans.add}, {"Common"})
+        self.assertEqual({a.rarity for a in talismans.add}, {"None"})  # a talisman has no rarity
+        self.assertTrue(all("power" not in line for line in presets.describe(talismans, self.hero)))  # and no power
+
+    def test_talismans_are_only_added_when_their_effect_is_known(self):
+        # The Sigil of Beeswax's effect has been seen in a real save. Fist of Iron's ID has, but not what it saves.
+        careful = presets.plan(by_title("Best talismans"), self.hero, self.catalog, power=30, rarity="Unique")
+        self.assertEqual([a.kit.name for a in careful.add], ["Sigil of Beeswax"])
+        self.assertEqual(sorted(kit.name for kit, _found in careful.unconfirmed), ["Fist of Iron", "Ocelot's Paw"])
+        presets.apply(careful, self.hero, self.catalog)
+        sigil = next(item for item in self.hero.items() if item.tag == "SW.Item.Talisman.HealthBoost")
+        self.assertEqual((sigil.rarity, sigil.power, len(sigil.data["Effects"]), len(sigil.data["ItemProgression"]["ItemLevels"])), ("None", -1, 1, 3))
+        again = presets.plan(by_title("Best talismans"), self.hero, self.catalog, power=30, rarity="Unique")
+        self.assertEqual([owned.kit.name for owned in again.have], ["Sigil of Beeswax"])  # the one it has counts, whatever power was picked
+        bold = presets.plan(by_title("Best talismans"), self.hero, self.catalog, power=30, include_unconfirmed=True, rarity="Unique")
+        notes = {a.kit.name: presets.describe(bold, self.hero)[n].rsplit("(", 1)[-1] for n, a in enumerate(bold.add)}
+        self.assertEqual(notes["Fist of Iron"], "unconfirmed: without its effect)")
+
+    def test_a_talisman_an_older_version_added_without_its_effect_isnt_good_enough(self):
+        # Before 1.7.1 the editor added talismans as Common items with a power and no effect.
+        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.Talisman.HealthBoost", power=5, seed=41))
+        plan = presets.plan(by_title("Best talismans"), self.hero, self.catalog, power=30, rarity="Unique")
+        self.assertEqual(([a.kit.name for a in plan.add], plan.have), (["Sigil of Beeswax"], []))
 
     def test_kit_fills_each_slot_once_within_the_heros_level(self):
         kit = by_title("Greatbow sharpshooter")

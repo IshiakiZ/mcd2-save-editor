@@ -176,12 +176,19 @@ your sign-in, account or device data.
   before adding an unconfirmed item, and Restore… undoes it. Items you find in the game become confirmed
   automatically. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
-  GitHub issue with just those IDs, nothing else from your save.
+  GitHub issue with just those IDs (and what your talismans do, see below), nothing else from your save.
 - **Most Uniques are best guesses.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
   `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Thirty of those IDs have been
   seen in real saves. The others follow the same pattern, so the editor adds them as Unconfirmed and asks first.
   Making an item you already own Unique only turns it into its Unique when that ID has been seen; otherwise it keeps
   its name and just gets Unique rarity, because a wrong guess would cost you the item.
+- **Most talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
+  at each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and
+  1.35. The editor knows this for the Sigil of Beeswax and for any talisman one of your heroes has found, and adds
+  those the way the game saves them. Every other talisman is **Unconfirmed**: the editor can only add it without its
+  effect, so it may do nothing in the game, and it asks first. **Share item IDs…** also lists what your own
+  talismans do, so the editor can learn them for everyone. Talismans added by versions before 1.7.1 have no effect
+  saved either; the editor points them out, and you can delete them and add them again.
 - **Enchantments** can't be added yet. Presets tell you which enchantments to put on at the Enchantsmith instead.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small

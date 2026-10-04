@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 from .hero import (
     GEAR_SLOTS,
+    NO_RARITY,
     STAT_CAPS,
     CatalogItem,
     Enchantment,
@@ -48,7 +49,7 @@ MAXROLL_SECRETS = "https://maxroll.gg/minecraft-dungeons-2/guides/secret-talisma
 
 GOALS, BEST_GEAR, KITS = "Goals", "Most powerful gear", "Kits"
 GROUPS = (GOALS, BEST_GEAR, KITS)
-TALISMAN_RARITY = "Common"  # the wiki lists every talisman as common
+TALISMAN_RARITY = NO_RARITY  # a talisman has no rarity (the game saves SW.Rarity.None) and no power
 TOP_ARTIFACT_RARITY = "Special"  # artifacts don't come in Unique
 
 
@@ -283,8 +284,8 @@ PRESETS += (
         "Best talismans",
         "More melee damage, and the health to use it.",
         "Fist of Iron and Ocelot's Paw each add up to 35% melee damage (Ocelot's Paw on jump attacks) and the Sigil "
-        "of Beeswax up to 35% max health. Talismans level up from the XP you earn while they're equipped, and only "
-        "come in Common. For ranged builds, see the Greatbow kit.",
+        "of Beeswax up to 35% max health. Talismans level up from the XP you earn while they're equipped, and have "
+        "no rarity or power. For ranged builds, see the Greatbow kit.",
         items=tuple(KitItem(name, "Talisman", why) for name, why in MELEE_TALISMANS.items()),
         group=BEST_GEAR,
         choose_rarity=True,
@@ -447,7 +448,7 @@ def _is_unique_name(kit_item: KitItem, found: CatalogItem) -> bool:
 
 def rarity_for(kit_item: KitItem, found: CatalogItem, chosen: str | None) -> str | None:
     """The rarity to add a kit item at: the kit's own, Unique for an item named by its Unique name,
-    Common for talismans, else ``chosen`` (artifacts top out at Special). None keeps the rarity of the
+    none for talismans, else ``chosen`` (artifacts top out at Special). None keeps the rarity of the
     saved item it's laid out like."""
     if kit_item.rarity:
         return kit_item.rarity
@@ -501,7 +502,7 @@ class Plan:
     rarity: str | None = None  # picked in the window, for presets that ask
     stats: dict[str, int] = field(default_factory=dict)
     add: list[Addition] = field(default_factory=list)
-    unconfirmed: list[tuple[KitItem, CatalogItem]] = field(default_factory=list)  # addable, but with a best-guess ID
+    unconfirmed: list[tuple[KitItem, CatalogItem]] = field(default_factory=list)  # addable, but as a best guess
     have: list[Owned] = field(default_factory=list)
     find: list[KitItem] = field(default_factory=list)
     upgrades: list[tuple[int, str, int]] = field(default_factory=list)  # (item index, rarity, power)
@@ -519,6 +520,7 @@ def _owned_copy(hero: Hero, kit_item: KitItem, found: CatalogItem | None, result
     """The hero's own copy of a kit item, if it has one that's good enough.
 
     For presets that pick a rarity, a copy counts only at that rarity and at least the chosen power.
+    A talisman has neither: a copy counts unless it has no effect saved and a new one would get one.
     """
     mine = [item for item in hero.items() if not item.stock_slot and not item.is_cosmetic]
     if result.rarity is None:
@@ -530,7 +532,12 @@ def _owned_copy(hero: Hero, kit_item: KitItem, found: CatalogItem | None, result
         rarity = rarity_for(kit_item, found, result.rarity)
         matches = [
             item for item in mine
-            if item.tag == found.tag_at(rarity) and (rarity is None or item.rarity == rarity) and (item.power or 0) >= result.power
+            if item.tag == found.tag_at(rarity)
+            and (
+                (found.no_effect or bool(item.progression.get("ItemLevels")))
+                if found.kind == "Talisman"
+                else (rarity is None or item.rarity == rarity) and (item.power or 0) >= result.power
+            )
         ]
     return max(matches, key=lambda item: (item.equipped_slot is not None, item.power or 0), default=None)
 
@@ -547,7 +554,8 @@ def plan(
     slots: list[GearSlot] | tuple[GearSlot, ...] = GEAR_SLOTS,
     check_level: bool = True,
 ) -> Plan:
-    """What ``preset`` would do. Items with best-guess IDs are only added with ``include_unconfirmed``.
+    """What ``preset`` would do. Best guesses (an item whose ID is one, a talisman the editor can't give its
+    effect) are only added with ``include_unconfirmed``.
 
     ``rarity`` is used by presets that ask for one. With ``equip`` the items it adds (or the hero
     already has) are equipped, in the preset's order, in slots the hero has opened (unless
@@ -630,7 +638,7 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
         lines.append(f"{item.name}: {', '.join(parts)}")
     for addition in preset_plan.add:
         line = f"Add {addition.name}"
-        if preset_plan.rarity is not None:
+        if preset_plan.rarity is not None and addition.found.kind != "Talisman":
             what = addition.rarity or "same rarity as your copy"
             if addition.name != addition.found.name:
                 what += f" {addition.found.name}"  # "Heartbreaker (Unique War Hammer, ...)"
@@ -641,7 +649,8 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
         if addition.name != addition.kit.name:
             why = _UNIQUE_INTRO.sub("", why)  # "At Unique it's the Heartbreaker: hits explode." -> "hits explode."
             why = why[:1].upper() + why[1:]
-        lines.append(f"{line}: {why}" + ("" if addition.confirmed else " (unconfirmed)"))
+        note = "" if addition.confirmed else " (unconfirmed: without its effect)" if addition.found.no_effect else " (unconfirmed)"
+        lines.append(f"{line}: {why}{note}")
     for owned in preset_plan.have:
         item = hero.item(owned.index)
         if owned.slot is not None:
