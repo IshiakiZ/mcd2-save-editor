@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, game_style, merge, paths, saves, share_ids, wgs, wiki
+from . import __version__, codec, game_style, merge, paths, saves, share_ids, updater, wgs, wiki
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -52,7 +52,10 @@ _SAFE_TEXT = (
     "keeps the edited version. Steam: the .sav file is replaced in place; if Steam Cloud is on, Steam uploads "
     "it the next time the game closes.\n"
     "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
-    "• Backups contain your sign-in token, so don't share them."
+    "• Backups contain your sign-in token, so don't share them.\n"
+    "• When the editor opens, it asks GitHub whether a newer version is out, and shows an Update button if one "
+    "is. That request says nothing about you or your saves. Update downloads the new version, checks it and "
+    "replaces the editor; your saves, backups, pictures and settings aren't touched."
 )
 _DATA_TEXT = (
     "Item names, armor sets, Uniques and enchantments: MetaBot.GG's Minecraft Dungeons II database, which is built "
@@ -218,6 +221,8 @@ class EditorApp:
         self.names_file = Path(names_file)
         use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
+        self.update: updater.Release | None = None  # a newer version on GitHub, once the check has found one
+        self._update_busy = False
         self.profile: saves.SaveProfile | None = None
         self.container: saves.Container | None = None
         self.original: Any = None  # document as loaded from disk
@@ -329,6 +334,7 @@ class EditorApp:
         ttk.Button(bar, text="Reload", command=self.reload).pack(side="left", padx=2)
         ttk.Button(bar, text="Open folder…", command=self._open_folder).pack(side="left", padx=2)
         ttk.Checkbutton(bar, text="Advanced mode", variable=self.advanced_var, command=self._on_advanced_toggled).pack(side="left", padx=(14, 2))
+        self.update_button_advanced = ttk.Button(bar, style="Accent.TButton", command=self.update_app)  # shown once there's an update
         ttk.Button(bar, text="Backups folder", command=self._open_backups_folder).pack(side="right", padx=2)
         ttk.Button(bar, text="Restore…", command=self._restore_dialog).pack(side="right", padx=2)
         ttk.Button(bar, text="Back up now", command=self._backup_now).pack(side="right", padx=2)
@@ -424,6 +430,7 @@ class EditorApp:
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
+        menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
         menu.add_separator()
         for name, what, url in MORE_FROM_DEVELOPER:
             menu.add_command(label=f"{name}: {what} ↗", command=lambda url=url: webbrowser.open(url))
@@ -449,6 +456,7 @@ class EditorApp:
         ttk.Checkbutton(bar, text="ADVANCED MODE", variable=self.advanced_var, command=self._on_advanced_toggled, style="Bar.TCheckbutton").pack(
             side="right", padx=(20, 0)
         )
+        self.update_button = ttk.Button(bar, style="Accent.TButton", command=self.update_app)  # shown once there's an update
 
         body = ttk.Frame(screen, style="Game.TFrame")
         body.grid(row=1, column=0, sticky="nsew")
@@ -1468,9 +1476,11 @@ class EditorApp:
 
     # ---------------------------------------------------------------- pictures
 
-    def _in_background(self, work: Any, done: Any, progress: queue.Queue | None = None) -> None:
-        """Run ``work()`` on a thread, then call ``done(ok, result)`` on the UI thread."""
+    def _in_background(self, work: Any, done: Any, progress: queue.Queue | None = None, say: Any = None) -> None:
+        """Run ``work()`` on a thread, then call ``done(ok, result)`` on the UI thread. What the work puts in
+        ``progress`` is shown in the status line as ``say(*item)`` says it."""
         results: queue.Queue = queue.Queue()
+        say = say or (lambda number, total, name: f"Downloading pictures {number}/{total}: {name}")
 
         def run() -> None:
             try:
@@ -1480,8 +1490,7 @@ class EditorApp:
 
         def poll() -> None:
             while progress is not None and not progress.empty():
-                number, total, name = progress.get_nowait()
-                self.status_var.set(f"Downloading pictures {number}/{total}: {name}")
+                self.status_var.set(say(*progress.get_nowait()))
             if results.empty():
                 self.root.after(150, poll)
             else:
@@ -1489,6 +1498,80 @@ class EditorApp:
 
         threading.Thread(target=run, name="background", daemon=True).start()
         poll()
+
+    # ----------------------------------------------------------------- updates
+
+    def check_for_updates(self, announce: bool = False) -> None:
+        """Ask GitHub, off the UI thread, whether a newer version is out. The Update button appears if one is;
+        ``announce`` also says so when there isn't, or when GitHub can't be reached."""
+
+        def done(ok: bool, release: Any) -> None:
+            newer = ok and release is not None and updater.is_newer(release.version)
+            if newer:
+                self._show_update(release)
+            if not announce:
+                return
+            if not ok:
+                messagebox.showinfo(APP_TITLE, f"GitHub couldn't be reached to look for a newer version.\n\n{release}", parent=self.root)
+            elif not newer:
+                messagebox.showinfo(APP_TITLE, f"You have the latest version ({__version__}).", parent=self.root)
+
+        self._in_background(updater.latest_release, done)
+
+    def _show_update(self, release: updater.Release) -> None:
+        self.update = release
+        self.update_button.configure(text=f"UPDATE TO {release.version}")
+        self.update_button_advanced.configure(text=f"Update to {release.version}")
+        self.update_button.pack(side="right", padx=(20, 0))
+        self.update_button_advanced.pack(side="left", padx=(14, 2))
+        self.status_var.set(f"Version {release.version} is out. Press Update to get it.")
+        self._fit_window()
+
+    def update_app(self) -> None:
+        """The Update button: replace the packaged editor with the newer version. Run from source there is no
+        packaged editor to replace, so it opens the download page."""
+        release = self.update
+        if release is None or self._update_busy:
+            return
+        target = updater.app_dir()
+        if target is None:
+            webbrowser.open(release.page)
+            self.status_var.set("Opened the download page. Run from source, the editor can't replace itself.")
+            return
+        if not self._confirm_discard():
+            return
+        question = (
+            f"Update to version {release.version}?\n\nThe editor downloads it from GitHub ({release.size / 1e6:.0f} MB), checks the "
+            "download, replaces its own folder and opens again. Your saves, backups, pictures and settings aren't touched."
+        )
+        if not messagebox.askyesno(APP_TITLE, question, parent=self.root):
+            return
+        self._update_busy = True
+        self.status_var.set(f"Downloading version {release.version}…")
+        progress: queue.Queue = queue.Queue()
+
+        def done(ok: bool, result: Any) -> None:
+            self._update_busy = False
+            if ok:
+                try:
+                    updater.start_swap(result, target)
+                except OSError as exc:
+                    ok, result = False, exc
+            if not ok:
+                self.status_var.set("The update wasn't installed.")
+                if messagebox.askyesno(APP_TITLE, f"The update couldn't be installed.\n\n{result}\n\nOpen the download page instead?", parent=self.root):
+                    webbrowser.open(release.page)
+                return
+            self.root.destroy()  # the new copy swaps the folder once this window has closed, then opens the editor
+
+        self._in_background(
+            lambda: updater.stage(release, lambda got, total: progress.put((got, total))),
+            done,
+            progress,
+            lambda got, total: f"Downloading version {release.version}: {got / 1e6:.0f} of {total / 1e6:.0f} MB",
+        )
+
+    # ---------------------------------------------------------------- pictures
 
     def _get_pictures(self) -> None:
         """Download item pictures from minecraft.wiki, after asking."""
@@ -1639,7 +1722,10 @@ def run(
 
     root.report_callback_exception = report
     try:
-        EditorApp(root, profile, backup_root, icon_root)
+        app = EditorApp(root, profile, backup_root, icon_root)
+        if close_after is None:  # a build check stays offline
+            app.check_for_updates()
+            threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()
     except Exception:
         if close_after is None:
             messagebox.showerror(APP_TITLE, traceback.format_exc(), parent=root)

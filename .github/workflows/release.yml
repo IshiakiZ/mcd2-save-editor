@@ -67,6 +67,10 @@ jobs:
       - name: Check the .exe answers as an MCP server
         run: python tools/check_exe_mcp.py dist/MCD2SaveEditor/MCD2SaveEditor.exe
 
+      # What the Update button ends with: the new copy swaps the installed folder for itself.
+      - name: Check the .exe can replace an older copy of itself
+        run: python tools/check_exe_update.py dist/MCD2SaveEditor
+
       - name: Zip the folder
         shell: pwsh
         run: |

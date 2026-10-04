@@ -48,6 +48,9 @@ the full save for people who want it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
+- **Updates itself:** when a newer version is out, an **Update** button appears. Press it and the editor downloads
+  the new version from GitHub, checks it and replaces itself; your saves, backups, pictures and settings aren't
+  touched.
 - **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
   after writing, and an automatic rollback if anything fails. If the game saves your hero while the editor is open,
   the editor loads the new version, or re-applies your unsaved changes to it, so neither side's progress is lost.
@@ -70,7 +73,8 @@ release. There's nothing to install, and it finds your saves automatically.
 
 Windows may say **"Windows protected your PC"** because the .exe isn't code-signed. Click **More info → Run
 anyway**. The editor keeps backups, pictures and settings in `%LOCALAPPDATA%\MCD2 Save Editor`, not in its own
-folder, so a newer version can simply replace the folder.
+folder, so a newer version can simply replace the folder. That's what the **Update** button does: when the editor
+opens it asks GitHub whether a newer version is out, and the button appears if one is.
 
 **Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
 installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
@@ -101,8 +105,9 @@ You don't have to take anyone's word for what's in the download:
 - **You can check that.** With the [GitHub CLI](https://cli.github.com),
   `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms the zip you downloaded is the
   one that workflow built, and from which commit. It works on the `MCD2SaveEditor.exe` inside as well.
-- **The source is all here.** The editor only goes online when you ask it to: to download item pictures from
-  minecraft.wiki, or to open a link in your browser.
+- **The source is all here.** The editor goes online for three things: when it opens, it asks GitHub whether a
+  newer version is out; **Update** downloads that version; and it downloads item pictures from minecraft.wiki when
+  you ask. Links open in your browser. Nothing about you or your saves is sent anywhere.
 - **You can skip the .exe** and run it from source, as above.
 
 ### Code signing policy
@@ -115,9 +120,11 @@ Free code signing provided by [SignPath.io](https://about.signpath.io), certific
 - Committers and reviewers: [Ishiaki](https://github.com/IshiakiZ)
 - Approvers: [Ishiaki](https://github.com/IshiakiZ)
 
-Privacy policy: this program will not transfer any information to other networked systems unless specifically
-requested by the user or the person installing or operating it. It downloads item pictures from minecraft.wiki when
-you ask for them, and opens links in your browser.
+Privacy policy: the editor never sends your saves, your hero's data or anything about you anywhere. It contacts
+other computers in three cases only. When its window opens, it asks GitHub (api.github.com) which version is the
+latest; that request carries only what any web request does, your IP address and the editor's name and version.
+When you press **Update**, it downloads that version from GitHub. When you ask for item pictures, it downloads them
+from minecraft.wiki. Links open in your own browser.
 
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
@@ -221,6 +228,7 @@ python -m dungeons2_editor pictures                             # download item 
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
+python -m dungeons2_editor update                               # look for a newer version on GitHub and install it
 ```
 
 Add `--profile <folder>` to point at a save folder somewhere else (the Xbox folder with `containers.index`, or the
@@ -252,6 +260,7 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
 | `dungeons2_editor/icons.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the Minecraft Wiki downloader, and the names you give items |
 | `dungeons2_editor/mcp_server.py`, `ai_dialog.py` | The MCP server for AI assistants, and the window that shows how to connect one |
+| `dungeons2_editor/updater.py` | Finding a newer version on GitHub, and replacing the packaged editor with it |
 | `tools/` | The item catalog builder, and the release build's helpers and checks |
 
 ## Credits and disclaimer

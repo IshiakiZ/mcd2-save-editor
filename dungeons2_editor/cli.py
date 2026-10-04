@@ -167,6 +167,60 @@ def cmd_mcp(args: argparse.Namespace) -> int:
     return serve(args.profile, args.backups)
 
 
+def cmd_update(args: argparse.Namespace) -> int:
+    """Look for a newer version on GitHub and install it, like the window's Update button."""
+    from . import __version__, updater
+
+    release = updater.check()
+    if release is None:
+        print(f"You have the latest version ({__version__}), or GitHub couldn't be reached.")
+        return 0
+    target = updater.app_dir()
+    if target is None:
+        print(f"Version {release.version} is out: {release.page}\nRun from source, the editor can't replace itself.")
+        return 0
+    if not _confirm(f"Update from {__version__} to {release.version} ({release.size / 1e6:.0f} MB from GitHub)?", args.yes):
+        print("Cancelled.")
+        return 1
+    try:
+        staged = updater.stage(release)
+        updater.start_swap(staged, target, restart=not args.no_restart)
+    except (updater.UpdateError, OSError) as exc:
+        print(f"The update couldn't be installed: {exc}", file=sys.stderr)
+        return 1
+    print(f"Version {release.version} is downloaded and checked. It replaces this one as soon as this closes.")
+    return 0
+
+
+def cmd_apply_update(args: argparse.Namespace) -> int:
+    """Swap the editor's folder for the new copy this runs from. The Update button starts it; see updater.py."""
+    from . import updater
+
+    try:
+        updater.apply_update(args.target, Path(sys.executable).resolve().parent, wait=args.wait, restart=not args.no_restart)
+    except updater.UpdateError as exc:
+        print(exc, file=sys.stderr)
+        if not args.no_restart:
+            _update_failed(str(exc), args.target)
+        return 1
+    return 0
+
+
+def _update_failed(why: str, target: Path) -> None:
+    """Say why (this runs without a console), and open the editor that's still there."""
+    import tkinter as tk
+    from tkinter import messagebox
+
+    from . import updater
+
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror("MCD2 Save Editor", f"The update couldn't be installed.\n\n{why}\n\nYou can download the new version from {updater.RELEASES_PAGE}", parent=root)
+    root.destroy()
+    if (Path(target) / updater.EXE_NAME).is_file():
+        updater._start([str(Path(target) / updater.EXE_NAME)], Path(target).parent)
+
+
 def main(argv: list[str] | None = None) -> int:
     # The folder options work before or after the command: "--profile X list" and "list --profile X".
     shared = argparse.ArgumentParser(add_help=False)
@@ -199,6 +253,14 @@ def main(argv: list[str] | None = None) -> int:
     command("mcp", "run as an MCP server (stdin/stdout) so an AI assistant can customise your heroes")
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
+    update = command("update", "look for a newer version on GitHub and install it")
+    update.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
+    update.add_argument("--no-restart", action="store_true", help="don't open the editor when it's done")
+    # Not for people to run: the Update button starts the new copy with it, to replace the old one.
+    apply_update = commands.add_parser("apply-update", parents=[shared])
+    apply_update.add_argument("--target", type=Path, required=True)
+    apply_update.add_argument("--wait", type=float, default=60)
+    apply_update.add_argument("--no-restart", action="store_true")
     args = parser.parse_args(argv)
     # Defaults are filled in here rather than with set_defaults(), which would change the shared
     # options' defaults and make each command reset a --profile given before it.
@@ -223,6 +285,8 @@ def main(argv: list[str] | None = None) -> int:
         "ids": cmd_ids,
         "mcp": cmd_mcp,
         "pictures": cmd_pictures,
+        "update": cmd_update,
+        "apply-update": cmd_apply_update,
     }[args.command]
     try:
         return handler(args)

@@ -1,3 +1,14 @@
+## What's new in 1.7.0
+
+- **The editor updates itself.** When a newer version is out, an **Update** button appears at the top. Press it and
+  the editor downloads the new version from GitHub, checks the download against the checksum GitHub lists for it,
+  replaces its own folder and opens again. Your saves, backups, pictures and settings aren't touched. Run from
+  source, the button opens the download page instead. **Menu → Check for updates** looks whenever you like, and
+  `MCD2SaveEditor.exe update` does it from a command line.
+- To know about new versions, the editor asks GitHub which version is the latest each time its window opens. That
+  request says nothing about you or your saves; the README's privacy policy spells out everything the editor
+  contacts.
+
 ## What's new in 1.6.0
 
 - **Far more added items stick.** A save stores each item under an internal name, and for most items the editor used

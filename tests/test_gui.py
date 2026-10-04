@@ -2,13 +2,14 @@ import copy
 import gc
 import json
 import tempfile
+import time
 import tkinter as tk
 import unittest
 from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import game_style, gui, saves, share_ids
+from dungeons2_editor import __version__, game_style, gui, saves, share_ids, updater
 from dungeons2_editor.hero import Hero, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
 
@@ -540,6 +541,83 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("Emeralds: 55 → 5,000", ask.call_args_list[2].args[1])
         hero = self.saved_hero()
         self.assertEqual((hero.attribute("Emeralds"), hero.attribute("XP")), (5000, 3000))  # yours and the game's
+
+    def wait_until(self, done):
+        """Let the window's background work finish (it reports back through Tk's event loop)."""
+        for _ in range(400):
+            self.root.update()
+            if done():
+                return
+            time.sleep(0.01)
+        self.fail("the background work didn't finish")
+
+    @staticmethod
+    def release(version):
+        page = f"https://github.com/IshiakiZ/mcd2-save-editor/releases/tag/v{version}"
+        return updater.Release(version, page, f"{updater.DOWNLOADS}v{version}/{updater.ASSET_NAME}", 19_000_000, "0" * 64)
+
+    def test_update_button_appears_when_a_newer_version_is_out(self):
+        self.assertFalse(self.app.update_button_advanced.winfo_manager())
+        release = self.release("99.0.0")
+        with mock.patch.object(updater, "latest_release", return_value=release):
+            self.app.check_for_updates()
+            self.wait_until(lambda: self.app.update is not None)
+        self.assertEqual(self.app.update_button_advanced.cget("text"), "Update to 99.0.0")
+        self.assertEqual(self.app.update_button.cget("text"), "UPDATE TO 99.0.0")
+        self.assertTrue(self.app.update_button_advanced.winfo_manager())
+        self.assertIn("Version 99.0.0 is out", self.app.status_var.get())
+        with mock.patch("webbrowser.open") as browser:  # run from source there's no packaged editor to replace
+            self.app.update_app()
+        browser.assert_called_once_with(release.page)
+
+    def test_no_update_button_without_a_newer_version(self):
+        for found in (self.release(__version__), self.release("0.9.0"), None):
+            with mock.patch.object(updater, "latest_release", return_value=found), mock.patch("tkinter.messagebox.showinfo") as info:
+                self.app.check_for_updates(announce=True)
+                self.wait_until(lambda: info.called)
+            self.assertIn("latest version", info.call_args.args[1])
+        with mock.patch.object(updater, "latest_release", side_effect=OSError("offline")), mock.patch("tkinter.messagebox.showinfo") as info:
+            self.app.check_for_updates(announce=True)
+            self.wait_until(lambda: info.called)
+        self.assertIn("couldn't be reached", info.call_args.args[1])
+        self.assertIsNone(self.app.update)
+        self.assertFalse(self.app.update_button_advanced.winfo_manager())
+        with mock.patch.object(updater, "latest_release", side_effect=OSError("offline")), mock.patch("tkinter.messagebox.showinfo") as info:
+            self.app.check_for_updates()  # the check at start-up says nothing when it finds nothing
+            for _ in range(40):
+                self.root.update()
+                time.sleep(0.01)
+        info.assert_not_called()
+
+    def test_update_downloads_the_new_copy_and_hands_over_to_it(self):
+        release = self.release("99.0.0")
+        self.app._show_update(release)
+        target, staged = self.dir / "MCD2SaveEditor", self.dir / "update" / "MCD2SaveEditor"
+        with mock.patch.object(updater, "app_dir", return_value=target), mock.patch.object(updater, "stage", return_value=staged) as stage, \
+                mock.patch.object(updater, "start_swap") as swap, mock.patch.object(self.root, "destroy") as closed, \
+                mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            self.app.update_app()  # asked, and the answer was no
+            self.assertIn("Update to version 99.0.0?", ask.call_args.args[1])
+            stage.assert_not_called()
+            ask.return_value = True
+            self.app.update_app()
+            self.wait_until(lambda: closed.called)
+        self.assertEqual(stage.call_args.args[0], release)
+        swap.assert_called_once_with(staged, target)  # the new copy replaces the folder once this window has closed
+
+    def test_a_failed_update_offers_the_download_page(self):
+        release = self.release("99.0.0")
+        self.app._show_update(release)
+        with mock.patch.object(updater, "app_dir", return_value=self.dir / "MCD2SaveEditor"), \
+                mock.patch.object(updater, "stage", side_effect=updater.UpdateError("The download doesn't match")), \
+                mock.patch.object(updater, "start_swap") as swap, mock.patch("webbrowser.open") as browser, \
+                mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            self.app.update_app()
+            self.wait_until(lambda: browser.called)
+        swap.assert_not_called()
+        self.assertIn("The download doesn't match", ask.call_args.args[1])
+        browser.assert_called_once_with(release.page)
+        self.assertIn("wasn't installed", self.app.status_var.get())
 
     def test_share_item_ids_window(self):
         from dungeons2_editor.share_ids import ShareIdsDialog
