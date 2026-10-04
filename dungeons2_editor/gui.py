@@ -84,7 +84,7 @@ SIMPLE_HELP_SECTIONS = [
         "pick. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
         "money, the most powerful gear, or complete kits from top builds, with the best enchantments for each piece.\n"
         "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in"
         "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
         "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
     ),
@@ -139,7 +139,7 @@ HELP_SECTIONS = [
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
         "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 9,999 emeralds; anything above is lost in "
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in"
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
     ),

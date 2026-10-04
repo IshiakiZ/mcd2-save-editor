@@ -22,7 +22,7 @@ AES-encrypted asset container that this research did not open. Numbers below com
 4. **Level on boss re-kills.** Bosses can be killed again indefinitely. The final campaign boss gives roughly a level per kill, each boss drop has a 1-in-6 Unique chance, and equipped talismans level from the same XP. **[community]**
 5. **Chase rarity and effects; Item Power can be bought.** The Blacksmith raises any item to the cap for your level in exchange for emeralds. A good low-level Unique is worth keeping. **[community]**
 6. **Don't chain-reroll one item.** The nth reroll on the same item costs n Echo Shards, so costs grow quadratically. Reroll spare copies once each instead (see [Rerolls](#rerolls)). **[community]**
-7. **Don't sit at a cap.** Emeralds stop at 9,999 and Echo Shards at 100; anything earned past the cap is lost. **[community]**
+7. **Don't sit at a cap.** Emeralds stop at 99,999 (9,999 in the 1.1.1.0 datamines; the game has raised it since) and Echo Shards at 100; anything earned past the cap is lost. **[community]**
 8. **Run Sift rifts on the Thrive tide.** The Wellspring Tides follow the day/night phase. Thrive speeds up soul generation and artifact cooldowns; Endure makes monsters stronger and turns off passive soul regeneration. **[files]**
 
 ## Route to level 42
@@ -86,7 +86,7 @@ in the encrypted data.
 
 | Currency | Cap | Notes |
 |---|---:|---|
-| Emeralds | 9,999 | Main source: salvage, which pays more for higher power and rarity along a power curve **[files]**. Main sink: Item Power upgrades. With the Thrifty Pendant, the damage bonus is full at 7,000 / 8,000 / 9,000 emeralds (+25 / 40 / 50%). |
+| Emeralds | 99,999 (was 9,999) | Main source: salvage, which pays more for higher power and rarity along a power curve **[files]**. Main sink: Item Power upgrades. With the Thrifty Pendant, the damage bonus is full at 7,000 / 8,000 / 9,000 emeralds (+25 / 40 / 50%). |
 | Echo Shards | 100 | Called `SpringStone` inside the game **[files]**. Best source: Soul Storms. Enchanting costs 1 each; the level-15 vendor upgrade 50; Blacksmith levels 2 / 3 cost 20 / 40; Enchantsmith levels 2 / 3 cost 30 / 60. One-time unlocks total about 200 shards. |
 | Enchantment Points | – | 1 per level-up (level cap 100). Refunded when you disenchant or salvage, so always spend them. |
 

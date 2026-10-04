@@ -15,7 +15,7 @@ from .mcp_server import SERVER_NAME
 
 INTRO = (
     "AI assistants that support MCP, like Claude Desktop and Claude Code, can use the editor to look at your heroes "
-    "and change them for you: ask for 9,999 emeralds, a Unique sword or the Melee damage kit. The assistant sees your "
+    "and change them for you: ask for 99,999 emeralds, a Unique sword or the Melee damage kit. The assistant sees your "
     "heroes' stats and items (not your sign-in or account details), collects its changes as a draft, and writes them "
     "only when you agree, with the game closed and your saves backed up first, just like Save to game here."
 )

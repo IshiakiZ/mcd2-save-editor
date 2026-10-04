@@ -64,10 +64,10 @@ class PresetTests(unittest.TestCase):
 
     def test_most_money_fills_to_the_cap(self):
         plan = presets.plan(by_title("Most money"), self.hero, self.catalog, power=1)
-        self.assertEqual(plan.stats, {"Emeralds": 9_999})  # this hero has no Echo Shards stat
+        self.assertEqual(plan.stats, {"Emeralds": 99_999})  # this hero has no Echo Shards stat
         self.assertEqual([k.name for k, _ in plan.unconfirmed], ["Emerald of Good Fortune"])
         presets.apply(plan, self.hero, self.catalog)
-        self.assertEqual(self.hero.attribute("Emeralds"), 9_999)
+        self.assertEqual(self.hero.attribute("Emeralds"), 99_999)
 
     def test_items_another_hero_found_can_be_added(self):
         plan = presets.plan(by_title("Most XP"), self.hero, self.catalog, power=1)
@@ -166,11 +166,11 @@ class PresetTests(unittest.TestCase):
 
     def test_game_caps(self):
         with self.assertRaises(ValueError):
-            self.hero.set_attributes({"Emeralds": 10_000}, game_caps=True)
+            self.hero.set_attributes({"Emeralds": 100_000}, game_caps=True)
         with self.assertRaises(ValueError):
             self.hero.set_attributes({"Level": 0})
-        self.hero.set_attributes({"Emeralds": 10_000})  # Advanced mode may go past a cap
-        self.assertEqual(self.hero.attribute("Emeralds"), 10_000)
+        self.hero.set_attributes({"Emeralds": 100_000})  # Advanced mode may go past a cap
+        self.assertEqual(self.hero.attribute("Emeralds"), 100_000)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 from .hero import (
     GEAR_SLOTS,
+    STAT_CAPS,
     CatalogItem,
     Enchantment,
     GearSlot,
@@ -101,10 +102,11 @@ PRESETS: tuple[Preset, ...] = (
     Preset(
         "Most money",
         "Fill your wallet and make every pickup pay more.",
-        "Sets emeralds and Echo Shards to the game's caps (9,999 and 100; anything above a cap is lost). "
+        f"Sets emeralds and Echo Shards to the game's caps ({STAT_CAPS['Emeralds']:,} and {STAT_CAPS['SpringStone']}; "
+        "anything above a cap is lost). "
         "The Emerald of Good Fortune adds up to a 25% chance of extra emeralds. In the game, salvaging gear is the "
         "main source of emeralds, and bigger, rarer items pay more.",
-        stats={"Emeralds": 9_999, "SpringStone": 100},
+        stats={"Emeralds": STAT_CAPS["Emeralds"], "SpringStone": STAT_CAPS["SpringStone"]},
         items=(EMERALD_OF_GOOD_FORTUNE,),
         sources=(METABOT_TALISMANS, METABOT_BEGINNER),
     ),
@@ -132,7 +134,7 @@ PRESETS: tuple[Preset, ...] = (
         "talismans can't be Unique), at the power you choose. It also fills your emeralds for the Thrifty Pendant, "
         "which adds more damage the more emeralds you carry. Uniques made by the editor work (a Unique Sword stuck "
         "in testing), but keep the power close to your level: in a test, the game removed items at power 135.",
-        stats={"Emeralds": 9_999},
+        stats={"Emeralds": STAT_CAPS["Emeralds"]},
         items=(THRIFTY_PENDANT,),
         upgrade_gear=True,
         sources=(METABOT_TALISMANS, METABOT_UNIQUES),

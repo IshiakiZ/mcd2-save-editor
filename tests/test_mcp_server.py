@@ -135,7 +135,7 @@ class ReadingTests(ServerTestCase):
         hero = self.call("get_hero", hero="Ranger Deluxe")  # by name, too: the offline hero, not the online one
         self.assertEqual((hero["hero"], hero["level"], hero["gear_power"]), ("00000000", 1, 1))
         emeralds = next(stat for stat in hero["stats"] if stat["stat"] == "Emeralds")
-        self.assertEqual((emeralds["value"], emeralds["cap"]), (55, 9999))
+        self.assertEqual((emeralds["value"], emeralds["cap"]), (55, 99999))
         gear = {slot["slot"]: slot for slot in hero["gear"]}
         self.assertEqual(len(gear), 12)
         self.assertEqual(gear["Melee weapon"]["item"]["name"], "Sword")
@@ -174,8 +174,8 @@ class EditingTests(ServerTestCase):
         self.assertEqual(self.call("save_changes", hero="00000000")["done"], "There's nothing to save.")
 
     def test_stats_stop_at_the_game_caps(self):
-        self.assertIn("ignore_caps", self.call("set_stats", hero="00000000", stats={"Emeralds": 50000}))
-        self.assertEqual(self.call("set_stats", hero="00000000", stats={"Emeralds": 50000}, ignore_caps=True)["done"], "Set Emeralds 50,000.")
+        self.assertIn("ignore_caps", self.call("set_stats", hero="00000000", stats={"Emeralds": 500000}))
+        self.assertEqual(self.call("set_stats", hero="00000000", stats={"Emeralds": 500000}, ignore_caps=True)["done"], "Set Emeralds 500,000.")
         self.assertIn("no stat", self.call("set_stats", hero="00000000", stats={"Echo shards": 50}))  # this hero has none yet
 
     def test_add_a_unique_by_its_name_and_equip_it(self):
@@ -217,7 +217,7 @@ class EditingTests(ServerTestCase):
         self.assertEqual(self.call("preview_changes", hero="00000000")["unsaved_changes"], [])
 
     def test_presets(self):
-        self.assertEqual(self.call("apply_preset", hero="00000000", preset="most money")["preset_did"], ["Emeralds: 55 → 9,999"])
+        self.assertEqual(self.call("apply_preset", hero="00000000", preset="most money")["preset_did"], ["Emeralds: 55 → 99,999"])
         kit = self.call("apply_preset", hero="00000000", preset="Melee damage", power=12)
         self.assertTrue(kit["left_out"])  # best-guess items stay out unless asked for
         self.assertIn("no preset", self.call("apply_preset", hero="00000000", preset="Max everything"))

@@ -56,8 +56,9 @@ _WHOLE_NUMBER_ATTRIBUTES = set(ATTRIBUTE_LABELS) - {"XP"}
 
 # The game's caps, from community datamines of build 1.1.1.0 (MetaBot, Maxroll; see
 # mcd2-research/README.md). Anything above a cap is lost in the game, so Simple mode stops there.
+# Emeralds stopped at 9,999 in that build; the game has let you hold 99,999 since.
 STAT_CAPS = {
-    "Emeralds": 9_999,
+    "Emeralds": 99_999,
     "SpringStone": 100,
     "Level": 100,
     "EnchantmentPoints": 99,  # one per level-up

@@ -13,6 +13,7 @@
   and which version. Each release now comes with a build attestation: with the [GitHub CLI](https://cli.github.com),
   `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms the zip was built by this
   repository's workflow from its source.
+- **Emeralds go up to 99,999** in Simple mode, the game's limit now (it was 9,999).
 - Numbers the game writes in an unusual form are written back exactly as they were, so an unedited save stays
   byte for byte identical.
 

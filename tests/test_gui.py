@@ -461,14 +461,14 @@ class HeroTabTests(WindowTestCase):
         self.root.update()
         dialog = next(w for w in self.tab.winfo_children() if isinstance(w, PresetsDialog))
         text = dialog.text.get("1.0", "end")
-        self.assertIn("Emeralds: 55 → 9,999", text)
+        self.assertIn("Emeralds: 55 → 99,999", text)
         self.assertIn("Unconfirmed items", text)
         self.assertFalse(dialog.rarity_row.winfo_manager())  # Most money doesn't ask for a rarity
         dialog._apply()
         self.assertTrue(dialog.message_var.get().startswith("Applied Most money"))
         dialog.destroy()
-        self.assertEqual(self.tab.stat_vars["Emeralds"].get(), "9999")
-        self.assertIn("Emeralds: 55 → 9,999", self.save())
+        self.assertEqual(self.tab.stat_vars["Emeralds"].get(), "99999")
+        self.assertIn("Emeralds: 55 → 99,999", self.save())
 
     def test_kit_preset_adds_and_equips_a_loadout(self):
         from dungeons2_editor import presets
@@ -543,7 +543,7 @@ class HeroTabTests(WindowTestCase):
         dialog.destroy()
 
     def test_advanced_mode_lets_stats_pass_the_game_caps(self):
-        self.tab.stat_vars["Emeralds"].set("50000")
+        self.tab.stat_vars["Emeralds"].set("500000")
         self.assertTrue(self.tab._apply_stat("Emeralds"))
         self.assertIn("above the game's cap", self.tab.stats_message_var.get())
 
@@ -675,23 +675,23 @@ class SimpleModeTests(WindowTestCase):
 
     def test_stats_stop_at_the_game_caps(self):
         emeralds = self.screen.stat_vars["Emeralds"]
-        emeralds.set("50000")
+        emeralds.set("500000")
         self.assertFalse(self.screen._apply_stat("Emeralds"))
         self.assertIn("cap", self.screen.stats_message_var.get())
         self.assertEqual(str(self.screen.stats_message.cget("style")), "MessageError.TLabel")
         self.assertEqual(emeralds.get(), "55")
-        emeralds.set("9998")
+        emeralds.set("99998")
         self.assertTrue(self.screen._apply_stat("Emeralds"))
         self.assertEqual(self.screen._nudge_stat("Emeralds", 5), "break")  # arrow keys stop at the cap
-        self.assertEqual(emeralds.get(), "9999")
+        self.assertEqual(emeralds.get(), "99999")
         self.app.advanced_var.set(True)
         self.app._on_advanced_toggled()
-        self.assertEqual(self.app.hero_tab.stat_vars["Emeralds"].get(), "9999")  # the Hero tab sees the change
-        self.app.hero_tab.stat_vars["Emeralds"].set("50000")
+        self.assertEqual(self.app.hero_tab.stat_vars["Emeralds"].get(), "99999")  # the Hero tab sees the change
+        self.app.hero_tab.stat_vars["Emeralds"].set("500000")
         self.assertTrue(self.app.hero_tab._apply_stat("Emeralds"))  # Advanced mode may go past the caps
         self.app.advanced_var.set(False)
         self.app._on_advanced_toggled()
-        self.assertEqual(self.screen.stat_vars["Emeralds"].get(), "50000")
+        self.assertEqual(self.screen.stat_vars["Emeralds"].get(), "500000")
 
     def test_level_opens_gear_slots(self):
         self.screen.stat_vars["Level"].set("5")
