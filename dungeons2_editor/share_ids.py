@@ -1,7 +1,8 @@
 """Sharing item IDs: the IDs in your saves that the editor doesn't know yet, ready to post on GitHub.
 
-Only item IDs (like SW.Item.MysticHelmet) go into the report, and what the game saved as the effect of a
-talisman the editor can't add with its effect yet: nothing else from the save.
+Only item IDs (like SW.Item.MysticHelmet) go into the report, and the effects the game saved with items: what
+a talisman does when the editor can't add it with its effect yet, and the effects on weapons, armor and
+artifacts, which the editor can't add at all until it has seen them. Nothing else from the save.
 """
 
 from __future__ import annotations
@@ -12,12 +13,15 @@ import urllib.parse
 import webbrowser
 from tkinter import ttk
 
-from .hero import NOT_ADDABLE_GROUPS, Hero, game_item, is_unique_version, item_group, item_kind, local_name
+from .hero import NOT_ADDABLE_GROUPS, UNSEEN_TAG, Hero, Item, game_item, is_unique_version, item_group, item_kind, local_name
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
 ISSUE_URL = "https://github.com/IshiakiZ/mcd2-save-editor/issues/new"
 ISSUE_TEMPLATE = "item-ids.yml"
+MAX_LINK = 6000  # characters; GitHub turns away a link much longer than this, so a longer list is pasted in instead
+PASTE_HERE = "(paste the list here: it's on your clipboard, so press Ctrl+V)"
+MAX_GEAR_LINES = 60  # lines of gear effects in one report, so it fits in a GitHub issue
 
 
 # How the game vouches for an ID (Hero.item_types_from_the_game), as the report puts it.
@@ -97,18 +101,77 @@ def talisman_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
             levels = item.progression.get("ItemLevels")
             text = effect_text(levels) if isinstance(levels, list) and levels else ""
             if text:
-                found[item.tag] = f"{item.name}'s effect: {text}"
+                found[item.tag] = f"{item.name}'s effect: {text}{_whole_layout(item, levels)}"
     return sorted(found.items())
 
 
+def _compact(value: object) -> str:
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=True)
+
+
+def _whole_layout(item: Item, levels: list) -> str:
+    """For a talisman the short form can't describe, exactly what the save holds. That's one with no effect at
+    some level (a companion's talisman, say), or with tags on its levels: adding one needs the rest too."""
+    plain = all(isinstance(level, dict) and level.get("LevelEffects") and not level.get("LevelTags") for level in levels)
+    return "" if plain else f"; levels as saved: {_compact(levels)}; effects as saved: {_compact(item.data.get('Effects'))}"
+
+
+def _effect_pairs(item: Item) -> set[tuple[str, str]]:
+    """(effect, template) for each effect on an item, read straight from the save."""
+    pairs = set()
+    for batch in item.data.get("Effects") or []:
+        for effect in (batch.get("EffectsInThisBatch") or []) if isinstance(batch, dict) else []:
+            if isinstance(effect, dict):
+                generator = effect.get("GeneratorData")
+                pairs.add((str(effect.get("TypeTag")), str(generator.get("GeneratorParentTemplate")) if isinstance(generator, dict) else ""))
+    return pairs
+
+
+def gear_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
+    """(item ID, the effects a save holds for one) for weapons, armor and artifacts in these saves that have
+    effects, exactly as saved. The editor can't add an effect it has never seen, so this is how it learns them.
+
+    One line for each item that shows an effect the lines before it don't, Uniques first, and then one for each
+    other Unique, up to MAX_GEAR_LINES. An item the game hasn't shown you yet is left out: the editor may have
+    just made it out of another item, and its effects would be that item's."""
+    candidates = []
+    for hero in heroes:
+        for item in hero.items():
+            marks = item.data.get("DynamicPropertyTags")
+            looked_at = item.stock_slot or (isinstance(marks, list) and UNSEEN_TAG not in marks)
+            if item.is_cosmetic or item.is_talisman or not looked_at or item_group(item.tag) in NOT_ADDABLE_GROUPS:
+                continue
+            pairs = _effect_pairs(item)
+            if pairs:
+                candidates.append((not is_unique_version(item.tag), -len(pairs), item.tag, item, pairs))
+    candidates.sort(key=lambda candidate: candidate[:3])
+    covered: set[tuple[str, str]] = set()
+    chosen: dict[str, Item] = {}
+    for _common, _count, tag, item, pairs in candidates:  # every effect there is to see, in as few lines as it takes
+        if not pairs <= covered and len(chosen) < MAX_GEAR_LINES:
+            chosen.setdefault(f"{tag} {len(chosen)}", item)
+            covered |= pairs
+    shown = {item.tag for item in chosen.values()}
+    for common, _count, tag, item, _pairs in candidates:  # and what each Unique comes with
+        if not common and tag not in shown and len(chosen) < MAX_GEAR_LINES:
+            chosen[f"{tag} {len(chosen)}"] = item
+            shown.add(tag)
+    return [(item.tag, f"effects on a {item.rarity} one: {_compact(item.data.get('Effects'))}") for item in chosen.values()]
+
+
 def finding_keys(heroes: list[Hero]) -> set[str]:
-    """A key for each line the report would have. The editor remembers the ones you've been shown, so it can
+    """A key for each thing the report would tell. The editor remembers the ones you've been shown, so it can
     tell when your saves hold something that wasn't there before."""
-    return {tag for tag, _note in unknown_ids(heroes)} | {f"{tag} effect" for tag, _text in talisman_effects(heroes)}
+    keys = {tag for tag, _note in unknown_ids(heroes)} | {f"{tag} effect" for tag, _text in talisman_effects(heroes)}
+    for hero in heroes:
+        for item in hero.items():
+            if not item.is_cosmetic and not item.is_talisman:
+                keys |= {f"{effect} {template}".strip() for effect, template in _effect_pairs(item)}
+    return keys
 
 
 def report_text(heroes: list[Hero], version: str) -> str:
-    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes)]
+    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes) + gear_effects(heroes)]
     return "\n".join(lines)
 
 
@@ -133,10 +196,10 @@ class ShareIdsDialog(tk.Toplevel):
         wrap = text_width(self, 80)
         report = report_text(heroes, version)
         intro = (
-            "These item IDs from your saves aren't in the editor's list yet, or are there without their in-game name. "
-            "Add what the game calls each one after the dash if you know it, then open a GitHub issue (you need a "
-            "free GitHub account) or copy the list. Only item IDs are shared, and what your talismans do (so the "
-            "editor can add them with their effect): nothing else from your saves."
+            "Your saves hold things the editor's list doesn't have yet: item IDs, what the game calls an item, or "
+            "the effects on your gear, which the editor can only add once it has seen them. Add what the game calls "
+            "an item after its dash if you know it, then open a GitHub issue (you need a free GitHub account) or copy "
+            "the list. Only item IDs and the effects saved with items are shared: nothing else from your saves."
             if report
             else "Everything in your saves is already in the editor's list. Thanks for checking!"
         )
@@ -168,5 +231,14 @@ class ShareIdsDialog(tk.Toplevel):
         self.message.set("Copied.")
 
     def open_issue(self) -> None:
-        webbrowser.open(issue_url(self.report(), self.version))
-        self.message.set("Opened in your browser.")
+        report = self.report()
+        link = issue_url(report, self.version)
+        if len(link) <= MAX_LINK:
+            webbrowser.open(link)
+            self.message.set("Opened in your browser.")
+            return
+        # Too long to hand over in a link, so it goes on the clipboard and the page opens ready for it.
+        self.clipboard_clear()
+        self.clipboard_append(report)
+        webbrowser.open(issue_url(PASTE_HERE, self.version))
+        self.message.set("Copied, and the page is open: paste the list into its first box (Ctrl+V).")

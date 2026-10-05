@@ -1,3 +1,24 @@
+## What's new in 1.8.1
+
+- **Sixteen talismans come with their effect now** (it was one). Players sent in what theirs do with 1.8.0's Share
+  item IDs, and thirteen more talismans got their real save ID from it, matched to their names by the numbers: a
+  talisman saved with a rolling cooldown of 0.45 at level 3 is the Armadillo Amulet, which cuts it by 45%. The Eye
+  of Experience, Looter's Charm, Emerald of Good Fortune, Healing Heart, Soul Chip and the rest are Confirmed, so
+  the presets that use them (Most XP, Most money, Best loot) add them with their effect.
+- **176 of the 180 items and 95 of the 116 Uniques are confirmed.** Thank you
+  [Blake5256](https://github.com/Blake5256), [mauricioggizi](https://github.com/mauricioggizi),
+  [icicle1133](https://github.com/icicle1133) and [WyattDrako](https://github.com/WyattDrako). All 60 Uniques
+  reported since 1.8.0 are saved under the pattern that version began to trust. The Mob Mallet, Blizzard Bangle,
+  Picnic Basket and Tempo Truffle have their real IDs, and the only items still guessed are four talismans.
+- **Add items no longer lists enchantment books you can't add.** Every book in the game's collections showed up
+  there, most of them under a made-up name. A book is on offer only when your hero has one to copy.
+- **Share item IDs also lists the effects on your weapons, armor and artifacts**, exactly as the game saved them.
+  The editor can't add an effect it has never seen, and this is how it will learn them: it's the groundwork for
+  putting abilities on the weapons you add. If you have enchanted or Rare gear, please share. A list too long for a
+  link is copied for you to paste in, since GitHub turns long links away.
+- If the game, the Xbox app or Steam asks which save to keep, the cloud's or this PC's, keep this PC's: that's the
+  one with your changes. The editor says so after it saves.
+
 ## What's new in 1.8.0
 
 - **Effects on the item card.** An item's effects are listed with their strength, as the game saved them, and a

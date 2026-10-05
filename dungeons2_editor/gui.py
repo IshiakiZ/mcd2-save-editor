@@ -53,6 +53,8 @@ _SAFE_TEXT = (
     "• Xbox app: changes are written the way the game writes them and marked for upload, so the Xbox cloud "
     "keeps the edited version. Steam: the .sav file is replaced in place; if Steam Cloud is on, Steam uploads "
     "it the next time the game closes.\n"
+    "• If the game, the Xbox app or Steam asks which save to keep, the cloud's or this PC's, keep this PC's: "
+    "that's the one with your changes.\n"
     "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
     "• Backups contain your sign-in token, so don't share them.\n"
     "• When the editor opens, it asks GitHub whether a newer version is out, and shows an Update button if one "
@@ -1337,7 +1339,8 @@ class EditorApp:
         self.status_var.set(f"Saved. Previous version backed up to {backup}")
         messagebox.showinfo(
             APP_TITLE,
-            "Saved! Start the game to see your changes.\n\n"
+            "Saved! Start the game to see your changes. If you're asked which save to keep, the cloud's or this "
+            "PC's, keep this PC's.\n\n"
             "If anything looks wrong, close the game and use Restore… to go back. "
             f"The previous version was backed up to:\n{backup}",
             parent=self.root,

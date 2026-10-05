@@ -1,5 +1,7 @@
+import json
 import unittest
 import urllib.parse
+from unittest import mock
 
 from dungeons2_editor import share_ids
 from dungeons2_editor.hero import Hero
@@ -71,6 +73,57 @@ class ShareIdsTests(unittest.TestCase):
         # Levels laid out some other way aren't guessed at.
         self.assertEqual(share_ids.effect_text([{"LevelEffects": "?"}]), "")
         self.assertEqual(share_ids.effect_text([{"LevelEffects": []}, {"LevelEffects": [{"TypeTag": "Other.Thing", "Intensity": 0.5, "Quality": 2}]}]), "nothing / Other.Thing 0.5 quality 2 (?)")
+
+    def test_a_talisman_the_short_form_cant_describe_is_shared_whole(self):
+        save = hero_save()
+        golem = talisman_item("SW.Item.Talisman.IronGolem", "Unused", seed=55, unseen=False)
+        for level in golem["ItemData"]["ItemProgression"]["ItemLevels"]:
+            level["LevelEffects"] = []  # a companion's talisman: three levels, and no effect at any of them
+        golem["ItemData"]["Effects"] = [{"TypeTag": "SW.Item.Effect.Upgradable", "EffectsInThisBatch": []}]
+        save["CharacterSaveV1"]["Inventory"]["Entries"].append(golem)
+        ((tag, text),) = share_ids.talisman_effects([Hero(save)])
+        self.assertEqual(tag, "SW.Item.Talisman.IronGolem")
+        self.assertTrue(text.startswith("Iron Golem's effect: nothing / nothing / nothing; levels as saved: [{"), text)
+        self.assertIn('"LevelTags":[]', text)
+        self.assertTrue(text.endswith('; effects as saved: [{"TypeTag":"SW.Item.Effect.Upgradable","EffectsInThisBatch":[]}]'), text)
+
+    def test_effects_on_gear_are_shared_as_saved(self):
+        def effect(name, strength, template="I"):
+            return {"TypeTag": f"SW.Effect.{name}", "Intensity": strength, "Quality": 0, "EnchantmentPointsInvested": 0,
+                    "GeneratorData": {"GeneratorParentTemplate": f"SW.EffectTemplate.{name}.{template}", "Locked": False}}
+
+        def gear(tag, effects, **more):
+            entry = hero_item(tag, unseen=False, **more)
+            entry["ItemData"]["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": effects}] if effects else []
+            return entry
+
+        save = hero_save()
+        save["CharacterSaveV1"]["Inventory"]["Entries"] += [
+            gear("SW.Item.Axe", [effect("FireAspect", 0.5)], seed=61),
+            gear("SW.Item.Glaive", [effect("FireAspect", 0.5)], seed=62),  # nothing the Axe doesn't show
+            gear("SW.Item.Mace", [effect("FireAspect", 0.7, "II"), effect("Sharpness", 12)], rarity="Rare", seed=63),
+            gear("SW.Item.Sword_Unique1", [effect("Burning", 1)], rarity="Unique", seed=64),
+            gear("SW.Item.Bow_Unique1", [effect("Burning", 1)], rarity="Unique", seed=65),  # a Unique gets a line anyway
+            gear("SW.Item.Pike", [], seed=66),  # no effects
+            gear("SW.Item.Talisman.HealthBoost", [effect("HealthBoost", 1.2)], seed=67),  # talismans have their own lines
+        ]
+        unseen = gear("SW.Item.Scythe", [effect("SoulBlast", 0.75)], seed=68)
+        unseen["ItemData"]["DynamicPropertyTags"] = ["SW.Item.Property.Dynamic.Unseen"]  # the editor may have just made it
+        save["CharacterSaveV1"]["Inventory"]["Entries"].append(unseen)
+        hero = Hero(save)
+        found = share_ids.gear_effects([hero])
+        self.assertEqual([tag for tag, _text in found], ["SW.Item.Bow_Unique1", "SW.Item.Mace", "SW.Item.Axe", "SW.Item.Sword_Unique1"])
+        mace = dict(found)["SW.Item.Mace"]
+        self.assertTrue(mace.startswith('effects on a Rare one: [{"TypeTag":"SW.Item.Effect.Enchantment","EffectsInThisBatch":[{"TypeTag":"SW.Effect.FireAspect","Intensity":0.7,'), mace)
+        self.assertEqual(json.loads(mace.split(": ", 1)[1]), save["CharacterSaveV1"]["Inventory"]["Entries"][7]["ItemData"]["Effects"])  # exactly as saved
+        report = share_ids.report_text([hero], "9.9.9").splitlines()
+        self.assertTrue(all(line.startswith("SW.Item.") for line in report))
+        self.assertIn("SW.Item.Axe - effects on a Common one: ", "\n".join(report))
+        keys = share_ids.finding_keys([hero])
+        self.assertTrue({"SW.Effect.FireAspect SW.EffectTemplate.FireAspect.I", "SW.Effect.Sharpness SW.EffectTemplate.Sharpness.I"} <= keys)
+        # A long list of them stops at what fits in a GitHub issue.
+        with mock.patch.object(share_ids, "MAX_GEAR_LINES", 2):
+            self.assertEqual([tag for tag, _text in share_ids.gear_effects([hero])], ["SW.Item.Bow_Unique1", "SW.Item.Mace"])
 
     def test_report_holds_only_item_ids(self):
         report = share_ids.report_text([Hero(hero_save())], "9.9.9")

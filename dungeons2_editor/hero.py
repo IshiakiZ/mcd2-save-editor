@@ -81,6 +81,7 @@ _TALISMAN_POWER = {
 }
 _UPGRADABLE = "SW.Item.Effect.Upgradable"  # the kind of effect batch a talisman's effect is saved in
 BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
+_BOOK_GROUP = "EnchantmentBook"
 # How a hero is saved, as (HardFormat, SoftVersion) from the save's SerializeMeta, for the game versions the
 # editor has been checked against. A game update that changes the format is expected to change one of them.
 TESTED_FORMATS = {("FCharacterSaveV1", 5)}
@@ -1139,6 +1140,8 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     for tag in seen:
         if tag in catalog or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
             continue
+        if item_group(tag) == _BOOK_GROUP and tag not in by_tag:
+            continue  # a book in the collections, but none in the inventory to lay a new one out like
         catalog[tag] = CatalogItem(tag, template(tag), no_effect=no_effect(tag))
     return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
 

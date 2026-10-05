@@ -46,7 +46,8 @@ PREFIX = "SW.Item."
 BOOK = "Enchantment Book"
 
 # IDs seen in real saves, without the SW.Item. in front: the developer's own, and the ones players sent in
-# https://github.com/IshiakiZ/mcd2-save-editor/issues/2, /issues/7 and /issues/9.
+# https://github.com/IshiakiZ/mcd2-save-editor/issues/2, /issues/7, /issues/9, /issues/11, /issues/12, /issues/15
+# and /issues/17. From /issues/11 on, a report only lists IDs the game itself vouches for.
 CONFIRMED_IDS = {
     PREFIX + name
     for name in """
@@ -68,6 +69,8 @@ CONFIRMED_IDS = {
     HewnBarkChest HewnBarkHelmet HewnBarkLeggings HoneyChest HoneyHelmet ScampHelmet ScampLeggings
     ScavengerBoots ScavengerHelmet UndauntedBoots UndauntedLeggings VoyagerChest WellspringLeggings
     WolfclutchHelmet EvocationLeggings TimewornHelmet
+    EvocationChest FrostRimeBoots FrostRimeHelmet ScavengerChest TimewornLeggings WellspringChest
+    GiantMallet
 
     Artifact.BlizzardStaff Artifact.CarapaceOcarina Artifact.ConductiveBracelet Artifact.CorruptedSeeds
     Artifact.CreeperCandle Artifact.FightersFife Artifact.FireBracelet Artifact.FireworkQuiver
@@ -78,10 +81,13 @@ CONFIRMED_IDS = {
     Artifact.Satchel.Poison Artifact.SmokeBomb Artifact.SoulHarvester Artifact.TotemOfCasting
     Artifact.TotemOfRegeneration Artifact.TotemOfShielding Artifact.WarBanner Artifact.WardingChimes
     Artifact.WarriorsDrums Artifact.WitchesBrew Artifact.CorruptedBeacon Artifact.FrostQuiver
-    Artifact.DeathcapMushroom Artifact.LightningQuiver
+    Artifact.DeathcapMushroom Artifact.LightningQuiver Artifact.FrostBracelet Artifact.PicnicBlanket
 
     Talisman.AmmoCapacity Talisman.Brawling Talisman.HealthBoost Talisman.PotionCooldown
     Talisman.RangedBuff Talisman.SoulGather Talisman.Wolf
+    Talisman.ArtifactCooldown Talisman.DropChance Talisman.EmeraldIncrease Talisman.ExperienceIncrease
+    Talisman.FiringEmeralds Talisman.Healing Talisman.HealthyStrike Talisman.IronGolem Talisman.Prickle
+    Talisman.RollingCooldown Talisman.SoulCapacity Talisman.StatusBuff Talisman.Wobble
     """.split()
 }
 # Uniques' own IDs seen in real saves. Each is its base item's ID with _Unique1 (weapons) or _Unique (armor).
@@ -96,6 +102,20 @@ UNIQUE_IDS = {
     MysticBoots_Unique MysticChest_Unique MysticHelmet_Unique MysticLeggings_Unique
     RealmreacherBoots_Unique RealmreacherChest_Unique RealmreacherHelmet_Unique RealmreacherLeggings_Unique
     UndauntedBoots_Unique UndauntedChest_Unique UndauntedHelmet_Unique UndauntedLeggings_Unique
+    Battlestaff_Unique1 Claymore_Unique1 Cleaver_Unique1 Crossbow_Unique1 CurvedGreatsword_Unique1
+    CurvedLongsword_Unique1 Dagger_Unique1 DualCrossbow_Unique1 Gauntlet_Unique1 GiantClub_Unique1
+    Glaive_Unique1 GreatAxe_Unique1 Greatbow_Unique1 Hammer_Unique1 Longbow_Unique1 MoonSword_Unique1
+    Pike_Unique1 RapidCrossbow_Unique1 ScatterCrossbow_Unique1 Scythe_Unique1 ShortSpear_Unique1
+    Shortbow_Unique1 Shovel_Unique1 StraightSword_Unique1 WarHammer_Unique1
+    CaveCrawlerBoots_Unique CaveCrawlerLeggings_Unique EvocationChest_Unique EvocationLeggings_Unique
+    FrostRimeChest_Unique FrostRimeLeggings_Unique HewnBarkChest_Unique HewnBarkLeggings_Unique
+    MushroomBoots_Unique MushroomChest_Unique MushroomHelmet_Unique MushroomLeggings_Unique
+    PhantomBoots_Unique PhantomHelmet_Unique PhantomLeggings_Unique RedstoneBoots_Unique
+    RedstoneChest_Unique RedstoneHelmet_Unique RedstoneLeggings_Unique ScampBoots_Unique ScampChest_Unique
+    ScampHelmet_Unique ScampLeggings_Unique ScavengerChest_Unique ScavengerHelmet_Unique
+    ScavengerLeggings_Unique StalwartHelmet_Unique StalwartLeggings_Unique TimewornBoots_Unique
+    TimewornChest_Unique TimewornHelmet_Unique TimewornLeggings_Unique VoyagerChest_Unique
+    WellspringBoots_Unique WolfclutchBoots_Unique
     """.split()
 }
 # What a save calls an item, where that isn't the name players see with the spaces taken out.
@@ -109,6 +129,7 @@ KNOWN_IDS = {
     "Greataxe": "GreatAxe",
     "Longsword": "StraightSword",
     "Meat Cleaver": "Cleaver",
+    "Mob Mallet": "GiantMallet",
     "Riftslasher": "CurvedLongsword",
     "Tidal Sickle": "MoonSword",
     "Twilight Dagger": "Dagger",
@@ -117,8 +138,9 @@ KNOWN_IDS = {
     "Battle Banner": "Artifact.WarBanner",
     "Blaze Bangle": "Artifact.FireBracelet",
     "Blight Bangle": "Artifact.PoisonBracelet",
+    "Blizzard Bangle": "Artifact.FrostBracelet",  # by its name, like the other three bangles
     "Cinder Scepter": "Artifact.FlameSceptre",
-    "Conductive Quiver": "Artifact.LightningQuiver",  # by its name, like the Freezing Quiver: it's the one quiver left
+    "Conductive Quiver": "Artifact.LightningQuiver",  # the player who reported the ID said so
     "Death Cap Mushroom": "Artifact.DeathcapMushroom",
     "Echo Ocarina": "Artifact.CarapaceOcarina",
     "Electric Bangle": "Artifact.ConductiveBracelet",
@@ -130,11 +152,14 @@ KNOWN_IDS = {
     "Freezing Quiver": "Artifact.FrostQuiver",  # by its name: the report that had it didn't say what the game calls it
     "Honey Dipper": "Artifact.Honeypot",
     "Humbling Horn": "Artifact.RallyingHorn",
+    "Picnic Basket": "Artifact.PicnicBlanket",
     "Pouch of Ember": "Artifact.Satchel.Fire",
     "Pouch of Frost": "Artifact.Satchel.Freezing",
     "Pouch of Poison": "Artifact.Satchel.Poison",
     "Pouch of Thunder": "Artifact.Satchel.Conductive",
     "Redstone Mine Launcher": "Artifact.RedstoneMines",
+    # By elimination, and by its name: the one artifact ID in saves, and the one artifact name, left without the other.
+    "Tempo Truffle": "Artifact.HasteMushroom",
     "Turtle Master's Mandolin": "Artifact.IronHideLute",
     "Venomous Quiver": "Artifact.PoisonQuiver",
     "Warrior Drums": "Artifact.WarriorsDrums",
@@ -148,6 +173,22 @@ KNOWN_IDS = {
     "Tasty Bone": "Talisman.Wolf",
     "Twig of Dark Oak": "Talisman.AmmoCapacity",
     "Twisted Tooth": "Talisman.SoulGather",
+    # Matched by what they do: the strength a save gives each one at level 3 (TALISMAN_LEVELS) is the number in
+    # MetaBot's description of the talisman ("Reduces rolling cooldown time by 45%" is RollCooldown 0.45).
+    "Armadillo Amulet": "Talisman.RollingCooldown",
+    "Emerald of Good Fortune": "Talisman.EmeraldIncrease",
+    "Essence of Efficiency": "Talisman.ArtifactCooldown",
+    "Healing Heart": "Talisman.Healing",
+    "Looter's Charm": "Talisman.DropChance",
+    "Sculk Badge": "Talisman.StatusBuff",
+    "Soul Chip": "Talisman.SoulCapacity",
+    "Tendrils of the Sprout": "Talisman.HealthyStrike",  # and a player who has one said so
+    "The Eye of Experience": "Talisman.ExperienceIncrease",
+    "Thrifty Pendant": "Talisman.FiringEmeralds",
+    # By their names: none of these has an effect with a number, in a save or on MetaBot.
+    "Golem Kit": "Talisman.IronGolem",
+    "Prickle's Mark": "Talisman.Prickle",
+    "Wobblestone": "Talisman.Wobble",
 }
 # Armor sets named differently in saves. Two come from their Uniques' IDs rather than from a report of the set
 # itself: RealmreacherChest_Unique is the Sharpshooter Duster, the Unique Ranger Jacket, and UndauntedHelmet_Unique
@@ -173,10 +214,13 @@ SET_NAMES = {
 BOOK_IDS = {
     "Ancient Alchemy": "SoulInfusedPotion",
     "Buddy Brew": "PotionSharing",
+    "Chain Reaction": "ChainReaction",
     "Dynamo": "Dynamo",
     "Ender Quiver": "ExpandedQuiver",
     "Fire Aspect": "FireAspect",
     "Frost Crescent": "FrostCrescent",
+    "Gravity Pulse": "GravityPulse",
+    "Health Synergy": "HealthSynergy",
     "Piercing": "Piercing",
     "Poison Fog": "PoisonFog",
     "Ricochet": "Ricochet",
@@ -186,21 +230,36 @@ BOOK_IDS = {
     "Tempo Theft": "TempoTheft",
     "Thundering": "Thundering",
 }
-# What a talisman does at each of its three levels, as a real save stores it: the effect is SW.Effect.<name>, its
-# level templates are SW.EffectTemplate.<name>.I to .III, and these are the strengths. A talisman that isn't here
-# can only be added without its effect, so the editor treats it as a guess even when its ID is known.
+# What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
+# effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
+# the effect's Intensity at each level. A talisman that isn't here can only be added without its effect, so the
+# editor treats it as a guess even when its ID is known. Four more have been seen with three levels and no effect
+# at any of them (IronGolem, Prickle, Wobble and Wolf): what else a save holds for those isn't known yet.
 TALISMAN_LEVELS = {
-    "Talisman.HealthBoost": ("HealthBoost", (1.2, 1.25, 1.35)),  # Sigil of Beeswax: +20 / 25 / 35% max health
+    "Talisman.AmmoCapacity": ("AmmoCapacity", "AmmoCapacity", (1.2, 1.4, 1.6)),  # Twig of Dark Oak: 60% more ammo
+    "Talisman.ArtifactCooldown": ("Cooldown", "ArtifactCooldown", (-0.04, -0.08, -0.14)),  # Essence of Efficiency
+    "Talisman.Brawling": ("Sharpness", "Brawling", (0.1, 0.2, 0.35)),  # Fist of Iron: 35% more melee damage
+    "Talisman.DropChance": ("DropChance", "DropChance", (0.01, 0.02, 0.04)),  # Looter's Charm
+    "Talisman.EmeraldIncrease": ("EmeraldsIncrease", "EmeraldIncrease", (0.1, 0.2, 0.25)),  # Emerald of Good Fortune
+    "Talisman.ExperienceIncrease": ("ExperienceIncrease", "ExperienceIncrease", (1.04, 1.06, 1.1)),  # The Eye of Experience
+    "Talisman.FiringEmeralds": ("FiringEmerald", "FiringEmerald", (1, 1.75, 2)),  # Thrifty Pendant: up to 200% damage
+    "Talisman.Healing": ("Regeneration", "Healing", (0.01, 0.03, 0.05)),  # Healing Heart: 5% health a second
+    "Talisman.HealthBoost": ("HealthBoost", "HealthBoost", (1.2, 1.25, 1.35)),  # Sigil of Beeswax: +20 / 25 / 35% max health
+    "Talisman.HealthyStrike": ("HealthyStrike", "HealthyStrike", (1, 2, 3)),  # Tendrils of the Sprout: 300% damage
+    "Talisman.PotionCooldown": ("PotionCooldown", "PotionCooldown", (-0.1, -0.15, -0.25)),  # Glowstone Flask
+    "Talisman.RangedBuff": ("Power", "RangedBuff", (0.1, 0.15, 0.25)),  # Amethyst Lens: 25% more ranged damage
+    "Talisman.RollingCooldown": ("RollCooldown", "RollingCooldown", (0.2, 0.25, 0.45)),  # Armadillo Amulet
+    "Talisman.SoulCapacity": ("SoulMax", "SoulCapacity", (1.15, 1.2, 1.35)),  # Soul Chip: 35% more Soul capacity
+    "Talisman.SoulGather": ("SoulGather", "SoulGather", (0.4, 0.8, 1.4)),  # Twisted Tooth: 140% more souls
+    "Talisman.StatusBuff": ("StatusBuff", "StatusBuff", (1.1, 1.15, 1.25)),  # Sculk Badge: statuses last 25% longer
 }
 # Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them.
 SLOTS = {"Helmet": "Helmet", "Chest": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
 SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings", "Boots": "Boots"}
 RANGED_TYPES = {"Bow", "Crossbow"}
 ENCHANT_SLOTS = {"Melee": "Melee", "Ranged": "Ranged", "Armor": "Armor", "Chest": "Chestplate"}
-# In saves, but nobody has said what the game calls them (the names below come from the IDs).
-EXTRA = [
-    {"name": "Haste Mushroom", "kind": "Artifact", "id": PREFIX + "Artifact.HasteMushroom"},
-]
+# In saves, but nobody has said what the game calls them (a name here would come from the ID).
+EXTRA: list[dict] = []
 
 
 class Tables(HTMLParser):
@@ -269,9 +328,9 @@ def entry(name: str, kind: str, item_id: str, unique_suffix: str = "", **extra: 
     if unique_suffix and item_id + unique_suffix in UNIQUE_IDS:
         made["unique_id"] = item_id + unique_suffix
     if item_id[len(PREFIX):] in TALISMAN_LEVELS:
-        effect, strengths = TALISMAN_LEVELS[item_id[len(PREFIX):]]
+        effect, template, strengths = TALISMAN_LEVELS[item_id[len(PREFIX):]]
         made["levels"] = [
-            {"effect": f"SW.Effect.{effect}", "intensity": strength, "template": f"SW.EffectTemplate.{effect}.{numeral}"}
+            {"effect": f"SW.Effect.{effect}", "intensity": strength, "template": f"SW.EffectTemplate.{template}.{numeral}"}
             for numeral, strength in zip(("I", "II", "III"), strengths)
         ]
     return made

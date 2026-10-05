@@ -274,6 +274,19 @@ class HeroTests(unittest.TestCase):
         sigil.progression["CurrentLevel"] = 2
         self.assertEqual(sigil.effect_lines()[-1], "Level 3 of 3.")
 
+    def test_a_copy_changed_into_another_item_keeps_its_effects(self):
+        # The way to give an item the abilities of one you have, until the editor can add effects itself.
+        sword = self.item_index("SW.Item.Sword")
+        effects = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [{"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5}]}]
+        self.hero.item(sword).data["Effects"] = effects
+        copy_index = self.hero.duplicate_item(sword)
+        self.hero.update_item(copy_index, tag="SW.Item.Axe", rarity="Rare", power=20)
+        axe = self.hero.item(copy_index)
+        self.assertEqual((axe.name, axe.rarity, axe.power, axe.equipped_slot), ("Axe", "Rare", 20, None))
+        self.assertEqual(axe.data["Effects"], effects)
+        self.assertIsNot(axe.data["Effects"], self.hero.item(sword).data["Effects"])  # its own copy of them
+        self.assertEqual(axe.effect_lines(), ["Fire Aspect 0.5"])
+
     def test_the_save_format_the_editor_was_checked_against(self):
         self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 5), True))
         self.document["SerializeMeta"]["SoftVersion"] = 6  # a game update changed how heroes are saved
@@ -359,6 +372,17 @@ class HeroTests(unittest.TestCase):
         self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item(book, seed=78))
         entry = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == book)
         self.assertEqual((entry.name, entry.kind, entry.template["ItemData"]["TypeTag"]), ("Somersault", heroes.BOOK_KIND, book))
+
+    def test_books_in_the_collections_are_not_on_offer_without_one_to_copy(self):
+        # The game files every book you've found in its collections. That used to put each of them in Add items,
+        # nameless ones included, to be laid out like whatever gear came to hand.
+        listed, unlisted = "SW.Item.EnchantmentBook.Shockwave", "SW.Item.EnchantmentBook.NotInTheList"
+        self.body["CollectionsStats"]["CollectedEnchantmentBooksOffensive"] = [listed, unlisted]
+        self.assertTrue({listed, unlisted} <= set(self.hero.item_types_from_the_game()))
+        self.assertFalse({listed, unlisted} & {entry.tag for entry in heroes.build_catalog([self.hero])})
+        self.body["Inventory"]["Entries"].append(hero_item(unlisted, seed=79, unseen=False))
+        entry = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == unlisted)
+        self.assertEqual((entry.name, entry.template["ItemData"]["TypeTag"]), ("Not In The List", unlisted))
 
     def test_the_game_item_list(self):
         items = heroes.game_items()

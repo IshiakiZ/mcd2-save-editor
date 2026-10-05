@@ -6,6 +6,7 @@ import tempfile
 import time
 import tkinter as tk
 import unittest
+import urllib.parse
 from pathlib import Path
 from tkinter import ttk
 from unittest import mock
@@ -760,7 +761,16 @@ class HeroTabTests(WindowTestCase):
             self.assertIn("SW.Item.SomethingNew", dialog.report())
             self.assertNotIn("SW.Item.CurvedGreatsword", dialog.report())  # known: the Cookiecutter
             dialog.open_issue()
-        self.assertIn("template=item-ids.yml", browser.call_args.args[0])
+            self.assertIn("template=item-ids.yml", browser.call_args.args[0])
+            self.assertIn("SW.Item.SomethingNew", urllib.parse.unquote_plus(browser.call_args.args[0]))
+            # A list too long for a link goes on the clipboard, and the page opens ready for it to be pasted in.
+            dialog.text.insert("end", "\n" + "\n".join(f"SW.Item.Thing{number} - a line that makes the list long" for number in range(200)))
+            dialog.open_issue()
+            link = browser.call_args.args[0]
+            self.assertLess(len(link), share_ids.MAX_LINK)
+            self.assertIn("paste the list here", urllib.parse.unquote_plus(link))
+            self.assertIn("SW.Item.Thing199", self.root.clipboard_get())
+            self.assertIn("paste the list", dialog.message.get())
         dialog.destroy()
 
     def test_advanced_mode_lets_stats_pass_the_game_caps(self):

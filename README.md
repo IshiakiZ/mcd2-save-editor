@@ -23,7 +23,7 @@ the full save for people who want it.
 - **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
   delete them. Every gear slot is shown, including the ones your level hasn't opened yet. An item's card lists its
   effects as the game saved them, and a talisman's level.
-- **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
+- **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. Items show their
   in-game names.
@@ -174,7 +174,7 @@ your sign-in, account or device data.
 - **Some added items may not work yet.** A save stores each item under an internal name, which often isn't the
   name you see: the Riftslasher is `SW.Item.CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst
   Lens is `SW.Item.Talisman.RangedBuff`. The game's list of those names is in its encrypted content files, and the
-  editor doesn't break that encryption, so it knows the names players have reported from their saves (154 of the 181
+  editor doesn't break that encryption, so it knows the names players have reported from their saves (176 of the 180
   items so far) and works the rest out from the in-game name. (The equipment slots are different: the game's
   readable script cache names all 12, so equipping is exact.) In testing, the game removed items whose name was a
   wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
@@ -185,28 +185,35 @@ your sign-in, account or device data.
   item the game has shown you. What the editor wrote doesn't count, or its own guesses would come back looking
   confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
-  GitHub issue with just those IDs (and what your talismans do, see below), nothing else from your save.
+  GitHub issue with just those IDs and the effects saved with your items (see below), nothing else from your save.
 - **Most Uniques go by a pattern.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
-  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Thirty-five of those IDs have been
+  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Ninety-five of the 116 have been
   seen in real saves, and every one is its base item's ID with `_Unique1` (weapons) or `_Unique` (armor) on the end.
   So the editor adds the other Uniques under the ID that pattern gives, and says so when it does. If one were wrong,
   the game would drop that item and keep the rest. Making an item you already own Unique is stricter: it only turns
   into its Unique when that ID has been seen; otherwise it keeps its name and just gets Unique rarity, because a
   wrong ID would cost you the item.
-- **Most talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
+- **Eight talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
   at each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and
-  1.35. The editor knows this for the Sigil of Beeswax and for any talisman one of your heroes has found, and adds
-  those the way the game saves them. Every other talisman is **Unconfirmed**: the editor can only add it without its
-  effect, so it may do nothing in the game, and it asks first. **Share item IDs…** also lists what your own
+  1.35. The editor knows this for 16 of the 24 talismans, from what players have shared, and for any talisman one
+  of your heroes has found, and adds those the way the game saves them. The other eight are **Unconfirmed**: the
+  editor can only add one without its effect, so it may do nothing in the game, and it asks first. Four of them
+  haven't been seen in a save at all (Lucky Clover, Medallion of Momentum, Ocelot's Paw and Wonderful Wheat), and
+  four are the companion talismans, whose levels hold no effect to copy. **Share item IDs…** lists what your own
   talismans do, so the editor can learn them for everyone. Talismans added by versions before 1.7.1 have no effect
   saved either; the editor points them out, and you can delete them and add them again.
-- **Effects and enchantments** are shown but can't be changed or added yet. Presets tell you which enchantments to
-  put on at the Enchantsmith instead.
+- **Effects and enchantments** are shown but can't be changed or added yet: the editor can only add an effect once
+  it has seen how the game saves it. **Share item IDs…** lists the effects on your own gear for that. Until then, to
+  give an item the abilities of one you already have, make a copy of that one and use **Change item…** on the copy:
+  it keeps its effects. Nobody has tried every effect on every kind of item, so check the result in the game.
+  Presets tell you which enchantments to put on at the Enchantsmith.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
   are the Unreal Engine binary kind (they start with `GVAS`) instead of JSON, they show up as read-only. Steam
   Cloud, if on, uploads the edited file when the game closes.
+- **If you're asked which save to keep.** After an edit, the game, the Xbox app or Steam may ask whether to keep the
+  cloud's save or this PC's. Keep this PC's: that's the one with your changes.
 - **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
   all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
   removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
@@ -295,9 +302,12 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)).
 - Most of the item IDs marked Confirmed come from lists that [icicle1133](https://github.com/icicle1133)
   ([#2](https://github.com/IshiakiZ/mcd2-save-editor/issues/2)),
-  [MEGASLAVMAN](https://github.com/MEGASLAVMAN) ([#7](https://github.com/IshiakiZ/mcd2-save-editor/issues/7)) and
-  [WyattDrako](https://github.com/WyattDrako) ([#9](https://github.com/IshiakiZ/mcd2-save-editor/issues/9))
-  collected from real saves.
+  [MEGASLAVMAN](https://github.com/MEGASLAVMAN) ([#7](https://github.com/IshiakiZ/mcd2-save-editor/issues/7)),
+  [WyattDrako](https://github.com/WyattDrako) ([#9](https://github.com/IshiakiZ/mcd2-save-editor/issues/9)),
+  [Blake5256](https://github.com/Blake5256) ([#11](https://github.com/IshiakiZ/mcd2-save-editor/issues/11),
+  [#12](https://github.com/IshiakiZ/mcd2-save-editor/issues/12)) and
+  [mauricioggizi](https://github.com/mauricioggizi) ([#17](https://github.com/IshiakiZ/mcd2-save-editor/issues/17))
+  collected from real saves, and what most talismans do comes from their saves too.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
