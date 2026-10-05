@@ -14,6 +14,7 @@ from tkinter import ttk
 from typing import Any, Callable
 
 from . import document as doc
+from . import edition
 from . import game_style as gs
 from .game_art import EMPTY_TILE, RARITY_TILE, Art, icon_for, mix, tile_fill
 from .game_style import GameFonts
@@ -771,7 +772,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         canvas.configure(scrollregion=(0, 0, width, max(pad * 2 + rows * cell_height, 1)))
         key = self.filter_var.get()
         self.count_text.set(f"{len(items)} {'IN STOCK' if key == 'Merchant' else 'ITEM' if len(items) == 1 else 'ITEMS'}")
-        if self.icons.has_pictures():
+        if self.icons.has_pictures() or not edition.ONLINE:  # the edition that never goes online has nothing to get
             self.pictures_button.pack_forget()
         elif not self.pictures_button.winfo_manager():
             self.pictures_button.pack(side="right", padx=(0, 8))

@@ -365,4 +365,5 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 - Game facts come from community datamines by [MetaBot](https://metabot.gg/en/minecraft-dungeons-2) and
   [Maxroll](https://maxroll.gg/minecraft-dungeons-2); see [mcd2-research](mcd2-research/README.md).
 
-Released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE): do what you like with it, change it, share your own version or build on
+it, as long as the copyright notice, which credits the author, stays with it.

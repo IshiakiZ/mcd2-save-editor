@@ -34,6 +34,23 @@ def _tk_available() -> bool:
     return True
 
 
+def _display_scaling() -> float | None:
+    """The display's own scaling (Tk's pixels per point), read before any test changes it. Tk keeps the
+    scaling for the whole process, not for one window: a test that sets it would otherwise pass it on to
+    every test after it."""
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        return None
+    try:
+        return float(root.tk.call("tk", "scaling"))
+    finally:
+        root.destroy()
+
+
+DISPLAY_SCALING = _display_scaling()
+
+
 class WindowTestCase(unittest.TestCase):
     """Opens the editor on a temporary save folder, in Simple or Advanced mode."""
 
@@ -53,10 +70,10 @@ class WindowTestCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.root = tk.Tk()
         self.root.withdraw()
-        if self.scaling:
-            self.root.tk.call("tk", "scaling", self.scaling)
+        self.root.tk.call("tk", "scaling", self.scaling or DISPLAY_SCALING)
         self.addCleanup(gc.collect)  # frees Tk objects on the main thread, after the window is destroyed
         self.addCleanup(self.root.destroy)
+        self.addCleanup(self.root.tk.call, "tk", "scaling", DISPLAY_SCALING)  # before the window goes: back to the display's own
         self.make_icons()
         self.names_file = self.dir / "item-names.json"
         self.addCleanup(use_local_names, {})  # names given in a test don't leak into the next
@@ -77,6 +94,13 @@ class WindowTestCase(unittest.TestCase):
         dialog.update()
         if not dialog.winfo_viewable():
             self.skipTest("windows can't be shown here")
+
+    def needs_room_for(self, window):
+        """Skip a check of what happens when a window that fits is made smaller, on a screen that can't show the
+        window whole to begin with (GitHub's Windows machines sometimes come with an 800x600 one)."""
+        room = layout.screen_room(window)
+        if room[0] < window.winfo_reqwidth() or room[1] < window.winfo_reqheight():
+            self.skipTest(f"this screen ({window.winfo_screenwidth()}x{window.winfo_screenheight()}) is too small to show the window whole")
 
     def assert_in_view(self, button, dialog):
         self.assertTrue(button.winfo_ismapped())
@@ -531,6 +555,7 @@ class HeroTabTests(WindowTestCase):
         picker, _row = self.open_picker_on("Battle Hammer")
         self.show_on_screen(picker)
         self.assert_in_view(picker.confirm_button, picker)
+        self.needs_room_for(picker)
         picker.minsize(1, 1)
         picker.geometry(f"{picker.winfo_width()}x{picker.winfo_height() // 2}")  # as on a screen that's too small for it
         picker.update()
@@ -546,6 +571,7 @@ class HeroTabTests(WindowTestCase):
         self.show_on_screen(dialog)
         buttons = [w for w in dialog.winfo_children()[0].winfo_children() if isinstance(w, ttk.Button)]
         close = next(w for frame in dialog.winfo_children()[0].winfo_children() if isinstance(frame, ttk.Frame) for w in frame.winfo_children() if isinstance(w, ttk.Button))
+        self.needs_room_for(dialog)
         dialog.minsize(1, 1)
         dialog.geometry(f"{dialog.winfo_width()}x{dialog.winfo_height() - 3 * close.winfo_height()}")  # the boxes of text can give that much
         dialog.update()
@@ -1055,6 +1081,15 @@ class SimpleModeTests(WindowTestCase):
         self.root.update()
         if screen.card_view.winfo_height() >= screen.card_content.winfo_reqheight():
             self.assertFalse(screen.card_scroll.winfo_ismapped())
+
+    def test_no_get_pictures_button_in_the_edition_that_never_goes_online(self):
+        from dungeons2_editor import edition
+
+        self.screen._draw_inventory()
+        self.assertTrue(self.screen.pictures_button.winfo_manager())  # no pictures yet, so the button offers to get them
+        with mock.patch.object(edition, "ONLINE", False):
+            self.screen._draw_inventory()
+            self.assertFalse(self.screen.pictures_button.winfo_manager())
 
     def test_effects_are_changed_from_the_card(self):
         sword = self.index_of("SW.Item.Sword")
