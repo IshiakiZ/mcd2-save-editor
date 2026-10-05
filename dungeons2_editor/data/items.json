@@ -306,7 +306,8 @@
    "slot": "Boots",
    "set": "Protector",
    "unique": "Humbler Tarsi",
-   "unique_effect": "Grants a 20% chance to evade melee damage."
+   "unique_effect": "Grants a 20% chance to evade melee damage.",
+   "unique_id": "SW.Item.StalwartBoots_Unique"
   },
   {
    "name": "Protector Chestplate",
@@ -316,7 +317,8 @@
    "slot": "Chestplate",
    "set": "Protector",
    "unique": "Humbler Carapace",
-   "unique_effect": "Increases all healing received by 40%."
+   "unique_effect": "Increases all healing received by 40%.",
+   "unique_id": "SW.Item.StalwartChest_Unique"
   },
   {
    "name": "Protector Helmet",
@@ -396,7 +398,7 @@
    "name": "Realmreacher Hat",
    "kind": "Armor",
    "id": "SW.Item.TimewornHelmet",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Helmet",
    "set": "Realmreacher",
    "unique": "Soul Corruptor Mask",
@@ -520,7 +522,8 @@
    "slot": "Helmet",
    "set": "Sculk Digger",
    "unique": "Twisted Warden Blindfold",
-   "unique_effect": "Critical hits with melee weapons deal 45% more damage."
+   "unique_effect": "Critical hits with melee weapons deal 45% more damage.",
+   "unique_id": "SW.Item.CaveCrawlerHelmet_Unique"
   },
   {
    "name": "Sculk Digger Leggings",
@@ -647,7 +650,7 @@
    "name": "Sorcerer Leggings",
    "kind": "Armor",
    "id": "SW.Item.EvocationLeggings",
-   "confirmed": false,
+   "confirmed": true,
    "slot": "Leggings",
    "set": "Sorcerer",
    "unique": "Alchemist Trousers",
@@ -816,8 +819,8 @@
   {
    "name": "Conductive Quiver",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.ConductiveQuiver",
-   "confirmed": false
+   "id": "SW.Item.Artifact.LightningQuiver",
+   "confirmed": true
   },
   {
    "name": "Corrupted Beacon",
@@ -840,8 +843,8 @@
   {
    "name": "Death Cap Mushroom",
    "kind": "Artifact",
-   "id": "SW.Item.Artifact.DeathCapMushroom",
-   "confirmed": false
+   "id": "SW.Item.Artifact.DeathcapMushroom",
+   "confirmed": true
   },
   {
    "name": "Echo Ocarina",
@@ -1085,7 +1088,8 @@
    "id": "SW.Item.Daggers",
    "confirmed": true,
    "unique": "Venomous Fangs",
-   "unique_effect": "Poison attacks deal 20% more damage."
+   "unique_effect": "Poison attacks deal 20% more damage.",
+   "unique_id": "SW.Item.Daggers_Unique1"
   },
   {
    "name": "Double Sickles",
@@ -1310,7 +1314,8 @@
    "id": "SW.Item.HeavyCrossbow",
    "confirmed": true,
    "unique": "The Close Ranger",
-   "unique_effect": "Ranged attacks deal 100% more damage at close range."
+   "unique_effect": "Ranged attacks deal 100% more damage at close range.",
+   "unique_id": "SW.Item.HeavyCrossbow_Unique1"
   },
   {
    "name": "Longbow",
@@ -1555,9 +1560,21 @@
    "confirmed": true
   },
   {
+   "name": "Dynamo",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Dynamo",
+   "confirmed": true
+  },
+  {
    "name": "Ender Quiver",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.ExpandedQuiver",
+   "confirmed": true
+  },
+  {
+   "name": "Fire Aspect",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.FireAspect",
    "confirmed": true
   },
   {
@@ -1570,6 +1587,12 @@
    "name": "Piercing",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Piercing",
+   "confirmed": true
+  },
+  {
+   "name": "Poison Fog",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.PoisonFog",
    "confirmed": true
   },
   {
@@ -1594,6 +1617,12 @@
    "name": "Springload",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.SpringLoaded",
+   "confirmed": true
+  },
+  {
+   "name": "Tempo Theft",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.TempoTheft",
    "confirmed": true
   },
   {

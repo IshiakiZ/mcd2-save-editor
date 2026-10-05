@@ -46,7 +46,7 @@ PREFIX = "SW.Item."
 BOOK = "Enchantment Book"
 
 # IDs seen in real saves, without the SW.Item. in front: the developer's own, and the ones players sent in
-# https://github.com/IshiakiZ/mcd2-save-editor/issues/2 and /issues/7.
+# https://github.com/IshiakiZ/mcd2-save-editor/issues/2, /issues/7 and /issues/9.
 CONFIRMED_IDS = {
     PREFIX + name
     for name in """
@@ -67,7 +67,7 @@ CONFIRMED_IDS = {
     WellspringHelmet WolfclutchBoots WolfclutchChest WolfclutchLeggings
     HewnBarkChest HewnBarkHelmet HewnBarkLeggings HoneyChest HoneyHelmet ScampHelmet ScampLeggings
     ScavengerBoots ScavengerHelmet UndauntedBoots UndauntedLeggings VoyagerChest WellspringLeggings
-    WolfclutchHelmet
+    WolfclutchHelmet EvocationLeggings TimewornHelmet
 
     Artifact.BlizzardStaff Artifact.CarapaceOcarina Artifact.ConductiveBracelet Artifact.CorruptedSeeds
     Artifact.CreeperCandle Artifact.FightersFife Artifact.FireBracelet Artifact.FireworkQuiver
@@ -78,6 +78,7 @@ CONFIRMED_IDS = {
     Artifact.Satchel.Poison Artifact.SmokeBomb Artifact.SoulHarvester Artifact.TotemOfCasting
     Artifact.TotemOfRegeneration Artifact.TotemOfShielding Artifact.WarBanner Artifact.WardingChimes
     Artifact.WarriorsDrums Artifact.WitchesBrew Artifact.CorruptedBeacon Artifact.FrostQuiver
+    Artifact.DeathcapMushroom Artifact.LightningQuiver
 
     Talisman.AmmoCapacity Talisman.Brawling Talisman.HealthBoost Talisman.PotionCooldown
     Talisman.RangedBuff Talisman.SoulGather Talisman.Wolf
@@ -89,7 +90,8 @@ UNIQUE_IDS = {
     for name in """
     Axe_Unique1 Claws_Unique1 Pickaxe_Unique1 Sabre_Unique1 Sword_Unique1 Trickbow_Unique1
     Bow_Unique1 Greatsword_Unique1 Mace_Unique1 Powerbow_Unique1 Rapier_Unique1 Sickles_Unique1
-    CaveCrawlerChest_Unique VoyagerLeggings_Unique
+    Daggers_Unique1 HeavyCrossbow_Unique1
+    CaveCrawlerChest_Unique CaveCrawlerHelmet_Unique StalwartBoots_Unique StalwartChest_Unique VoyagerLeggings_Unique
     HoneyBoots_Unique HoneyChest_Unique HoneyHelmet_Unique HoneyLeggings_Unique
     MysticBoots_Unique MysticChest_Unique MysticHelmet_Unique MysticLeggings_Unique
     RealmreacherBoots_Unique RealmreacherChest_Unique RealmreacherHelmet_Unique RealmreacherLeggings_Unique
@@ -116,6 +118,8 @@ KNOWN_IDS = {
     "Blaze Bangle": "Artifact.FireBracelet",
     "Blight Bangle": "Artifact.PoisonBracelet",
     "Cinder Scepter": "Artifact.FlameSceptre",
+    "Conductive Quiver": "Artifact.LightningQuiver",  # by its name, like the Freezing Quiver: it's the one quiver left
+    "Death Cap Mushroom": "Artifact.DeathcapMushroom",
     "Echo Ocarina": "Artifact.CarapaceOcarina",
     "Electric Bangle": "Artifact.ConductiveBracelet",
     "Ender Fog": "Artifact.SmokeBomb",
@@ -169,13 +173,17 @@ SET_NAMES = {
 BOOK_IDS = {
     "Ancient Alchemy": "SoulInfusedPotion",
     "Buddy Brew": "PotionSharing",
+    "Dynamo": "Dynamo",
     "Ender Quiver": "ExpandedQuiver",
+    "Fire Aspect": "FireAspect",
     "Frost Crescent": "FrostCrescent",
     "Piercing": "Piercing",
+    "Poison Fog": "PoisonFog",
     "Ricochet": "Ricochet",
     "Shockwave": "Shockwave",
     "Somersault": "MultiRoll",
     "Springload": "SpringLoaded",
+    "Tempo Theft": "TempoTheft",
     "Thundering": "Thundering",
 }
 # What a talisman does at each of its three levels, as a real save stores it: the effect is SW.Effect.<name>, its

@@ -13,6 +13,11 @@
 - A talisman no longer shows a rarity of "None" or a power of -1, and those two can't be changed for one. A
   talisman that an older version added has no effect saved; the editor says so when you pick it, and you can
   delete it and add it again.
+- **More confirmed items.** A third player's saves (thank you, [WyattDrako](https://github.com/WyattDrako))
+  confirmed the Death Cap Mushroom, the Sorcerer Leggings and the Realmreacher Hat, a quiver saved as
+  `LightningQuiver` (by its name, the Conductive Quiver), and five more Uniques' own IDs: Venomous Fangs, The Close
+  Ranger, the Twisted Warden Blindfold, the Humbler Carapace and the Humbler Tarsi. Four more enchantment books
+  get their names too. 154 of the 181 items and 35 of the 116 Uniques are confirmed now.
 
 ## What's new in 1.7.0
 

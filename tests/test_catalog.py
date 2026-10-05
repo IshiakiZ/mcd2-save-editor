@@ -34,6 +34,15 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(heroes.unique_tag("SW.Item.Sword"), "SW.Item.Sword_Unique1")  # the developer made one and the game kept it
         self.assertEqual(heroes.display_name("SW.Item.Sword_Unique1"), "The Burning Blade")
 
+    def test_ids_players_reported_replace_the_guesses(self):
+        ids = {item.name: (item.id, item.confirmed) for item in self.items}
+        # Reported from real saves (issue 9): neither is the in-game name with the spaces taken out.
+        self.assertEqual(ids["Death Cap Mushroom"], ("SW.Item.Artifact.DeathcapMushroom", True))
+        self.assertEqual(ids["Conductive Quiver"], ("SW.Item.Artifact.LightningQuiver", True))
+        self.assertEqual(heroes.unique_tag("SW.Item.HeavyCrossbow"), "SW.Item.HeavyCrossbow_Unique1")
+        self.assertEqual(heroes.display_name("SW.Item.StalwartChest_Unique"), "Humbler Carapace")
+        self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.FireAspect"), "Fire Aspect")
+
     def test_every_unique_seen_follows_the_pattern_the_guesses_use(self):
         # CatalogItem.tag_at guesses an unseen Unique's ID this way, so a Unique that breaks it should be noticed.
         seen = [item for item in self.items if item.unique_id]
