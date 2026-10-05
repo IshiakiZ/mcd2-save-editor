@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from . import edition
 from .icons import normalize
 
 API_URL = "https://minecraft.wiki/api.php"
@@ -35,6 +36,7 @@ class WikiPicture:
 
 
 def _get(url: str, timeout: float = 30) -> bytes:
+    edition.require_online("download pictures")
     parsed = urllib.parse.urlparse(url)
     host = parsed.hostname or ""
     if parsed.scheme != "https" or not (host == WIKI_HOST or host.endswith("." + WIKI_HOST)):

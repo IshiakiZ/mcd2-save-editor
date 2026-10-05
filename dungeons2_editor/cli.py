@@ -104,8 +104,11 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
 
 def cmd_pictures(args: argparse.Namespace) -> int:
-    from . import icons, wiki
+    from . import edition, icons, wiki
 
+    if not edition.ONLINE:
+        print(edition.offline_note("download pictures") + " Put your own in the icons folder, or paste them in the editor.")
+        return 1
     pictures = wiki.list_pictures()
     folder = icons.IconLibrary(args.icons).ensure_folder() / "wiki"
     size = sum(picture.size for picture in pictures) / 1e6
@@ -180,8 +183,11 @@ def cmd_mcp(args: argparse.Namespace) -> int:
 
 def cmd_update(args: argparse.Namespace) -> int:
     """Look for a newer version on GitHub and install it, like the window's Update button."""
-    from . import __version__, updater
+    from . import __version__, edition, updater
 
+    if not edition.ONLINE:
+        print(edition.offline_note("look for updates") + f" New versions are on {edition.NAME}.")
+        return 1
     release = updater.check()
     if release is None:
         print(f"You have the latest version ({__version__}), or GitHub couldn't be reached.")

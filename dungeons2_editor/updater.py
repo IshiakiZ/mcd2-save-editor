@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
-from . import __version__, paths
+from . import __version__, edition, paths
 
 REPOSITORY = "IshiakiZ/mcd2-save-editor"
 LATEST_URL = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
@@ -65,6 +65,7 @@ def is_newer(version: str, than: str = __version__) -> bool:
 
 
 def _open(url: str, timeout: float = TIMEOUT):
+    edition.require_online("look for updates or download them")
     if not url.startswith("https://"):
         raise UpdateError(f"{url} isn't a secure address")
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"})

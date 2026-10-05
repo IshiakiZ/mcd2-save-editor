@@ -34,6 +34,9 @@
   card describes. No save holding one has reached the editor yet, so it can't write it, and a Unique the editor
   added may be without it. Share item IDs lists what each Unique you've found comes with: if the game has given you
   one, please share.
+- **A second download that never goes online: MCD2SaveEditor-Nexus.zip.** Nexus Mods doesn't host programs that
+  go online, so this is the editor built for it: no check for updates, no updater, no picture download. Everything
+  else is the same. If you want the editor to update itself, take MCD2SaveEditor.zip as before.
 - The book the editor called Radiance is Healing Smite. Share item IDs lists only the effects and enchantments the
   editor doesn't have yet.
 - If the game saved your hero while the editor had it open, changed effects are carried over to the newer save

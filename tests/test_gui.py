@@ -756,6 +756,28 @@ class HeroTabTests(WindowTestCase):
             self.app.update_app()
         browser.assert_called_once_with(release.page)
 
+    def test_the_offline_edition_asks_nobody(self):
+        from dungeons2_editor import edition
+
+        offline = (mock.patch.object(edition, "ONLINE", False), mock.patch.object(edition, "NAME", "Nexus Mods"))
+        with offline[0], offline[1], mock.patch.object(updater, "latest_release", side_effect=AssertionError("it asked GitHub")) as asked, \
+                mock.patch.object(gui.wiki, "list_pictures", side_effect=AssertionError("it asked the wiki")) as listed:
+            self.app.check_for_updates()  # at start-up: nothing happens, and nothing is said
+            with mock.patch("tkinter.messagebox.showinfo") as info:
+                self.app.check_for_updates(announce=True)  # Check for updates in the menu
+            self.assertIn("from Nexus Mods, never goes online, so it doesn't look for updates", info.call_args.args[1])
+            self.assertIn(f"New versions are on Nexus Mods. You have {__version__}.", info.call_args.args[1])
+            with mock.patch("tkinter.messagebox.showinfo") as info:
+                self.app._get_pictures()
+            self.assertIn("never goes online, so it doesn't download pictures", info.call_args.args[1])
+            self.assertIn("Windows+Shift+S", info.call_args.args[1])  # and how to get pictures all the same
+            for _ in range(20):
+                self.root.update()
+                time.sleep(0.01)
+        asked.assert_not_called()
+        listed.assert_not_called()
+        self.assertIsNone(self.app.update)
+
     def test_no_update_button_without_a_newer_version(self):
         for found in (self.release(__version__), self.release("0.9.0"), None):
             with mock.patch.object(updater, "latest_release", return_value=found), mock.patch("tkinter.messagebox.showinfo") as info:

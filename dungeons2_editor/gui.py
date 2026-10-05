@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, game_style, merge, paths, saves, share_ids, updater, wgs, wiki
+from . import __version__, codec, edition, game_style, merge, paths, saves, share_ids, updater, wgs, wiki
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -57,9 +57,19 @@ _SAFE_TEXT = (
     "that's the one with your changes.\n"
     "• The sign-in, entitlement and device-ID containers are never read or changed.\n"
     "• Backups contain your sign-in token, so don't share them.\n"
+) + (
     "• When the editor opens, it asks GitHub whether a newer version is out, and shows an Update button if one "
     "is. That request says nothing about you or your saves. Update downloads the new version, checks it and "
     "replaces the editor; your saves, backups, pictures and settings aren't touched."
+    if edition.ONLINE
+    else f"• This edition of the editor, from {edition.NAME}, never goes online: it doesn't look for updates and it "
+    f"doesn't download anything. New versions are on {edition.NAME}. Links open in your own browser."
+)
+# What the edition that never goes online says where the other one downloads the Minecraft Wiki's pictures.
+_NO_PICTURES = (
+    edition.offline_note("download pictures")
+    + " In the game, press Windows+Shift+S and drag around an item's tile, then pick the item here and paste the "
+    "picture; or put pictures in the icons folder yourself, named after the item (MysticHelmet.png)."
 )
 _DATA_TEXT = (
     "Item names, armor sets, Uniques and enchantments: MetaBot.GG's Minecraft Dungeons II database, which is built "
@@ -119,8 +129,14 @@ SIMPLE_HELP_SECTIONS = [
     (
         "Pictures",
         "Items show their picture when the icons folder has one, and an icon in their rarity's colour when it "
-        "doesn't. Get item pictures… in MENU downloads the Minecraft Wiki's item pictures (run it again now and then "
-        "for new ones). For an item it doesn't have, take your own: in the game, press Windows+Shift+S and drag around "
+        "doesn't. "
+        + (
+            "Get item pictures… in MENU downloads the Minecraft Wiki's item pictures (run it again now and then "
+            "for new ones). For an item it doesn't have, take your own: "
+            if edition.ONLINE
+            else "This edition never goes online, so it doesn't download pictures. Take your own: "
+        )
+        + "in the game, press Windows+Shift+S and drag around "
         "the item's tile, then pick the item here and press PASTE PICTURE. The editor cuts the item out and keeps it "
         "on this PC. You can also put pictures in the icons folder yourself, named after the item, stat or hero skin "
         "(MysticHelmet.png, Emeralds.png, RangerDeluxe.png).",
@@ -177,8 +193,13 @@ HELP_SECTIONS = [
     (
         "Pictures",
         "Items show their picture when the icons folder has one, and a square in their rarity's colour when it "
-        "doesn't. Get pictures… (on the Hero tab) downloads the Minecraft Wiki's item pictures. You can also add your "
-        "own, named after the item, stat or hero skin (MysticHelmet.png, Emeralds.png, RangerDeluxe.png). "
+        "doesn't. "
+        + (
+            "Get pictures… (on the Hero tab) downloads the Minecraft Wiki's item pictures. You can also add your "
+            if edition.ONLINE
+            else "This edition never goes online, so it doesn't download pictures. Add your "
+        )
+        + "own, named after the item, stat or hero skin (MysticHelmet.png, Emeralds.png, RangerDeluxe.png). "
         "The README in the icons folder explains the names.",
     ),
     ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore…")),
@@ -1543,7 +1564,14 @@ class EditorApp:
 
     def check_for_updates(self, announce: bool = False) -> None:
         """Ask GitHub, off the UI thread, whether a newer version is out. The Update button appears if one is;
-        ``announce`` also says so when there isn't, or when GitHub can't be reached."""
+        ``announce`` also says so when there isn't, or when GitHub can't be reached. The edition that never
+        goes online asks nobody."""
+        if not edition.ONLINE:
+            if announce:
+                messagebox.showinfo(
+                    APP_TITLE, f"{edition.offline_note('look for updates')}\n\nNew versions are on {edition.NAME}. You have {__version__}.", parent=self.root
+                )
+            return
 
         def done(ok: bool, release: Any) -> None:
             newer = ok and release is not None and updater.is_newer(release.version)
@@ -1615,6 +1643,9 @@ class EditorApp:
 
     def _get_pictures(self) -> None:
         """Download item pictures from minecraft.wiki, after asking."""
+        if not edition.ONLINE:
+            messagebox.showinfo(APP_TITLE, _NO_PICTURES, parent=self.root)
+            return
         if self._pictures_busy:
             return
         self._pictures_busy = True
@@ -1763,7 +1794,7 @@ def run(
     root.report_callback_exception = report
     try:
         app = EditorApp(root, profile, backup_root, icon_root)
-        if close_after is None:  # a build check stays offline
+        if close_after is None and edition.ONLINE:  # a build check stays offline, and so does the offline edition
             app.check_for_updates()
             threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()
     except Exception:

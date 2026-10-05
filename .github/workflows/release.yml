@@ -1,7 +1,8 @@
 name: Build and release
 
-# Push a tag like v1.0.1 to build the editor and publish MCD2SaveEditor.zip as a GitHub Release.
-# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the zip as an artifact.
+# Push a tag like v1.0.1 to build the editor and publish MCD2SaveEditor.zip as a GitHub Release, with
+# MCD2SaveEditor-Nexus.zip beside it: the edition for Nexus Mods, which never goes online.
+# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the zips as an artifact.
 on:
   push:
     tags: ["v*"]
@@ -71,32 +72,71 @@ jobs:
       - name: Check the .exe can replace an older copy of itself
         run: python tools/check_exe_update.py dist/MCD2SaveEditor
 
-      - name: Zip the folder
+      # Nexus Mods doesn't host programs that go online, an updater included. So it gets an edition of its own:
+      # built once more with the update check, the updater and the picture download switched off, and with
+      # PyInstaller's inner zip of Python's own modules unpacked, since an archive inside the archive is another
+      # thing Nexus turns away.
+      - name: Build the edition for Nexus Mods, which never goes online
+        shell: pwsh
+        run: |
+          python tools/make_edition.py nexus
+          pyinstaller --noconfirm --onedir --windowed --noupx --name MCD2SaveEditor --icon assets/app.ico --version-file build/version-info.txt --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data;dungeons2_editor/data" --distpath dist-nexus --workpath build/nexus mcd2_save_editor.py
+          python tools/make_edition.py github
+          $internal = "dist-nexus/MCD2SaveEditor/_internal"
+          Expand-Archive -Path "$internal/base_library.zip" -DestinationPath $internal -Force
+          Remove-Item "$internal/base_library.zip"
+          $inner = Get-ChildItem dist-nexus -Recurse -Include *.zip, *.7z, *.rar
+          if ($inner) { throw "The Nexus edition still holds an archive: $inner" }
+
+      - name: Check the Nexus edition works and refuses to go online
+        shell: pwsh
+        run: |
+          $exe = "dist-nexus/MCD2SaveEditor/MCD2SaveEditor.exe"
+          $saves = python -c "import tempfile; from pathlib import Path; from tests.helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode; print(make_profile(Path(tempfile.mkdtemp()), {'Character00000000-0000-1000-8000-000000000002': hero_save_text().encode(), 'GlobalSaveDataDefault': shift_encode(SETTINGS_TEXT)}))"
+          foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4")) {
+            $run = Start-Process $exe -ArgumentList $arguments -Wait -PassThru
+            if ($run.ExitCode -ne 0) { throw "The Nexus edition's MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
+            Write-Output "OK: MCD2SaveEditor.exe $arguments"
+          }
+          foreach ($arguments in @("update --yes", "pictures --yes")) {
+            $run = Start-Process $exe -ArgumentList $arguments -Wait -PassThru
+            if ($run.ExitCode -ne 1) { throw "The Nexus edition should refuse '$arguments' with exit code 1, but it exited with $($run.ExitCode)" }
+            Write-Output "OK: the Nexus edition refuses: $arguments"
+          }
+          python tools/check_exe_mcp.py $exe
+          if ($LASTEXITCODE -ne 0) { throw "The Nexus edition doesn't answer as an MCP server" }
+
+      - name: Zip the folders
         shell: pwsh
         run: |
           Compress-Archive -Path dist/MCD2SaveEditor -DestinationPath dist/MCD2SaveEditor.zip
+          Compress-Archive -Path dist-nexus/MCD2SaveEditor -DestinationPath dist/MCD2SaveEditor-Nexus.zip
           "### SHA-256", '```' >> $env:GITHUB_STEP_SUMMARY
-          foreach ($file in "dist/MCD2SaveEditor.zip", "dist/MCD2SaveEditor/MCD2SaveEditor.exe") {
-            "$((Get-FileHash $file -Algorithm SHA256).Hash.ToLower())  $(Split-Path $file -Leaf)" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          foreach ($file in "dist/MCD2SaveEditor.zip", "dist/MCD2SaveEditor/MCD2SaveEditor.exe", "dist/MCD2SaveEditor-Nexus.zip", "dist-nexus/MCD2SaveEditor/MCD2SaveEditor.exe") {
+            "$((Get-FileHash $file -Algorithm SHA256).Hash.ToLower())  $($file -replace '^dist-nexus/MCD2SaveEditor/', 'Nexus edition: ' -replace '^dist/(MCD2SaveEditor/)?', '')" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
           }
           '```' >> $env:GITHUB_STEP_SUMMARY
 
       # Lets anyone check a download: gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor
-      - name: Attest where the zip and the .exe were built
+      - name: Attest where the zips and the .exe files were built
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/MCD2SaveEditor.zip
             dist/MCD2SaveEditor/MCD2SaveEditor.exe
+            dist/MCD2SaveEditor-Nexus.zip
+            dist-nexus/MCD2SaveEditor/MCD2SaveEditor.exe
 
-      - name: Keep the zip
+      - name: Keep the zips
         uses: actions/upload-artifact@v4
         with:
           name: MCD2SaveEditor
-          path: dist/MCD2SaveEditor.zip
+          path: |
+            dist/MCD2SaveEditor.zip
+            dist/MCD2SaveEditor-Nexus.zip
 
       - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip dist/MCD2SaveEditor-Nexus.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md
