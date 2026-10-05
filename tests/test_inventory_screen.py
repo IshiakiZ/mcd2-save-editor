@@ -3,7 +3,7 @@ import unittest
 from dungeons2_editor.hero import GEAR_SLOTS, Hero, game_item, gear_power
 from dungeons2_editor.inventory_screen import describe, fit_lines, slot_noun
 
-from .helpers import hero_item, hero_save
+from .helpers import hero_item, hero_save, rolled, rolled_effect
 
 SLOT = {slot.label: slot.tag for slot in GEAR_SLOTS}
 
@@ -56,7 +56,12 @@ class CardTextTests(unittest.TestCase):
 
     def test_says_what_the_item_does(self):
         unique = self.item("SW.Item.MysticHelmet_Unique", "Unique")  # the Oracle Crown has an ID of its own
-        self.assertEqual(describe(unique, game_item(unique.tag)), "Lightning attacks deal 25% more damage.")
+        # Made by the editor, it holds no effects, so it's without the Crown's own: the card says what that does in the game.
+        self.assertEqual(describe(unique, game_item(unique.tag)), "In the game: Lightning attacks deal 25% more damage.")
+        unique.data["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II"))]  # could be the editor's doing or the game's
+        self.assertEqual(describe(unique, game_item(unique.tag)), "In the game: Lightning attacks deal 25% more damage.")
+        unique.data["Effects"] = [{"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]}]
+        self.assertEqual(describe(unique, game_item(unique.tag)), "Lightning attacks deal 25% more damage.")  # saved a way the editor doesn't write
         for rarity in ("Common", "Unique"):  # the Mystic Circlet stays a Mystic Circlet, whatever its rarity
             base = self.item("SW.Item.MysticHelmet", rarity)
             self.assertEqual(describe(base, game_item(base.tag)), "Its Unique is the Oracle Crown. Lightning attacks deal 25% more damage.")

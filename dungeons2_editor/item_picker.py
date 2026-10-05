@@ -7,7 +7,7 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from . import document as doc
-from .hero import MAX_ITEM_POWER, MAX_STACK, RARITIES, CatalogItem, GearSlot, slots_for
+from .hero import MAX_ITEM_POWER, MAX_STACK, NO_OWN_EFFECT, RARITIES, CatalogItem, GearSlot, slots_for
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -175,7 +175,10 @@ class ItemPicker(tk.Toplevel):
                     compound="left",
                     command=self._show_selected,
                 ).grid(row=position // 2, column=position % 2, sticky="w", padx=(0, 18))
-            ttk.Label(panel, textvariable=self.unique_text, style="Muted.TLabel", wraplength=wrap, justify="left").pack(anchor="w")
+            self.unique_label = ttk.Label(panel, textvariable=self.unique_text, style="Muted.TLabel", wraplength=wrap, justify="left")
+            self.unique_label.pack(anchor="w")
+            # Shown under it while Unique is picked: what the line above describes isn't on a Unique added here.
+            self.unique_note_label = ttk.Label(panel, text=NO_OWN_EFFECT, style="Warn.TLabel", wraplength=wrap, justify="left")
             numbers = ttk.Frame(panel)
             numbers.pack(anchor="w", pady=(10, 0))
             ttk.Label(numbers, text="Power").grid(row=0, column=0, sticky="w", padx=(0, 8))
@@ -271,6 +274,7 @@ class ItemPicker(tk.Toplevel):
             self.preview.configure(image="")
             for var in (self.kind_text, self.status_text, self.unique_text):
                 var.set("")
+            self._show_unique_note(False)
             self._show_slot()
             return
         rarity = self._rarity()
@@ -294,15 +298,25 @@ class ItemPicker(tk.Toplevel):
             self.status_text.set("Unconfirmed: " + doubt[0].lower() + doubt[1:])
             self.status_label.configure(style="Warn.TLabel")
         if as_unique:
-            effect = f" {item.unique_effect}" if item.unique_effect else ""
+            effect = f" In the game: {item.unique_effect}" if item.unique_effect else ""
             self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).{effect}")
         elif item.unique and self.mode == "add":
             self.unique_text.set(f"Pick Unique to get the {item.unique}.")
         else:
             self.unique_text.set("")
+        self._show_unique_note(as_unique)
         self._show_slot()
         if self.winfo_ismapped():
             fit_to_contents(self)  # longer text can need more room
+
+    def _show_unique_note(self, shown: bool) -> None:
+        """Say, in a warning's colour, that the Unique picked comes without its own effect; or stop saying it."""
+        if self.mode != "add":
+            return
+        if shown:
+            self.unique_note_label.pack(anchor="w", pady=(2, 0), after=self.unique_label)
+        else:
+            self.unique_note_label.pack_forget()
 
     # ------------------------------------------------------------ equipping
 

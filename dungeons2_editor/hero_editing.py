@@ -137,7 +137,8 @@ class HeroEditing:
         if known is None or not known.unique:
             return ""
         if is_unique_version(item.tag):
-            return f"It's {'' if item.name.startswith('The ') else 'the '}{item.name} now. "
+            without = " (without its own effect, which the editor can't add yet)" if item.own_effect_missing is not False else ""
+            return f"It's {'' if item.name.startswith('The ') else 'the '}{item.name} now{without}. "
         return (
             f"It's a Unique-rarity {item.name}, not the {known.unique}: the editor hasn't seen that Unique's own ID in a "
             "save yet, and won't risk an item you own on it. Add items can add one. "
@@ -196,7 +197,8 @@ class HeroEditing:
                 tag, template, rarity=rarity, power=power, count=count, slot=slot, check_level=not self.advanced
             )
             self._fill_items()
-            self._say_item(f"Added. {SAVE_REMINDER}")
+            note = self.hero.item(self.selected).own_effect_note  # a Unique comes without the effect of its own
+            self._say_item(f"Added. {note + ' ' if note else ''}{SAVE_REMINDER}")
             self.on_change()
 
         ItemPicker(

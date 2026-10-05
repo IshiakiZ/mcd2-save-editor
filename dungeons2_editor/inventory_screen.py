@@ -99,7 +99,8 @@ def describe(item: Item, known: GameItem | None) -> str:
     if item.kind == "Talisman" and known.effect:
         return f"At level 3: {known.effect}"
     if is_unique_version(item.tag):
-        return known.unique_effect or ""
+        # The effects box below says when this one is, or may be, without that effect.
+        return ("In the game: " if known.unique_effect and item.own_effect_missing is not False else "") + (known.unique_effect or "")
     if known.unique:
         return f"Its Unique is the {known.unique}." + (f" {known.unique_effect}" if known.unique_effect else "")
     return ""
@@ -1045,9 +1046,15 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if effects or item.can_have_effects or item.is_talisman:
             more = len(effects) - EFFECTS_SHOWN
             shown = effects[:EFFECTS_SHOWN] + ([f"and {more} more"] if more > 0 else [])
+            unique_note = item.own_effect_note  # a Unique the editor made is without the effect of its own
+            if unique_note and shown:
+                shown.insert(0, unique_note)
             if item.is_talisman:
                 self.enchant_title.set("EFFECT")
                 none = "No effect saved."
+            elif unique_note:
+                self.enchant_title.set("EFFECTS" if effects else "NO EFFECTS")
+                none = f"{unique_note} Give it any other you like" + (", and an enchantment." if item.kind in ENCHANTABLE else ".")
             else:
                 self.enchant_title.set("EFFECTS" if effects else "NO EFFECTS")
                 none = "The game rolls a Rare item one effect and a Special item two. Give this one any you like" + (

@@ -9,7 +9,7 @@ from typing import Callable
 
 from . import document as doc
 from . import presets
-from .hero import MAX_ITEM_POWER, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount, vendors_text
+from .hero import MAX_ITEM_POWER, NO_OWN_EFFECT, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount, vendors_text
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -365,6 +365,8 @@ class PresetsDialog(tk.Toplevel):
                 f"{bare} of these talismans {'is' if bare == 1 else 'are'} added without {'its' if bare == 1 else 'their'} effect, "
                 "which the editor hasn't seen in a real save yet, and may do nothing in the game."
             )
+        if any(addition.rarity == "Unique" and addition.found.unique for addition in plan.add):
+            notes.append(NO_OWN_EFFECT + " It's the Unique in name, look, rarity and power.")
         patterned = sum(addition.found.by_pattern_at(addition.rarity) for addition in plan.add)
         if patterned:
             notes.append(

@@ -186,9 +186,12 @@ class EditingTests(ServerTestCase):
         # A Unique has a save ID of its own; this one has been seen in a real save.
         self.assertEqual((gear["Leggings"]["name"], gear["Leggings"]["id"]), ("Oracle Tights", "SW.Item.MysticLeggings_Unique"))
         self.assertTrue(gear["Leggings"]["unique_effect"])
+        # What the Unique does in the game isn't on one the editor adds, and the assistant is told so.
+        self.assertEqual(gear["Leggings"]["unique_effect_note"], "Without its own effect: the editor can't add that one yet.")
         # The Oracle Crown's hasn't, but it follows the pattern every seen one does, so it can be added too.
         found = self.call("find_items", query="Mystic Circlet")["items"][0]
         self.assertEqual((found["unique"], found["unique_confirmed"], found["unique_by_pattern"]), ("Oracle Crown", False, True))
+        self.assertIn("comes without its own effect", found["unique_effect_note"])
         crown = self.call("add_item", hero="00000000", item="Mystic Circlet", rarity="Unique")["item"]
         self.assertEqual((crown["name"], crown["id"], crown["unique_effect"]), ("Oracle Crown", "SW.Item.MysticHelmet_Unique", "Lightning attacks deal 25% more damage."))
         self.assertEqual(self.call("add_item", hero="00000000", item="Longbow")["item"]["power"], 3)  # power defaults to the best item's

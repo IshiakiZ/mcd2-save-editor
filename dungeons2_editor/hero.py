@@ -87,6 +87,10 @@ _ENCHANTMENT = "SW.Item.Effect.Enchantment"  # the enchantment the Enchantsmith 
 EFFECT_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what the game rolls effects on
 ENCHANTABLE_KINDS = ("Melee", "Ranged", "Armor")  # what the Enchantsmith enchants
 TIERS = ("I", "II", "III")
+# A Unique comes with an effect of its own, the one its card describes. No real save holding one has reached the
+# editor, so it can't write it, and a Unique it makes is without it (a player checked in the game: issue 19).
+# The editor says this wherever it makes a Unique.
+NO_OWN_EFFECT = "A Unique the editor makes comes without its own effect: the editor hasn't seen how the game saves that one yet."
 MAX_ITEM_XP = 10_000_000
 # The town's three vendors, and the hint the game files in a hero's save the first time you open each one's
 # window (CollectionsStats.ShownHints). The game's script cache spells all three; two have been seen in a save.
@@ -812,6 +816,26 @@ class Item:
     def own_effects(self) -> list[Effect]:
         """Effects saved any other way, such as the one a Unique comes with. The editor leaves these alone."""
         return [effect for effect in self.effects if not effect.is_rolled and not effect.is_enchantment]
+
+    @property
+    def own_effect_missing(self) -> bool | None:
+        """For a Unique: whether it's without the effect of its own, the one its card describes. True when
+        nothing saved on it could be that effect, which is how the editor makes one (see NO_OWN_EFFECT). None
+        when that can't be told: it has effects, but only of the kind the editor writes too. False when it has
+        one saved some other way, and for anything that isn't a Unique."""
+        if not is_unique_version(self.tag) or self.own_effects:
+            return False
+        return None if self.rolled_effects else True
+
+    @property
+    def own_effect_note(self) -> str:
+        """What to say about a Unique that is, or may be, without its own effect; nothing for any other item."""
+        missing = self.own_effect_missing
+        if missing:
+            return "Without its own effect: the editor can't add that one yet."
+        if missing is None:
+            return "If the editor made this Unique, it's without its own effect."
+        return ""
 
     @property
     def can_have_effects(self) -> bool:

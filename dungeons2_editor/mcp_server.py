@@ -28,6 +28,7 @@ from .hero import (
     ATTRIBUTE_LABELS,
     MAX_ITEM_POWER,
     MAX_STACK,
+    NO_OWN_EFFECT,
     RARITIES,
     STAT_CAPS,
     TIERS,
@@ -709,8 +710,9 @@ class EditorServer:
                   "ignore_caps": _flag("Go past the game's caps (anything above them is lost in the game).")},
                  self.set_stats, ("hero", "stats")),
             Tool("add_item", "Add an item", "Add any item from find_items to the inventory, optionally equipped. A Unique's own name (e.g. Oracle "
-                 "Crown), or its base item at Unique rarity, adds the Unique, which has a save ID of its own. Power defaults to "
-                 "the hero's strongest item.",
+                 "Crown), or its base item at Unique rarity, adds the Unique, which has a save ID of its own. It comes without "
+                 "the Unique's own effect (unique_effect says what that does in the game): the editor can't write that one yet, "
+                 "so tell the user. Power defaults to the hero's strongest item.",
                  {"hero": HERO, "item": _string("The item's name or save ID from find_items."), "rarity": RARITY, "power": POWER,
                   "count": COUNT, "equip": {"type": ["boolean", "string"], "description": "true to equip it in the first free slot, or a slot name."},
                   "allow_unconfirmed": UNCONFIRMED, "ignore_slot_levels": LOCKED},
@@ -845,7 +847,9 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         info["effects"] = [_effect_info(effect) for effect in item.effects]
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
-            info["unique_effect"] = known.unique_effect
+            info["unique_effect"] = known.unique_effect  # what the Unique does in the game
+        if item.own_effect_note:
+            info["unique_effect_note"] = item.own_effect_note
     elif known is not None and known.unique:
         info["at_unique"] = known.unique
     if entry is not None and not entry.confirmed:
@@ -920,6 +924,7 @@ def _catalog_info(entry: CatalogItem) -> dict:
             info["unique_by_pattern"] = True
     if entry.unique_effect:
         info["unique_effect"] = entry.unique_effect
+        info["unique_effect_note"] = NO_OWN_EFFECT
     known = game_item(entry.tag)
     if known is not None and known.effect:
         info["effect_at_level_3"] = known.effect

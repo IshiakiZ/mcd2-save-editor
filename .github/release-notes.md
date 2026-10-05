@@ -1,3 +1,19 @@
+## What's new in 1.9.1
+
+- **The editor says when a Unique comes without its own effect.** In the game a Unique has an effect of its own, the
+  one its card describes. The editor can't write it yet, so a Unique it adds, or makes from another item, is that
+  Unique in name, look, rarity and power only. [dtreddy30-source](https://github.com/dtreddy30-source) checked in
+  the game: Prime Enchanter's Gauntlets from the editor have no waves of lightning and ice
+  ([issue 19](https://github.com/IshiakiZ/mcd2-save-editor/issues/19)). Until now the editor showed what a Unique
+  does as if the one it made would do it. Now Add items says so before you add one, kits say so in their preview,
+  and an item's card says when a Unique is without its own effect, or may be.
+- **One real Unique would fix it for all of them.** The editor writes only what it has seen in a real save, and
+  every Unique in the saves it has seen was one it made. So **Share item IDs** now lists what each of your Uniques
+  holds, whatever that is. If the game itself has given you one (a drop, a reward or a purchase), open
+  **Menu > Share item IDs…**, write "from the game" at the end of that Unique's line and send the list. It holds
+  item IDs and the effects on your gear, nothing else from your save.
+- Nothing changes in what the editor writes to a save.
+
 ## What's new in 1.9.0
 
 - **Abilities on your gear.** Pick a weapon, armor piece or artifact and press **Change effects…**. Choose its

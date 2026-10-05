@@ -134,6 +134,32 @@ class ShareIdsTests(unittest.TestCase):
         # A long list of them stops at what fits in a GitHub issue.
         with mock.patch.object(share_ids, "MAX_GEAR_LINES", 2):
             self.assertEqual([tag for tag, _text in share_ids.gear_effects([hero])], ["SW.Item.Bow_Unique1", "SW.Item.Sword_Unique1"])
+        # A Unique is listed with whatever it holds, once for each kind: nobody knows yet how the effect a Unique
+        # comes with is saved, so it may look like any other. On its own that isn't news, since the editor may
+        # have made it.
+        held = hero_save()
+        held["CharacterSaveV1"]["Inventory"]["Entries"] += [
+            gear("SW.Item.Sword_Unique1", rolled(rolled_effect("CriticalEdge", 0.2, "II")), rarity="Unique", seed=71),
+            gear("SW.Item.Sword_Unique1", rolled(rolled_effect("CriticalEdge", 0.2, "II"), rolled_effect("Vanguard", 0.2)), rarity="Unique", seed=72),
+            gear("SW.Item.Bow_Unique1", rarity="Unique", seed=73),  # holds nothing: the editor made it
+            gear("SW.Item.Mace_Unique1", enchanted(enchantment_effect("Radiance", 0.3)), rarity="Unique", seed=74),
+            gear("SW.Item.Claymore", rolled(rolled_effect("CriticalEdge", 0.2, "II")), rarity="Rare", seed=75),  # not a Unique
+        ]
+        plain = Hero(held)
+        listed = share_ids.gear_effects([plain])
+        self.assertEqual([tag for tag, _text in listed], ["SW.Item.Sword_Unique1", "SW.Item.Mace_Unique1"])
+        self.assertIn('"SW.Effect.Vanguard"', listed[0][1])  # of two alike, the one that holds more
+        self.assertTrue(listed[1][1].startswith('effects on a Unique one: [{"TypeTag":"SW.Item.Effect.Enchantment",'), listed[1][1])
+        self.assertEqual(share_ids.finding_keys([plain]) - {tag for tag, _note in share_ids.unknown_ids([plain])}, set())
+        with mock.patch.object(share_ids, "MAX_UNIQUE_LINES", 1):
+            self.assertEqual([tag for tag, _text in share_ids.gear_effects([plain])], ["SW.Item.Sword_Unique1"])
+        # An effect that's locked is saved a way the editor never writes, so it's news, on a Unique or not.
+        locked = rolled_effect("CriticalEdge", 0.2, "II")
+        locked["GeneratorData"]["Locked"] = True
+        held["CharacterSaveV1"]["Inventory"]["Entries"] += [gear("SW.Item.Pike", rolled(locked), rarity="Rare", seed=76)]
+        plain = Hero(held)
+        self.assertEqual([tag for tag, _text in share_ids.gear_effects([plain])], ["SW.Item.Sword_Unique1", "SW.Item.Mace_Unique1", "SW.Item.Pike"])
+        self.assertEqual(share_ids.finding_keys([plain]) - {tag for tag, _note in share_ids.unknown_ids([plain])}, {"SW.Item.Pike own effects"})
         # Effects the editor put on an item aren't the game's word until the game has shown you the item.
         fresh = Hero(hero_save())
         index = next(item.index for item in fresh.items() if item.tag == "SW.Item.Sword")

@@ -30,8 +30,8 @@ the full save for people who want it.
   level up** puts it one XP short, so the game levels it up the next time you earn XP with it on.
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
-  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. Items show their
-  in-game names.
+  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. For now a Unique comes
+  [without its own effect](#what-it-cant-do). Items show their in-game names.
 - **Presets:**
   - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
   - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
@@ -226,9 +226,14 @@ your sign-in, account or device data.
   nobody has sent yet; it marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
   game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
-  game rolls and the enchantment are what you can change. A Unique's own effect, the one its card describes, hasn't
-  been seen in a save yet, so a Unique the editor added may be missing it. Nobody has tried every effect on every
-  kind of item, so check the result in the game.
+  game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
+  check the result in the game.
+- **A Unique the editor makes comes without its own effect.** In the game a Unique has an effect of its own, the
+  one its card describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on
+  the item, and no save holding a real one has reached the editor yet, so it can't write it: a Unique you add, or
+  make from another item, is that Unique in name, look, rarity and power only. The editor says so when you add one,
+  and on its card. One real Unique would fix this for all of them: if the game itself has given you one (a drop, a
+  reward or a purchase), **Share item IDs…** lists what it holds.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves

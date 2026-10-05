@@ -100,6 +100,8 @@ SIMPLE_HELP_SECTIONS = [
         "you pick (the game rolls a Rare item one and a Special item two, and never more than four) and a weapon or "
         "armor piece an enchantment. The editor writes these exactly as a real save holds them, so it offers the ones "
         "it has seen so far and anything on an item in your own saves; Share item IDs sends it the ones on your gear. "
+        "A Unique the editor makes comes without its own effect, the one its card describes: the editor hasn't seen "
+        "how the game saves that one yet, and the card says when a Unique is without it. "
         "On a talisman the button is READY TO LEVEL UP: it puts the talisman one XP short of its next level, and the "
         "game levels it up the next time you earn XP with it on.\n"
         "• Level, XP and gear power are along the top, and enchantment points, emeralds and echo shards are in the "
