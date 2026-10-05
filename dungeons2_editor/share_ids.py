@@ -101,6 +101,12 @@ def talisman_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
     return sorted(found.items())
 
 
+def finding_keys(heroes: list[Hero]) -> set[str]:
+    """A key for each line the report would have. The editor remembers the ones you've been shown, so it can
+    tell when your saves hold something that wasn't there before."""
+    return {tag for tag, _note in unknown_ids(heroes)} | {f"{tag} effect" for tag, _text in talisman_effects(heroes)}
+
+
 def report_text(heroes: list[Hero], version: str) -> str:
     lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes)]
     return "\n".join(lines)

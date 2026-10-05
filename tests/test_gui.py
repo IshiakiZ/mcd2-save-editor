@@ -15,7 +15,7 @@ from dungeons2_editor.hero import Hero, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
 from dungeons2_editor.restore_dialog import RestoreDialog
 
-from .helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode
+from .helpers import SETTINGS_TEXT, hero_save, hero_save_text, make_profile, shift_encode
 
 HERO = "Character00000000-0000-1000-8000-000000000002"
 OTHER_HERO = "Character00000000-0000-1000-8000-000000000003"
@@ -64,6 +64,21 @@ class WindowTestCase(unittest.TestCase):
 
     def container_names(self):
         return [c.name for c in self.app._containers_by_iid.values()]
+
+    def show_on_screen(self, dialog):
+        """Windows are hidden in these tests; this one needs its real layout."""
+        self.root.deiconify()
+        dialog.deiconify()
+        dialog.update()
+        if not dialog.winfo_viewable():
+            self.skipTest("windows can't be shown here")
+
+    def assert_in_view(self, button, dialog):
+        self.assertTrue(button.winfo_ismapped())
+        self.assertGreater(button.winfo_height(), 5)
+        self.assertGreaterEqual(button.winfo_rooty(), dialog.winfo_rooty())
+        self.assertLessEqual(button.winfo_rooty() + button.winfo_height(), dialog.winfo_rooty() + dialog.winfo_height())
+        self.assertLessEqual(button.winfo_rootx() + button.winfo_width(), dialog.winfo_rootx() + dialog.winfo_width())
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
@@ -454,6 +469,33 @@ class HeroTabTests(WindowTestCase):
         summary = self.save()
         self.assertIn("Added Sigil of Beeswax", summary)
         self.assertNotIn("Added Sigil of Beeswax (", summary)  # no rarity or power to tell
+
+    def test_the_add_button_keeps_its_room_in_a_window_too_short_for_everything(self):
+        picker, _row = self.open_picker_on("Battle Hammer")
+        self.show_on_screen(picker)
+        self.assert_in_view(picker.confirm_button, picker)
+        picker.minsize(1, 1)
+        picker.geometry(f"{picker.winfo_width()}x{picker.winfo_height() // 2}")  # as on a screen that's too small for it
+        picker.update()
+        self.assert_in_view(picker.confirm_button, picker)
+        picker.destroy()
+
+    def test_the_connect_an_ai_windows_buttons_keep_their_room(self):
+        from dungeons2_editor.ai_dialog import ConnectAiDialog
+
+        self.app._connect_ai()
+        self.root.update()
+        dialog = next(w for w in self.root.winfo_children() if isinstance(w, ConnectAiDialog))
+        self.show_on_screen(dialog)
+        buttons = [w for w in dialog.winfo_children()[0].winfo_children() if isinstance(w, ttk.Button)]
+        close = next(w for frame in dialog.winfo_children()[0].winfo_children() if isinstance(frame, ttk.Frame) for w in frame.winfo_children() if isinstance(w, ttk.Button))
+        dialog.minsize(1, 1)
+        dialog.geometry(f"{dialog.winfo_width()}x{dialog.winfo_height() - 3 * close.winfo_height()}")  # the boxes of text can give that much
+        dialog.update()
+        for button in [*buttons, close]:  # the three Copy buttons and Close
+            self.assert_in_view(button, dialog)
+        self.assertEqual(len(buttons), 3)
+        dialog.destroy()
 
     def test_a_unique_is_added_under_its_own_id(self):
         picker, _row = self.open_picker_on("Battle Hammer")
@@ -1137,8 +1179,9 @@ class RestoreTests(WindowTestCase):
         screen = self.app.inventory
         screen.stat_vars["Emeralds"].set(str(emeralds))
         self.assertTrue(screen.commit_pending())
-        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
             self.app.save_to_game()
+        self.assertNotIn("checked against", ask.call_args.args[1])  # a save format the editor knows: no caution
         self.assertEqual(self.emeralds_saved(), emeralds)
 
     def emeralds_saved(self):
@@ -1149,22 +1192,8 @@ class RestoreTests(WindowTestCase):
         self.root.update()
         return next(w for w in self.root.winfo_children() if isinstance(w, RestoreDialog))
 
-    def show_on_screen(self, dialog):
-        """Windows are hidden in these tests; this one needs its real layout."""
-        self.root.deiconify()
-        dialog.deiconify()
-        dialog.update()
-        if not dialog.winfo_viewable():
-            self.skipTest("windows can't be shown here")
-
-    def assert_in_view(self, button, dialog):
-        self.assertTrue(button.winfo_ismapped())
-        self.assertGreater(button.winfo_height(), 5)
-        self.assertGreaterEqual(button.winfo_rooty(), dialog.winfo_rooty())
-        self.assertLessEqual(button.winfo_rooty() + button.winfo_height(), dialog.winfo_rooty() + dialog.winfo_height())
-        self.assertLessEqual(button.winfo_rootx() + button.winfo_width(), dialog.winfo_rootx() + dialog.winfo_width())
-
     def test_restore_puts_back_the_save_from_before(self):
+        self.assertEqual([bool(self.app.share_button.winfo_manager()), bool(self.app.share_button_advanced.winfo_manager())], [False, False])  # nothing new in these saves
         self.save_with_emeralds(777)
         dialog = self.open_restore()
         self.assertEqual(dialog.selected().reason, "Before saving Offline hero (Ranger Deluxe)")  # the newest is picked
@@ -1270,6 +1299,53 @@ class ScaledDisplayTests(RestoreTests):
         room = layout.screen_room(dialog)
         self.assertEqual((dialog.winfo_width(), dialog.winfo_height()), (min(needed[0], room[0]), min(needed[1], room[1])))
         self.assertGreater(needed[1], 380)  # the height the window used to have, whatever the scaling
+
+
+def newer_hero_save():
+    """A hero as a later version of the game might save it, who has found a Unique the editor's list hasn't seen."""
+    document = hero_save()
+    document["SerializeMeta"]["SoftVersion"] = 6
+    document["CharacterSaveV1"]["CollectionsStats"]["CollectedWeaponsUnique"] = ["SW.Item.Mace_Unique1"]
+    return json.dumps(document, separators=(",", ":")).encode()
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class NewsFromTheSavesTests(WindowTestCase):
+    """What the editor points out about a save: something to share, and a save format it hasn't been checked against."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: newer_hero_save()}
+
+    def shown(self):
+        return [bool(button.winfo_manager()) for button in (self.app.share_button, self.app.share_button_advanced)]
+
+    def test_a_note_when_the_saves_hold_something_to_share(self):
+        self.assertEqual(self.shown(), [True, True])
+        self.assertEqual((self.app.share_button.cget("text"), self.app.share_button_advanced.cget("text")),
+                         ("SHARE ITEM IDS · 1 NEW", "Share item IDs (1 new)…"))
+        self.app.share_button.invoke()
+        self.root.update()
+        dialog = next(w for w in self.root.winfo_children() if isinstance(w, share_ids.ShareIdsDialog))
+        self.assertIn("SW.Item.Mace_Unique1 - Carapace Mace (the Unique Mace): confirms the editor's guess [in the collections]", dialog.report())
+        dialog.destroy()
+        # You've been shown it, so the note goes away, and stays away the next time the saves are opened.
+        self.assertEqual(self.shown(), [False, False])
+        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["shared"], ["SW.Item.Mace_Unique1"])
+        self.app.reload()
+        self.root.update()
+        self.assertEqual(self.shown(), [False, False])
+        # Until the saves hold something else.
+        self.app.profile.get(HERO).decoded.document["CharacterSaveV1"]["CollectionsStats"]["CollectedWeaponsCommon"].append("SW.Item.SomethingNew")
+        self.app._update_share_note()
+        self.assertEqual((self.shown(), self.app.share_button.cget("text")), ([True, True], "SHARE ITEM IDS · 1 NEW"))
+
+    def test_a_caution_before_saving_a_format_the_editor_wasnt_checked_against(self):
+        self.app.inventory.stat_vars["Emeralds"].set("60")
+        self.assertTrue(self.app.inventory.commit_pending())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            self.app.save_to_game()
+        question = ask.call_args.args[1]
+        self.assertIn("Emeralds: 55 → 60", question)
+        self.assertIn("a format the editor hasn't been checked against (FCharacterSaveV1, version 6)", question)
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")

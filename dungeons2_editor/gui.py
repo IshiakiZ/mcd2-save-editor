@@ -23,7 +23,7 @@ from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
 from .game_style import GameFonts
-from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_document, use_local_names
+from .hero import HERO_SORTS, Hero, describe_changes, format_amount, format_caution, is_hero_document, use_local_names
 from .hero_tab import HeroTab
 from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
@@ -344,6 +344,7 @@ class EditorApp:
         ttk.Button(bar, text="Open folder…", command=self._open_folder).pack(side="left", padx=2)
         ttk.Checkbutton(bar, text="Advanced mode", variable=self.advanced_var, command=self._on_advanced_toggled).pack(side="left", padx=(14, 2))
         self.update_button_advanced = ttk.Button(bar, style="Accent.TButton", command=self.update_app)  # shown once there's an update
+        self.share_button_advanced = ttk.Button(bar, command=self._share_ids)  # shown when there's something new to share
         ttk.Button(bar, text="Backups folder", command=self._open_backups_folder).pack(side="right", padx=2)
         ttk.Button(bar, text="Restore…", command=self._restore_dialog).pack(side="right", padx=2)
         ttk.Button(bar, text="Back up now", command=self._backup_now).pack(side="right", padx=2)
@@ -466,6 +467,7 @@ class EditorApp:
             side="right", padx=(20, 0)
         )
         self.update_button = ttk.Button(bar, style="Accent.TButton", command=self.update_app)  # shown once there's an update
+        self.share_button = ttk.Button(bar, style="Bar.TButton", command=self._share_ids)  # shown when there's something new to share
 
         body = ttk.Frame(screen, style="Game.TFrame")
         body.grid(row=1, column=0, sticky="nsew")
@@ -655,9 +657,34 @@ class EditorApp:
         self.help_text = text
         text.pack(fill="both", expand=True)
 
+    def _saved_heroes(self) -> list[Hero]:
+        return [c.hero for c in self.profile.containers if c.hero is not None] if self.profile is not None else []
+
     def _share_ids(self) -> None:
-        heroes = [c.hero for c in self.profile.containers if c.hero is not None] if self.profile is not None else []
+        heroes = self._saved_heroes()
         share_ids.ShareIdsDialog(self.root, heroes, __version__)
+        # You've been shown what there is to share now. The note comes back when your saves hold something else.
+        shown = set(self._shared_already()) | share_ids.finding_keys(heroes)
+        self.settings["shared"] = sorted(shown)
+        _save_settings(self.settings_file, self.settings)
+        self._update_share_note()
+
+    def _shared_already(self) -> list[str]:
+        shared = self.settings.get("shared")
+        return [key for key in shared if isinstance(key, str)] if isinstance(shared, list) else []
+
+    def _update_share_note(self) -> None:
+        """Show a button when your saves hold item IDs or talisman effects that the editor's list doesn't have
+        and that you haven't been shown yet. Nothing is sent anywhere unless you share it yourself."""
+        new = len(share_ids.finding_keys(self._saved_heroes()) - set(self._shared_already()))
+        if new:
+            self.share_button.configure(text=f"SHARE ITEM IDS · {new} NEW")
+            self.share_button_advanced.configure(text=f"Share item IDs ({new} new)…")
+            self.share_button.pack(side="right", padx=(20, 0))
+            self.share_button_advanced.pack(side="left", padx=(14, 2))
+        else:
+            self.share_button.pack_forget()
+            self.share_button_advanced.pack_forget()
 
     def _connect_ai(self) -> None:
         ConnectAiDialog(self.root)
@@ -724,6 +751,7 @@ class EditorApp:
             target = kept or next(iter(heroes), None)
         self._show_container(target)
         self._select_in_list(target)
+        self._update_share_note()
         self.status_var.set("Loaded your saves.")
 
     def _other_saved_heroes(self) -> list[Hero]:
@@ -1281,6 +1309,9 @@ class EditorApp:
         if len(lines) > 14:
             lines = lines[:13] + [f"… and {len(lines) - 13} more"]
         question = f"Save these changes to {self.container.label}?\n\n" + "\n".join(lines) + "\n\nYour current saves are backed up first."
+        caution = format_caution(Hero(self.document)) if is_hero_document(self.document) else ""
+        if caution:
+            question += f"\n\n{caution}"
         if not messagebox.askyesno("Save to game", question, parent=self.root):
             return
         name = self.container.name

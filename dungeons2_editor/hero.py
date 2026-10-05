@@ -89,6 +89,19 @@ _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, C
 _ARMOR = re.compile(r"Helmet|Helm|Hood|Hat|Mask|Chest|Armor|Armour|Mail|Robe|Tunic|Vest|Leggings|Pants|Greaves|Boots|Shoes|Gauntlets|Gloves")
 
 
+def format_caution(hero: "Hero") -> str:
+    """What to say before saving a hero whose save format the editor hasn't been checked against (a game
+    update has most likely changed it). Empty when it has been."""
+    if hero.format_is_tested:
+        return ""
+    name, version = hero.save_format
+    return (
+        f"This hero is saved in a format the editor hasn't been checked against ({name}, version {version}), most "
+        "likely since a game update. The editor leaves everything in a save that it doesn't know as it is, and your "
+        "saves are backed up first, but check the result in the game."
+    )
+
+
 def is_hero_document(document: Any) -> bool:
     meta = document.get("SerializeMeta") if isinstance(document, dict) else None
     return isinstance(meta, dict) and str(meta.get("HardFormat", "")).startswith("FCharacterSave")

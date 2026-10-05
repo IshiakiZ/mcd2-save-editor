@@ -70,8 +70,12 @@ class ConnectAiDialog(tk.Toplevel):
             text = tk.Text(frame, height=lines, wrap="none" if key == "desktop" else "char", font=("Consolas", 10), relief="flat", padx=6, pady=4)
             text.insert("1.0", self.sections[key])
             text.configure(state="disabled")
-            text.grid(row=row + 2, column=0, sticky="ew", pady=(4, 0))
-            ttk.Button(frame, text="Copy", command=lambda key=key: self.copy(key)).grid(row=row + 2, column=1, sticky="n", padx=(8, 0), pady=(4, 0))
+            text.grid(row=row + 2, column=0, sticky="nsew", pady=(4, 0))
+            copy_button = ttk.Button(frame, text="Copy", command=lambda key=key: self.copy(key))
+            copy_button.grid(row=row + 2, column=1, sticky="n", padx=(8, 0), pady=(4, 0))
+            # On a screen too small for the window, the boxes of text give way (Copy still copies all of it),
+            # down to the height of the button beside them; the buttons keep their room.
+            frame.rowconfigure(row + 2, weight=1, minsize=copy_button.winfo_reqheight() + 4)
             row += 3
         bottom = ttk.Frame(frame)
         bottom.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(14, 0))

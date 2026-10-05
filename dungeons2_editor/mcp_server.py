@@ -38,6 +38,7 @@ from .hero import (
     build_catalog,
     describe_changes,
     format_amount,
+    format_caution,
     game_item,
     gear_power,
     gear_slots,
@@ -585,6 +586,8 @@ class EditorServer:
         }
         if problems:
             result["problems"] = problems
+        if format_caution(Hero(document)):
+            result["caution"] = format_caution(Hero(document))
         return result
 
     # ------------------------------------------------------------------- tools

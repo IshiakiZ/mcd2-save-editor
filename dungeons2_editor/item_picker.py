@@ -197,10 +197,12 @@ class ItemPicker(tk.Toplevel):
         self.confirm_button = ttk.Button(
             panel, text="Add to inventory" if self.mode == "add" else "Use this item", style="Accent.TButton", command=self._confirm
         )
-        self.confirm_button.pack(anchor="w", pady=(12, 0))
+        # At the bottom, and laid out before everything above them: on a screen too small for the whole
+        # window, the button to add the item is the last thing that should go missing.
+        self.confirm_button.pack(side="bottom", anchor="w", pady=(12, 0), before=head)
         self.message_var = tk.StringVar()
         self.message = ttk.Label(panel, textvariable=self.message_var, style="Muted.TLabel", wraplength=wrap, justify="left")
-        self.message.pack(anchor="w", pady=(6, 0))
+        self.message.pack(side="bottom", anchor="w", pady=(6, 0), before=self.confirm_button)
 
         hint = (
             "Every item in the game is listed. Confirmed items have been seen in real saves, so the game knows them. "

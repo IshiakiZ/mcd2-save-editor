@@ -267,6 +267,20 @@ class EditingTests(ServerTestCase):
         self.assertEqual(self.call("discard_changes", hero="00000000")["done"], "Threw the unsaved changes away.")
         self.assertEqual(self.call("preview_changes", hero="00000000")["unsaved_changes"], [])
 
+    def test_a_caution_with_a_save_format_the_editor_wasnt_checked_against(self):
+        saved = self.call("set_stats", hero="00000000", stats={"Emeralds": 60}) and self.call("save_changes", hero="00000000")
+        self.assertNotIn("caution", saved)
+        document = hero_save()
+        document["SerializeMeta"]["SoftVersion"] = 6  # as a later version of the game might save it
+        self.profile = make_profile(
+            self.dir / "newer", {HERO: json.dumps(document, separators=(",", ":")).encode(), "GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT)}
+        )
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        self.call("set_stats", hero="00000000", stats={"Emeralds": 61})
+        saved = self.call("save_changes", hero="00000000")
+        self.assertEqual(saved["done"], "Saved. Start the game to see the changes.")
+        self.assertIn("hasn't been checked against (FCharacterSaveV1, version 6)", saved["caution"])
+
     def test_presets(self):
         self.assertEqual(self.call("apply_preset", hero="00000000", preset="most money")["preset_did"], ["Emeralds: 55 → 99,999"])
         kit = self.call("apply_preset", hero="00000000", preset="Melee damage", power=12)
