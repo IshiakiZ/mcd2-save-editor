@@ -206,7 +206,8 @@ class ItemPicker(tk.Toplevel):
             "Every item in the game is listed. Confirmed items have been seen in real saves, so the game knows them. "
             "For the others the editor has to guess the game's name for the item; if it guesses wrong, the game may "
             "drop the item. A talisman also needs its effect, which the editor learns from a save: until then it's added "
-            "without one. Items you find in the game become confirmed automatically."
+            "without one. Items you find in the game become confirmed automatically, and so does one you added here "
+            "once the game has kept it."
         )
         ttk.Label(frame, text=hint, style="Muted.TLabel", wraplength=text_width(self, 110), justify="left").grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 0)
@@ -278,7 +279,13 @@ class ItemPicker(tk.Toplevel):
         kind = item.kind + (f"  ·  {item.piece.lower()}" if item.piece else "")
         self.kind_text.set(kind + (f"  ·  {item.tag_at(rarity)}" if self.advanced else ""))
         doubt = item.doubt(rarity)
-        if not doubt:
+        if not doubt and item.by_pattern_at(rarity):
+            self.status_text.set(
+                "By its pattern: this Unique's own ID hasn't been seen in a save yet, but every Unique found so far "
+                "is saved this way. If it's wrong, the game drops this one item."
+            )
+            self.status_label.configure(style="Success.TLabel")
+        elif not doubt:
             self.status_text.set("Confirmed: seen in real saves, so the game knows it.")
             self.status_label.configure(style="Success.TLabel")
         else:
@@ -365,7 +372,7 @@ class ItemPicker(tk.Toplevel):
     def _accept_guesses(self, item: CatalogItem, slot: GearSlot | None, rarity: str | None = None) -> bool:
         """Ask once per window before using an item, or a slot, whose name in the game is a best guess, and
         before adding a talisman without its effect."""
-        guessed_item = not item.id_known_at(rarity) and not self._unconfirmed_ok
+        guessed_item = not item.id_trusted_at(rarity) and not self._unconfirmed_ok
         guessed_slot = slot is not None and not slot.confirmed and not self._guessed_slot_ok
         bare = item.no_effect and not self._no_effect_ok
         if not guessed_item and not guessed_slot and not bare:

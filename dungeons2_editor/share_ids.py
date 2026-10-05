@@ -20,13 +20,21 @@ ISSUE_URL = "https://github.com/IshiakiZ/mcd2-save-editor/issues/new"
 ISSUE_TEMPLATE = "item-ids.yml"
 
 
+# How the game vouches for an ID (Hero.item_types_from_the_game), as the report puts it.
+SEEN_AS = {"collected": "in the collections", "merchant": "in the merchant's stock", "kept": "kept by the game"}
+
+
 def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
     """(item ID, note) for each ID in these saves that the editor's item list doesn't confirm, or confirms
     without knowing the item's name in the game. A name you gave the item (NAME IT…) is the note. Cosmetics, quest
-    items and currencies are left out. A Unique has an ID of its own, which counts as known once the list has it."""
-    seen = set()
+    items and currencies are left out. A Unique has an ID of its own, which counts as known once the list has it.
+
+    Only IDs the game itself vouches for are listed, with how in square brackets: an item the editor added
+    under a guessed ID isn't evidence for that ID until the game has kept it."""
+    seen: dict[str, str] = {}
     for hero in heroes:
-        seen |= hero.seen_item_types()
+        for tag, how in hero.item_types_from_the_game().items():
+            seen.setdefault(tag, how)
     found = []
     for tag in sorted(seen):
         if item_group(tag) in NOT_ADDABLE_GROUPS:
@@ -36,15 +44,18 @@ def unknown_ids(heroes: list[Hero]) -> list[tuple[str, str]]:
         confirmed = item is not None and (item.unique_id == tag if unique else item.confirmed)
         mine = local_name(tag)
         if mine and (item is None or item.name_from_id or not confirmed):
-            found.append((tag, mine))
+            note = mine
         elif item is None:
-            found.append((tag, f"new to the editor ({item_kind(tag).lower()}), what's it called in the game?"))
+            note = f"new to the editor ({item_kind(tag).lower()}), what's it called in the game?"
         elif unique and not confirmed:
-            found.append((tag, f"{item.unique} (the Unique {item.name}): confirms the editor's guess"))
+            note = f"{item.unique} (the Unique {item.name}): confirms the editor's guess"
         elif not confirmed:
-            found.append((tag, f"{item.name}: confirms the editor's guess"))
+            note = f"{item.name}: confirms the editor's guess"
         elif item.name_from_id:
-            found.append((tag, f"the editor calls it {item.name}; what's it called in the game?"))
+            note = f"the editor calls it {item.name}; what's it called in the game?"
+        else:
+            continue
+        found.append((tag, f"{note} [{SEEN_AS[seen[tag]]}]"))
     return found
 
 

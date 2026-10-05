@@ -191,8 +191,14 @@ class HeroTests(unittest.TestCase):
         sword, mace = catalog["SW.Item.Sword"], catalog["SW.Item.Mace"]
         self.assertEqual((sword.tag_at("Unique"), sword.confirmed_at("Unique"), sword.name_at("Unique")), ("SW.Item.Sword_Unique1", True, "The Burning Blade"))
         self.assertEqual((sword.tag_at("Rare"), sword.name_at("Rare")), ("SW.Item.Sword", "Sword"))
-        # The Carapace Mace's own ID is a guess after the pattern, so it counts as unconfirmed.
-        self.assertEqual((mace.tag_at("Unique"), mace.confirmed_at("Unique"), mace.confirmed_at("Rare")), ("SW.Item.Mace_Unique1", False, True))
+        # The Carapace Mace's own ID hasn't been seen, but it follows the pattern every seen one does: it can be added.
+        self.assertEqual((mace.tag_at("Unique"), mace.id_known_at("Unique"), mace.by_pattern_at("Unique")), ("SW.Item.Mace_Unique1", False, True))
+        self.assertEqual((mace.confirmed_at("Unique"), mace.doubt("Unique"), mace.confirmed_at("Rare")), (True, "", True))
+        self.assertEqual((sword.by_pattern_at("Unique"), mace.by_pattern_at("Rare")), (False, False))  # seen; not a Unique
+        # The Battlestaff's own ID is a guess, so its Unique's is a guess twice over.
+        staff = catalog["SW.Item.Battlestaff"]
+        self.assertEqual((staff.unique, staff.by_pattern_at("Unique"), staff.confirmed_at("Unique")), ("Elemental Staff", False, False))
+        self.assertIn("best guess", staff.doubt("Unique"))
         self.assertEqual(catalog["SW.Item.MysticHelmet"].tag_at("Unique"), "SW.Item.MysticHelmet_Unique")  # armor: no 1
         grindstone = catalog["SW.Item.Artifact.Grindstone"]
         self.assertEqual((grindstone.tag_at("Unique"), grindstone.confirmed_at("Unique")), ("SW.Item.Artifact.Grindstone", True))
@@ -201,11 +207,77 @@ class HeroTests(unittest.TestCase):
         self.assertIn("SW.Item.Sword_Unique1", self.document["CharacterSaveV1"]["LootProgression"]["DiscoveredLoot"])
 
     def test_a_unique_found_in_the_game_is_its_base_items_unique(self):
-        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.Mace_Unique1", rarity="Unique", seed=77))
+        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.Mace_Unique1", rarity="Unique", seed=77, unseen=False))
         catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}
         self.assertNotIn("SW.Item.Mace_Unique1", catalog)  # not an item of its own
-        self.assertEqual((catalog["SW.Item.Mace"].unique_tag, catalog["SW.Item.Mace"].confirmed_at("Unique")), ("SW.Item.Mace_Unique1", True))
+        mace = catalog["SW.Item.Mace"]
+        self.assertEqual((mace.unique_tag, mace.id_known_at("Unique"), mace.by_pattern_at("Unique")), ("SW.Item.Mace_Unique1", True, False))
         self.assertEqual(heroes.template_for("SW.Item.Sword_Unique1", list(catalog.values())), catalog["SW.Item.Sword"].template)
+
+    def test_only_what_the_game_vouches_for_counts_as_seen(self):
+        vouched = self.hero.item_types_from_the_game()
+        self.assertEqual(vouched["SW.Item.Axe"], "collected")  # in the game's collections, which the editor never writes
+        self.assertEqual(vouched["SW.Item.Sword"], "collected")
+        self.assertEqual(vouched["SW.Item.CurvedGreatsword"], "merchant")  # the Village Merchant's stock is the game's
+        self.assertEqual(vouched["SW.Item.Cosmetic.Cape.Hero"], "kept")  # on an item the game has shown you
+        self.assertNotIn("SW.Item.Bow", vouched)  # only in the discovered loot, which the editor adds to itself
+        self.assertNotIn("SW.Item.Longbow", vouched)  # on an item nobody has looked at yet
+        self.assertIn("SW.Item.Bow", self.hero.seen_item_types())  # everything in the save, vouched for or not
+
+    def test_an_id_the_editor_wrote_is_not_evidence_until_the_game_keeps_it(self):
+        def staff():
+            return next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == "SW.Item.Battlestaff")
+
+        self.assertFalse(staff().confirmed)  # a best guess from its name
+        index = self.hero.add_item("SW.Item.Battlestaff", staff().template)
+        # It's in the inventory and the discovered loot now, but only because the editor put it there.
+        self.assertIn("SW.Item.Battlestaff", self.body["LootProgression"]["DiscoveredLoot"])
+        self.assertNotIn("SW.Item.Battlestaff", self.hero.item_types_from_the_game())
+        self.assertFalse(staff().confirmed)
+        # The game loads the hero, keeps the item and shows it to you: it would have dropped an ID it doesn't know.
+        self.hero.item(index).data["DynamicPropertyTags"].remove("SW.Item.Property.Dynamic.Unseen")
+        self.assertEqual(self.hero.item_types_from_the_game()["SW.Item.Battlestaff"], "kept")
+        self.assertTrue(staff().confirmed)
+        # Turned into something else, it's a new item again, and vouches for nothing until the game has had it.
+        self.hero.update_item(index, tag="SW.Item.SomethingElse")
+        self.assertIn("SW.Item.Property.Dynamic.Unseen", self.hero.item(index).data["DynamicPropertyTags"])
+        self.assertNotIn("SW.Item.SomethingElse", self.hero.item_types_from_the_game())
+        self.assertFalse(staff().confirmed)
+        # The merchant's stock is evidence because the game makes it, so what's in it can't be changed.
+        stock = self.item_index("SW.Item.CurvedGreatsword")
+        with self.assertRaisesRegex(ValueError, "Village Merchant's stock"):
+            self.hero.update_item(stock, tag="SW.Item.Battlestaff")
+        self.hero.update_item(stock, rarity="Rare", power=9)  # its rarity and power still can
+
+    def test_effects_are_read_the_way_a_save_holds_them(self):
+        sword = self.hero.item(self.item_index("SW.Item.Sword"))
+        self.assertEqual((sword.effects, sword.effect_lines()), ([], []))
+        sword.data["Effects"] = [
+            {"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
+                {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 2, "EnchantmentPointsInvested": 3,
+                 "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.FireAspect.II", "Locked": True}},
+                {"TypeTag": "SW.Effect.Sharpness", "Intensity": 12},
+                "not an effect",
+            ]},
+            {"TypeTag": "SW.Item.Effect.Other"},  # a batch laid out some other way is left out, not guessed at
+            "not a batch",
+        ]
+        first, second = sword.effects
+        self.assertEqual((first.name, first.tag, first.strength, first.quality, first.points, first.locked, first.group),
+                         ("Fire Aspect", "SW.Effect.FireAspect", 0.5, 2, 3, True, "SW.Item.Effect.Enchantment"))
+        self.assertEqual(sword.effect_lines(), ["Fire Aspect 0.5, quality 2, 3 enchantment points, locked", "Sharpness 12"])
+        self.assertEqual(heroes.sort_items(self.hero.items(), "Most effects")[0].tag, "SW.Item.Sword")
+        # A talisman also says which level it's at, and what's to come.
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=1, seed=61))
+        sigil = self.hero.item(self.item_index("SW.Item.Talisman.HealthBoost"))
+        self.assertEqual(sigil.effect_lines(), ["Health Boost 1.25", "Level 2 of 3. At the next level: 1.35."])
+        sigil.progression["CurrentLevel"] = 2
+        self.assertEqual(sigil.effect_lines()[-1], "Level 3 of 3.")
+
+    def test_the_save_format_the_editor_was_checked_against(self):
+        self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 5), True))
+        self.document["SerializeMeta"]["SoftVersion"] = 6  # a game update changed how heroes are saved
+        self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 6), False))
 
     def test_a_talisman_is_added_the_way_the_game_saves_one(self):
         catalog = {entry.tag: entry for entry in heroes.build_catalog([self.hero])}

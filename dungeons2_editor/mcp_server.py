@@ -31,6 +31,7 @@ from .hero import (
     RARITIES,
     STAT_CAPS,
     CatalogItem,
+    Effect,
     GearSlot,
     Hero,
     Item,
@@ -59,7 +60,8 @@ INSTRUCTIONS = (
     "gear power: in testing, the game put level 100 back to 1 and removed items at power 135. Items with "
     "confirmed: false have a best-guess save ID, and the game may remove them. Talismans have no rarity or power, "
     "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
-    "game's servers, so they can't be changed. Enchantments can't be added yet."
+    "game's servers, so they can't be changed. An item's effects are shown but can't be changed, and "
+    "enchantments can't be added yet."
 )
 
 _SLOT_WORDS = {"melee": "Melee weapon", "ranged": "Ranged weapon", "chest": "Chestplate", "legs": "Leggings", "helm": "Helmet"}
@@ -447,8 +449,8 @@ class EditorServer:
             if args.get("change_into"):
                 entry, unique_name = _catalog_item(args["change_into"], self._catalog(hero, profile, container.name))
                 rarity = args.get("rarity") or ("Unique" if unique_name else hero.item(index).rarity)
-                if not entry.confirmed_at(rarity) and not args.get("allow_unconfirmed"):
-                    raise ToolError(f"{_doubt(entry, rarity)} Pass allow_unconfirmed to use it anyway.")
+                if not (entry.id_known_at(rarity) and not entry.no_effect) and not args.get("allow_unconfirmed"):
+                    raise ToolError(f"{_doubt(entry, rarity, owned=True)} Pass allow_unconfirmed to use it anyway.")
                 changes["tag"] = entry.tag_at(rarity)
                 if unique_name and not args.get("rarity"):
                     changes["rarity"] = "Unique"
@@ -537,7 +539,7 @@ class EditorServer:
             presets.apply(plan, hero, catalog, game_caps=True, check_level=check_level)
             more: dict[str, Any] = {"preset_did": lines}
             left_out = [
-                f"{kit.name} ({'effect not known yet' if found.id_known_at(presets.rarity_for(kit, found, plan.rarity)) else 'best-guess save ID'})"
+                f"{kit.name} ({'effect not known yet' if found.id_trusted_at(presets.rarity_for(kit, found, plan.rarity)) else 'best-guess save ID'})"
                 for kit, found in plan.unconfirmed
             ]
             if left_out:
@@ -595,7 +597,8 @@ class EditorServer:
                  "Merchant's stock. Each item has a ref to use in the other tools. Shows unsaved changes too.",
                  {"hero": HERO}, self.get_hero, ("hero",), read_only=True),
             Tool("find_items", "Find items", "Search every weapon, armor piece, artifact and talisman in the game by name (Uniques included). "
-                 "confirmed: false means the save ID is a best guess; unique_confirmed says the same about the item's Unique. "
+                 "confirmed: false means the save ID is a best guess; unique_confirmed says whether the Unique's own ID has "
+                 "been seen (unique_by_pattern: it hasn't, but it follows the pattern every seen one does, and can be added). "
                  "effect_known: false marks a talisman the editor can only add without its effect.",
                  {"query": _string("Part of a name, e.g. 'mystic' or 'Oracle Crown'."),
                   "kind": _string("Melee, Ranged, Armor, Artifact or Talisman.", enum=["Melee", "Ranged", "Armor", "Artifact", "Talisman"]),
@@ -725,8 +728,8 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         info["piece"] = item.piece
     if item.level:
         info["item_level"] = item.level
-    if item.enchantments and not item.is_talisman:
-        info["enchantments"] = item.enchantments
+    if item.effects:  # shown as the game saved them; they can't be changed here yet
+        info["effects"] = [_effect_info(effect) for effect in item.effects]
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
             info["unique_effect"] = known.unique_effect
@@ -737,10 +740,22 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
     return info
 
 
-def _doubt(entry: CatalogItem, rarity: str | None) -> str:
-    """Why adding this item is a best guess, for the assistant."""
+def _effect_info(effect: Effect) -> dict:
+    info = {"name": effect.name, "id": effect.tag, "strength": effect.strength}
+    if effect.quality:
+        info["quality"] = effect.quality
+    if effect.points:
+        info["enchantment_points"] = effect.points
+    if effect.locked:
+        info["locked"] = True
+    return info
+
+
+def _doubt(entry: CatalogItem, rarity: str | None, owned: bool = False) -> str:
+    """Why adding this item is a best guess, for the assistant. For an item the hero ``owned`` already, a
+    Unique's ID has to have been seen: its pattern isn't enough to risk the item on."""
     parts = []
-    if not entry.id_known_at(rarity):
+    if not (entry.id_known_at(rarity) if owned else entry.id_trusted_at(rarity)):
         parts.append(
             f"The game's save ID for the {entry.name_at(rarity)} ({entry.tag_at(rarity)}) is a best guess, and in testing "
             "the game removed items whose guess was wrong."
@@ -762,6 +777,8 @@ def _catalog_info(entry: CatalogItem) -> dict:
     if entry.unique:
         info["unique"] = entry.unique
         info["unique_confirmed"] = entry.unique_tag is not None
+        if entry.by_pattern_at("Unique"):
+            info["unique_by_pattern"] = True
     if entry.unique_effect:
         info["unique_effect"] = entry.unique_effect
     known = game_item(entry.tag)

@@ -126,7 +126,7 @@ class HeroEditing:
             return f"It's {'' if item.name.startswith('The ') else 'the '}{item.name} now. "
         return (
             f"It's a Unique-rarity {item.name}, not the {known.unique}: the editor hasn't seen that Unique's own ID in a "
-            "save yet. Add items can add one as a best guess. "
+            "save yet, and won't risk an item you own on it. Add items can add one. "
         )
 
     def _apply_numbers(self) -> bool:

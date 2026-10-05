@@ -88,6 +88,7 @@ FILTERS = (
 )
 KIND_NAMES = {"Melee": "Melee weapon", "Ranged": "Ranged weapon", "Armor": "Armor", "Artifact": "Artifact", "Talisman": "Talisman"}
 ENCHANTABLE = ("Melee", "Ranged", "Armor")  # artifacts and talismans can't be enchanted
+EFFECTS_SHOWN = 4  # lines of effects on an item's card; any more are counted
 
 
 def describe(item: Item, known: GameItem | None) -> str:
@@ -992,14 +993,16 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.power_var.set(power_text(item))
         self.count_var.set(str(item.count))
         self.power_hint.set(f"Your strongest item has power {self.hero.best_power()}. Much higher may be removed by the game.")
-        if item.kind in ENCHANTABLE:
-            if item.enchantments:
-                self.enchant_title.set("ENCHANTED")
-                plural = "s" if item.enchantments != 1 else ""
-                self.enchant_text.set(f"{item.enchantments} enchantment{plural}, picked in the game. The editor leaves them as they are.")
-            else:
-                self.enchant_title.set("NOT ENCHANTED")
-                self.enchant_text.set("Find the Enchantsmith in town to enchant this item. The editor can't add enchantments yet.")
+        effects = item.effect_lines()
+        if effects:
+            self.enchant_title.set("EFFECTS")
+            more = len(effects) - EFFECTS_SHOWN
+            shown = effects[:EFFECTS_SHOWN] + ([f"and {more} more"] if more > 0 else [])
+            self.enchant_text.set("\n".join(shown) + "\nShown as the game saved them. The editor can't change effects yet.")
+            self.enchant_box.grid()
+        elif item.kind in ENCHANTABLE:
+            self.enchant_title.set("NOT ENCHANTED")
+            self.enchant_text.set("Find the Enchantsmith in town to enchant this item. The editor can't add enchantments yet.")
             self.enchant_box.grid()
         else:
             self.enchant_box.grid_remove()

@@ -18,8 +18,8 @@ class PresetTests(unittest.TestCase):
         # A second hero who has already found a Lucky Clover and The Eye of Experience.
         other = hero_save()
         other["CharacterSaveV1"]["Inventory"]["Entries"] += [
-            talisman_item("SW.Item.Talisman.LuckyClover", "LuckyClover", seed=11),
-            talisman_item("SW.Item.Talisman.EyeOfExperience", "EyeOfExperience", seed=12),
+            talisman_item("SW.Item.Talisman.LuckyClover", "LuckyClover", seed=11, unseen=False),
+            talisman_item("SW.Item.Talisman.EyeOfExperience", "EyeOfExperience", seed=12, unseen=False),
         ]
         self.other = Hero(other)
         self.catalog = build_catalog([self.hero, self.other])
@@ -105,14 +105,19 @@ class PresetTests(unittest.TestCase):
 
     def test_unique_names_and_unconfirmed_items(self):
         found = presets.find_item("Emerald Hammer", self.catalog)
-        # The Battle Hammer's ID is known; its Unique's own ID is a guess after the usual pattern.
-        self.assertEqual((found.tag, found.confirmed, found.tag_at("Unique"), found.confirmed_at("Unique")), ("SW.Item.Hammer", True, "SW.Item.Hammer_Unique1", False))
+        # The Battle Hammer's ID is known. Its Unique's own ID hasn't been seen, but follows the pattern every seen one does.
+        self.assertEqual((found.tag, found.confirmed, found.tag_at("Unique"), found.id_known_at("Unique"), found.confirmed_at("Unique")),
+                         ("SW.Item.Hammer", True, "SW.Item.Hammer_Unique1", False, True))
         careful = presets.plan(by_title("Best loot"), self.hero, self.catalog, power=30)
-        self.assertIn("Emerald Hammer", [kit.name for kit, _ in careful.unconfirmed])
-        self.assertNotIn("Emerald Hammer", [addition.kit.name for addition in careful.add])
+        self.assertIn("Emerald Hammer", [addition.kit.name for addition in careful.add])  # so a kit adds it without being asked to
+        self.assertEqual([kit.name for kit, _ in careful.unconfirmed], ["Looter's Charm"])  # its ID is a guess, and its effect unknown
         bold = presets.plan(by_title("Best loot"), self.hero, self.catalog, power=30, include_unconfirmed=True)
-        self.assertIn("Emerald Hammer", [addition.kit.name for addition in bold.add])
-        self.assertTrue(any(line.endswith("(unconfirmed)") for line in presets.describe(bold, self.hero)))
+        self.assertIn("Looter's Charm", [addition.kit.name for addition in bold.add])
+        self.assertTrue(any(line.endswith("(unconfirmed: without its effect)") for line in presets.describe(bold, self.hero)))
+        # A kit with gear whose own ID is a guess still leaves that out.
+        kit = presets.plan(by_title("Melee damage"), self.hero, self.catalog, power=30, rarity="Unique")
+        self.assertTrue(kit.unconfirmed)
+        self.assertTrue(all(not found.id_trusted_at(presets.rarity_for(item, found, "Unique")) or found.no_effect for item, found in kit.unconfirmed))
         presets.apply(bold, self.hero, self.catalog)
         hammer = next(item for item in self.hero.items() if item.tag == "SW.Item.Hammer_Unique1")
         self.assertEqual((hammer.name, hammer.rarity, hammer.power), ("Emerald Hammer", "Unique", 30))

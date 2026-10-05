@@ -36,7 +36,7 @@ _HEADINGS = {
     "power": "Power",
     "level": "Level",
     "xp": "XP",
-    "enchants": "Enchants",
+    "enchants": "Effects",
     "where": "Where",
 }
 # Clicking a column heading sorts by it.
@@ -47,7 +47,7 @@ _HEADING_SORTS = {
     "power": "Most powerful",
     "level": "Highest item level",
     "xp": "Most item XP",
-    "enchants": "Most enchantments",
+    "enchants": "Most effects",
     "where": "Where",
 }
 _NUMBER_COLUMNS = ("power", "level", "xp", "enchants")
@@ -187,7 +187,7 @@ class HeroTab(HeroEditing, ttk.Frame):
         self.item_title_var = tk.StringVar()
         ttk.Label(details, textvariable=self.item_title_var, font=self.bold_font).grid(row=0, column=1, sticky="w")
         self.item_subtitle_var = tk.StringVar()
-        ttk.Label(details, textvariable=self.item_subtitle_var, style="Muted.TLabel").grid(row=1, column=1, sticky="w")
+        ttk.Label(details, textvariable=self.item_subtitle_var, style="Muted.TLabel", wraplength=720, justify="left").grid(row=1, column=1, sticky="w")
 
         fields = ttk.Frame(details)
         fields.grid(row=2, column=1, sticky="w", pady=(6, 0))
@@ -342,7 +342,7 @@ class HeroTab(HeroEditing, ttk.Frame):
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name),
-                values=(item.kind, "" if item.is_talisman else item.rarity, power, item.level, number_text(item.xp), item.enchantments, item.where),
+                values=(item.kind, "" if item.is_talisman else item.rarity, power, item.level, number_text(item.xp), len(item.effects), item.where),
                 tags=("locked",) if item.is_cosmetic else (),
             )
             self._index_by_iid[iid] = item.index
@@ -465,7 +465,11 @@ class HeroTab(HeroEditing, ttk.Frame):
             return
         item = self.hero.item(index)
         self.item_title_var.set(item.name)
-        self.item_subtitle_var.set(("Talisman" if item.is_talisman else f"{item.rarity} {item.kind.lower()}") + f"  ·  {item.where}")
+        subtitle = ("Talisman" if item.is_talisman else f"{item.rarity} {item.kind.lower()}") + f"  ·  {item.where}"
+        effects = item.effect_lines()
+        if effects:  # shown, not changed: the editor can't edit effects yet
+            subtitle += "\nEffects: " + "  ·  ".join(line.rstrip(".") for line in effects)
+        self.item_subtitle_var.set(subtitle)
         self.preview.configure(image=self.icons.item_image(item.tag, item.rarity, PREVIEW_SIZE, item.name))
         self.preview_source_var.set("Picture: minecraft.wiki" if self.icons.is_from_wiki(item.name, item.tag) else "")
         if self.advanced:

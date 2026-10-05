@@ -323,7 +323,7 @@ class PresetsDialog(tk.Toplevel):
             text.insert("end", "\n", "row")
         notes = []
         if any(row.state == "left out" for row in rows):
-            guessed_ids = any(not found.id_known_at(presets.rarity_for(kit, found, plan.rarity)) for kit, found in plan.unconfirmed)
+            guessed_ids = any(not found.id_trusted_at(presets.rarity_for(kit, found, plan.rarity)) for kit, found in plan.unconfirmed)
             no_effect = any(found.no_effect for _kit, found in plan.unconfirmed)
             if guessed_ids or not no_effect:
                 notes.append(
@@ -339,8 +339,15 @@ class PresetsDialog(tk.Toplevel):
                 f"{bare} of these talismans {'is' if bare == 1 else 'are'} added without {'its' if bare == 1 else 'their'} effect, "
                 "which the editor hasn't seen in a real save yet, and may do nothing in the game."
             )
+        patterned = sum(addition.found.by_pattern_at(addition.rarity) for addition in plan.add)
+        if patterned:
+            notes.append(
+                f"{patterned} of these Uniques {'is' if patterned == 1 else 'are'} added under an ID worked out from a pattern: "
+                "every Unique found in a save so far has its base item's ID with _Unique1 (weapons) or _Unique (armor) "
+                "on the end. If one is wrong, the game drops that item and keeps the rest."
+            )
         guesses = []
-        guessed = sum(not addition.found.id_known_at(addition.rarity) for addition in plan.add)
+        guessed = sum(not addition.found.id_trusted_at(addition.rarity) for addition in plan.add)
         if guessed:
             guesses.append(f"{guessed} of these items" if guessed < len(rows) else "these items")
         if any(not entry.slot.confirmed for entry in [*plan.add, *plan.have] if entry.slot is not None):
@@ -376,7 +383,7 @@ class PresetsDialog(tk.Toplevel):
     def _accept_guesses(self) -> bool:
         """Ask before adding items, or using slots, whose names in the game are best guesses, and before adding
         talismans without their effect."""
-        items = sum(not addition.found.id_known_at(addition.rarity) for addition in self.plan.add)
+        items = sum(not addition.found.id_trusted_at(addition.rarity) for addition in self.plan.add)
         bare = sum(addition.found.no_effect for addition in self.plan.add)
         slots = sorted({entry.slot.label.lower() for entry in [*self.plan.add, *self.plan.have] if entry.slot and not entry.slot.confirmed})
         if not items and not bare and not slots:

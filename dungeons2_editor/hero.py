@@ -81,6 +81,9 @@ _TALISMAN_POWER = {
 }
 _UPGRADABLE = "SW.Item.Effect.Upgradable"  # the kind of effect batch a talisman's effect is saved in
 BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
+# How a hero is saved, as (HardFormat, SoftVersion) from the save's SerializeMeta, for the game versions the
+# editor has been checked against. A game update that changes the format is expected to change one of them.
+TESTED_FORMATS = {("FCharacterSaveV1", 5)}
 
 _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, Crossbow, ...
 _ARMOR = re.compile(r"Helmet|Helm|Hood|Hat|Mask|Chest|Armor|Armour|Mail|Robe|Tunic|Vest|Leggings|Pants|Greaves|Boots|Shoes|Gauntlets|Gloves")
@@ -383,6 +386,39 @@ def _check_number(value: Any, low: float, high: float, what: str, whole: bool = 
         raise ValueError(f"{what} must be between {low:,} and {high:,}.")
 
 
+@dataclass(frozen=True)
+class Effect:
+    """One effect on an item, as a save holds it. The editor shows these; it doesn't change them yet."""
+
+    tag: str  # SW.Effect.HealthBoost
+    strength: Any  # the save's Intensity; what the number means depends on the effect (1.2 is +20% max health)
+    quality: Any = 0
+    points: Any = 0  # enchantment points put into it
+    locked: bool = False
+    group: str = ""  # the kind of batch it's saved in: SW.Item.Effect.Upgradable for a talisman's own effect
+
+    @property
+    def name(self) -> str:
+        """'Health Boost' for SW.Effect.HealthBoost."""
+        return words(self.tag.rsplit(".", 1)[-1])
+
+    @property
+    def text(self) -> str:
+        """'Health Boost 1.2', with its quality and enchantment points when it has any."""
+        parts = [f"{self.name} {format_amount(self.strength)}" if _is_number(self.strength) else self.name]
+        if _is_number(self.quality) and self.quality:
+            parts.append(f"quality {format_amount(self.quality)}")
+        if _is_number(self.points) and self.points:
+            parts.append(f"{format_amount(self.points)} enchantment point{'' if self.points == 1 else 's'}")
+        if self.locked:
+            parts.append("locked")
+        return ", ".join(parts)
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 @dataclass
 class Item:
     index: int
@@ -447,8 +483,44 @@ class Item:
         return self.progression.get("CurrentXP", 0)
 
     @property
-    def enchantments(self) -> int:
-        return len(self.data.get("Effects") or [])
+    def effects(self) -> list[Effect]:
+        """The item's effects, in the save's order. A save keeps them in batches (a talisman's own effect is
+        one batch, of the kind SW.Item.Effect.Upgradable); anything laid out another way is left out."""
+        found = []
+        for batch in self.data.get("Effects") or []:
+            listed = batch.get("EffectsInThisBatch") if isinstance(batch, dict) else None
+            for effect in listed if isinstance(listed, list) else []:
+                if not isinstance(effect, dict) or not isinstance(effect.get("TypeTag"), str):
+                    continue
+                generator = effect.get("GeneratorData")
+                found.append(
+                    Effect(
+                        effect["TypeTag"],
+                        effect.get("Intensity"),
+                        effect.get("Quality", 0),
+                        effect.get("EnchantmentPointsInvested", 0),
+                        bool(generator.get("Locked")) if isinstance(generator, dict) else False,
+                        str(batch.get("TypeTag", "")),
+                    )
+                )
+        return found
+
+    def effect_lines(self) -> list[str]:
+        """What the item's effects are, a line each. A talisman also says which level it's at and how
+        strong its effect gets at the levels to come."""
+        lines = [effect.text for effect in self.effects]
+        levels = self.progression.get("ItemLevels")
+        if self.is_talisman and isinstance(levels, list) and levels and isinstance(self.level, int) and 0 <= self.level < len(levels):
+            line = f"Level {self.level + 1} of {len(levels)}."
+            later = []
+            for level in levels[self.level + 1:]:
+                listed = level.get("LevelEffects") if isinstance(level, dict) else None
+                strength = listed[0].get("Intensity") if isinstance(listed, list) and len(listed) == 1 and isinstance(listed[0], dict) else None
+                later.append(format_amount(strength) if _is_number(strength) else None)
+            if later and all(later):
+                line += f" At the next level{'' if len(later) == 1 else 's'}: {', then '.join(later)}."
+            lines.append(line)
+        return lines
 
     @property
     def count(self) -> int:
@@ -489,7 +561,7 @@ ITEM_SORTS = {
     "Highest item level": (lambda item: item.level, True),
     "Most item XP": (lambda item: item.xp, True),
     "Rarest": (lambda item: item.rarity_rank, True),
-    "Most enchantments": (lambda item: item.enchantments, True),
+    "Most effects": (lambda item: len(item.effects), True),
     "Newest": (lambda item: item.picked_up, True),
     "Name": (lambda item: item.name.lower(), False),
     "Kind": (lambda item: (item.kind, item.name.lower()), False),
@@ -536,6 +608,17 @@ class Hero:
     @property
     def power_level(self) -> Any:
         return self.metadata.get("PowerLevel")
+
+    @property
+    def save_format(self) -> tuple[str, Any]:
+        """(HardFormat, SoftVersion): how the game says this hero is saved."""
+        meta = self.document.get("SerializeMeta") or {}
+        return str(meta.get("HardFormat", "")), meta.get("SoftVersion")
+
+    @property
+    def format_is_tested(self) -> bool:
+        """Whether the editor has been checked against this save format (see TESTED_FORMATS)."""
+        return self.save_format in TESTED_FORMATS
 
     @property
     def skin(self) -> str:
@@ -602,7 +685,10 @@ class Hero:
         making an item Unique gives it that ID when it's known to be real, and
         taking an item's Unique rarity away gives it back its base item's ID.
         A ``tag`` that's given is otherwise kept exactly. A talisman has no rarity
-        or power to change, and an item changed into one is laid out as one.
+        or power to change, and an item changed into one is laid out as one. An
+        item that becomes another item is marked as new, the way the game marks
+        one you haven't looked at: until the game has shown it to you, nothing
+        says the game knows its ID (see ``item_types_from_the_game``).
         """
         item = self._gear(index)
         if item.is_talisman:
@@ -615,6 +701,8 @@ class Hero:
                 _check_addable_tag(tag)
                 if item.equipped_slot:
                     raise ValueError(f"Unequip the {item.name} before changing what it is.")
+                if item.stock_slot:
+                    raise ValueError(f"The {item.name} is in the Village Merchant's stock. Make a copy, and change the copy.")
         if rarity is not None and rarity != item.rarity and rarity not in RARITIES:
             raise ValueError(f"Rarity must be one of {', '.join(RARITIES)}.")
         if power is not None:
@@ -626,12 +714,15 @@ class Hero:
 
         wanted = item.tag if tag is None else tag
         if rarity == "Unique":
-            wanted = unique_tag(wanted, self.seen_item_types()) or wanted
+            wanted = unique_tag(wanted, self.item_types_from_the_game()) or wanted
         elif rarity is not None and tag is None:
             wanted = base_tag(wanted)
         if wanted != item.tag:
             levels = self._talisman_levels(wanted) if tag_kind(wanted) == "Talisman" else None
             item.data["TypeTag"] = wanted
+            marks = item.data.get("DynamicPropertyTags")
+            if isinstance(marks, list) and UNSEEN_TAG not in marks:
+                marks.append(UNSEEN_TAG)
             if levels is not None:
                 self._as_talisman(item.data, levels)
                 rarity = power = None
@@ -700,7 +791,7 @@ class Hero:
         if talisman:
             rarity = power = None
         if rarity == "Unique":
-            tag = unique_tag(tag, self.seen_item_types()) or tag
+            tag = unique_tag(tag, self.item_types_from_the_game()) or tag
         if rarity is not None and rarity not in RARITIES:
             raise ValueError(f"Rarity must be one of {', '.join(RARITIES)}.")
         if power is not None:
@@ -811,8 +902,41 @@ class Hero:
         if item.equipped_slot:
             item.entry["EquippedSlot"] = EMPTY_SLOT
 
+    def collected_item_types(self) -> set[str]:
+        """Item IDs in the game's own collections (CollectionsStats): it files an item there when you pick
+        it up. The editor never writes these lists."""
+        tags: set[str] = set()
+        for key, values in (self.body.get("CollectionsStats") or {}).items():
+            if key.startswith("Collected") and isinstance(values, list):
+                tags.update(tag for tag in values if isinstance(tag, str))
+        return {tag for tag in tags if _ITEM_TAG.fullmatch(tag)}
+
+    def item_types_from_the_game(self) -> dict[str, str]:
+        """Item IDs in this save that the game itself vouches for, and how each one is known:
+
+        - ``"collected"``: it's in the game's collections.
+        - ``"merchant"``: it's in the Village Merchant's stock, which the game makes.
+        - ``"kept"``: it's on an item the game has shown you. The game drops an item whose ID it doesn't
+          know when it loads a hero, so an item it has shown you since is real, even one the editor made.
+
+        An item the editor has just added or changed is still marked as not looked at, so it doesn't count
+        yet. Nor does the discovered-loot list, which the editor adds to itself. This is what keeps the
+        editor's own guesses from coming back as "seen in a real save".
+        """
+        found = dict.fromkeys(self.collected_item_types(), "collected")
+        for item in self.items():
+            if item.tag in found or not _ITEM_TAG.fullmatch(item.tag):
+                continue
+            marks = item.data.get("DynamicPropertyTags")
+            if item.stock_slot:
+                found[item.tag] = "merchant"
+            elif isinstance(marks, list) and UNSEEN_TAG not in marks:
+                found[item.tag] = "kept"
+        return found
+
     def seen_item_types(self) -> set[str]:
-        """Every item ID in this save: inventory, discovered loot and collections."""
+        """Every item ID in this save: inventory, discovered loot and collections. Some of these the editor
+        may have written itself; ``item_types_from_the_game`` has only the ones the game vouches for."""
         tags = {item.tag for item in self.items()}
         tags.update(tag for tag in (self.body.get("LootProgression") or {}).get("DiscoveredLoot") or [] if isinstance(tag, str))
         for key, values in (self.body.get("CollectionsStats") or {}).items():
@@ -831,7 +955,7 @@ class CatalogItem:
 
     tag: str
     template: dict
-    confirmed: bool = True  # the ID has been seen in real saves, so the game knows it
+    confirmed: bool = True  # the ID is one the game has been seen to use, so the game knows it
     title: str | None = None  # in-game name, when known
     unique: str | None = None  # name of the item at Unique rarity
     kind_name: str | None = None
@@ -859,24 +983,35 @@ class CatalogItem:
         return self.unique_tag or self.tag + ("_Unique" if self.kind == "Armor" else "_Unique1")
 
     def id_known_at(self, rarity: str | None = None) -> bool:
-        """Whether the game is known to have the ID it's added under at this rarity."""
+        """Whether the game has been seen to use the ID it's added under at this rarity."""
         return self.unique_tag is not None if rarity == "Unique" and self.unique else self.confirmed
 
+    def by_pattern_at(self, rarity: str | None = None) -> bool:
+        """Whether it's added under a Unique's ID that hasn't been seen itself, but follows the pattern of
+        every Unique's ID that has: its base item's ID, which is known, with _Unique1 (weapons) or _Unique
+        (armor) on the end."""
+        return rarity == "Unique" and bool(self.unique) and self.unique_tag is None and self.confirmed
+
+    def id_trusted_at(self, rarity: str | None = None) -> bool:
+        """Whether the ID it's added under is good enough to add without asking: seen, or a Unique's by the
+        pattern. (Making an item you own Unique is stricter: there a wrong ID would cost you the item.)"""
+        return self.id_known_at(rarity) or self.by_pattern_at(rarity)
+
     def confirmed_at(self, rarity: str | None = None) -> bool:
-        """Whether it's known to work when added at this rarity: the game knows its ID, and a talisman
-        gets its effect."""
-        return self.id_known_at(rarity) and not self.no_effect
+        """Whether it can be added at this rarity without asking: its ID is trusted, and a talisman gets
+        its effect."""
+        return self.id_trusted_at(rarity) and not self.no_effect
 
     def doubt(self, rarity: str | None = None) -> str:
-        """Why adding it at this rarity is a guess, as a sentence. Empty when it's known to work."""
-        if self.no_effect and not self.id_known_at(rarity):
+        """Why adding it at this rarity is a guess, as a sentence. Empty when it isn't one."""
+        if self.no_effect and not self.id_trusted_at(rarity):
             return (
                 "The game's name for this talisman is a best guess, and the editor hasn't seen its effect in a "
                 "save yet, so it's added without one."
             )
         if self.no_effect:
             return "The editor hasn't seen this talisman's effect in a save yet, so it's added without one and may do nothing in the game."
-        return "" if self.id_known_at(rarity) else "The game's name for this item is a best guess."
+        return "" if self.id_trusted_at(rarity) else "The game's name for this item is a best guess."
 
     def name_at(self, rarity: str | None) -> str:
         return self.unique if rarity == "Unique" and self.unique else self.name
@@ -945,8 +1080,9 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     the game has saved for these heroes. Cosmetics, quest items and currencies are left out,
     and so is an enchantment book unless a hero has that book to copy.
 
-    IDs seen in saves are confirmed; the game list's other IDs are best guesses from the
-    items' names (see tools/build_item_catalog.py). Each item borrows the layout of a saved
+    IDs the game vouches for in these saves (``Hero.item_types_from_the_game``) are confirmed;
+    the game list's other IDs are best guesses from the items' names (see
+    tools/build_item_catalog.py). Each item borrows the layout of a saved
     inventory entry: the same item, the same group, or any gear. A Unique isn't an entry of
     its own: its base item's entry carries the Unique's ID, once that has been seen. A talisman
     also needs its effect: one that neither the item list nor a saved copy shows is ``no_effect``.
@@ -955,7 +1091,7 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     by_tag: dict[str, dict] = {}
     by_group: dict[str, dict] = {}
     for hero in heroes:
-        seen |= hero.seen_item_types()
+        seen |= set(hero.item_types_from_the_game())
         for item in hero.items():
             if not item.is_cosmetic:
                 # A talisman the game handed over carries its effect, so it's the better one to lay a new one out like.

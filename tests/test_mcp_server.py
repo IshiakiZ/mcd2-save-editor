@@ -185,9 +185,10 @@ class EditingTests(ServerTestCase):
         # A Unique has a save ID of its own; this one has been seen in a real save.
         self.assertEqual((gear["Leggings"]["name"], gear["Leggings"]["id"]), ("Oracle Tights", "SW.Item.MysticLeggings_Unique"))
         self.assertTrue(gear["Leggings"]["unique_effect"])
-        # The Oracle Crown's hasn't, so its ID is a guess after the same pattern, and needs a yes.
-        self.assertIn("SW.Item.MysticHelmet_Unique) is a best guess", self.call("add_item", hero="00000000", item="Oracle Crown"))
-        crown = self.call("add_item", hero="00000000", item="Mystic Circlet", rarity="Unique", allow_unconfirmed=True)["item"]
+        # The Oracle Crown's hasn't, but it follows the pattern every seen one does, so it can be added too.
+        found = self.call("find_items", query="Mystic Circlet")["items"][0]
+        self.assertEqual((found["unique"], found["unique_confirmed"], found["unique_by_pattern"]), ("Oracle Crown", False, True))
+        crown = self.call("add_item", hero="00000000", item="Mystic Circlet", rarity="Unique")["item"]
         self.assertEqual((crown["name"], crown["id"], crown["unique_effect"]), ("Oracle Crown", "SW.Item.MysticHelmet_Unique", "Lightning attacks deal 25% more damage."))
         self.assertEqual(self.call("add_item", hero="00000000", item="Longbow")["item"]["power"], 3)  # power defaults to the best item's
         self.assertIn("Did you mean", self.call("add_item", hero="00000000", item="mystic"))
@@ -213,6 +214,27 @@ class EditingTests(ServerTestCase):
         kit = self.call("apply_preset", hero="00000000", preset="Best talismans")
         self.assertIn("Fist of Iron (effect not known yet)", kit["left_out"])
         self.assertIn("Ocelot's Paw (best-guess save ID)", kit["left_out"])
+
+    def test_an_owned_item_is_not_risked_on_a_uniques_pattern(self):
+        # Adding the Oracle Crown under its pattern ID risks nothing but the new item. Turning the hero's own
+        # Longbow into it would risk the Longbow, so that needs the ID to have been seen, or a yes.
+        refused = self.call("change_item", hero="00000000", item=self.ref_of("Longbow"), change_into="Oracle Crown")
+        self.assertIn("SW.Item.MysticHelmet_Unique) is a best guess", refused)
+        changed = self.call("change_item", hero="00000000", item=self.ref_of("Longbow"), change_into="Oracle Crown", allow_unconfirmed=True)
+        self.assertEqual((changed["item"]["name"], changed["item"]["id"]), ("Oracle Crown", "SW.Item.MysticHelmet_Unique"))
+
+    def test_effects_are_shown_as_the_game_saved_them(self):
+        document = json.loads(json.dumps(hero_save()))
+        sword = next(e for e in document["CharacterSaveV1"]["Inventory"]["Entries"] if e["ItemData"]["TypeTag"] == "SW.Item.Sword")
+        sword["ItemData"]["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
+            {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 0, "EnchantmentPointsInvested": 2,
+             "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.FireAspect.I", "Locked": False}}]}]
+        self.profile = make_profile(
+            self.dir / "saves2", {HERO: json.dumps(document, separators=(",", ":")).encode(), "GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT)}
+        )
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        gear = {slot["slot"]: slot["item"] for slot in self.call("get_hero", hero="00000000")["gear"]}
+        self.assertEqual(gear["Melee weapon"]["effects"], [{"name": "Fire Aspect", "id": "SW.Effect.FireAspect", "strength": 0.5, "enchantment_points": 2}])
 
     def test_guessed_ids_and_locked_slots_need_permission(self):
         self.assertIn("best guess", self.call("add_item", hero="00000000", item="Battlestaff"))

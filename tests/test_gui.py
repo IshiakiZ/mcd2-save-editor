@@ -198,6 +198,21 @@ class HeroTabTests(WindowTestCase):
         self.select_item("Mystic Circlet")
         self.assertEqual(self.tab.preview_source_var.get(), "Picture: minecraft.wiki")
 
+    def test_an_items_effects_show_in_the_list_and_under_its_name(self):
+        sword = next(item for item in self.tab.hero.items() if item.tag == "SW.Item.Sword")
+        sword.data["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
+            {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 0, "EnchantmentPointsInvested": 2},
+            {"TypeTag": "SW.Effect.Sharpness", "Intensity": 12},
+        ]}]
+        self.tab._fill_items()
+        self.select_item("Sword")
+        row = self.tab.tree.selection()[0]
+        self.assertEqual(str(self.tab.tree.set(row, "enchants")), "2")
+        self.assertEqual(self.tab.tree.heading("enchants", "text").strip(" ▲▼"), "Effects")
+        self.assertIn("\nEffects: Fire Aspect 0.5, 2 enchantment points  ·  Sharpness 12", self.tab.item_subtitle_var.get())
+        self.select_item("Longbow")
+        self.assertNotIn("Effects", self.tab.item_subtitle_var.get())
+
     def test_sorting_and_filters(self):
         self.tab.sort_var.set("Name")
         self.tab._fill_items()
@@ -448,10 +463,11 @@ class HeroTabTests(WindowTestCase):
         self.assertEqual(picker.name_var.get(), "Emerald Hammer")
         self.assertIn("Unique Battle Hammer", picker.unique_text.get())
         self.assertIn("SW.Item.Hammer_Unique1", picker.kind_text.get())
-        self.assertTrue(picker.status_text.get().startswith("Unconfirmed"))  # the Emerald Hammer's own ID is a guess
+        # The Emerald Hammer's own ID hasn't been seen, but it follows the pattern every seen one does: no question asked.
+        self.assertTrue(picker.status_text.get().startswith("By its pattern"))
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             picker._confirm()
-        ask.assert_called_once()
+        ask.assert_not_called()
         picker.destroy()
         self.assertIn("Added Emerald Hammer (Unique", self.save())
         hammer = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Hammer_Unique1")
@@ -694,8 +710,8 @@ class HeroTabTests(WindowTestCase):
         from dungeons2_editor.share_ids import ShareIdsDialog
 
         with mock.patch("webbrowser.open") as browser:
-            # Something the game has found that the editor has never heard of.
-            self.app.profile.get(HERO).decoded.document["CharacterSaveV1"]["LootProgression"]["DiscoveredLoot"].append("SW.Item.SomethingNew")
+            # Something the game has filed in its collections that the editor has never heard of.
+            self.app.profile.get(HERO).decoded.document["CharacterSaveV1"]["CollectionsStats"]["CollectedWeaponsCommon"].append("SW.Item.SomethingNew")
             self.app._share_ids()
             self.root.update()
             dialog = next(w for w in self.root.winfo_children() if isinstance(w, ShareIdsDialog))
@@ -840,6 +856,31 @@ class SimpleModeTests(WindowTestCase):
         self.assertIn("This one has no effect saved, so it may do nothing in the game. Delete it and add it again", self.screen.power_hint.get())
         self.screen.pick_item(self.index_of("SW.Item.Longbow"))  # other items get their rarity and power back
         self.assertTrue(self.screen.power_entry.instate(["!disabled"]))
+
+    def test_an_items_effects_are_listed_on_its_card(self):
+        sword = self.index_of("SW.Item.Sword")
+        self.screen.pick_item(sword)
+        self.assertEqual(self.screen.enchant_title.get(), "NOT ENCHANTED")  # a weapon with nothing on it yet
+        self.screen.hero.item(sword).data["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
+            {"TypeTag": f"SW.Effect.Effect{number}", "Intensity": number, "Quality": 0, "EnchantmentPointsInvested": 0} for number in range(1, 7)
+        ]}]
+        self.screen.refresh()
+        self.screen.pick_item(sword)
+        self.assertEqual(self.screen.enchant_title.get(), "EFFECTS")
+        lines = self.screen.enchant_text.get().splitlines()
+        self.assertEqual(lines[:5], ["Effect1 1", "Effect2 2", "Effect3 3", "Effect4 4", "and 2 more"])
+        self.assertIn("can't change effects yet", lines[-1])
+        self.assertTrue(self.screen.enchant_box.winfo_manager())
+        # A talisman's effect comes with its level; an artifact with no effects has nothing to show.
+        entry = next(entry for entry in self.screen._catalog() if entry.tag == "SW.Item.Talisman.HealthBoost")
+        sigil = self.screen.hero.add_item(entry.tag, entry.template)
+        self.screen.refresh()
+        self.screen.pick_item(sigil)
+        self.assertEqual(self.screen.enchant_text.get().splitlines()[:2], ["Health Boost 1.2", "Level 1 of 3. At the next levels: 1.25, then 1.35."])
+        horn = self.screen.hero.add_item("SW.Item.Artifact.RallyingHorn", entry.template)
+        self.screen.refresh()
+        self.screen.pick_item(horn)
+        self.assertFalse(self.screen.enchant_box.winfo_manager())
 
     def test_merchant_stock_can_be_copied_but_not_worn(self):
         self.show("Merchant")
@@ -1069,6 +1110,7 @@ class SimpleModeTests(WindowTestCase):
         # The Longbow turns into an artifact that's been seen in saves, but that nobody has named yet.
         longbow = self.index_of("SW.Item.Longbow")
         self.screen.hero.update_item(longbow, tag="SW.Item.Artifact.HasteMushroom")
+        self.screen.hero.item(longbow).data["DynamicPropertyTags"].clear()  # and the game has shown it to you since
         self.screen.refresh()
         self.screen.pick_item(longbow)
         self.assertIn("name made from its save ID", self.screen.card_kind_var.get())
@@ -1077,7 +1119,7 @@ class SimpleModeTests(WindowTestCase):
             self.screen.name_button.invoke()
         self.assertEqual(self.screen.card_name_var.get(), "TEMPO TRUFFLE")
         self.assertEqual(json.loads(self.names_file.read_text(encoding="utf-8")), {"SW.Item.Artifact.HasteMushroom": "Tempo Truffle"})
-        self.assertIn("SW.Item.Artifact.HasteMushroom - Tempo Truffle", share_ids.report_text([self.screen.hero], "9"))
+        self.assertIn("SW.Item.Artifact.HasteMushroom - Tempo Truffle [kept by the game]", share_ids.report_text([self.screen.hero], "9"))
 
 
 def size_of(window):
