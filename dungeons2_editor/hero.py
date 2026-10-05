@@ -25,10 +25,11 @@ import time
 from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 GAME_ITEMS_FILE = Path(__file__).resolve().parent / "data" / "items.json"  # made by tools/build_item_catalog.py
 ENCHANTMENTS_FILE = GAME_ITEMS_FILE.with_name("enchantments.json")
+EFFECTS_FILE = GAME_ITEMS_FILE.with_name("effects.json")
 
 ITEM_PREFIX = "SW.Item."
 COSMETIC_PREFIX = "SW.Item.Cosmetic."
@@ -79,7 +80,21 @@ _TALISMAN_POWER = {
     "PlayerLevel": 1, "AreaThreatLevel": 1, "RecommendedThreatLevel": 1, "ThreatSliderOffset": 0,
     "ItemPowerMin": 1, "ItemPowerMax": 11, "RNGRoll": 0, "ItemPower": -1, "ItemPowerOriginal": 0,
 }
-_UPGRADABLE = "SW.Item.Effect.Upgradable"  # the kind of effect batch a talisman's effect is saved in
+# An item's effects are saved in batches, each of a kind:
+_UPGRADABLE = "SW.Item.Effect.Upgradable"  # a talisman's own effect, which grows with its level
+_REROLLABLE = "SW.Item.Effect.Rerollable"  # the effects the game rolls on a weapon, armor piece or artifact
+_ENCHANTMENT = "SW.Item.Effect.Enchantment"  # the enchantment the Enchantsmith put on it
+EFFECT_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what the game rolls effects on
+ENCHANTABLE_KINDS = ("Melee", "Ranged", "Armor")  # what the Enchantsmith enchants
+TIERS = ("I", "II", "III")
+MAX_ITEM_XP = 10_000_000
+# The town's three vendors, and the hint the game files in a hero's save the first time you open each one's
+# window (CollectionsStats.ShownHints). The game's script cache spells all three; two have been seen in a save.
+VENDORS = {
+    "Village Merchant": "SW.UI.Onboarding.Panel.VillageMerchant.Overview",
+    "Blacksmith": "SW.UI.Onboarding.Panel.Blacksmith.Overview",
+    "Enchantsmith": "SW.UI.Onboarding.Panel.Enchantsmith.Overview",
+}
 BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
 _BOOK_GROUP = "EnchantmentBook"
 # How a hero is saved, as (HardFormat, SoftVersion) from the save's SerializeMeta, for the game versions the
@@ -88,6 +103,19 @@ TESTED_FORMATS = {("FCharacterSaveV1", 5)}
 
 _RANGED = re.compile(r"bow|sling|blowgun|launcher", re.IGNORECASE)  # Longbow, Crossbow, ...
 _ARMOR = re.compile(r"Helmet|Helm|Hood|Hat|Mask|Chest|Armor|Armour|Mail|Robe|Tunic|Vest|Leggings|Pants|Greaves|Boots|Shoes|Gauntlets|Gloves")
+
+
+def vendors_text(hero: "Hero") -> str:
+    """Which town vendors the hero has unlocked, as the game's own records show it, in a sentence or two."""
+    opened = hero.vendors_opened()
+    yes = [name for name, done in opened.items() if done]
+    no = [name for name, done in opened.items() if not done]
+    how = "The game notes the first time you open each one's window."
+    if not no:
+        return f"This hero has unlocked all three town vendors: the {', the '.join(yes[:-1])} and the {yes[-1]}."
+    if not yes:
+        return f"This hero hasn't opened a town vendor in the game yet. {how}"
+    return f"Unlocked in the game: the {' and the '.join(yes)}. Not opened yet: the {' and the '.join(no)}. {how}"
 
 
 def format_caution(hero: "Hero") -> str:
@@ -160,6 +188,63 @@ class Enchantment:
     slots: tuple[str, ...]  # Melee, Ranged, Armor (any piece) or Chestplate
     book: str  # where its book drops
     tier3: str  # what it does at tier III
+    what: str = ""  # what it does, in a few words
+    levels: str = ""  # its numbers at tiers I, II and III: "20% / 35% / 50% chance"
+
+
+@dataclass(frozen=True)
+class EffectChoice:
+    """One tier of a gear effect or of an enchantment, as a save holds it, ready to put on an item."""
+
+    effect: str  # SW.Effect.CriticalEdge, SW.Enchantment.Radiance
+    template: str  # SW.EffectTemplate.CriticalEdge.II, SW.Enchantment.Radiance.I
+    strength: Any  # the save's Intensity
+    name: str  # what the game calls it, or a name made from its ID
+    tier: str = ""  # I, II or III
+    seen: bool = True  # this tier has been seen in a real save (else its number is from the game files' table)
+    shown: str = ""  # the number the game shows for it: 20%
+    maybe: str = ""  # what the game probably calls it, when the name is made from its ID
+    rolls_on: str = ""  # the gear the game rolls it on
+    slots: tuple[str, ...] = ()  # an enchantment: what it goes on (Melee, Ranged, Armor or Chestplate), when known
+    what: str = ""  # what it does: an enchantment in a few words, a gear effect's tier in the game's own
+    levels: str = ""  # an enchantment: its numbers at tiers I, II and III
+    yours: bool = False  # not in the editor's list: found on an item in your saves
+
+    @property
+    def is_enchantment(self) -> bool:
+        return self.effect.startswith(ENCHANTMENT_PREFIX)
+
+    @property
+    def title(self) -> str:
+        """'Critical Edge II'."""
+        return f"{self.name} {self.tier}".strip()
+
+    @property
+    def number(self) -> str:
+        """'20%' when the game's number for it is known, else the strength as saved."""
+        return self.shown or format_amount(self.strength)
+
+    def fits(self, kind: str, piece: str | None = None) -> bool:
+        """Whether an enchantment goes on an item of this kind (and armor piece). True when that isn't known."""
+        if not self.slots:
+            return True
+        return kind in self.slots or (piece is not None and piece in self.slots)
+
+
+@dataclass(frozen=True)
+class EffectBook:
+    """What the editor knows about effects (dungeons2_editor/data/effects.json)."""
+
+    effects: tuple[EffectChoice, ...] = ()  # gear effects, a choice for each tier
+    enchantments: tuple[EffectChoice, ...] = ()
+    max_effects: int = 4  # the most effects the game gives an item
+    enchant_points: Any = None  # rarity -> enchantment points in an enchantment at tiers I, II and III
+    talisman_xp: tuple[int, ...] = ()  # XP a talisman needs for level 2, then for level 3
+
+    def points_for(self, rarity: str, tier: str) -> int:
+        """Enchantment points the game counts as put into an enchantment of this tier on an item of this rarity."""
+        costs = (self.enchant_points or {}).get(rarity)
+        return int(costs[TIERS.index(tier)]) if costs and tier in TIERS and TIERS.index(tier) < len(costs) else 0
 
 
 def _load(path: Path, key: str) -> list:
@@ -188,9 +273,143 @@ def game_items() -> tuple[GameItem, ...]:
 def enchantments() -> dict[str, Enchantment]:
     """Every enchantment by name."""
     return {
-        e["name"]: Enchantment(e["name"], tuple(e.get("slots") or ()), e.get("book", ""), e.get("tier3", ""))
+        e["name"]: Enchantment(
+            e["name"], tuple(e.get("slots") or ()), e.get("book", ""), e.get("tier3", ""), e.get("what", ""), e.get("levels", "")
+        )
         for e in _load(ENCHANTMENTS_FILE, "enchantments")
     }
+
+
+ENCHANTMENT_PREFIX = "SW.Enchantment."
+
+
+def _tier_of(template: str) -> str:
+    """'II' for SW.EffectTemplate.CriticalEdge.II; '' when the template doesn't end in a tier."""
+    last = template.rsplit(".", 1)[-1]
+    return last if last in TIERS and "." in template else ""
+
+
+def _base_of(template: str) -> str:
+    """A template without its tier: SW.EffectTemplate.CriticalEdge."""
+    return template.rsplit(".", 1)[0] if _tier_of(template) else template
+
+
+@lru_cache(maxsize=1)
+def effect_book() -> EffectBook:
+    """The effects and enchantments the editor can write, as real saves hold them (made by
+    tools/build_item_catalog.py). Empty when the file can't be read."""
+    try:
+        data = json.loads(EFFECTS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return EffectBook()
+    if not isinstance(data, dict):
+        return EffectBook()
+    by_name = enchantments()
+
+    def choices(entries: Any, enchantment: bool) -> tuple[EffectChoice, ...]:
+        made = []
+        for entry in entries if isinstance(entries, list) else []:
+            if not isinstance(entry, dict) or not isinstance(entry.get("effect"), str) or not entry.get("name"):
+                continue
+            base = entry["effect"] if enchantment else entry.get("template")
+            known = by_name.get(entry["name"]) if enchantment else None
+            for tier in entry.get("tiers") or []:
+                if not isinstance(base, str) or not isinstance(tier, dict) or tier.get("tier") not in TIERS or not _is_number(tier.get("strength")):
+                    continue
+                made.append(
+                    EffectChoice(
+                        entry["effect"], f"{base}.{tier['tier']}", tier["strength"], entry["name"], tier["tier"], bool(tier.get("seen")),
+                        str(tier.get("shown") or ""), str(entry.get("maybe") or ""), str(entry.get("rolls_on") or ""),
+                        known.slots if known else (), known.what if known else str(tier.get("text") or ""), known.levels if known else "",
+                    )
+                )
+        return tuple(made)
+
+    costs = data.get("enchant_points")
+    xp = data.get("talisman_xp")
+    most = data.get("max_effects")
+    return EffectBook(
+        choices(data.get("effects"), False),
+        choices(data.get("enchantments"), True),
+        most if isinstance(most, int) and not isinstance(most, bool) and most > 0 else 4,
+        costs if isinstance(costs, dict) else None,
+        tuple(value for value in xp if _is_number(value)) if isinstance(xp, list) else (),
+    )
+
+
+def _named(tag: str, template: str) -> EffectChoice | None:
+    """What the editor's list says about an effect on an item: the same effect and template if it has them, else
+    another tier of the same effect, for its name."""
+    book = effect_book()
+    listed = book.enchantments if tag.startswith(ENCHANTMENT_PREFIX) else book.effects
+    same = [choice for choice in listed if choice.effect == tag and _base_of(choice.template) == _base_of(template)]
+    return next((choice for choice in same if choice.template == template), same[0] if same else None)
+
+
+def _enchantment_info(tag: str) -> Enchantment | None:
+    """What the game calls an enchantment and what it goes on, by way of its book: SW.Enchantment.PotionSharing
+    comes from the book SW.Item.EnchantmentBook.PotionSharing, which the item list knows as Buddy Brew. None
+    for anything else, and for an enchantment whose book hasn't been named."""
+    if not tag.startswith(ENCHANTMENT_PREFIX):
+        return None
+    book = _game_items_by_id().get(f"{ITEM_PREFIX}{_BOOK_GROUP}.{tag[len(ENCHANTMENT_PREFIX):]}")
+    return enchantments().get(book.name) if book is not None and not book.name_from_id else None
+
+
+def effect_choices(heroes: Iterable["Hero"] = ()) -> tuple[list[EffectChoice], list[EffectChoice]]:
+    """(gear effects, enchantments) the editor can put on an item: every tier in its own list, and any other it
+    finds on an item in these saves, which it can copy exactly as the game saved it. A tier the list only has
+    from the game files' table counts as seen once a save shows it, and the save's number wins."""
+    book = effect_book()
+    found: dict[tuple[str, str], EffectChoice] = {}
+    kinds: dict[tuple[str, str], set[str]] = {}
+    for hero in heroes:
+        for item in hero.items():
+            for effect in item.effects:
+                if effect.group not in (_REROLLABLE, _ENCHANTMENT) or not effect.template or not _is_number(effect.strength):
+                    continue
+                if (effect.group == _ENCHANTMENT) != effect.tag.startswith(ENCHANTMENT_PREFIX):
+                    continue  # not laid out the way the editor knows
+                key = (effect.tag, effect.template)
+                kinds.setdefault(key, set()).add(item.kind)
+                known = _named(effect.tag, effect.template)
+                listed = known is not None and known.template == effect.template
+                if listed and known.seen:
+                    continue  # the list has this tier from a real save already; a number typed in by hand doesn't replace it
+                found.setdefault(
+                    key,
+                    replace(known, strength=effect.strength, seen=True, shown=known.shown if known.strength == effect.strength else "")
+                    if listed
+                    else effect.as_choice(),
+                )
+    lists: tuple[list[EffectChoice], list[EffectChoice]] = ([], [])
+    for enchantment, listed in ((False, book.effects), (True, book.enchantments)):
+        made = [found.pop((choice.effect, choice.template), choice) for choice in listed]
+        for key, choice in list(found.items()):
+            if choice.is_enchantment == enchantment:
+                if enchantment and not choice.slots:  # all that's known is where it was found
+                    choice = replace(choice, slots=tuple(sorted(kinds[key] & set(ENCHANTABLE_KINDS))))
+                made.append(choice)
+                del found[key]
+        order = {tier: position for position, tier in enumerate(TIERS)}
+        lists[enchantment].extend(sorted(made, key=lambda choice: (choice.name.lower(), order.get(choice.tier, len(order)), choice.template)))
+    return lists
+
+
+def _effect_entry(choice: EffectChoice, points: int = 0) -> dict:
+    """An effect the way a save holds one, in the game's own order of keys."""
+    return {
+        "TypeTag": choice.effect,
+        "Intensity": choice.strength,
+        "Quality": 0,
+        "EnchantmentPointsInvested": int(points),
+        "GeneratorData": {"GeneratorParentTemplate": choice.template, "Locked": False},
+    }
+
+
+def _effect_key(entry: Any) -> tuple[Any, Any]:
+    generator = entry.get("GeneratorData") if isinstance(entry, dict) else None
+    return (entry.get("TypeTag") if isinstance(entry, dict) else None, generator.get("GeneratorParentTemplate") if isinstance(generator, dict) else None)
 
 
 @lru_cache(maxsize=1)
@@ -282,8 +501,9 @@ def display_name(tag: str) -> str:
 
 
 def talisman_levels(tag: str) -> list[dict]:
-    """A talisman's levels as the game saves them (ItemProgression.ItemLevels): its effect at each one. Empty
-    when the item list doesn't know what the talisman does."""
+    """A talisman's levels as the game saves them (ItemProgression.ItemLevels): its effect at each one, or for
+    a companion's talisman, which has no effect of its own, the tag each level carries. Empty when the item
+    list doesn't know what the talisman does."""
     known = game_item(tag)
     return [
         {
@@ -295,10 +515,13 @@ def talisman_levels(tag: str) -> list[dict]:
                     "EnchantmentPointsInvested": 0,
                     "GeneratorData": {"GeneratorParentTemplate": level["template"], "Locked": False},
                 }
-            ],
-            "LevelTags": [],
+            ]
+            if "effect" in level
+            else [],
+            "LevelTags": list(level.get("tags") or []),
         }
         for level in (known.levels if known is not None else ())
+        if isinstance(level, dict)
     ]
 
 
@@ -375,6 +598,15 @@ def slots_for(kind: str, piece: str | None, slots: list[GearSlot] | tuple[GearSl
     return [slot for slot in slots if slot.kind == kind and (slot.piece is None or slot.piece == piece)]
 
 
+def _slot_words(slots: Sequence[str]) -> str:
+    """'melee and ranged weapons', 'armor', 'chestplates': what an enchantment goes on."""
+    names = {"Melee": "melee weapons", "Ranged": "ranged weapons", "Armor": "armor", "Chestplate": "chestplates"}
+    if set(slots) >= {"Melee", "Ranged"}:
+        slots = ["weapons"] + [slot for slot in slots if slot not in ("Melee", "Ranged")]
+    listed = [names.get(slot, slot.lower()) for slot in slots]
+    return " and ".join(listed) if len(listed) < 3 else ", ".join(listed[:-1]) + " and " + listed[-1]
+
+
 def format_amount(value: Any) -> str:
     """5000 -> '5,000'; 845.5 -> '845.5'."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -402,7 +634,7 @@ def _check_number(value: Any, low: float, high: float, what: str, whole: bool = 
 
 @dataclass(frozen=True)
 class Effect:
-    """One effect on an item, as a save holds it. The editor shows these; it doesn't change them yet."""
+    """One effect on an item, as a save holds it."""
 
     tag: str  # SW.Effect.HealthBoost
     strength: Any  # the save's Intensity; what the number means depends on the effect (1.2 is +20% max health)
@@ -410,16 +642,62 @@ class Effect:
     points: Any = 0  # enchantment points put into it
     locked: bool = False
     group: str = ""  # the kind of batch it's saved in: SW.Item.Effect.Upgradable for a talisman's own effect
+    template: str = ""  # SW.EffectTemplate.HealthBoost.I: which tier of which effect the game made it from
+
+    @property
+    def is_rolled(self) -> bool:
+        """One of the effects the game rolls on a weapon, armor piece or artifact."""
+        return self.group == _REROLLABLE
+
+    @property
+    def is_enchantment(self) -> bool:
+        return self.group == _ENCHANTMENT
+
+    @property
+    def tier(self) -> str:
+        """I, II or III for a rolled effect or an enchantment; a talisman's effect follows its level instead."""
+        return _tier_of(self.template) if self.group in (_REROLLABLE, _ENCHANTMENT) else ""
 
     @property
     def name(self) -> str:
-        """'Health Boost' for SW.Effect.HealthBoost."""
-        return words(self.tag.rsplit(".", 1)[-1])
+        """What the game calls it when the editor knows ('Acrobat' for SW.Effect.RollCooldown from the Acrobat
+        template), else a name made from its ID ('Health Boost' for SW.Effect.HealthBoost)."""
+        known = _named(self.tag, self.template) if self.group in (_REROLLABLE, _ENCHANTMENT) else None
+        if known is not None:
+            return known.name
+        book = _enchantment_info(self.tag) if self.is_enchantment else None
+        # A rolled effect is named after its template, as the game names it: Acrobat, not Roll Cooldown.
+        named = _base_of(self.template) if self.is_rolled and self.template else self.tag
+        return book.name if book is not None else words(named.rsplit(".", 1)[-1])
+
+    @property
+    def title(self) -> str:
+        """'Critical Edge II'."""
+        return f"{self.name} {self.tier}".strip()
+
+    def as_choice(self) -> EffectChoice:
+        """This effect as something to put on an item again, exactly as it's saved here: the editor's own entry
+        for it when it has one, else a copy."""
+        known = _named(self.tag, self.template)
+        if known is not None and known.template == self.template and known.strength == self.strength:
+            return known if known.seen else replace(known, seen=True)  # it's in a save: that's seen
+        like = known or _enchantment_info(self.tag)  # another tier of it, or what its book says
+        return EffectChoice(
+            self.tag, self.template, self.strength, self.name, self.tier, maybe=known.maybe if known else "",
+            rolls_on=known.rolls_on if known else "", slots=like.slots if like else (), what=like.what if like else "",
+            levels=like.levels if like else "", yours=True,
+        )
 
     @property
     def text(self) -> str:
-        """'Health Boost 1.2', with its quality and enchantment points when it has any."""
-        parts = [f"{self.name} {format_amount(self.strength)}" if _is_number(self.strength) else self.name]
+        """'Health Boost 1.2' or 'Critical Edge II 20%', with its quality and enchantment points when it has
+        any. An enchantment's strength isn't a number the game shows, so it's left out."""
+        known = _named(self.tag, self.template) if self.tier else None
+        if known is not None and known.template == self.template and known.strength == self.strength and known.shown:
+            number = known.shown
+        else:
+            number = format_amount(self.strength) if _is_number(self.strength) else ""
+        parts = [f"{self.title} {number}" if number and not self.is_enchantment else self.title]
         if _is_number(self.quality) and self.quality:
             parts.append(f"quality {format_amount(self.quality)}")
         if _is_number(self.points) and self.points:
@@ -507,6 +785,7 @@ class Item:
                 if not isinstance(effect, dict) or not isinstance(effect.get("TypeTag"), str):
                     continue
                 generator = effect.get("GeneratorData")
+                template = generator.get("GeneratorParentTemplate") if isinstance(generator, dict) else None
                 found.append(
                     Effect(
                         effect["TypeTag"],
@@ -515,17 +794,53 @@ class Item:
                         effect.get("EnchantmentPointsInvested", 0),
                         bool(generator.get("Locked")) if isinstance(generator, dict) else False,
                         str(batch.get("TypeTag", "")),
+                        template if isinstance(template, str) else "",
                     )
                 )
         return found
 
+    @property
+    def rolled_effects(self) -> list[Effect]:
+        """The effects the game rolled for it (or the editor gave it in their place)."""
+        return [effect for effect in self.effects if effect.is_rolled]
+
+    @property
+    def enchantment(self) -> Effect | None:
+        return next((effect for effect in self.effects if effect.is_enchantment), None)
+
+    @property
+    def own_effects(self) -> list[Effect]:
+        """Effects saved any other way, such as the one a Unique comes with. The editor leaves these alone."""
+        return [effect for effect in self.effects if not effect.is_rolled and not effect.is_enchantment]
+
+    @property
+    def can_have_effects(self) -> bool:
+        return not self.is_cosmetic and self.kind in EFFECT_KINDS
+
+    @property
+    def can_be_enchanted(self) -> bool:
+        return not self.is_cosmetic and self.kind in ENCHANTABLE_KINDS
+
+    @property
+    def next_level_xp(self) -> int | None:
+        """XP a talisman needs for its next level, counted from the level before. None at the last level, for
+        anything else, or when the editor doesn't know."""
+        needed = effect_book().talisman_xp
+        levels = self.progression.get("ItemLevels")
+        if not self.is_talisman or not isinstance(levels, list) or not isinstance(self.level, int):
+            return None  # one with no levels saved has nothing to level into
+        return int(needed[self.level]) if 0 <= self.level < min(len(needed), len(levels) - 1) else None
+
     def effect_lines(self) -> list[str]:
         """What the item's effects are, a line each. A talisman also says which level it's at and how
         strong its effect gets at the levels to come."""
-        lines = [effect.text for effect in self.effects]
+        lines = [f"Enchanted: {effect.text}" if effect.is_enchantment else effect.text for effect in self.effects]
         levels = self.progression.get("ItemLevels")
         if self.is_talisman and isinstance(levels, list) and levels and isinstance(self.level, int) and 0 <= self.level < len(levels):
-            line = f"Level {self.level + 1} of {len(levels)}."
+            needed = self.next_level_xp
+            # Past the first level, whether the XP saved counts from nothing or from the last level-up hasn't been seen.
+            progress = f" ({format_amount(self.xp)} of {format_amount(needed)} XP)" if needed is not None and self.level == 0 and _is_number(self.xp) else ""
+            line = f"Level {self.level + 1} of {len(levels)}{progress}."
             later = []
             for level in levels[self.level + 1:]:
                 listed = level.get("LevelEffects") if isinstance(level, dict) else None
@@ -734,9 +1049,7 @@ class Hero:
         if wanted != item.tag:
             levels = self._talisman_levels(wanted) if tag_kind(wanted) == "Talisman" else None
             item.data["TypeTag"] = wanted
-            marks = item.data.get("DynamicPropertyTags")
-            if isinstance(marks, list) and UNSEEN_TAG not in marks:
-                marks.append(UNSEEN_TAG)
+            self._mark_unseen(item.data)
             if levels is not None:
                 self._as_talisman(item.data, levels)
                 rarity = power = None
@@ -749,6 +1062,146 @@ class Hero:
                     values[key] = int(power)
         if count is not None and count != item.count:
             item.entry["StackCount"] = int(count)
+
+    @staticmethod
+    def _mark_unseen(data: dict) -> None:
+        """Mark an item as one you haven't looked at, the way the game marks a new one. Until the game has
+        shown it to you, what the editor wrote on it isn't the game's word for anything."""
+        marks = data.get("DynamicPropertyTags")
+        if isinstance(marks, list) and UNSEEN_TAG not in marks:
+            marks.append(UNSEEN_TAG)
+
+    def _effects_item(self, index: int) -> tuple[Item, list]:
+        """An item whose effects can be changed, and its list of effect batches."""
+        item = self._gear(index)
+        if item.stock_slot:
+            raise ValueError(f"The {item.name} is in the Village Merchant's stock. Make a copy, and change the copy.")
+        batches = item.data.get("Effects")
+        if not isinstance(batches, list) or not all(isinstance(batch, dict) for batch in batches):
+            raise ValueError(f"The {item.name}'s effects are saved in a way the editor doesn't know, so it leaves them alone.")
+        return item, batches
+
+    def set_effects(self, index: int, choices: Sequence[EffectChoice]) -> None:
+        """Give a weapon, armor piece or artifact these effects, in place of the ones the game rolled for it.
+
+        They're saved the way the game saves the effects it rolls (one batch of the kind
+        SW.Item.Effect.Rerollable), each exactly as a real save holds that tier. An effect the item keeps is
+        left as it is. Any other effect the item has (an enchantment, a Unique's own) isn't touched, and
+        counts towards the most the game gives an item. No effects at all removes the batch, which is how
+        the game saves a Common item.
+        """
+        item, batches = self._effects_item(index)
+        wanted = list(choices)
+        if not item.can_have_effects:
+            raise ValueError(f"The {item.name} can't have effects like these: the game rolls them on weapons, armor and artifacts.")
+        if any(choice.is_enchantment for choice in wanted):
+            raise ValueError("An enchantment isn't one of the effects the game rolls. Set it as the item's enchantment.")
+        if len({choice.effect for choice in wanted}) != len(wanted):
+            raise ValueError("An item can't have the same effect twice.")
+        most = effect_book().max_effects
+        own = len(item.own_effects)
+        if len(wanted) + own > most:
+            also = f", and the {item.name} has {own} of its own" if own else ""
+            raise ValueError(f"The game caps an item at {most} effects{also}.")
+        batch = next((batch for batch in batches if batch.get("TypeTag") == _REROLLABLE), None)
+        kept = batch.get("EffectsInThisBatch") if batch is not None else None
+        current = {_effect_key(entry): entry for entry in kept} if isinstance(kept, list) else {}
+        made = [current.get((choice.effect, choice.template)) or _effect_entry(choice) for choice in wanted]
+        if isinstance(kept, list) and len(made) == len(kept) and all(a is b for a, b in zip(made, kept)):
+            return
+        if not made:
+            if batch is None:
+                return
+            batches.remove(batch)
+        elif batch is not None:
+            batch["EffectsInThisBatch"] = made
+        else:
+            # Before an enchantment: the game rolls an item's effects when it makes it, and enchants it later.
+            at = next((position for position, other in enumerate(batches) if other.get("TypeTag") == _ENCHANTMENT), len(batches))
+            batches.insert(at, {"TypeTag": _REROLLABLE, "EffectsInThisBatch": made})
+        self._mark_unseen(item.data)
+
+    def set_enchantment(self, index: int, choice: EffectChoice | None) -> None:
+        """Enchant a weapon or armor piece, or with None take its enchantment off.
+
+        It's saved the way the Enchantsmith's work is: one batch of the kind SW.Item.Effect.Enchantment
+        holding the one enchantment, with the enchantment points the game counts for that tier on an item of
+        that rarity (it hands them back when you disenchant). The editor doesn't take the points from you.
+        """
+        item, batches = self._effects_item(index)
+        batch = next((batch for batch in batches if batch.get("TypeTag") == _ENCHANTMENT), None)
+        if choice is None:
+            if batch is not None:
+                batches.remove(batch)
+                self._mark_unseen(item.data)
+            return
+        if not choice.is_enchantment:
+            raise ValueError(f"{choice.name} isn't an enchantment.")
+        if not item.can_be_enchanted:
+            raise ValueError(f"The {item.name} can't be enchanted: enchantments go on weapons and armor.")
+        if not choice.fits(item.kind, item.piece):
+            raise ValueError(f"{choice.name} goes on {_slot_words(choice.slots)}, and the {item.name} isn't one.")
+        kept = batch.get("EffectsInThisBatch") if batch is not None else None
+        if isinstance(kept, list) and len(kept) == 1 and _effect_key(kept[0]) == (choice.effect, choice.template):
+            return  # it has this one already
+        made = [_effect_entry(choice, effect_book().points_for(item.rarity, choice.tier))]
+        if batch is not None:
+            batch["EffectsInThisBatch"] = made
+        else:
+            batches.append({"TypeTag": _ENCHANTMENT, "EffectsInThisBatch": made})
+        self._mark_unseen(item.data)
+
+    def set_item_xp(self, index: int, xp: int | float) -> None:
+        """Set the XP a talisman has earned. The game works out the level itself: it levels a talisman up when
+        the XP it earns takes it past what the next level needs."""
+        item = self._gear(index)
+        progression = item.data.get("ItemProgression")
+        if not item.is_talisman or not isinstance(progression, dict) or "CurrentXP" not in progression:
+            raise ValueError(f"The {item.name} doesn't earn XP: only talismans do.")
+        _check_number(xp, 0, MAX_ITEM_XP, "XP")
+        progression["CurrentXP"] = int(xp) if float(xp).is_integer() else float(xp)
+
+    def ready_talisman(self, index: int) -> int:
+        """Put a talisman one XP short of its next level, so the next XP you earn in the game levels it up.
+        Returns the XP it was given."""
+        item = self._gear(index)
+        if not item.is_talisman:
+            raise ValueError(f"The {item.name} doesn't earn XP: only talismans do.")
+        needed = item.next_level_xp
+        if needed is None:
+            raise ValueError(
+                f"The {item.name} is at its last level." if item.is_talisman and item.progression.get("ItemLevels")
+                else f"The editor doesn't know what the {item.name} needs for its next level."
+            )
+        # Whether a save counts a talisman's XP from nothing or from its last level-up hasn't been seen, so
+        # past the first level this is the higher of the two: either way the next XP earned is enough.
+        target = sum(effect_book().talisman_xp[: item.level + 1]) - 1
+        self.set_item_xp(index, max(target, 0))
+        return target
+
+    # ------------------------------------------------------------ the town
+
+    def vendors_opened(self) -> dict[str, bool]:
+        """Which of the town's three vendors this hero has unlocked and opened, by the game's own records: the
+        hint it files the first time you open a vendor's window, and the counts it keeps of what each vendor
+        has done for you. The editor writes none of these, so an enchantment or a vendor level set here
+        doesn't count. Nor does the Village Merchant's stock: a hero has that before the Merchant is found."""
+        stats = self.body.get("CollectionsStats") or {}
+        hints = {hint.get("Tag") for hint in stats.get("ShownHints") or [] if isinstance(hint, dict)}
+        opened = {name: tag in hints for name, tag in VENDORS.items()}
+        achievements = self.body.get("Achievements") or {}
+
+        def done(group: str, name: str, key: str) -> bool:
+            entry = (achievements.get(group) or {}).get(f"SW.Achievements.{name}")
+            return bool(entry.get(key)) if isinstance(entry, dict) else False
+
+        if done("BoolAchievements", "PurchaseASpecialGearPieceFromTheVillageMerchant", "bCompleted"):
+            opened["Village Merchant"] = True
+        if done("BoolAchievements", "ReforgeASpecialPieceOfGear", "bCompleted"):
+            opened["Blacksmith"] = True
+        if done("CountAchievements", "UpgradeAnEnchantmentToLevel3", "Count") or done("CollectionAchievements", "EnchantEveryInventorySlotWithLevel3Enchantments", "CollectedTags"):
+            opened["Enchantsmith"] = True
+        return opened
 
     @staticmethod
     def _make_new(entry: dict) -> None:
@@ -855,7 +1308,8 @@ class Hero:
         its effect at level 1 with every level listed. Without ``levels`` (the editor doesn't know what this
         talisman does) it has no effect at all, and may do nothing in the game."""
         data["RarityTag"] = RARITY_PREFIX + NO_RARITY
-        data["Effects"] = [{"TypeTag": _UPGRADABLE, "EffectsInThisBatch": copy.deepcopy(levels[0].get("LevelEffects", []))}] if levels else []
+        first = levels[0].get("LevelEffects") if levels else None  # a companion's talisman has none
+        data["Effects"] = [{"TypeTag": _UPGRADABLE, "EffectsInThisBatch": copy.deepcopy(first)}] if first else []
         progression = data.setdefault("ItemProgression", {})
         progression.update(CurrentLevel=0, CurrentXP=0, ItemLevels=copy.deepcopy(levels))
         values = (data.get("GeneratorData") or {}).get("PowerGeneratorValues")
@@ -1181,6 +1635,13 @@ def describe_changes(before: dict, after: dict) -> list[str]:
             parts.append(f"power {format_amount(item.power)} → {format_amount(other.power)}")
         if other.count != item.count:
             parts.append(f"count {item.count} → {other.count}")
+        if [effect.text for effect in other.rolled_effects] != [effect.text for effect in item.rolled_effects]:
+            parts.append("effects: " + (", ".join(effect.text for effect in other.rolled_effects) or "none"))
+        was, now = item.enchantment, other.enchantment
+        if (was.title if was else None) != (now.title if now else None):
+            parts.append(f"enchanted with {now.title}" if now else "enchantment taken off")
+        if other.is_talisman and other.xp != item.xp:
+            parts.append(f"XP {format_amount(item.xp)} → {format_amount(other.xp)}")
         if other.equipped_slot != item.equipped_slot:
             parts.append(other.where[0].lower() + other.where[1:] if other.equipped_slot else "unequipped")
         if parts:

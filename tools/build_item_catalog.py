@@ -7,8 +7,11 @@ links are in each file this writes and in the README:
     uniques       every Unique, its slot and its base item: so every weapon, and every
                   armor piece with its set and slot
     artifacts     every artifact
-    talismans     every talisman and what it does at level 3
+    talismans     every talisman and what it does at level 3, and the XP a talisman level takes
     enchantments  every enchantment, the gear it goes on and where its book drops
+    effects       every gear effect and its strength at each tier, and on each effect's own
+                  page (effects/acrobat) the game's wording for each tier
+    guides/enchanting-guide   what each enchantment does at each level, and what a level costs
 
 The game's own item IDs aren't published anywhere the editor can use, so each item's save ID
 comes from real saves where players have reported it, and is otherwise worked out from its
@@ -26,6 +29,10 @@ wrong: the game's internal names often aren't the names players see (the Riftsla
 as CurvedLongsword, the Sculk Digger set as CaveCrawler, the Amethyst Lens as
 Talisman.RangedBuff). A Unique's own ID is only listed once it has been seen.
 
+The same goes for effects and enchantments (dungeons2_editor/data/effects.json): the editor can
+only write one the way a real save holds it, so GEAR_EFFECTS and ENCHANTMENT_TIERS list what
+saves have shown, and MetaBot's tables give the names and the numbers the game shows.
+
 Run from the repository root:  python tools/build_item_catalog.py
 """
 
@@ -39,7 +46,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 BASE_URL = "https://metabot.gg/en/minecraft-dungeons-2/"
-PAGES = ("uniques", "artifacts", "talismans", "enchantments")
+PAGES = ("uniques", "artifacts", "talismans", "enchantments", "effects", "guides/enchanting-guide")
 HEADERS = {"User-Agent": "Dungeons2SaveEditor/1.2 (item catalog builder; +https://github.com/IshiakiZ/mcd2-save-editor)"}
 DATA = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data"
 PREFIX = "SW.Item."
@@ -220,6 +227,9 @@ BOOK_IDS = {
     "Fire Aspect": "FireAspect",
     "Frost Crescent": "FrostCrescent",
     "Gravity Pulse": "GravityPulse",
+    # Radiance by the quest that hands it out: Training with the Enchantsmith rewards Piercing, Healing Smite and
+    # Ancient Alchemy (MetaBot's enchanting guide), and a save got Piercing, Radiance and SoulInfusedPotion from it.
+    "Healing Smite": "Radiance",
     "Health Synergy": "HealthSynergy",
     "Piercing": "Piercing",
     "Poison Fog": "PoisonFog",
@@ -233,8 +243,7 @@ BOOK_IDS = {
 # What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
 # effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
 # the effect's Intensity at each level. A talisman that isn't here can only be added without its effect, so the
-# editor treats it as a guess even when its ID is known. Four more have been seen with three levels and no effect
-# at any of them (IronGolem, Prickle, Wobble and Wolf): what else a save holds for those isn't known yet.
+# editor treats it as a guess even when its ID is known.
 TALISMAN_LEVELS = {
     "Talisman.AmmoCapacity": ("AmmoCapacity", "AmmoCapacity", (1.2, 1.4, 1.6)),  # Twig of Dark Oak: 60% more ammo
     "Talisman.ArtifactCooldown": ("Cooldown", "ArtifactCooldown", (-0.04, -0.08, -0.14)),  # Essence of Efficiency
@@ -253,6 +262,77 @@ TALISMAN_LEVELS = {
     "Talisman.SoulGather": ("SoulGather", "SoulGather", (0.4, 0.8, 1.4)),  # Twisted Tooth: 140% more souls
     "Talisman.StatusBuff": ("StatusBuff", "StatusBuff", (1.1, 1.15, 1.25)),  # Sculk Badge: statuses last 25% longer
 }
+# A companion's talisman has no effect of its own: each level carries a tag instead (SW.Talisman.Wolf.Level.1 to
+# .3), and the game does the rest. The Tasty Bone has been seen whole in a real save. Three more were reported with
+# three levels and no effect (IronGolem, Prickle and Wobble), from a version whose report left the tags out.
+TALISMAN_LEVEL_TAGS = {
+    "Talisman.Wolf": "SW.Talisman.Wolf.Level",  # Tasty Bone
+}
+# Gear effects (the bonuses the game rolls on weapons, armor and artifacts) as real saves store them: effect ->
+# (template, strength at each tier seen). The effect is SW.Effect.<effect>, a tier's template is
+# SW.EffectTemplate.<template>.<tier> and the strength is the save's Intensity. Everything here was written by
+# the game: the developer's own play, and players' Share item IDs reports.
+GEAR_EFFECTS = {
+    "Cooldown": ("Cooldown", {"I": -0.1, "II": -0.15}),
+    "CriticalEdge": ("CriticalEdge", {"I": 0.1, "II": 0.2}),
+    "CriticalHit": ("CriticalHit", {"I": 0.05}),
+    "Desperation": ("Desperation", {"I": 0.1}),
+    "Expand": ("Expand", {"I": 0.2}),
+    "HealingFocus": ("HealingFocus", {"II": 0.35}),
+    "Knockback": ("Knockback", {"I": 0.15}),
+    "LightningFocus": ("LightningFocus", {"I": 0.1, "II": 0.15}),
+    "Looting": ("Looting", {"I": 0.2}),
+    "Lucky": ("Lucky", {"I": 0.1}),
+    "MasterMarksman": ("MasterMarksman", {"I": 0.15}),
+    "ProjectileProtection": ("ProjectileProtection", {"I": -0.1}),
+    "RollCooldown": ("Acrobat", {"I": 0.1}),
+    "SoulMax": ("BagOfSouls", {"I": 1.25}),
+    "SwiftSneak": ("SwiftSneak", {"I": 0.15}),
+    "Vanguard": ("Vanguard", {"I": 0.2}),
+    "Vestige": ("Vestige", {"I": 0.1}),
+    "Vivify": ("Vivify", {"I": 0.15}),
+}
+# What the game calls an effect, by its template, where there's no doubt: the template is named as MetaBot names
+# the effect (or all but), and every strength a save has shown is MetaBot's number for that tier. For these the
+# tiers nobody has sent yet are filled in from MetaBot's table, marked as not seen.
+# Spiritual is here by another route: MetaBot lists the Soul Chip talisman under it, a save holds the Soul Chip's
+# effect as SW.Effect.SoulMax, and SoulMax is the effect the BagOfSouls template gives gear, at Spiritual's 25%.
+EFFECT_NAMES = {
+    "Acrobat": "Acrobat",
+    "BagOfSouls": "Spiritual",
+    "Cooldown": "Cooldown",
+    "CriticalEdge": "Critical Edge",
+    "CriticalHit": "Critical Hit",
+    "Knockback": "Knockback",
+    "Looting": "Looter",
+    "Lucky": "Luck",
+    "MasterMarksman": "Marksman",
+    "ProjectileProtection": "Projectile Protection",
+    "Vanguard": "Vanguard",
+}
+# What the game probably calls these: the meaning and the one strength seen fit, but the names don't match, so
+# it's shown as a maybe and no tier is filled in from it.
+EFFECT_GUESSES = {
+    "Expand": "Totem Radius",
+    "HealingFocus": "Healer",
+    "LightningFocus": "Electromancer",
+    "SwiftSneak": "Prowler",
+    "Vivify": "Ally",
+}
+# Enchantments as real saves store them: enchantment -> strength at each tier seen. The effect is
+# SW.Enchantment.<name>, named like its book (BOOK_IDS), and a tier's template is SW.Enchantment.<name>.<tier>. The
+# strength isn't the number the game shows (Ancient Alchemy I is 0.5 and gives 30 souls), so a tier can't be
+# worked out: each one has to be seen.
+ENCHANTMENT_TIERS = {
+    "Piercing": {"I": 1},
+    "Radiance": {"I": 0.3},
+    "SoulInfusedPotion": {"I": 0.5, "II": 0.6},
+}
+# Enchantment points a save has shown for an enchantment on a Unique item (EnchantmentPointsInvested), to check
+# MetaBot's cost table against.
+SEEN_ENCHANT_POINTS = {("Unique", "I"): 3, ("Unique", "II"): 8}
+TIERS = ("I", "II", "III")
+POOLS = re.compile(r"All gear|Any (?:weapon|armor|artifact)|[A-Z][a-z]+ gear|Fixed only")  # where an effect rolls
 # Armor slots as MetaBot names them, as the editor names them, and as armor IDs spell them.
 SLOTS = {"Helmet": "Helmet", "Chest": "Chestplate", "Leggings": "Leggings", "Boots": "Boots"}
 SLOT_WORDS = {"Helmet": "Helmet", "Chestplate": "Chest", "Leggings": "Leggings", "Boots": "Boots"}
@@ -295,17 +375,25 @@ class Tables(HTMLParser):
             self._cell.append(data)
 
 
-def fetch_tables(page: str) -> list[list[list[str]]]:
+def fetch(page: str) -> str:
     request = urllib.request.Request(BASE_URL + page, headers=HEADERS)
     for attempt in range(4):
         try:
             with urllib.request.urlopen(request, timeout=60) as response:
-                parser = Tables()
-                parser.feed(response.read().decode("utf-8"))
-                return parser.tables
+                return response.read().decode("utf-8")
         except OSError:
             time.sleep(3 * (attempt + 1))
     raise RuntimeError(f"metabot.gg didn't answer for {page}")
+
+
+def fetch_tables(page: str) -> list[list[list[str]]]:
+    return tables_in(fetch(page))
+
+
+def tables_in(page_html: str) -> list[list[list[str]]]:
+    parser = Tables()
+    parser.feed(page_html)
+    return parser.tables
 
 
 def rows(tables: list[list[list[str]]], *headers: str) -> list[dict[str, str]]:
@@ -315,6 +403,88 @@ def rows(tables: list[list[list[str]]], *headers: str) -> list[dict[str, str]]:
         if names[: len(headers)] == list(headers):
             return [dict(zip(names, row)) for row in table[1:] if len(row) == len(names)]
     raise RuntimeError(f"no table headed {headers}")
+
+
+def all_rows(tables: list[list[list[str]]], *headers: str) -> list[dict[str, str]]:
+    """The rows of every table whose header row starts with ``headers``."""
+    found = []
+    for table in tables:
+        names = [cell.upper() for cell in table[0]] if table else []
+        if names[: len(headers)] == list(headers):
+            found += [dict(zip(names, row)) for row in table[1:] if len(row) == len(names)]
+    return found
+
+
+def spaced(name: str) -> str:
+    """'BagOfSouls' -> 'Bag Of Souls': a name for an effect nobody has named, from its ID."""
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ", name)
+
+
+def percent(cell: str) -> float | None:
+    """'7.5%' -> 7.5; None for a tier the effect doesn't have ('—')."""
+    match = re.fullmatch(r"(\d+(?:\.\d+)?)%", cell.strip())
+    return float(match.group(1)) if match else None
+
+
+def strength_like(seen: float, shown: float) -> str:
+    """How a save's strength relates to the number the game shows: 0.2 for 20% ("plain"), -0.1 for 10% less
+    ("less"), or 1.25 for 25% more ("times")."""
+    for way, value in (("plain", shown / 100), ("less", -shown / 100), ("times", 1 + shown / 100)):
+        if abs(seen - value) < 1e-9:
+            return way
+    return ""
+
+
+def as_strength(way: str, shown: float) -> float:
+    return round({"plain": shown / 100, "less": -shown / 100, "times": 1 + shown / 100}[way], 6)
+
+
+def slug(name: str) -> str:
+    """'Critical Edge' -> 'critical-edge', as in the address of the effect's own page."""
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+def gear_effects(table: list[dict[str, str]], wording: dict[str, dict[str, str]]) -> list[dict]:
+    """GEAR_EFFECTS as the editor's list: each effect with its tiers. A named effect also gets the tiers nobody
+    has seen yet, from MetaBot's numbers, as long as every tier that has been seen agrees with them, and the
+    game's own wording for each tier (``wording``: effect name -> tier -> sentence)."""
+    by_name = {row["EFFECT"]: row for row in table}
+    made = []
+    for effect, (template, seen) in sorted(GEAR_EFFECTS.items()):
+        name = EFFECT_NAMES.get(template)
+        entry = {"effect": f"SW.Effect.{effect}", "template": f"SW.EffectTemplate.{template}", "name": name or spaced(template)}
+        tiers = [{"tier": tier, "strength": seen[tier], "seen": True} for tier in TIERS if tier in seen]
+        if name is None:
+            entry["name_from_id"] = True
+            if template in EFFECT_GUESSES:
+                entry["maybe"] = EFFECT_GUESSES[template]
+        elif name not in by_name:
+            raise SystemExit(f"{name} isn't in MetaBot's effects table any more")
+        else:
+            row = by_name[name]
+            ways = {strength_like(strength, percent(row[tier]) or 0) for tier, strength in seen.items()}
+            if len(ways) != 1 or "" in ways:
+                raise SystemExit(f"{effect}: saves hold {seen}, which doesn't fit MetaBot's {[row[tier] for tier in TIERS]}")
+            way = ways.pop()
+            tiers = []
+            for tier in TIERS:
+                shown = percent(row[tier])
+                if shown is None:
+                    continue
+                sentence = wording.get(name, {}).get(tier, "")
+                # MetaBot gives a tier's number twice: in its table, and in the game's wording for the tier. A tier
+                # nobody has seen saved is only taken when the two agree (Critical Edge III: 30% and "40% more").
+                agrees = bool(re.search(rf"(?<![\d.]){re.escape(f'{shown:g}')}(?![\d.])", sentence))
+                if tier not in seen and not agrees:
+                    print(f"warning: {name} {tier} is {row[tier]} in MetaBot's table, but its wording is {sentence!r}; left out until a save shows it")
+                    continue
+                tiers.append({"tier": tier, "strength": as_strength(way, shown), "shown": row[tier], "seen": tier in seen, **({"text": sentence} if agrees else {})})
+            entry["category"] = row["CATEGORY"]
+            entry["rolls_on"] = ", ".join(POOLS.findall(row["ROLLS ON"]))
+            entry["page"] = f"{BASE_URL}effects/{slug(name)}"
+        entry["tiers"] = tiers
+        made.append(entry)
+    return made
 
 
 def pascal(name: str) -> str:
@@ -331,15 +501,18 @@ def entry(name: str, kind: str, item_id: str, unique_suffix: str = "", **extra: 
         effect, template, strengths = TALISMAN_LEVELS[item_id[len(PREFIX):]]
         made["levels"] = [
             {"effect": f"SW.Effect.{effect}", "intensity": strength, "template": f"SW.EffectTemplate.{template}.{numeral}"}
-            for numeral, strength in zip(("I", "II", "III"), strengths)
+            for numeral, strength in zip(TIERS, strengths)
         ]
+    if item_id[len(PREFIX):] in TALISMAN_LEVEL_TAGS:
+        made["levels"] = [{"tags": [f"{TALISMAN_LEVEL_TAGS[item_id[len(PREFIX):]]}.{level}"]} for level in (1, 2, 3)]
     return made
 
 
 def main() -> None:
-    pages = {}
+    pages, texts = {}, {}
     for page in PAGES:
-        pages[page] = fetch_tables(page)
+        texts[page] = fetch(page)
+        pages[page] = tables_in(texts[page])
         time.sleep(1)  # be gentle
 
     items: dict[str, dict] = {}
@@ -362,6 +535,8 @@ def main() -> None:
     for extra in EXTRA:
         items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"], slot=extra.get("slot", ""), name_from_id=True))
 
+    guide = pages["guides/enchanting-guide"]
+    by_level = {row["ENCHANTMENT"]: row for row in all_rows(guide, "ENCHANTMENT", "EFFECT", "I / II / III")}
     enchantments = [
         {
             "name": row["ENCHANTMENT"],
@@ -370,9 +545,40 @@ def main() -> None:
             "triggers": row["TRIGGERS ON"],
             "book": row.get("BOOK DROPS IN", ""),
             "tier3": row["AT TIER III"],
+            **({"what": by_level[row["ENCHANTMENT"]]["EFFECT"], "levels": by_level[row["ENCHANTMENT"]]["I / II / III"]} if row["ENCHANTMENT"] in by_level else {}),
         }
         for row in rows(pages["enchantments"], "ENCHANTMENT", "SLOT", "CATEGORY")
     ]
+    for name in sorted(set(by_level) - {enchantment["name"] for enchantment in enchantments}):
+        print(f"warning: MetaBot's enchanting guide lists {name}, but its enchantments page doesn't")
+
+    # Effects and enchantments the editor can write: only as real saves hold them.
+    names_by_book = {book_id: name for name, book_id in BOOK_IDS.items()}
+    enchantment_tiers = [
+        {
+            "effect": f"SW.Enchantment.{enchantment}",
+            "name": names_by_book.get(enchantment, spaced(enchantment)),
+            **({} if enchantment in names_by_book else {"name_from_id": True}),
+            "tiers": [{"tier": tier, "strength": seen[tier], "seen": True} for tier in TIERS if tier in seen],
+        }
+        for enchantment, seen in sorted(ENCHANTMENT_TIERS.items())
+    ]
+    costs = {
+        row["ITEM RARITY"]: [int(row[column]) for column in ("LEVEL I", "LEVEL II (TOTAL)", "LEVEL III (TOTAL)")]
+        for row in rows(guide, "ITEM RARITY", "LEVEL I", "LEVEL II (TOTAL)", "LEVEL III (TOTAL)")
+    }
+    for (rarity, tier), points in SEEN_ENCHANT_POINTS.items():
+        if costs[rarity][TIERS.index(tier)] != points:
+            raise SystemExit(f"a save holds {points} points for a tier {tier} enchantment on a {rarity} item; MetaBot's table says {costs[rarity]}")
+    talisman_xp = [int(row["XP TO NEXT LEVEL"].replace(",", "")) for row in rows(pages["talismans"], "LEVEL", "XP TO NEXT LEVEL")[:2]]
+    cap = re.search(r"caps an item at (\d+) effects", texts["effects"])
+    if cap is None:
+        raise SystemExit("MetaBot's effects page no longer says how many effects an item can have")
+    wording = {}
+    for name in sorted(set(EFFECT_NAMES.values())):  # each named effect's own page has the game's wording for its tiers
+        wording[name] = {row["TIER"]: row["EFFECT"] for row in rows(fetch_tables(f"effects/{slug(name)}"), "TIER", "VALUE", "EFFECT")}
+        time.sleep(1)
+    effects = gear_effects(rows(pages["effects"], "EFFECT", "CATEGORY", "ROLLS ON", "I", "II", "III"), wording)
     books = [
         {"name": name, "kind": BOOK, "id": f"{PREFIX}EnchantmentBook.{BOOK_IDS[name]}", "confirmed": True}
         for name in sorted(BOOK_IDS)
@@ -395,15 +601,37 @@ def main() -> None:
         print(f"warning: {item_id} was seen in a save, but no item in the list has it")
     for item_id in sorted(UNIQUE_IDS - {item.get("unique_id") for item in catalog}):
         print(f"warning: {item_id} was seen in a save, but no item in the list has a Unique with that ID")
-    sources = [BASE_URL + page for page in PAGES]
+    sources = {page: BASE_URL + page for page in PAGES}
     DATA.mkdir(parents=True, exist_ok=True)
-    (DATA / "items.json").write_text(json.dumps({"sources": sources[:3], "items": catalog}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    item_sources = [sources[page] for page in ("uniques", "artifacts", "talismans")]
+    (DATA / "items.json").write_text(json.dumps({"sources": item_sources, "items": catalog}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     (DATA / "enchantments.json").write_text(
-        json.dumps({"sources": sources[3:], "enchantments": sorted(enchantments, key=lambda e: e["name"])}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
+        json.dumps(
+            {"sources": [sources["enchantments"], sources["guides/enchanting-guide"]], "enchantments": sorted(enchantments, key=lambda e: e["name"])},
+            indent=1, ensure_ascii=False,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    (DATA / "effects.json").write_text(
+        json.dumps(
+            {
+                "sources": [sources["effects"], sources["guides/enchanting-guide"], sources["talismans"]],
+                "max_effects": int(cap.group(1)),  # "The game caps an item at 4 effects."
+                "enchant_points": costs,  # enchantment points in an enchantment, by the item's rarity, at tiers I to III
+                "talisman_xp": talisman_xp,  # XP a talisman needs for level 2, then for level 3
+                "effects": effects,
+                "enchantments": enchantment_tiers,
+            },
+            indent=1, ensure_ascii=False,
+        ) + "\n",
+        encoding="utf-8",
     )
     counts = {kind: sum(item["kind"] == kind for item in catalog) for kind in sorted({item["kind"] for item in catalog})}
     print(f"{len(catalog)} items ({sum(item['confirmed'] for item in catalog)} confirmed IDs, {sum('unique' in item for item in catalog)} with a Unique, "
           f"{sum('unique_id' in item for item in catalog)} of those with the Unique's own ID), {len(enchantments)} enchantments -> {DATA}\n{counts}")
+    print(f"{len(effects)} gear effects ({sum(len(effect['tiers']) for effect in effects)} tiers, "
+          f"{sum(tier['seen'] for effect in effects for tier in effect['tiers'])} of them seen in saves) and "
+          f"{len(enchantment_tiers)} enchantments ({sum(len(e['tiers']) for e in enchantment_tiers)} tiers) the editor can write")
 
 
 if __name__ == "__main__":

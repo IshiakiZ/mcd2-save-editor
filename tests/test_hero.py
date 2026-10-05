@@ -1,4 +1,5 @@
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +8,22 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import my_items
 from dungeons2_editor.hero import Hero
 
-from .helpers import hero_item, hero_save, talisman_item
+from .helpers import enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect, talisman_item
+
+# What the game saved, key for key, for a Special Bow it dropped and for a Unique helmet enchanted at the Enchantsmith
+# (the developer's own save, 2026-10-05). The editor has to write the same.
+GAME_BOW_EFFECTS = (
+    '[{"TypeTag": "SW.Item.Effect.Rerollable", "EffectsInThisBatch": [{"TypeTag": "SW.Effect.Knockback", "Intensity": 0.15, '
+    '"Quality": 0, "EnchantmentPointsInvested": 0, "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.Knockback.I", '
+    '"Locked": false}}, {"TypeTag": "SW.Effect.CriticalEdge", "Intensity": 0.2, "Quality": 0, "EnchantmentPointsInvested": 0, '
+    '"GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.CriticalEdge.II", "Locked": false}}]}]'
+)
+GAME_HELMET_EFFECTS = (
+    '[{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [{"TypeTag": "SW.Enchantment.SoulInfusedPotion", '
+    '"Intensity": 0.6, "Quality": 0, "EnchantmentPointsInvested": 8, "GeneratorData": {"GeneratorParentTemplate": '
+    '"SW.Enchantment.SoulInfusedPotion.II", "Locked": false}}]}]'
+)
+UNSEEN = "SW.Item.Property.Dynamic.Unseen"
 
 
 class HeroTests(unittest.TestCase):
@@ -249,35 +265,49 @@ class HeroTests(unittest.TestCase):
             self.hero.update_item(stock, tag="SW.Item.Battlestaff")
         self.hero.update_item(stock, rarity="Rare", power=9)  # its rarity and power still can
 
+    def choice(self, name, tier="I"):
+        gear, enchantments = heroes.effect_choices([self.hero])
+        return next(choice for choice in gear + enchantments if choice.name == name and choice.tier == tier)
+
     def test_effects_are_read_the_way_a_save_holds_them(self):
         sword = self.hero.item(self.item_index("SW.Item.Sword"))
         self.assertEqual((sword.effects, sword.effect_lines()), ([], []))
+        thorns = rolled_effect("Thorns", 12)
+        thorns.update(Quality=2)
+        thorns["GeneratorData"]["Locked"] = True
         sword.data["Effects"] = [
-            {"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
-                {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 2, "EnchantmentPointsInvested": 3,
-                 "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.FireAspect.II", "Locked": True}},
-                {"TypeTag": "SW.Effect.Sharpness", "Intensity": 12},
-                "not an effect",
-            ]},
+            rolled(rolled_effect("CriticalEdge", 0.2, "II"), thorns, "not an effect"),
+            enchanted(enchantment_effect("Radiance", 0.3)),
             {"TypeTag": "SW.Item.Effect.Other"},  # a batch laid out some other way is left out, not guessed at
             "not a batch",
         ]
-        first, second = sword.effects
-        self.assertEqual((first.name, first.tag, first.strength, first.quality, first.points, first.locked, first.group),
-                         ("Fire Aspect", "SW.Effect.FireAspect", 0.5, 2, 3, True, "SW.Item.Effect.Enchantment"))
-        self.assertEqual(sword.effect_lines(), ["Fire Aspect 0.5, quality 2, 3 enchantment points, locked", "Sharpness 12"])
+        first, second, third = sword.effects
+        self.assertEqual((first.name, first.tier, first.tag, first.strength, first.template, first.group),
+                         ("Critical Edge", "II", "SW.Effect.CriticalEdge", 0.2, "SW.EffectTemplate.CriticalEdge.II", "SW.Item.Effect.Rerollable"))
+        self.assertEqual((second.name, second.quality, second.locked), ("Thorns", 2, True))  # not in the list: named from its ID
+        self.assertEqual((third.name, third.tier, third.points, third.is_enchantment), ("Healing Smite", "I", 3, True))
+        # The game's own number for a tier when the list has it, else the strength as saved. An enchantment's
+        # strength isn't a number the game shows.
+        self.assertEqual(sword.effect_lines(), ["Critical Edge II 20%", "Thorns I 12, quality 2, locked", "Enchanted: Healing Smite I, 3 enchantment points"])
+        self.assertEqual(([effect.title for effect in sword.rolled_effects], sword.enchantment.title, sword.own_effects),
+                         (["Critical Edge II", "Thorns I"], "Healing Smite I", []))
         self.assertEqual(heroes.sort_items(self.hero.items(), "Most effects")[0].tag, "SW.Item.Sword")
-        # A talisman also says which level it's at, and what's to come.
+        # A rolled effect goes by its template, as in the game: SW.Effect.RollCooldown from the Acrobat template is
+        # Acrobat, and from another template it's another thing.
+        sword.data["Effects"] = [rolled(rolled_effect("RollCooldown", 0.1, template="Acrobat"), rolled_effect("RollCooldown", 0.2, template="RollingCooldown"))]
+        self.assertEqual(sword.effect_lines(), ["Acrobat I 10%", "Rolling Cooldown I 0.2"])
+        # A talisman also says which level it's at, how far along it is, and what's to come.
         self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=1, seed=61))
         sigil = self.hero.item(self.item_index("SW.Item.Talisman.HealthBoost"))
         self.assertEqual(sigil.effect_lines(), ["Health Boost 1.25", "Level 2 of 3. At the next level: 1.35."])
         sigil.progression["CurrentLevel"] = 2
         self.assertEqual(sigil.effect_lines()[-1], "Level 3 of 3.")
+        sigil.progression.update(CurrentLevel=0, CurrentXP=14396)
+        self.assertEqual(sigil.effect_lines()[-1], "Level 1 of 3 (14,396 of 18,480 XP). At the next levels: 1.25, then 1.35.")
 
     def test_a_copy_changed_into_another_item_keeps_its_effects(self):
-        # The way to give an item the abilities of one you have, until the editor can add effects itself.
         sword = self.item_index("SW.Item.Sword")
-        effects = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [{"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5}]}]
+        effects = [rolled(rolled_effect("CriticalEdge", 0.1))]
         self.hero.item(sword).data["Effects"] = effects
         copy_index = self.hero.duplicate_item(sword)
         self.hero.update_item(copy_index, tag="SW.Item.Axe", rarity="Rare", power=20)
@@ -285,7 +315,210 @@ class HeroTests(unittest.TestCase):
         self.assertEqual((axe.name, axe.rarity, axe.power, axe.equipped_slot), ("Axe", "Rare", 20, None))
         self.assertEqual(axe.data["Effects"], effects)
         self.assertIsNot(axe.data["Effects"], self.hero.item(sword).data["Effects"])  # its own copy of them
-        self.assertEqual(axe.effect_lines(), ["Fire Aspect 0.5"])
+        self.assertEqual(axe.effect_lines(), ["Critical Edge I 10%"])
+
+    def test_effects_are_written_the_way_the_game_saves_them(self):
+        sword = self.item_index("SW.Item.Sword")
+        item = self.hero.item(sword)
+        self.assertNotIn(UNSEEN, item.data["DynamicPropertyTags"])
+        self.hero.set_effects(sword, [self.choice("Knockback"), self.choice("Critical Edge", "II")])
+        self.assertEqual(json.dumps(item.data["Effects"]), GAME_BOW_EFFECTS)  # the same keys, in the same order
+        # What the editor wrote isn't the game's word for anything until the game has shown you the item.
+        self.assertIn(UNSEEN, item.data["DynamicPropertyTags"])
+        # An effect the item keeps is left exactly as it is; the rest are made new.
+        knockback = item.data["Effects"][0]["EffectsInThisBatch"][0]
+        knockback["Quality"] = 7  # something the editor doesn't set
+        self.hero.set_effects(sword, [self.choice("Looter"), self.choice("Knockback")])
+        self.assertEqual([effect.text for effect in item.rolled_effects], ["Looter I 20%", "Knockback I 15%, quality 7"])
+        self.assertIs(item.data["Effects"][0]["EffectsInThisBatch"][1], knockback)
+        # The same effect at another tier takes its place.
+        self.hero.set_effects(sword, [self.choice("Looter"), self.choice("Knockback", "III")])
+        self.assertEqual(item.effect_lines(), ["Looter I 20%", "Knockback III 30%"])
+        # No effects at all is saved the way the game saves a Common item: no batch.
+        self.hero.set_effects(sword, [])
+        self.assertEqual(item.data["Effects"], [])
+
+    def test_what_effects_an_item_can_have(self):
+        sword = self.item_index("SW.Item.Sword")
+        most = heroes.effect_book().max_effects
+        self.assertEqual(most, 4)
+        five = [self.choice(name) for name in ("Knockback", "Looter", "Luck", "Vanguard", "Acrobat")]
+        with self.assertRaisesRegex(ValueError, "caps an item at 4 effects"):
+            self.hero.set_effects(sword, five)
+        self.hero.set_effects(sword, five[:4])
+        with self.assertRaisesRegex(ValueError, "same effect twice"):
+            self.hero.set_effects(sword, [self.choice("Knockback"), self.choice("Knockback", "II")])
+        with self.assertRaisesRegex(ValueError, "isn't one of the effects the game rolls"):
+            self.hero.set_effects(sword, [self.choice("Healing Smite")])
+        self.assertEqual(len(self.hero.item(sword).rolled_effects), 4)  # a refused change changes nothing
+        # An effect saved some other way (the one a Unique comes with) is left alone, and counts towards the four.
+        own = {"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]}
+        self.hero.item(sword).data["Effects"].insert(0, own)
+        with self.assertRaisesRegex(ValueError, "caps an item at 4 effects, and the Sword has 1 of its own"):
+            self.hero.set_effects(sword, five[:4])
+        self.hero.set_effects(sword, five[:3])
+        self.assertIs(self.hero.item(sword).data["Effects"][0], own)
+        self.assertEqual([effect.name for effect in self.hero.item(sword).own_effects], ["Burning"])
+        # Only weapons, armor and artifacts; and the merchant's stock is the game's doing.
+        self.body["Inventory"]["Entries"] += [
+            talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", seed=61),
+            hero_item("SW.Item.Artifact.RallyingHorn", seed=62),
+        ]
+        with self.assertRaisesRegex(ValueError, "the game rolls them on weapons, armor and artifacts"):
+            self.hero.set_effects(self.item_index("SW.Item.Talisman.HealthBoost"), five[:1])
+        with self.assertRaisesRegex(ValueError, "Cosmetics"):
+            self.hero.set_effects(self.item_index("SW.Item.Cosmetic.Cape.Hero"), five[:1])
+        with self.assertRaisesRegex(ValueError, "Village Merchant's stock"):
+            self.hero.set_effects(self.item_index("SW.Item.CurvedGreatsword"), five[:1])
+        self.hero.set_effects(self.item_index("SW.Item.Artifact.RallyingHorn"), five[:1])  # an artifact can
+        self.hero.item(sword).data["Effects"] = {"not": "a list"}
+        with self.assertRaisesRegex(ValueError, "saved in a way the editor doesn't know"):
+            self.hero.set_effects(sword, five[:1])
+
+    def test_an_enchantment_is_written_the_way_the_enchantsmith_saves_it(self):
+        helmet = self.item_index("SW.Item.MysticHelmet")
+        item = self.hero.item(helmet)
+        item.data["RarityTag"] = "SW.Rarity.Unique"
+        item.data["DynamicPropertyTags"] = []
+        self.hero.set_enchantment(helmet, self.choice("Ancient Alchemy", "II"))
+        self.assertEqual(json.dumps(item.data["Effects"]), GAME_HELMET_EFFECTS)  # 8 points: tiers I and II on a Unique
+        self.assertIn(UNSEEN, item.data["DynamicPropertyTags"])
+        self.assertEqual((item.enchantment.title, item.effect_lines()), ("Ancient Alchemy II", ["Enchanted: Ancient Alchemy II, 8 enchantment points"]))
+        same = item.data["Effects"][0]["EffectsInThisBatch"][0]
+        self.hero.set_enchantment(helmet, self.choice("Ancient Alchemy", "II"))
+        self.assertIs(item.data["Effects"][0]["EffectsInThisBatch"][0], same)  # it has it already: nothing to do
+        # One enchantment an item: another takes its place. The points the game counts depend on the item's rarity.
+        for rarity, points in (("Common", 1), ("Rare", 1), ("Special", 2), ("Unique", 3)):
+            item.data["RarityTag"] = f"SW.Rarity.{rarity}"
+            self.hero.set_enchantment(helmet, None)
+            self.hero.set_enchantment(helmet, self.choice("Ancient Alchemy"))
+            self.assertEqual([(effect.title, effect.points) for effect in item.effects], [("Ancient Alchemy I", points)], rarity)
+        # The effects the game rolled go before it, as they would on an item enchanted after it dropped.
+        self.hero.set_effects(helmet, [self.choice("Luck")])
+        self.assertEqual([batch["TypeTag"] for batch in item.data["Effects"]], ["SW.Item.Effect.Rerollable", "SW.Item.Effect.Enchantment"])
+        self.hero.set_enchantment(helmet, None)
+        self.assertEqual(item.effect_lines(), ["Luck I 10%"])
+        # An enchantment only goes where the game puts it.
+        sword = self.item_index("SW.Item.Sword")
+        with self.assertRaisesRegex(ValueError, "Piercing goes on ranged weapons, and the Sword isn't one"):
+            self.hero.set_enchantment(sword, self.choice("Piercing"))
+        with self.assertRaisesRegex(ValueError, "Ancient Alchemy goes on armor"):
+            self.hero.set_enchantment(sword, self.choice("Ancient Alchemy"))
+        self.hero.set_enchantment(sword, self.choice("Healing Smite"))  # weapons, melee or ranged
+        self.hero.set_enchantment(self.item_index("SW.Item.Longbow"), self.choice("Piercing"))
+        with self.assertRaisesRegex(ValueError, "Critical Edge isn't an enchantment"):
+            self.hero.set_enchantment(sword, self.choice("Critical Edge"))
+        self.body["Inventory"]["Entries"].append(hero_item("SW.Item.Artifact.RallyingHorn", seed=62))
+        with self.assertRaisesRegex(ValueError, "can't be enchanted: enchantments go on weapons and armor"):
+            self.hero.set_enchantment(self.item_index("SW.Item.Artifact.RallyingHorn"), self.choice("Healing Smite"))
+
+    def test_effects_on_your_own_items_can_be_put_on_others(self):
+        gear, enchantments = heroes.effect_choices([])
+        listed = len(gear), len(enchantments)
+        self.assertEqual([choice.title for choice in enchantments], ["Ancient Alchemy I", "Ancient Alchemy II", "Healing Smite I", "Piercing I"])
+        knock = next(choice for choice in gear if choice.title == "Knockback III")
+        self.assertEqual((knock.seen, knock.number, knock.strength, knock.rolls_on), (False, "30%", 0.3, "Any weapon"))  # from the game files' table
+        self.assertEqual(knock.what, "Attacks do 30% more knockback.")  # in the game's own words
+        self.assertEqual(next(choice for choice in gear if choice.title == "Spiritual I").strength, 1.25)  # 25% more
+        self.assertEqual(next(choice for choice in gear if choice.title == "Lightning Focus I").maybe, "Electromancer")
+        self.assertEqual(self.choice("Healing Smite").slots, ("Melee", "Ranged"))
+        # An effect or enchantment the list doesn't have, on an item in a save, can be copied exactly as it is there.
+        sword = self.hero.item(self.item_index("SW.Item.Sword"))
+        sword.data["Effects"] = [
+            rolled(rolled_effect("Thorns", 0.3, "II"), rolled_effect("Vanguard", 0.5, "III"), rolled_effect("Knockback", 0.25, "II")),
+            enchanted(enchantment_effect("FireAspect", 0.9, "III", points=15)),
+        ]
+        gear, enchantments = heroes.effect_choices([self.hero])
+        self.assertEqual((len(gear), len(enchantments)), (listed[0] + 1, listed[1] + 1))
+        thorns, fire = self.choice("Thorns", "II"), self.choice("Fire Aspect", "III")
+        self.assertEqual((thorns.yours, thorns.strength, thorns.template), (True, 0.3, "SW.EffectTemplate.Thorns.II"))
+        self.assertEqual((fire.yours, fire.is_enchantment, fire.slots), (True, True, ("Melee",)))  # all that's known: it was on a melee weapon
+        # A save showing a tier the list only had from the table makes it seen; and the save's number wins.
+        self.assertTrue(self.choice("Vanguard", "III").seen)
+        knockback = self.choice("Knockback", "II")
+        self.assertEqual((knockback.seen, knockback.strength, knockback.number), (True, 0.25, "0.25"))
+        # Put on another item, they're saved as they were found.
+        bow = self.item_index("SW.Item.Longbow")
+        self.hero.set_effects(bow, [thorns, knockback])
+        self.assertEqual(self.hero.item(bow).data["Effects"], [rolled(rolled_effect("Thorns", 0.3, "II"), rolled_effect("Knockback", 0.25, "II"))])
+        with self.assertRaisesRegex(ValueError, "Fire Aspect goes on melee weapons"):
+            self.hero.set_enchantment(bow, fire)
+        self.assertEqual([effect.as_choice() for effect in sword.rolled_effects][0], thorns)
+
+    def test_a_talismans_xp_and_its_next_level(self):
+        self.assertEqual(heroes.effect_book().talisman_xp, (18480, 73920))
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        index = self.item_index("SW.Item.Talisman.HealthBoost")
+        sigil = self.hero.item(index)
+        self.assertEqual((sigil.level, sigil.xp, sigil.next_level_xp), (0, 90, 18480))
+        # One XP short of the next level: the game does the levelling up itself, the next time it earns XP.
+        self.assertEqual(self.hero.ready_talisman(index), 18479)
+        self.assertEqual((sigil.xp, sigil.level, type(sigil.xp)), (18479, 0, int))
+        self.hero.set_item_xp(index, 500.5)
+        self.assertEqual(sigil.xp, 500.5)
+        for bad in (-1, heroes.MAX_ITEM_XP + 1, "lots", True):
+            with self.assertRaises(ValueError):
+                self.hero.set_item_xp(index, bad)
+        # At level 2, whichever way the save counts its XP, this is enough for the next XP earned to reach level 3.
+        sigil.progression["CurrentLevel"] = 1
+        self.assertEqual((sigil.next_level_xp, self.hero.ready_talisman(index)), (73920, 92399))
+        sigil.progression["CurrentLevel"] = 2
+        self.assertIsNone(sigil.next_level_xp)
+        with self.assertRaisesRegex(ValueError, "last level"):
+            self.hero.ready_talisman(index)
+        sword = self.item_index("SW.Item.Sword")
+        self.assertIsNone(self.hero.item(sword).next_level_xp)
+        with self.assertRaisesRegex(ValueError, "only talismans do"):
+            self.hero.set_item_xp(sword, 5)
+        # A talisman with no levels saved has nothing to level into.
+        bare = self.hero.add_item("SW.Item.Talisman.SomethingNew", self.entry("SW.Item.Sword"))
+        with self.assertRaisesRegex(ValueError, "doesn't know what"):
+            self.hero.ready_talisman(bare)
+
+    def test_the_town_vendors_a_hero_has_opened(self):
+        # Nothing says this hero has been to a vendor. The Village Merchant's stock doesn't: a hero has that from
+        # the start, before the Merchant has been found.
+        self.assertEqual(self.hero.vendors_opened(), {"Village Merchant": False, "Blacksmith": False, "Enchantsmith": False})
+        # The game files a hint the first time you open each vendor's window.
+        self.body["CollectionsStats"]["ShownHints"] = [
+            {"Tag": "SW.UI.Onboarding.ActionList.Movement", "Count": 16},
+            {"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1},
+        ]
+        self.assertEqual(self.hero.vendors_opened(), {"Village Merchant": False, "Blacksmith": False, "Enchantsmith": True})
+        self.body["CollectionsStats"]["ShownHints"].append({"Tag": "SW.UI.Onboarding.Panel.Blacksmith.Overview", "Count": 1})
+        self.assertEqual(self.hero.vendors_opened()["Blacksmith"], True)
+        # So do the counts it keeps of what a vendor did. What the editor writes doesn't count: an enchantment it
+        # put on, or a vendor level it set.
+        self.body["CollectionsStats"]["ShownHints"] = []
+        self.hero.set_enchantment(self.item_index("SW.Item.Sword"), self.choice("Healing Smite"))
+        self.hero.set_attributes({"VillageMerchantUpgradeLevel": 3})
+        self.assertEqual(self.hero.vendors_opened(), {"Village Merchant": False, "Blacksmith": False, "Enchantsmith": False})
+        self.body["Achievements"] = {
+            "BoolAchievements": {
+                "SW.Achievements.ReforgeASpecialPieceOfGear": {"bCompleted": True},
+                "SW.Achievements.PurchaseASpecialGearPieceFromTheVillageMerchant": {"bCompleted": False},
+            },
+            "CountAchievements": {"SW.Achievements.UpgradeAnEnchantmentToLevel3": {"Count": 2}},
+        }
+        self.assertEqual(self.hero.vendors_opened(), {"Village Merchant": False, "Blacksmith": True, "Enchantsmith": True})
+        self.body["Achievements"]["BoolAchievements"]["SW.Achievements.PurchaseASpecialGearPieceFromTheVillageMerchant"]["bCompleted"] = True
+        self.assertEqual(self.hero.vendors_opened(), {"Village Merchant": True, "Blacksmith": True, "Enchantsmith": True})
+
+    def test_changed_effects_are_described(self):
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        before = copy.deepcopy(self.document)
+        sword = self.item_index("SW.Item.Sword")
+        self.hero.set_effects(sword, [self.choice("Knockback"), self.choice("Critical Edge", "II")])
+        self.hero.set_enchantment(sword, self.choice("Healing Smite"))
+        self.hero.ready_talisman(self.item_index("SW.Item.Talisman.HealthBoost"))
+        self.assertEqual(heroes.describe_changes(before, self.document), [
+            "Sword: effects: Knockback I 15%, Critical Edge II 20%, enchanted with Healing Smite I",
+            "Sigil of Beeswax: XP 90 → 18,479",
+        ])
+        after = copy.deepcopy(self.document)
+        self.hero.set_effects(sword, [])
+        self.hero.set_enchantment(sword, None)
+        self.assertEqual(heroes.describe_changes(after, self.document), ["Sword: effects: none, enchantment taken off"])
 
     def test_the_save_format_the_editor_was_checked_against(self):
         self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 5), True))

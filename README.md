@@ -19,10 +19,15 @@ the full save for people who want it.
   an empty slot to put something in it, and right-click any tile for its actions.
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
   levels (under **Stats & town**). Click a number to change it; changes apply as you type, and mistakes show up in
-  red.
+  red. The editor also tells you which of the three town vendors your hero has unlocked.
 - **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
-  delete them. Every gear slot is shown, including the ones your level hasn't opened yet. An item's card lists its
-  effects as the game saved them, and a talisman's level.
+  delete them. Every gear slot is shown, including the ones your level hasn't opened yet.
+- **Effects and enchantments:** give a weapon, armor piece or artifact the effects you pick (the game rolls a Rare
+  item one and a Special item two, and never more than four), and a weapon or armor piece an enchantment. The editor
+  writes them exactly as a real save holds them, so it offers the ones it has seen so far, plus anything on an item
+  in your own saves, which it can copy to any other item. See [what it can't do yet](#what-it-cant-do).
+- **Talisman levels:** an item's card shows a talisman's level and how far it is from the next one, and **Ready to
+  level up** puts it one XP short, so the game levels it up the next time you earn XP with it on.
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. Items show their
@@ -33,8 +38,10 @@ the full save for people who want it.
   - **Kits:** six complete loadouts from MetaBot's data-backed builds (Melee damage, Greatbow sharpshooter,
     Close-range crossbow, Humbler tank, Soul caster and Companion support).
 
-  Pick the item power and rarity, and the preset adds and equips everything. Each one shows what it will change,
-  and lists the best enchantment for every piece, what it does and where its book drops.
+  Pick the item power and rarity, and the preset adds and equips everything. A kit's gear comes with effects, and
+  with enchantments once your hero has unlocked the Enchantsmith in the game, from the ones the editor can write.
+  Each preset shows what it will change, and lists the best enchantment for every piece, what it does and where its
+  book drops.
 - **Let an AI do it:** connect Claude or another AI assistant over MCP, and ask it for what you want ("give my hero
   the best melee kit at power 30"). It shows you its changes before anything is written. See
   [Let an AI customise your hero](#let-an-ai-customise-your-hero-mcp).
@@ -47,8 +54,8 @@ the full save for people who want it.
   **Paste picture**: the editor cuts the item out and keeps it on your PC.
 - **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
   The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it. When your saves hold
-  item IDs or talisman effects the editor's list doesn't have, a **Share item IDs** button with the count appears
-  at the top; nothing is sent unless you send it.
+  item IDs, effects or enchantments the editor's list doesn't have, a **Share item IDs** button with the count
+  appears at the top; nothing is sent unless you send it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
@@ -102,6 +109,9 @@ many PyInstaller programs, because malware gets packaged the same way: the 1.4.0
 on VirusTotal, all of them generic or machine-learning verdicts. To give them less to trip over, the download is now a
 plain folder (the .exe no longer unpacks itself every time it starts), its launcher is compiled during the build
 (not PyInstaller's ready-made one, which malware also carries), and the .exe says what it is and which version.
+The 1.8.1 download was flagged by none of 66 engines
+([its VirusTotal page](https://www.virustotal.com/gui/file/0164cb93bcfe47a60b77015e0722fdf7584c31f54c230220612c5bc89df2e009)).
+A scanner can still get a later version wrong, so the checks below stay worth knowing.
 
 You don't have to take anyone's word for what's in the download:
 
@@ -161,7 +171,8 @@ the exact setup for your PC, with Copy buttons. In short:
 - **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor\MCD2SaveEditor.exe" mcp`
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
-set stats, add, change, equip, copy and delete items, and apply presets. Its changes collect in a draft, like unsaved
+set stats, add, change, equip, copy and delete items, give an item effects and an enchantment, get a talisman ready
+to level up, and apply presets. Its changes collect in a draft, like unsaved
 changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
 and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
 game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
@@ -193,20 +204,29 @@ your sign-in, account or device data.
   the game would drop that item and keep the rest. Making an item you already own Unique is stricter: it only turns
   into its Unique when that ID has been seen; otherwise it keeps its name and just gets Unique rarity, because a
   wrong ID would cost you the item.
-- **Eight talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
+- **Seven talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
   at each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and
-  1.35. The editor knows this for 16 of the 24 talismans, from what players have shared, and for any talisman one
-  of your heroes has found, and adds those the way the game saves them. The other eight are **Unconfirmed**: the
-  editor can only add one without its effect, so it may do nothing in the game, and it asks first. Four of them
-  haven't been seen in a save at all (Lucky Clover, Medallion of Momentum, Ocelot's Paw and Wonderful Wheat), and
-  four are the companion talismans, whose levels hold no effect to copy. **Share item IDs…** lists what your own
-  talismans do, so the editor can learn them for everyone. Talismans added by versions before 1.7.1 have no effect
-  saved either; the editor points them out, and you can delete them and add them again.
-- **Effects and enchantments** are shown but can't be changed or added yet: the editor can only add an effect once
-  it has seen how the game saves it. **Share item IDs…** lists the effects on your own gear for that. Until then, to
-  give an item the abilities of one you already have, make a copy of that one and use **Change item…** on the copy:
-  it keeps its effects. Nobody has tried every effect on every kind of item, so check the result in the game.
-  Presets tell you which enchantments to put on at the Enchantsmith.
+  1.35, and for a companion's talisman like the Tasty Bone, a tag at each level. The editor knows this for 17 of
+  the 24 talismans, from what players have shared, and for any talisman one of your heroes has found, and adds
+  those the way the game saves them. The other seven are **Unconfirmed**: the editor can only add one without its
+  effect, so it may do nothing in the game, and it asks first. Four of them haven't been seen in a save at all
+  (Lucky Clover, Medallion of Momentum, Ocelot's Paw and Wonderful Wheat), and three are companion talismans
+  (Golem Kit, Prickle's Mark and Wobblestone) reported before the report listed a level's tags. **Share item IDs…**
+  lists what your own talismans do, so the editor can learn them for everyone. Talismans added by versions before
+  1.7.1 have no effect saved either; the editor points them out, and you can delete them and add them again.
+- **A talisman's level is the game's to change.** The editor sets the XP a talisman has earned and leaves the
+  levelling up to the game: **Ready to level up** puts it one XP short of the next level (18,480 XP for level 2
+  and 73,920 more for level 3), and the next XP you earn with it equipped does the rest.
+- **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
+  files, so the editor learns how each one is saved from real saves: 18 gear effects and 3 enchantments so far
+  (Healing Smite, Piercing and Ancient Alchemy, not yet at every tier), plus whatever is on your own items. For
+  eleven of the effects the game's own numbers are published (MetaBot's table), so the editor also offers the tiers
+  nobody has sent yet; it marks those as not seen and asks before adding one. An enchantment's saved strength isn't
+  the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
+  game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
+  game rolls and the enchantment are what you can change. A Unique's own effect, the one its card describes, hasn't
+  been seen in a save yet, so a Unique the editor added may be missing it. Nobody has tried every effect on every
+  kind of item, so check the result in the game.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
@@ -234,6 +254,10 @@ the data.
 
 - **Heroes** (`Character<id>`) are plain, compact JSON. Stats are in `Ability.Attributes`, items in
   `Inventory.Entries`.
+- An item's effects are saved in batches, one for each kind: the ones the game rolled for it
+  (`SW.Item.Effect.Rerollable`), its enchantment (`SW.Item.Effect.Enchantment`) and a talisman's own
+  (`SW.Item.Effect.Upgradable`). Each effect holds what it is (`SW.Effect.CriticalEdge`), its strength, and the
+  template it was made from, which says the tier (`SW.EffectTemplate.CriticalEdge.II`).
 - **Settings** (`GlobalSaveDataDefault`) are JSON with every byte stored minus one (`{"blobs"` becomes `z!aknar!`).
 - The editor writes both formats byte-for-byte the way the game does, so an unedited save comes out identical.
 - Saves are written the way the game writes them: the new data gets a new file name, the revision goes up
@@ -282,7 +306,7 @@ The tests run on every push and pull request, on Windows and on Linux (`.github/
 | `dungeons2_editor/saves.py` | Finding saves (both layouts), backups, restore, safe saving |
 | `dungeons2_editor/hero.py` | Hero stats and items, the add-item catalog, change summaries |
 | `dungeons2_editor/presets.py` | The presets, kits and the facts behind them |
-| `dungeons2_editor/data/` | The item and enchantment lists (`tools/build_item_catalog.py` rebuilds them) |
+| `dungeons2_editor/data/` | The item, enchantment and effect lists (`tools/build_item_catalog.py` rebuilds them) |
 | `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `restore_dialog.py`, `layout.py` | The window, its dialogs, and sizing them for the display's scaling |
 | `dungeons2_editor/inventory_screen.py`, `game_style.py`, `game_art.py` | Simple mode's game-style screen, its colours and theme, and its pixel art |
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
@@ -313,8 +337,12 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
   [artifacts](https://metabot.gg/en/minecraft-dungeons-2/artifacts),
   [talismans](https://metabot.gg/en/minecraft-dungeons-2/talismans) and
-  [enchantments](https://metabot.gg/en/minecraft-dungeons-2/enchantments). `tools/build_item_catalog.py` rebuilds the
-  lists from those pages.
+  [enchantments](https://metabot.gg/en/minecraft-dungeons-2/enchantments). What the game calls a gear effect and its
+  number at each tier come from its [gear effects](https://metabot.gg/en/minecraft-dungeons-2/effects) page, what
+  each enchantment does and costs from its
+  [enchanting guide](https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide), and the XP a talisman
+  level takes from its talismans page. How an effect or an enchantment is saved comes from real saves only.
+  `tools/build_item_catalog.py` rebuilds the lists from those pages.
 - The best gear, the kits and the numbers in the presets come from MetaBot.GG's
   [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.

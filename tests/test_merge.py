@@ -2,9 +2,9 @@ import copy
 import unittest
 
 from dungeons2_editor import merge
-from dungeons2_editor.hero import Hero, gear_slots
+from dungeons2_editor.hero import Hero, effect_choices, gear_slots
 
-from .helpers import hero_item, hero_save
+from .helpers import enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect
 
 
 def by_tag(document, tag):
@@ -38,6 +38,31 @@ class ReapplyTests(unittest.TestCase):
         circlet = by_tag(merged, "SW.Item.MysticHelmet")
         self.assertEqual((circlet.rarity, circlet.power), ("Unique", 50))
         self.assertEqual(by_tag(merged, "SW.Item.Bow").power, 7)  # the game's new item is still there
+
+    def test_changed_effects_are_reapplied_whole(self):
+        def choice(name, tier="I"):
+            return next(c for c in sum(effect_choices([]), []) if c.name == name and c.tier == tier)
+
+        # The Sword had an effect and an enchantment, and the Longbow an effect; the editor changed all of it.
+        for document in (self.original, self.edited, self.newer):
+            by_tag(document, "SW.Item.Sword").data["Effects"] = [rolled(rolled_effect("Looting", 0.2)), enchanted(enchantment_effect("Radiance", 0.3))]
+            by_tag(document, "SW.Item.Longbow").data["Effects"] = [rolled(rolled_effect("Knockback", 0.15))]
+        hero = Hero(self.edited)
+        sword, bow = by_tag(self.edited, "SW.Item.Sword").index, by_tag(self.edited, "SW.Item.Longbow").index
+        hero.set_effects(sword, [choice("Critical Edge", "II"), choice("Luck")])
+        hero.set_enchantment(sword, None)
+        hero.set_effects(bow, [])  # every effect taken off
+        self.play()
+        merged, problems = merge.reapply(self.original, self.edited, self.newer)
+        self.assertEqual(problems, [])
+        self.assertEqual(by_tag(merged, "SW.Item.Sword").effect_lines(), ["Critical Edge II 20%", "Luck I 10%"])
+        self.assertEqual(by_tag(merged, "SW.Item.Longbow").data["Effects"], [])
+        # If the game changed an item's effects too (you enchanted it there), the game's are kept, and it says so.
+        by_tag(self.newer, "SW.Item.Sword").data["Effects"].append(enchanted(enchantment_effect("FireAspect", 0.5)))
+        merged, problems = merge.reapply(self.original, self.edited, self.newer)
+        self.assertEqual(problems, ["Sword: the game changed its effects too, so the game's were kept."])
+        self.assertEqual(len(by_tag(merged, "SW.Item.Sword").effects), 3)
+        self.assertEqual(by_tag(merged, "SW.Item.Longbow").data["Effects"], [])
 
     def test_added_and_deleted_items(self):
         hero = Hero(self.edited)

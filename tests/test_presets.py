@@ -4,7 +4,7 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import presets
 from dungeons2_editor.hero import Hero, build_catalog
 
-from .helpers import hero_item, hero_save, talisman_item
+from .helpers import enchanted, enchantment_effect, hero_item, hero_save, talisman_item
 
 
 def by_title(title):
@@ -53,7 +53,80 @@ class PresetTests(unittest.TestCase):
             self.assertLessEqual(sum(f.kind == "Ranged" for f in found), 1, kit.title)  # some builds keep your bow
             self.assertEqual(sorted(f.piece for f in found if f.kind == "Armor"), ["Boots", "Chestplate", "Helmet", "Leggings"], kit.title)
             self.assertTrue(kit.choose_rarity and kit.equip)
-            self.assertTrue(all(item.enchants for item in kit.items if item.kind in ("Melee", "Ranged", "Armor")), kit.title)
+            # Enchantments as MetaBot's build planner places them: on a weapon and the helmet, and mostly the chestplate.
+            pieces = {entry.piece or entry.kind: item for item, entry in zip(kit.items, found)}
+            self.assertTrue(any(pieces[kind].enchants for kind in ("Melee", "Ranged") if kind in pieces) and pieces["Helmet"].enchants, kit.title)
+            self.assertFalse(pieces["Leggings"].enchants or pieces["Boots"].enchants, kit.title)
+            # Every weapon, armor piece and artifact names effects to roll; a talisman's effect is its own.
+            self.assertTrue(all(bool(item.effects) == (entry.kind != "Talisman") for item, entry in zip(kit.items, found)), kit.title)
+        self.assertGreaterEqual(sum(bool(pieces["Chestplate"].enchants) for pieces in (
+            {entry.piece: item for item, entry in zip(kit.items, [presets.find_item(i.name, self.catalog) for i in kit.items]) if entry.piece}
+            for kit in kits
+        )), 5)
+
+    def test_a_kit_enchants_once_the_hero_has_opened_the_enchantsmith(self):
+        kit = presets.Preset("Test kit", "A goal.", "Details.", sources=("https://example.com",), group=presets.KITS, choose_rarity=True, items=(
+            presets.KitItem("Sword", "Melee", "Hits things.", enchants=("Lightning Surge", "Healing Smite"),
+                            effects=("Sharpness", "Critical Edge", "Looter", "Luck")),
+            presets.KitItem("Longbow", "Ranged", "Shoots things.", enchants=("Chain Reaction", "Ricochet")),
+            presets.KitItem("Mystic Circlet", "Armor", "Looks wise.", enchants=("Ancient Alchemy",)),
+        ))
+
+        def added(plan):
+            return {addition.kit.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects])
+                    for addition in plan.add}
+
+        # Nothing in the save says this hero has been to the Enchantsmith: no enchantments. The gear the kit adds
+        # still gets the effects the game would roll for it: two on a Special item, from the ones the editor can
+        # write (it hasn't seen Sharpness saved), each at the best tier a save has shown.
+        plan = presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special")
+        self.assertFalse(plan.enchant)
+        self.assertEqual(added(plan), {"Sword": (None, ["Critical Edge II", "Looter I"]), "Longbow": (None, []), "Mystic Circlet": (None, [])})
+        # Once it has, each item gets the first of its enchantments that the editor can write and that fits it.
+        self.hero.body["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
+        plan = presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special")
+        self.assertTrue(plan.enchant)
+        self.assertEqual(added(plan), {
+            "Sword": ("Healing Smite I", ["Critical Edge II", "Looter I"]),  # Lightning Surge hasn't been seen saved yet
+            "Longbow": (None, []),  # nor has Chain Reaction
+            "Mystic Circlet": ("Ancient Alchemy II", []),
+        })
+        self.assertEqual(presets.enchanted_by(plan)[id(kit.items[0])].title, "Healing Smite I")
+        self.assertIn("Add Sword (Special, power 20): Hits things. With Critical Edge II, Looter I, enchanted with Healing Smite I.", presets.describe(plan, self.hero))
+        self.assertEqual(added(presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special", enchant=False))["Sword"][0], None)
+        self.assertEqual(added(presets.plan(kit, self.hero, self.catalog, power=20, rarity="Unique"))["Sword"][1], ["Critical Edge II"])  # one on a Unique
+        self.assertEqual(added(presets.plan(kit, self.hero, self.catalog, power=20, rarity="Common"))["Sword"][1], [])
+        presets.apply(plan, self.hero, self.catalog)
+        sword = max((item for item in self.hero.items() if item.tag == "SW.Item.Sword"), key=lambda item: item.power)
+        self.assertEqual(sword.effect_lines(), ["Critical Edge II 20%", "Looter I 20%", "Enchanted: Healing Smite I, 2 enchantment points"])
+        circlet = max((item for item in self.hero.items() if item.tag == "SW.Item.MysticHelmet"), key=lambda item: item.power)
+        self.assertEqual(circlet.effect_lines(), ["Enchanted: Ancient Alchemy II, 6 enchantment points"])
+        # An enchantment found on an item in the saves can be written too. Its book says what it's called and what
+        # it goes on (the book saved as Ricochet is Ricochet, for ranged weapons); without a named book, all the
+        # editor knows is the kind of item it was on.
+        bow = next(item for item in self.hero.items() if item.tag == "SW.Item.Longbow" and item.rarity == "Rare")
+        bow.data["Effects"] = [enchanted(enchantment_effect("Ricochet", 3, "III", points=9))]
+        sword.data["Effects"] = [enchanted(enchantment_effect("ChainLightning", 0.4, "II", points=6))]
+        learned = heroes.effect_choices([self.hero])
+        self.assertEqual([(choice.title, choice.slots) for choice in learned[1] if choice.yours],
+                         [("Chain Lightning II", ("Melee",)), ("Ricochet III", ("Ranged",))])
+        again = presets.plan(kit, self.hero, self.catalog, power=30, rarity="Special", effects=learned)
+        self.assertEqual(added(again)["Longbow"], ("Ricochet III", []))
+
+    def test_a_kit_enchants_your_own_copy_only_when_it_has_no_enchantment(self):
+        kit = presets.Preset("Test kit", "A goal.", "Details.", sources=("https://example.com",), items=(
+            presets.KitItem("Sword", "Melee", "Hits things.", enchants=("Healing Smite",), effects=("Looter",)),
+        ))
+        self.assertFalse(presets.plan(kit, self.hero, self.catalog, power=1).changes_anything)  # it has the Sword already
+        self.hero.body["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
+        plan = presets.plan(kit, self.hero, self.catalog, power=1)
+        self.assertEqual(([owned.enchantment.title for owned in plan.have], plan.changes_anything), (["Healing Smite I"], True))
+        self.assertEqual(presets.describe(plan, self.hero), ["Your Sword: enchanted with Healing Smite I"])
+        presets.apply(plan, self.hero, self.catalog)
+        sword = next(item for item in self.hero.items() if item.tag == "SW.Item.Sword")
+        self.assertEqual(sword.effect_lines(), ["Enchanted: Healing Smite I, 1 enchantment point"])  # the effects the game rolled for it stay as they are
+        again = presets.plan(kit, self.hero, self.catalog, power=1)
+        self.assertEqual(([owned.enchantment for owned in again.have], again.changes_anything), ([None], False))  # the one it has is kept
 
     def test_finds_items_by_their_in_game_names(self):
         self.assertEqual(presets.find_item("The Eye of Experience", self.catalog).tag, "SW.Item.Talisman.EyeOfExperience")

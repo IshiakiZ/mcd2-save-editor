@@ -86,6 +86,38 @@ def talisman_item(tag, effect, strengths=(1.2, 1.25, 1.35), level=0, xp=0, **mor
     return entry
 
 
+def rolled_effect(name, strength, tier="I", template=None):
+    """One of the effects the game rolls on a weapon, armor piece or artifact, as a real save holds it."""
+    return {
+        "TypeTag": f"SW.Effect.{name}",
+        "Intensity": strength,
+        "Quality": 0,
+        "EnchantmentPointsInvested": 0,
+        "GeneratorData": {"GeneratorParentTemplate": f"SW.EffectTemplate.{template or name}.{tier}", "Locked": False},
+    }
+
+
+def enchantment_effect(name, strength, tier="I", points=3):
+    """An enchantment as a real save holds one the Enchantsmith put on."""
+    return {
+        "TypeTag": f"SW.Enchantment.{name}",
+        "Intensity": strength,
+        "Quality": 0,
+        "EnchantmentPointsInvested": points,
+        "GeneratorData": {"GeneratorParentTemplate": f"SW.Enchantment.{name}.{tier}", "Locked": False},
+    }
+
+
+def rolled(*effects):
+    """The batch an item's rolled effects are saved in."""
+    return {"TypeTag": "SW.Item.Effect.Rerollable", "EffectsInThisBatch": list(effects)}
+
+
+def enchanted(effect):
+    """The batch an item's enchantment is saved in."""
+    return {"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [effect]}
+
+
 def hero_save(online=False, emeralds=55, level=1):
     """A hero save shaped like a real Character<id> container (made-up ID)."""
     return {

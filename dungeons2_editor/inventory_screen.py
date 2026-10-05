@@ -40,7 +40,7 @@ from .hero import (
     sort_items,
     use_local_names,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, number_text, power_text, talisman_hint
+from .hero_editing import SAVE_REMINDER, HeroEditing, effects_action, number_text, power_text, talisman_hint, vendors_text
 from .icons import IconLibrary
 from .item_picker import slot_open
 from .layout import fit_to_contents
@@ -407,8 +407,24 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.card.pack(fill="both", expand=True)
         self.banner = tk.Canvas(self.card, width=width, height=self.art.px(28), background=gs.CARD, highlightthickness=0)
         self.banner.pack(fill="x")
-        content = ttk.Frame(self.card, style="Card.TFrame", padding=(16, 12, 16, 14))
-        content.pack(fill="both", expand=True)
+        # The card's contents scroll when the card is too short for them (a small screen, or a display Windows
+        # scales up), and what's said about the last change stays in view below them.
+        self.item_message_var = tk.StringVar()
+        self.item_message = ttk.Label(
+            self.card, textvariable=self.item_message_var, style="CardMuted.TLabel", wraplength=wrap, justify="left", padding=(16, 6, 16, 10)
+        )
+        self.card_view = tk.Canvas(
+            self.card, width=width, height=1, background=gs.CARD, highlightthickness=0, borderwidth=0, yscrollincrement=self.art.px(30)
+        )
+        self.card_view.pack(fill="both", expand=True)
+        self.card_scroll = ttk.Scrollbar(self.card, orient="vertical", command=self.card_view.yview)
+        self.card_view.configure(yscrollcommand=self.card_scroll.set)
+        content = ttk.Frame(self.card_view, style="Card.TFrame", padding=(16, 12, 16, 14))
+        self.card_content = content
+        self.card_view.create_window(0, 0, anchor="nw", window=content, width=width)
+        content.bind("<Configure>", lambda _event: self._fit_card())
+        self.card_view.bind("<Configure>", lambda _event: self._fit_card())
+        self.winfo_toplevel().bind("<MouseWheel>", self._on_card_wheel, add="+")
         content.columnconfigure(0, weight=1)
 
         head = ttk.Frame(content, style="Card.TFrame")
@@ -483,6 +499,8 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         ttk.Label(self.enchant_box, textvariable=self.enchant_text, style="Box.TLabel", wraplength=wrap - diamond - 40, justify="left").grid(
             row=1, column=1, sticky="w"
         )
+        self.effects_button = ttk.Button(self.enchant_box, text="CHANGE EFFECTS…", style="Card.TButton", command=self.change_effects)
+        self.effects_button.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
         actions = ttk.Frame(self.item_box, style="Card.TFrame")
         actions.grid(row=5, column=0, sticky="ew", pady=(14, 0))
@@ -509,10 +527,30 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.stats_box.grid(row=4, column=0, sticky="ew", pady=(10, 0))
         self.stats_box.columnconfigure(1, weight=1)
 
-        self.item_message_var = tk.StringVar()
-        self.item_message = ttk.Label(content, textvariable=self.item_message_var, style="CardMuted.TLabel", wraplength=wrap, justify="left")
-        self.item_message.grid(row=5, column=0, sticky="ew", pady=(10, 0))
         self._show_parts()
+
+    def _fit_card(self) -> None:
+        """Scroll the card's contents when the card can't show them all, and only then."""
+        view, needed = self.card_view, self.card_content.winfo_reqheight()
+        room = view.winfo_height()
+        view.configure(scrollregion=(0, 0, self._card_width, max(needed, room)))
+        if needed > room > 1:
+            self.card_scroll.place(in_=view, relx=1.0, rely=0.0, relheight=1.0, anchor="ne")
+        else:
+            self.card_scroll.place_forget()
+            view.yview_moveto(0)
+
+    def _on_card_wheel(self, event: tk.Event) -> None:
+        """The mouse wheel scrolls the card when the pointer is over it. Over a number box it changes the number,
+        as it always has."""
+        if not self.card_scroll.winfo_ismapped():
+            return
+        try:
+            under = self.winfo_containing(event.x_root, event.y_root)
+        except (KeyError, tk.TclError):
+            return
+        if under is not None and str(under).startswith(str(self.card)) and not isinstance(under, (ttk.Spinbox, ttk.Entry)):
+            self.card_view.yview_scroll(-2 if event.delta > 0 else 2, "units")
 
     # ----------------------------------------------------------------- loading
 
@@ -581,6 +619,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
     def _say_item(self, text: str, error: bool = False) -> None:
         self.item_message_var.set(text)
         self.item_message.configure(style="CardError.TLabel" if error else "CardMuted.TLabel")
+        if text:
+            self.item_message.pack(side="bottom", fill="x", before=self.card_view)  # below the card's contents, always in view
+        else:
+            self.item_message.pack_forget()
 
     # ------------------------------------------------------------------- stats
 
@@ -872,7 +914,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if self.card_mode == "slot":
             menu.add_command(label="Put an item here…", command=self._add_to_picked_slot, state="normal" if self.slot_add_button.instate(["!disabled"]) else "disabled")
         elif self.card_mode == "item":
-            for button in (self.equip_button, self.copy_button, self.change_button, self.delete_button, self.picture_button, self.name_button):
+            for button in (self.equip_button, self.copy_button, self.change_button, self.effects_button, self.delete_button,
+                           self.picture_button, self.name_button):
+                if button is self.effects_button and not self.enchant_box.winfo_manager():
+                    continue  # nothing about effects to do for this item
                 text = str(button.cget("text"))
                 menu.add_command(label=text[0] + text[1:].lower(), command=button.invoke, state="normal" if button.instate(["!disabled"]) else "disabled")
         menu.tk_popup(event.x_root, event.y_root)
@@ -963,6 +1008,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
     def _show_item(self, index: int | None) -> None:
         if index != self._shown:
             self._say_item("")
+            self.card_view.yview_moveto(0)  # another item: start from the top of its card
         self._shown = index
         if self.hero is None:
             return
@@ -994,15 +1040,21 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.count_var.set(str(item.count))
         self.power_hint.set(f"Your strongest item has power {self.hero.best_power()}. Much higher may be removed by the game.")
         effects = item.effect_lines()
-        if effects:
-            self.enchant_title.set("EFFECTS")
+        label, usable = effects_action(item)
+        if effects or item.can_have_effects or item.is_talisman:
             more = len(effects) - EFFECTS_SHOWN
             shown = effects[:EFFECTS_SHOWN] + ([f"and {more} more"] if more > 0 else [])
-            self.enchant_text.set("\n".join(shown) + "\nShown as the game saved them. The editor can't change effects yet.")
-            self.enchant_box.grid()
-        elif item.kind in ENCHANTABLE:
-            self.enchant_title.set("NOT ENCHANTED")
-            self.enchant_text.set("Find the Enchantsmith in town to enchant this item. The editor can't add enchantments yet.")
+            if item.is_talisman:
+                self.enchant_title.set("EFFECT")
+                none = "No effect saved."
+            else:
+                self.enchant_title.set("EFFECTS" if effects else "NO EFFECTS")
+                none = "The game rolls a Rare item one effect and a Special item two. Give this one any you like" + (
+                    ", and an enchantment." if item.kind in ENCHANTABLE else "."
+                )
+            self.enchant_text.set("\n".join(shown) if shown else none)
+            self.effects_button.configure(text=label.upper())
+            self.effects_button.state(["!disabled"] if usable else ["disabled"])
             self.enchant_box.grid()
         else:
             self.enchant_box.grid_remove()
@@ -1051,8 +1103,12 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             entry.bind("<FocusOut>", lambda _event, name=name: self._apply_stat(name))
             entry.bind("<Up>", lambda _event, name=name: self._nudge_stat(name, 1))
             entry.bind("<Down>", lambda _event, name=name: self._nudge_stat(name, -1))
+        rows = len(self.hero.attributes())
+        ttk.Label(
+            self.stats_box, text=vendors_text(self.hero), style="CardMuted.TLabel", wraplength=self._card_width - 34, justify="left"
+        ).grid(row=rows, column=0, columnspan=3, sticky="w", pady=(8, 0))
         ttk.Button(self.stats_box, text="DONE", style="Card.TButton", command=self._close_stats).grid(
-            row=len(self.hero.attributes()), column=0, sticky="w", pady=(10, 0)
+            row=rows + 1, column=0, sticky="w", pady=(10, 0)
         )
         self._show_parts(self.stats_box)
 

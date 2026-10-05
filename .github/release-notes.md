@@ -1,3 +1,52 @@
+## What's new in 1.9.0
+
+- **Abilities on your gear.** Pick a weapon, armor piece or artifact and press **Change effects…**. Choose its
+  effects from a list, each at the tier you want, up to the game's four (the game itself rolls a Rare item one and a
+  Special item two). The editor writes an effect exactly as the game saves it: checked against a real save, all 21
+  items it rewrote came out the same as the game's own, key for key. It knows 18 effects so far, among them Critical
+  Edge, Critical Hit, Looter, Luck, Knockback, Vanguard, Marksman, Acrobat, Cooldown and Spiritual, most with the
+  game's own wording for what each tier does.
+- **Enchantments.** The same window enchants a weapon or armor piece, and counts the enchantment points as the
+  game's cost table has them. Three enchantments are in so far: Healing Smite, Piercing and Ancient Alchemy, not yet
+  at every tier. The strength a save holds for an enchantment isn't the number the game shows, so each tier of each
+  one has to be seen in a save once before the editor can write it.
+- **Anything on your own gear can be copied.** An effect or an enchantment on any item in your saves can go on any
+  other item that takes it, whether the editor's list has it or not. Enchant one item in the game, and the editor
+  can put that enchantment on the rest. **Share item IDs** sends what's on your gear, so everyone gets it.
+- **Kits come enchanted once you've unlocked the Enchantsmith.** The editor now tells which of the three town
+  vendors your hero has unlocked (the Merchant, the Blacksmith and the Enchantsmith), and says so under Stats & town.
+  When the Enchantsmith is one of them, a kit puts on the enchantments its build names, where the editor can write
+  them, and lists the rest for you to pick in the game. Gear a kit adds also gets the effects the game would roll
+  for it.
+- **Kits checked again against MetaBot's guides** (updated 2 October): the same five builds and the same gear.
+  Enchantments now go where its build planner puts them: on one weapon, the helmet and the chestplate. The melee
+  kit's crossbow and the bow kit's hatchet no longer name one, and the bow takes Piercing, the guide's second
+  choice, until the editor can write Chain Reaction.
+- **Talismans: how far to the next level, and Ready to level up.** A talisman's card shows its progress (18,480 XP
+  for level 2, then 73,920 more for level 3). **Ready to level up** puts it one XP short, and the game levels it up
+  the next time you earn XP with it on. The levelling itself is left to the game.
+- **The Tasty Bone is added the way the game saves it.** A companion's talisman has no effect of its own: each of
+  its levels carries a tag instead. That makes 17 of the 24 talismans.
+- **The item card scrolls on small and scaled-up displays.** With Windows at 150% on a 1080p screen, the card's
+  lower buttons (Change item…, Delete, Paste picture, Name it…) were cut off. The card now scrolls when it has to,
+  and what it says about your last change stays in view below it.
+- **A Unique's own effect is still missing.** In the game a Unique comes with an effect of its own, the one its
+  card describes. No save holding one has reached the editor yet, so it can't write it, and a Unique the editor
+  added may be without it. Share item IDs lists what each Unique you've found comes with: if the game has given you
+  one, please share.
+- The book the editor called Radiance is Healing Smite. Share item IDs lists only the effects and enchantments the
+  editor doesn't have yet.
+- If the game saved your hero while the editor had it open, changed effects are carried over to the newer save
+  along with your other changes.
+- Fully upgraded town says what each vendor level unlocks. The Echo Shard prices it gave for the later levels are
+  gone: they aren't in MetaBot's data.
+- For AI assistants (MCP): `list_effects`, `set_item_effects` and `ready_talisman`, and `get_hero` says which
+  vendors are unlocked.
+- Thanks to [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2) for the effect names and numbers
+  ([gear effects](https://metabot.gg/en/minecraft-dungeons-2/effects)), what an enchantment costs
+  ([enchanting guide](https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide)) and the XP a talisman
+  level takes ([talismans](https://metabot.gg/en/minecraft-dungeons-2/talismans)).
+
 ## What's new in 1.8.1
 
 - **Sixteen talismans come with their effect now** (it was one). Players sent in what theirs do with 1.8.0's Share

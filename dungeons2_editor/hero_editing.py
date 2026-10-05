@@ -5,15 +5,17 @@ change, copy, delete, presets) do the same thing.
 
 from __future__ import annotations
 
+import copy
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox
 from typing import Any
 
 from . import document as doc
+from .effects_dialog import EffectsDialog
 from .hero import (
-    MAX_STAT, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, format_amount, game_item, gear_slots,
-    is_unique_version, slots_for, talisman_levels, template_for,
+    MAX_STAT, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, effect_book, effect_choices, format_amount,
+    game_item, gear_slots, is_unique_version, slots_for, talisman_levels, template_for, vendors_text,
 )
 from .item_picker import ItemPicker, slot_choice, slot_open
 from .presets_dialog import PresetsDialog
@@ -37,6 +39,18 @@ def talisman_hint(item: Item) -> str:
         return hint
     fix = " Delete it and add it again to get one with its effect." if talisman_levels(item.tag) else ""
     return f"{hint} This one has no effect saved, so it may do nothing in the game.{fix}"
+
+
+def effects_action(item: Item) -> tuple[str, bool]:
+    """(what the button for an item's effects says, whether it can be pressed). For a talisman it's the button
+    that gets it ready to level up: a talisman's effect follows its level."""
+    if item.is_talisman:
+        return "Ready to level up", item.next_level_xp is not None
+    usable = (item.can_have_effects or item.can_be_enchanted) and not item.stock_slot
+    return "Change effects…", usable
+
+
+__all__ = ["HeroEditing", "SAVE_REMINDER", "effects_action", "number_text", "power_text", "talisman_hint", "vendors_text"]
 
 
 class HeroEditing:
@@ -271,11 +285,59 @@ class HeroEditing:
             text_font=tkfont.nametofont("TkDefaultFont"),
             slots=self._slots(),
             icons=self.icons,
+            effects=effect_choices(self._heroes()),
         )
 
     def _after_preset(self) -> None:
         self.refresh()
         self._say_stats(f"Preset applied. {SAVE_REMINDER}")
+        self.on_change()
+
+    def change_effects(self) -> None:
+        """The picked item's effects and enchantment, in their own window; or, for a talisman, one XP short
+        of its next level."""
+        if self.hero is None or self._shown is None or not self.commit_pending():
+            return
+        index = self._shown
+        item = self.hero.item(index)
+        if item.is_talisman:
+            self._ready_talisman(index)
+            return
+        gear, enchantments = effect_choices(self._heroes())
+        dialog = EffectsDialog(
+            self, item, gear, enchantments, most=effect_book().max_effects, enchantsmith_opened=self.hero.vendors_opened()["Enchantsmith"]
+        )
+        self.wait_window(dialog)
+        if dialog.result is None:
+            return
+        effects, enchantment = dialog.result
+        before = copy.deepcopy(item.data.get("Effects"))
+        try:
+            if item.can_have_effects:
+                self.hero.set_effects(index, effects)
+            if item.can_be_enchanted or enchantment is None:
+                self.hero.set_enchantment(index, enchantment)
+        except ValueError as exc:
+            item.data["Effects"] = before  # all of it or none of it
+            self._show_item(index)
+            self._say_item(str(exc), error=True)
+            return
+        self._fill_items()
+        self._say_item(f"Effects changed. {SAVE_REMINDER}")
+        self.on_change()
+
+    def _ready_talisman(self, index: int) -> None:
+        item = self.hero.item(index)
+        try:
+            xp = self.hero.ready_talisman(index)
+        except ValueError as exc:
+            self._say_item(str(exc), error=True)
+            return
+        self._fill_items()
+        self._say_item(
+            f"XP set to {format_amount(xp)}, one short of level {item.level + 2}: the next XP you earn in the game with it "
+            f"equipped levels it up. {SAVE_REMINDER}"
+        )
         self.on_change()
 
     def change_item(self) -> None:

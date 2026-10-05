@@ -1,8 +1,9 @@
 """Sharing item IDs: the IDs in your saves that the editor doesn't know yet, ready to post on GitHub.
 
 Only item IDs (like SW.Item.MysticHelmet) go into the report, and the effects the game saved with items: what
-a talisman does when the editor can't add it with its effect yet, and the effects on weapons, armor and
-artifacts, which the editor can't add at all until it has seen them. Nothing else from the save.
+a talisman does when the editor can't add it with its effect yet, and the effects and enchantments on weapons,
+armor and artifacts that the editor's list doesn't have, which it can't add until it has seen them. Nothing
+else from the save.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import urllib.parse
 import webbrowser
 from tkinter import ttk
 
-from .hero import NOT_ADDABLE_GROUPS, UNSEEN_TAG, Hero, Item, game_item, is_unique_version, item_group, item_kind, local_name
+from .hero import NOT_ADDABLE_GROUPS, UNSEEN_TAG, Hero, Item, effect_book, game_item, is_unique_version, item_group, item_kind, local_name
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
 
@@ -127,46 +128,62 @@ def _effect_pairs(item: Item) -> set[tuple[str, str]]:
     return pairs
 
 
-def gear_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
-    """(item ID, the effects a save holds for one) for weapons, armor and artifacts in these saves that have
-    effects, exactly as saved. The editor can't add an effect it has never seen, so this is how it learns them.
+def _known_pairs() -> set[tuple[str, str]]:
+    """(effect, template) for every tier of an effect or enchantment that the editor's own list has seen saved."""
+    book = effect_book()
+    return {(choice.effect, choice.template) for choice in book.effects + book.enchantments if choice.seen}
 
-    One line for each item that shows an effect the lines before it don't, Uniques first, and then one for each
-    other Unique, up to MAX_GEAR_LINES. An item the game hasn't shown you yet is left out: the editor may have
-    just made it out of another item, and its effects would be that item's."""
-    candidates = []
+
+def _telling_items(heroes: list[Hero]) -> list[tuple[Item, set[tuple[str, str]], bool]]:
+    """(item, the effects on it that are new to the editor, whether it has an effect saved some way the editor
+    doesn't write) for each weapon, armor piece and artifact in these saves that would teach the editor
+    something, Uniques first. An item the game hasn't shown you yet is left out: the editor may have just made
+    it, or changed its effects, and then they aren't the game's word for anything."""
+    known = _known_pairs()
+    found = []
     for hero in heroes:
         for item in hero.items():
             marks = item.data.get("DynamicPropertyTags")
             looked_at = item.stock_slot or (isinstance(marks, list) and UNSEEN_TAG not in marks)
             if item.is_cosmetic or item.is_talisman or not looked_at or item_group(item.tag) in NOT_ADDABLE_GROUPS:
                 continue
-            pairs = _effect_pairs(item)
-            if pairs:
-                candidates.append((not is_unique_version(item.tag), -len(pairs), item.tag, item, pairs))
-    candidates.sort(key=lambda candidate: candidate[:3])
+            pairs = _effect_pairs(item) - known
+            own = bool(item.own_effects)  # a Unique's own effect, say: how those are saved isn't known yet
+            if pairs or own:
+                found.append((not is_unique_version(item.tag), -len(pairs), item.tag, item, pairs, own))
+    found.sort(key=lambda entry: entry[:3])
+    return [(item, pairs, own) for _common, _count, _tag, item, pairs, own in found]
+
+
+def gear_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
+    """(item ID, the effects a save holds for one) for weapons, armor and artifacts in these saves whose effects
+    the editor's list doesn't have, exactly as saved. The editor can't add an effect it has never seen, so this
+    is how it learns them.
+
+    One line for each item that shows an effect or enchantment the editor doesn't know and the lines before
+    it don't show, and one for each item with an effect saved some way the editor doesn't write (what a
+    Unique comes with), up to MAX_GEAR_LINES."""
     covered: set[tuple[str, str]] = set()
-    chosen: dict[str, Item] = {}
-    for _common, _count, tag, item, pairs in candidates:  # every effect there is to see, in as few lines as it takes
-        if not pairs <= covered and len(chosen) < MAX_GEAR_LINES:
-            chosen.setdefault(f"{tag} {len(chosen)}", item)
+    listed: set[str] = set()
+    chosen: list[Item] = []
+    for item, pairs, own in _telling_items(heroes):
+        if len(chosen) >= MAX_GEAR_LINES:
+            break
+        if not pairs <= covered or (own and item.tag not in listed):
+            chosen.append(item)
             covered |= pairs
-    shown = {item.tag for item in chosen.values()}
-    for common, _count, tag, item, _pairs in candidates:  # and what each Unique comes with
-        if not common and tag not in shown and len(chosen) < MAX_GEAR_LINES:
-            chosen[f"{tag} {len(chosen)}"] = item
-            shown.add(tag)
-    return [(item.tag, f"effects on a {item.rarity} one: {_compact(item.data.get('Effects'))}") for item in chosen.values()]
+            listed.add(item.tag)
+    return [(item.tag, f"effects on a {item.rarity} one: {_compact(item.data.get('Effects'))}") for item in chosen]
 
 
 def finding_keys(heroes: list[Hero]) -> set[str]:
     """A key for each thing the report would tell. The editor remembers the ones you've been shown, so it can
     tell when your saves hold something that wasn't there before."""
     keys = {tag for tag, _note in unknown_ids(heroes)} | {f"{tag} effect" for tag, _text in talisman_effects(heroes)}
-    for hero in heroes:
-        for item in hero.items():
-            if not item.is_cosmetic and not item.is_talisman:
-                keys |= {f"{effect} {template}".strip() for effect, template in _effect_pairs(item)}
+    for item, pairs, own in _telling_items(heroes):
+        keys |= {f"{effect} {template}".strip() for effect, template in pairs}
+        if own:
+            keys.add(f"{item.tag} own effects")
     return keys
 
 
@@ -197,7 +214,7 @@ class ShareIdsDialog(tk.Toplevel):
         report = report_text(heroes, version)
         intro = (
             "Your saves hold things the editor's list doesn't have yet: item IDs, what the game calls an item, or "
-            "the effects on your gear, which the editor can only add once it has seen them. Add what the game calls "
+            "effects and enchantments on your gear, which the editor can only add once it has seen them. Add what the game calls "
             "an item after its dash if you know it, then open a GitHub issue (you need a free GitHub account) or copy "
             "the list. Only item IDs and the effects saved with items are shared: nothing else from your saves."
             if report

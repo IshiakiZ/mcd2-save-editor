@@ -12,11 +12,15 @@ from tkinter import ttk
 from unittest import mock
 
 from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs
-from dungeons2_editor.hero import Hero, use_local_names
+from dungeons2_editor.effects_dialog import EffectsDialog
+from dungeons2_editor.hero import Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
 from dungeons2_editor.restore_dialog import RestoreDialog
 
-from .helpers import SETTINGS_TEXT, hero_save, hero_save_text, make_profile, shift_encode
+from .helpers import (
+    SETTINGS_TEXT, enchanted, enchantment_effect, hero_item, hero_save, hero_save_text, make_profile, rolled, rolled_effect,
+    shift_encode, talisman_item,
+)
 
 HERO = "Character00000000-0000-1000-8000-000000000002"
 OTHER_HERO = "Character00000000-0000-1000-8000-000000000003"
@@ -216,18 +220,70 @@ class HeroTabTests(WindowTestCase):
 
     def test_an_items_effects_show_in_the_list_and_under_its_name(self):
         sword = next(item for item in self.tab.hero.items() if item.tag == "SW.Item.Sword")
-        sword.data["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
-            {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 0, "EnchantmentPointsInvested": 2},
-            {"TypeTag": "SW.Effect.Sharpness", "Intensity": 12},
-        ]}]
+        sword.data["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II")), enchanted(enchantment_effect("Radiance", 0.3))]
         self.tab._fill_items()
         self.select_item("Sword")
         row = self.tab.tree.selection()[0]
         self.assertEqual(str(self.tab.tree.set(row, "enchants")), "2")
         self.assertEqual(self.tab.tree.heading("enchants", "text").strip(" ▲▼"), "Effects")
-        self.assertIn("\nEffects: Fire Aspect 0.5, 2 enchantment points  ·  Sharpness 12", self.tab.item_subtitle_var.get())
+        self.assertIn("\nEffects: Critical Edge II 20%  ·  Enchanted: Healing Smite I, 3 enchantment points", self.tab.item_subtitle_var.get())
         self.select_item("Longbow")
         self.assertNotIn("Effects", self.tab.item_subtitle_var.get())
+
+    def test_effects_are_changed_in_their_own_window(self):
+        self.select_item("Sword")
+        button = self.tab.effects_button
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Change effects…", True))
+
+        def choose(dialog):
+            self.assertIsInstance(dialog, EffectsDialog)
+            self.assertTrue(dialog.select("Critical Edge", "II"))
+            dialog.add()
+            self.assertTrue(dialog.select("Healing Smite"))
+            dialog.add()
+            dialog.apply()
+
+        with mock.patch.object(self.tab, "wait_window", side_effect=choose):
+            button.invoke()
+        sword = next(item for item in self.tab.hero.items() if item.tag == "SW.Item.Sword")
+        self.assertEqual(sword.effect_lines(), ["Critical Edge II 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertIn("Effects changed.", self.tab.item_message_var.get())
+        self.assertIn("Effects: Critical Edge II 20%", self.tab.item_subtitle_var.get())
+        # Closing the window without Apply leaves the item as it was.
+        with mock.patch.object(self.tab, "wait_window", side_effect=lambda dialog: (dialog.remove_all(), dialog.destroy())):
+            button.invoke()
+        self.assertEqual(len(sword.effects), 2)
+        self.assertIn("Sword: effects: Critical Edge II 20%, enchanted with Healing Smite I", self.save())
+        self.assertEqual(next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Sword").effect_lines(), sword.effect_lines())
+        # Not for what the merchant stocks, or for a cosmetic.
+        self.select_item("Cookiecutter")
+        self.assertTrue(button.instate(["disabled"]))
+        self.tab.show_cosmetics.set(True)
+        self.tab._fill_items()
+        self.select_item("Hero")
+        self.assertTrue(button.instate(["disabled"]))
+
+    def test_a_talisman_is_made_ready_to_level_up(self):
+        self.tab.hero.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        self.tab._fill_items()
+        self.select_item("Sigil of Beeswax")
+        button = self.tab.effects_button
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Ready to level up", True))
+        self.assertIn("Level 1 of 3 (90 of 18,480 XP)", self.tab.item_subtitle_var.get())
+        button.invoke()
+        self.assertIn("XP set to 18,479, one short of level 2", self.tab.item_message_var.get())
+        self.assertIn("Level 1 of 3 (18,479 of 18,480 XP)", self.tab.item_subtitle_var.get())
+        self.save()
+        self.assertEqual(next(item for item in self.saved_hero().items() if item.is_talisman).xp, 18479)
+
+    def test_the_town_vendors_the_hero_has_unlocked(self):
+        self.assertTrue(self.tab.vendors_var.get().startswith("This hero hasn't opened a town vendor in the game yet."))
+        hints = self.tab.hero.body["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.VillageMerchant.Overview", "Count": 1}]
+        self.tab.refresh()
+        self.assertTrue(self.tab.vendors_var.get().startswith("Unlocked in the game: the Village Merchant. Not opened yet: the Blacksmith and the Enchantsmith."))
+        hints += [{"Tag": f"SW.UI.Onboarding.Panel.{vendor}.Overview", "Count": 1} for vendor in ("Blacksmith", "Enchantsmith")]
+        self.tab.refresh()
+        self.assertEqual(self.tab.vendors_var.get(), "This hero has unlocked all three town vendors: the Village Merchant, the Blacksmith and the Enchantsmith.")
 
     def test_sorting_and_filters(self):
         self.tab.sort_var.set("Name")
@@ -911,28 +967,92 @@ class SimpleModeTests(WindowTestCase):
 
     def test_an_items_effects_are_listed_on_its_card(self):
         sword = self.index_of("SW.Item.Sword")
+        button = self.screen.effects_button
         self.screen.pick_item(sword)
-        self.assertEqual(self.screen.enchant_title.get(), "NOT ENCHANTED")  # a weapon with nothing on it yet
-        self.screen.hero.item(sword).data["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
-            {"TypeTag": f"SW.Effect.Effect{number}", "Intensity": number, "Quality": 0, "EnchantmentPointsInvested": 0} for number in range(1, 7)
-        ]}]
+        self.assertEqual(self.screen.enchant_title.get(), "NO EFFECTS")  # a weapon with nothing on it yet
+        self.assertIn("Give this one any you like, and an enchantment.", self.screen.enchant_text.get())
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("CHANGE EFFECTS…", True))
+        self.screen.hero.item(sword).data["Effects"] = [
+            rolled(*[rolled_effect(f"Effect{number}", number) for number in range(1, 5)]), enchanted(enchantment_effect("Radiance", 0.3)),
+            {"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]},
+        ]
         self.screen.refresh()
         self.screen.pick_item(sword)
         self.assertEqual(self.screen.enchant_title.get(), "EFFECTS")
-        lines = self.screen.enchant_text.get().splitlines()
-        self.assertEqual(lines[:5], ["Effect1 1", "Effect2 2", "Effect3 3", "Effect4 4", "and 2 more"])
-        self.assertIn("can't change effects yet", lines[-1])
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Effect1 I 1", "Effect2 I 2", "Effect3 I 3", "Effect4 I 4", "and 2 more"])
         self.assertTrue(self.screen.enchant_box.winfo_manager())
-        # A talisman's effect comes with its level; an artifact with no effects has nothing to show.
+        # A talisman's effect comes with its level, and the button gets it ready for the next one.
         entry = next(entry for entry in self.screen._catalog() if entry.tag == "SW.Item.Talisman.HealthBoost")
         sigil = self.screen.hero.add_item(entry.tag, entry.template)
         self.screen.refresh()
         self.screen.pick_item(sigil)
-        self.assertEqual(self.screen.enchant_text.get().splitlines()[:2], ["Health Boost 1.2", "Level 1 of 3. At the next levels: 1.25, then 1.35."])
+        self.assertEqual(self.screen.enchant_title.get(), "EFFECT")
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Health Boost 1.2", "Level 1 of 3 (0 of 18,480 XP). At the next levels: 1.25, then 1.35."])
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("READY TO LEVEL UP", True))
+        button.invoke()
+        self.assertEqual(self.screen.hero.item(sigil).xp, 18479)
+        self.assertIn("XP set to 18,479, one short of level 2", self.screen.item_message_var.get())
+        self.assertIn("(18,479 of 18,480 XP)", self.screen.enchant_text.get())
+        # An artifact gets effects but no enchantment; the merchant's stock is left alone; a cosmetic has nothing to show.
         horn = self.screen.hero.add_item("SW.Item.Artifact.RallyingHorn", entry.template)
         self.screen.refresh()
         self.screen.pick_item(horn)
+        self.assertEqual(self.screen.enchant_title.get(), "NO EFFECTS")
+        self.assertNotIn("enchantment", self.screen.enchant_text.get())
+        self.assertTrue(button.instate(["!disabled"]))
+        self.screen.pick_item(self.index_of("SW.Item.CurvedGreatsword"))
+        self.assertTrue(button.instate(["disabled"]))
+        self.screen.pick_item(self.index_of("SW.Item.Cosmetic.Cape.Hero"))
         self.assertFalse(self.screen.enchant_box.winfo_manager())
+
+    def test_the_card_scrolls_when_its_too_short_for_what_it_shows(self):
+        # On a small screen, or a display Windows scales up, the card used to cut off its lower buttons.
+        screen = self.screen
+        screen.pick_item(self.index_of("SW.Item.Longbow"))
+        self.root.minsize(1, 1)
+        self.root.geometry("1280x520")
+        self.root.deiconify()
+        self.root.update()
+        if not self.root.winfo_viewable():
+            self.skipTest("windows can't be shown here")
+        needed = screen.card_content.winfo_reqheight()
+        self.assertLess(screen.card_view.winfo_height(), needed)
+        self.assertTrue(screen.card_scroll.winfo_ismapped())
+        screen.card_view.yview_moveto(1)
+        self.root.update()
+        self.assert_in_view(screen.name_button, screen.card)  # the last button can be reached
+        # What's said about a change stays in view, below whatever scrolls.
+        screen._say_item("Changed. Press Save to game when you're done.")
+        self.root.update()
+        self.assert_in_view(screen.item_message, screen.card)
+        screen.pick_item(self.index_of("SW.Item.MysticHelmet"))
+        self.root.update()
+        self.assertEqual((screen.card_view.yview()[0], screen.item_message.winfo_manager()), (0.0, ""))  # another item: from the top, nothing said yet
+        # With room for everything, nothing scrolls.
+        self.root.geometry(f"1280x{self.root.winfo_height() + needed}")
+        self.root.update()
+        if screen.card_view.winfo_height() >= screen.card_content.winfo_reqheight():
+            self.assertFalse(screen.card_scroll.winfo_ismapped())
+
+    def test_effects_are_changed_from_the_card(self):
+        sword = self.index_of("SW.Item.Sword")
+        self.screen.pick_item(sword)
+
+        def choose(dialog):
+            self.assertIsInstance(dialog, EffectsDialog)
+            self.assertFalse(dialog.enchantsmith_opened)  # nothing in this save says the hero has been to the Enchantsmith
+            self.assertTrue(dialog.select("Looter"))
+            dialog.add()
+            self.assertTrue(dialog.select("Healing Smite"))
+            dialog.add()
+            dialog.apply()
+
+        with mock.patch.object(self.screen, "wait_window", side_effect=choose):
+            self.screen.effects_button.invoke()
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertIn("Effects changed.", self.screen.item_message_var.get())
+        self.assertIn("Sword: effects: Looter I 20%, enchanted with Healing Smite I", self.save())
+        self.assertEqual(self.saved_hero().item(sword).effect_lines(), ["Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
 
     def test_merchant_stock_can_be_copied_but_not_worn(self):
         self.show("Merchant")
@@ -989,6 +1109,8 @@ class SimpleModeTests(WindowTestCase):
         self.assertEqual(self.screen.card_name_var.get(), "STATS & TOWN")
         entries = [w for w in self.screen.stats_box.winfo_children() if isinstance(w, ttk.Entry)]
         self.assertEqual(len(entries), len(self.screen.hero.attributes()))
+        notes = [str(w.cget("text")) for w in self.screen.stats_box.winfo_children() if isinstance(w, ttk.Label)]
+        self.assertIn("This hero hasn't opened a town vendor in the game yet. The game notes the first time you open each one's window.", notes)
         self.assertIs(self.screen.stat_vars["Emeralds"], self.screen._fixed_vars["Emeralds"])  # the same as the top bar's
         self.screen._close_stats()
         self.assertEqual(self.screen.banner_text, "YOUR HERO")
@@ -1313,6 +1435,164 @@ class ScaledDisplayTests(RestoreTests):
         room = layout.screen_room(dialog)
         self.assertEqual((dialog.winfo_width(), dialog.winfo_height()), (min(needed[0], room[0]), min(needed[1], room[1])))
         self.assertGreater(needed[1], 380)  # the height the window used to have, whatever the scaling
+
+
+def geared_hero_save():
+    """A hero with a Special bow the game rolled two effects for, an enchanted helmet, and a horn."""
+    document = hero_save()
+    bow = hero_item("SW.Item.Bow", power=17, rarity="Special", seed=71, unseen=False)
+    bow["ItemData"]["Effects"] = [rolled(rolled_effect("Knockback", 0.15), rolled_effect("CriticalEdge", 0.2, "II"))]
+    helmet = hero_item("SW.Item.HoneyHelmet", power=14, rarity="Unique", seed=72, unseen=False)
+    helmet["ItemData"]["Effects"] = [
+        {"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]},
+        enchanted(enchantment_effect("SoulInfusedPotion", 0.6, "II", points=8)),
+    ]
+    document["CharacterSaveV1"]["Inventory"]["Entries"] += [bow, helmet, hero_item("SW.Item.Artifact.RallyingHorn", seed=73, unseen=False)]
+    return json.dumps(document, separators=(",", ":")).encode()
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class EffectsWindowTests(WindowTestCase):
+    """The window that changes an item's effects and its enchantment."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: geared_hero_save()}
+
+    def open(self, tag, **more):
+        hero = self.app.inventory.hero
+        item = next(item for item in hero.items() if item.tag == tag)
+        dialog = EffectsDialog(self.root, item, *effect_choices([hero]), **more)
+        self.addCleanup(lambda: dialog.winfo_exists() and dialog.destroy())
+        self.root.update()
+        return dialog
+
+    def on_item(self, dialog):
+        return [(dialog.current.item(iid, "text"), dialog.current.set(iid, "kind")) for iid in dialog.current.get_children()]
+
+    def listed(self, dialog):
+        return [dialog.listing.item(iid, "text") for iid in dialog.listing.get_children()]
+
+    def test_effects_are_added_changed_and_removed(self):
+        dialog = self.open("SW.Item.Bow")
+        self.assertEqual(self.on_item(dialog), [("Knockback I", "Effect"), ("Critical Edge II", "Effect")])
+        self.assertEqual(dialog.count_var.get(), "2 of 4 effects")
+        self.assertTrue(dialog.apply_button.instate(["disabled"]))  # nothing to apply yet
+        self.assertIn("Lightning Focus (Electromancer?)", self.listed(dialog))  # a name made from the ID, and the likely one
+        # One it has already: the tier it has is the one picked, and there's nothing to add.
+        self.assertTrue(dialog.select("Critical Edge"))
+        self.assertEqual((dialog.tier_var.get(), str(dialog.add_button.cget("text")), dialog.add_button.instate(["disabled"])), ("II", "On the item", True))
+        # Another tier of it takes its place.
+        dialog.tier_var.set("I")
+        dialog._show_choice()
+        self.assertEqual(str(dialog.add_button.cget("text")), "Change to tier I")
+        dialog.add()
+        self.assertEqual(self.on_item(dialog), [("Knockback I", "Effect"), ("Critical Edge I", "Effect")])
+        self.assertTrue(dialog.apply_button.instate(["!disabled"]))
+        # A new one starts at the best tier a save has shown, and is added at the end.
+        self.assertTrue(dialog.select("Looter"))
+        self.assertEqual((dialog.tier_var.get(), str(dialog.add_button.cget("text"))), ("I", "Add this effect"))
+        self.assertEqual(dialog.note_var.get(), "Looter I: Grants a 20% chance to get additional loot drops.")
+        dialog.add()
+        self.assertTrue(dialog.select("Luck"))
+        dialog.add()
+        self.assertEqual(dialog.count_var.get(), "4 of 4 effects")
+        # Full: a fifth has to wait until one is removed.
+        self.assertTrue(dialog.select("Vanguard"))
+        self.assertTrue(dialog.add_button.instate(["disabled"]))
+        self.assertIn("The game caps an item at 4 effects, so remove one first.", dialog.note_var.get())
+        dialog.add()
+        self.assertEqual(len(dialog.effects), 4)
+        dialog.current.selection_set("effect 0")
+        self.root.update()
+        dialog.remove()
+        self.assertEqual([choice.title for choice in dialog.effects], ["Critical Edge I", "Looter I", "Luck I"])
+        self.assertTrue(dialog.add_button.instate(["!disabled"]))
+        # Searching narrows the list.
+        dialog.search_var.set("any weapon")
+        self.assertEqual(self.listed(dialog), ["Critical Edge", "Critical Hit", "Knockback"])
+        dialog.search_var.set("nothing like this")
+        self.assertEqual((self.listed(dialog), dialog.note_var.get()), ([], "Nothing matches. Try another search."))
+        dialog.search_var.set("")
+        dialog.apply()
+        self.assertEqual(([choice.title for choice in dialog.result[0]], dialog.result[1]), (["Critical Edge I", "Looter I", "Luck I"], None))
+        self.assertFalse(dialog.winfo_exists())
+
+    def test_a_tier_no_save_has_shown_is_asked_about_once(self):
+        dialog = self.open("SW.Item.Bow")
+        self.assertFalse(dialog.select("Critical Edge", "III"))  # not on offer: the game files' two numbers for it disagree
+        self.assertTrue(dialog.select("Vanguard", "III"))
+        self.assertIn("Deal 50% more damage to enemies who are at full health. This tier hasn't been seen in a real save yet", dialog.note_var.get())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            dialog.add()
+        self.assertEqual((ask.call_count, [choice.title for choice in dialog.effects]), (1, ["Knockback I", "Critical Edge II"]))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            dialog.add()
+            dialog.select("Knockback", "III")
+            dialog.add()
+        self.assertEqual((ask.call_count, [choice.title for choice in dialog.effects]), (1, ["Knockback III", "Critical Edge II", "Vanguard III"]))
+
+    def test_an_enchantment_goes_only_where_the_game_puts_it(self):
+        dialog = self.open("SW.Item.Bow", enchantsmith_opened=False)
+        dialog.kind_var.set("Enchantments")
+        dialog._fill_choices()
+        self.assertEqual(self.listed(dialog), ["Healing Smite", "Piercing"])  # the ones for a ranged weapon
+        self.assertTrue(dialog.select("Piercing"))
+        self.assertEqual(str(dialog.add_button.cget("text")), "Enchant with it")
+        self.assertEqual(
+            dialog.note_var.get(),
+            "Projectiles pierce enemies. Tiers I, II and III: 1 / 3 / 5 enemies. This hero hasn't opened the Enchantsmith in the game yet.",
+        )
+        dialog.add()
+        self.assertEqual(self.on_item(dialog)[-1], ("Piercing I", "Enchantment"))
+        dialog.select("Healing Smite")
+        self.assertEqual(str(dialog.add_button.cget("text")), "Change to Healing Smite I")  # one enchantment an item
+        dialog.add()
+        self.assertEqual((dialog.enchantment.title, len(dialog.effects)), ("Healing Smite I", 2))
+        dialog.current.selection_set("enchantment")
+        self.root.update()
+        dialog.remove()
+        self.assertIsNone(dialog.enchantment)
+        dialog.remove_all()
+        self.assertEqual((self.on_item(dialog), dialog.clear_button.instate(["disabled"])), ([], True))
+        dialog.destroy()
+        self.assertIsNone(dialog.result)
+        # An artifact takes effects and no enchantment.
+        horn = self.open("SW.Item.Artifact.RallyingHorn")
+        self.assertTrue(horn.kind_buttons["Enchantments"].instate(["disabled"]))
+        self.assertEqual(horn.choices["Enchantments"], [])
+
+    def test_an_effect_of_the_items_own_is_left_alone(self):
+        dialog = self.open("SW.Item.HoneyHelmet")
+        self.assertEqual(self.on_item(dialog), [("Ancient Alchemy II", "Enchantment"), ("Burning", "Its own")])
+        self.assertEqual(dialog.count_var.get(), "0 of 3 effects")  # its own one counts towards the game's four
+        dialog.current.selection_set("own 0")
+        self.root.update()
+        self.assertTrue(dialog.remove_button.instate(["disabled"]))
+        dialog.remove()
+        self.assertEqual(len(self.on_item(dialog)), 2)
+        self.assertEqual(dialog.kind_var.get(), "Effects")
+        dialog.kind_var.set("Enchantments")
+        dialog._fill_choices()
+        self.assertEqual(self.listed(dialog), ["Ancient Alchemy"])  # the one enchantment known for armor
+        self.assertEqual((dialog.tier_var.get(), str(dialog.add_button.cget("text"))), ("II", "On the item"))
+
+    def test_the_buttons_keep_their_room(self):
+        dialog = self.open("SW.Item.Bow")
+        self.show_on_screen(dialog)
+        for button in (dialog.apply_button, dialog.add_button, dialog.remove_button):
+            self.assert_in_view(button, dialog)
+        dialog.select("Vanguard", "III")  # the longest note there is
+        dialog.update()
+        self.assert_in_view(dialog.apply_button, dialog)
+
+
+class EffectsWindowAt150Tests(EffectsWindowTests):
+    """The same on a display scaled up to 150%."""
+
+    scaling = 2.0
+
+
+class EffectsWindowAt200Tests(EffectsWindowTests):
+    scaling = 2.6667
 
 
 def newer_hero_save():

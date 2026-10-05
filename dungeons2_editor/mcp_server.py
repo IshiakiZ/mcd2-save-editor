@@ -30,13 +30,17 @@ from .hero import (
     MAX_STACK,
     RARITIES,
     STAT_CAPS,
+    TIERS,
     CatalogItem,
     Effect,
+    EffectChoice,
     GearSlot,
     Hero,
     Item,
     build_catalog,
     describe_changes,
+    effect_book,
+    effect_choices,
     format_amount,
     format_caution,
     game_item,
@@ -61,8 +65,11 @@ INSTRUCTIONS = (
     "gear power: in testing, the game put level 100 back to 1 and removed items at power 135. Items with "
     "confirmed: false have a best-guess save ID, and the game may remove them. Talismans have no rarity or power, "
     "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
-    "game's servers, so they can't be changed. An item's effects are shown but can't be changed, and "
-    "enchantments can't be added yet."
+    "game's servers, so they can't be changed. set_item_effects gives a weapon, armor piece or artifact its "
+    "effects and a weapon or armor piece its enchantment, from list_effects: the editor writes them exactly as a "
+    "real save holds them, so it only has the ones it has seen so far. ready_talisman puts a talisman one XP "
+    "short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
+    "apply_preset add enchantments once the Enchantsmith is one of them."
 )
 
 _SLOT_WORDS = {"melee": "Melee weapon", "ranged": "Ranged weapon", "chest": "Chestplate", "legs": "Leggings", "helm": "Helmet"}
@@ -323,9 +330,50 @@ class EditorServer:
             "gear": gear,
             "inventory": [_item_info(item, refs, catalog) for item in everything if not item.equipped_slot and not item.stock_slot],
             "merchant_stock": [_item_info(item, refs, catalog) for item in everything if item.stock_slot],
+            # By the game's own records: it notes the first time each vendor's window is opened.
+            "vendors": hero.vendors_opened(),
             "unsaved_changes": describe_changes(draft.original, draft.document) if draft else [],
         }
         return result
+
+    def list_effects(self, args: dict) -> dict:
+        profile = self._profile()
+        gear, enchantments = effect_choices([c.hero for c in profile.containers if c.hero is not None])
+        query = str(args.get("query") or "").strip().lower()
+
+        def listing(choices: list[EffectChoice]) -> list[dict]:
+            grouped: dict[tuple[str, str], list[EffectChoice]] = {}
+            for choice in choices:
+                grouped.setdefault((choice.effect, choice.template.rsplit(".", 1)[0] if choice.tier else choice.template), []).append(choice)
+            found = []
+            for tiers in grouped.values():
+                first = tiers[0]
+                entry: dict[str, Any] = {"name": first.name, "id": first.effect}
+                if first.maybe:
+                    entry["probably_called"] = first.maybe
+                if first.rolls_on:
+                    entry["rolls_on"] = first.rolls_on
+                if first.is_enchantment:
+                    entry["goes_on"] = list(first.slots)
+                    if first.what:
+                        entry["does"] = first.what + (f" (tiers I, II and III: {first.levels})" if first.levels else "")
+                entry["tiers"] = [
+                    {"tier": choice.tier or "as saved", **({} if choice.is_enchantment else {"strength": choice.number}),
+                     **({} if choice.seen else {"seen": False}), **({"from_your_saves": True} if choice.yours else {})}
+                    for choice in tiers
+                ]
+                if not query or query in f"{entry['name']} {first.maybe} {first.effect} {first.rolls_on} {first.what}".lower():
+                    found.append(entry)
+            return found
+
+        return {
+            "effects": listing(gear),
+            "enchantments": listing(enchantments),
+            "most_effects_on_an_item": effect_book().max_effects,
+            "note": "The game rolls none on a Common item, one on a Rare one and two on a Special one. seen: false marks a tier "
+                    "no save has shown yet: its number is from the game files' table, and set_item_effects needs allow_unseen for it. "
+                    "Anything on an item in these saves can be copied to another, which is how more become available.",
+        }
 
     def find_items(self, args: dict) -> dict:
         profile = self._profile()
@@ -471,6 +519,47 @@ class EditorServer:
 
         return self._edit(args["hero"], change)
 
+    def set_item_effects(self, args: dict) -> dict:
+        def change(hero: Hero, profile: saves.SaveProfile, container: saves.Container) -> tuple[str, dict]:
+            index = _index_of(hero, args["item"])
+            gear, enchantments = effect_choices(self._heroes_for_catalog(hero, profile, container.name))
+            allow = bool(args.get("allow_unseen"))
+            did = []
+            if args.get("effects") is not None:
+                wanted = args["effects"]
+                if not isinstance(wanted, list) or not all(isinstance(name, str) for name in wanted):
+                    raise ToolError("effects is a list of names from list_effects, e.g. [\"Critical Edge II\", \"Looter\"]. An empty list removes them.")
+                hero.set_effects(index, [_effect_choice(name, gear, allow) for name in wanted])
+                did.append("effects: " + (", ".join(effect.title for effect in hero.item(index).rolled_effects) or "none"))
+            if args.get("enchantment") is not None:
+                wanted = str(args["enchantment"]).strip()
+                if wanted.lower() in ("", "none", "remove"):
+                    hero.set_enchantment(index, None)
+                    did.append("enchantment taken off")
+                else:
+                    hero.set_enchantment(index, _effect_choice(wanted, enchantments, allow))
+                    did.append(f"enchanted with {hero.item(index).enchantment.title}")
+            if not did:
+                raise ToolError("Say what to set: effects (a list of names from list_effects) or enchantment (a name, or \"none\").")
+            item = hero.item(index)
+            more = {"item": _item_info(item, _refs(hero), {})}
+            if hero.item(index).enchantment is not None and not hero.vendors_opened()["Enchantsmith"]:
+                more["heads_up"] = "This hero hasn't opened the Enchantsmith in the game yet."
+            return f"The {item.name}: {'; '.join(did)}.", more
+
+        return self._edit(args["hero"], change)
+
+    def ready_talisman(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            index = _index_of(hero, args["item"])
+            item = hero.item(index)
+            xp = hero.ready_talisman(index)
+            text = (f"The {item.name}'s XP is {format_amount(xp)}, one short of level {item.level + 2}: the next XP earned in the "
+                    "game with it equipped levels it up.")
+            return text, {"item": _item_info(hero.item(index), _refs(hero), {})}
+
+        return self._edit(args["hero"], change)
+
     def equip_item(self, args: dict) -> dict:
         def change(hero: Hero, profile: saves.SaveProfile, container: saves.Container) -> tuple[str, dict]:
             index = _index_of(hero, args["item"])
@@ -610,6 +699,9 @@ class EditorServer:
                  self.find_items, read_only=True),
             Tool("list_presets", "List presets", "Ready-made goals (Most money, Most XP, ...), the most powerful gear, and complete kits from top builds.",
                  {}, self.list_presets, read_only=True),
+            Tool("list_effects", "List effects", "The gear effects and enchantments the editor can put on an item, with their tiers: the ones seen "
+                 "in real saves so far, and anything on an item in these saves.",
+                 {"query": _string("Part of a name, e.g. 'critical' or 'smite'.")}, self.list_effects, read_only=True),
             Tool("set_stats", "Set stats", "Change stats: Emeralds, Echo shards (SpringStone), Enchantment points, Level, XP and the town upgrade "
                  "levels. Stops at the game's caps unless ignore_caps. Change Level in small steps.",
                  {"hero": HERO, "stats": {"type": "object", "description": "Stat name to value, e.g. {\"Emeralds\": 9999, \"Level\": 12}.",
@@ -628,6 +720,18 @@ class EditorServer:
                  {"hero": HERO, "item": ITEM, "rarity": RARITY, "power": POWER, "count": COUNT,
                   "change_into": _string("Another item's name or save ID."), "allow_unconfirmed": UNCONFIRMED},
                  self.change_item, ("hero", "item")),
+            Tool("set_item_effects", "Set an item's effects", "Give a weapon, armor piece or artifact its effects (in place of the ones the game "
+                 "rolled), and a weapon or armor piece its enchantment, from list_effects. Leave either out to keep what the item "
+                 "has. A name without a tier gets the highest tier a save has shown.",
+                 {"hero": HERO, "item": ITEM,
+                  "effects": {"type": "array", "items": {"type": "string"},
+                              "description": "Names from list_effects, with a tier if you like: [\"Critical Edge II\", \"Looter\"]. At most 4; [] removes them."},
+                  "enchantment": _string("An enchantment from list_effects, with a tier if you like (\"Healing Smite I\"), or \"none\" to take it off."),
+                  "allow_unseen": _flag("Allow a tier no save has shown yet (seen: false). If the game doesn't know it as written, it may drop the effect or the item.")},
+                 self.set_item_effects, ("hero", "item")),
+            Tool("ready_talisman", "Ready a talisman to level up", "Put a talisman one XP short of its next level: the game levels it up the next time it "
+                 "earns XP while equipped. A talisman's effect follows its level, which only the game changes.",
+                 {"hero": HERO, "item": ITEM}, self.ready_talisman, ("hero", "item")),
             Tool("equip_item", "Equip an item", "Put an item on. Whatever was in the slot goes back to the inventory.",
                  {"hero": HERO, "item": ITEM, "slot": SLOT, "ignore_slot_levels": LOCKED}, self.equip_item, ("hero", "item")),
             Tool("unequip_item", "Unequip an item", "Take an item off; it stays in the inventory.",
@@ -637,7 +741,9 @@ class EditorServer:
             Tool("delete_item", "Delete an item", "Delete an item from the inventory (unequip it first).",
                  {"hero": HERO, "item": ITEM}, self.delete_item, ("hero", "item")),
             Tool("apply_preset", "Apply a preset", "Apply a preset from list_presets: set stats, and add and equip its gear at the power and rarity given. "
-                 "Items with best-guess save IDs, and talismans whose effect isn't known, are left out unless include_unconfirmed.",
+                 "Items with best-guess save IDs, and talismans whose effect isn't known, are left out unless include_unconfirmed. "
+                 "A kit's gear gets the effects the game would roll for it, and its enchantments once the hero has unlocked the "
+                 "Enchantsmith, from the ones the editor can write.",
                  {"hero": HERO, "preset": _string("The preset's name from list_presets."), "power": POWER,
                   "rarity": RARITY, "equip": {"type": "boolean", "description": "Equip the gear it adds (kits and gear presets do by default)."},
                   "include_unconfirmed": _flag("Also add items whose save ID is a best guess (the game may remove them) and "
@@ -725,13 +831,17 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
     }
     if item.is_talisman:  # it has neither: the game saves SW.Rarity.None and power -1
         del info["rarity"], info["power"]
+        info["talisman_level"] = item.level + 1 if isinstance(item.level, int) else item.level
+        info["xp"] = item.xp
+        if item.next_level_xp is not None and item.level == 0:
+            info["xp_for_next_level"] = item.next_level_xp
         if not item.progression.get("ItemLevels"):
             info["note"] = "No effect is saved with this talisman, so it may do nothing in the game."
     if item.piece:
         info["piece"] = item.piece
     if item.level:
         info["item_level"] = item.level
-    if item.effects:  # shown as the game saved them; they can't be changed here yet
+    if item.effects:  # as the game saved them; set_item_effects changes the rolled ones and the enchantment
         info["effects"] = [_effect_info(effect) for effect in item.effects]
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
@@ -743,8 +853,34 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
     return info
 
 
+def _effect_choice(wanted: str, choices: list[EffectChoice], allow_unseen: bool) -> EffectChoice:
+    """The effect or enchantment an assistant named: 'Critical Edge II', or 'looter' for its best tier seen."""
+    words = wanted.strip().split()
+    tier = words[-1].upper() if len(words) > 1 and words[-1].upper() in TIERS else ""
+    name = " ".join(words[:-1] if tier else words).lower()
+    same = [choice for choice in choices if name in (choice.name.lower(), choice.maybe.lower(), choice.effect.rsplit(".", 1)[-1].lower())]
+    if not same:
+        raise ToolError(f"The editor can't write {wanted!r} yet: it hasn't seen it in a real save. list_effects shows what it can.")
+    if not tier:
+        found = presets._best(same) or same[0]
+    else:
+        found = next((choice for choice in same if choice.tier == tier), None)
+        if found is None:
+            raise ToolError(f"{same[0].name} is known at tier {', '.join(choice.tier for choice in same)}, not {tier}.")
+    if not found.seen and not found.yours and not allow_unseen:
+        raise ToolError(
+            f"{found.title} hasn't been seen in a real save yet: its number is from the game files' table. If the game doesn't "
+            "know it as written, it may drop the effect or the item. Pass allow_unseen to use it anyway."
+        )
+    return found
+
+
 def _effect_info(effect: Effect) -> dict:
     info = {"name": effect.name, "id": effect.tag, "strength": effect.strength}
+    if effect.tier:
+        info["tier"] = effect.tier
+    if effect.is_enchantment:
+        info["enchantment"] = True
     if effect.quality:
         info["quality"] = effect.quality
     if effect.points:

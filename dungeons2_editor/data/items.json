@@ -1721,7 +1721,24 @@
    "name": "Tasty Bone",
    "kind": "Talisman",
    "id": "SW.Item.Talisman.Wolf",
-   "confirmed": true
+   "confirmed": true,
+   "levels": [
+    {
+     "tags": [
+      "SW.Talisman.Wolf.Level.1"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Wolf.Level.2"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Wolf.Level.3"
+     ]
+    }
+   ]
   },
   {
    "name": "Tendrils of the Sprout",
@@ -1901,6 +1918,12 @@
    "name": "Gravity Pulse",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.GravityPulse",
+   "confirmed": true
+  },
+  {
+   "name": "Healing Smite",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Radiance",
    "confirmed": true
   },
   {

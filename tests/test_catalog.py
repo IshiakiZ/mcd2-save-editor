@@ -9,8 +9,8 @@ from dungeons2_editor import hero as heroes
 from dungeons2_editor import presets
 from dungeons2_editor.hero import Hero, build_catalog
 
-from . import PINNED_ITEMS_FILE, REAL_ITEMS_FILE, use_item_list
-from .helpers import hero_save
+from . import PINNED_EFFECTS_FILE, PINNED_ITEMS_FILE, REAL_EFFECTS_FILE, REAL_ITEMS_FILE, use_effect_list, use_item_list
+from .helpers import hero_save, talisman_item
 
 
 class RealItemListTests(unittest.TestCase):
@@ -18,6 +18,8 @@ class RealItemListTests(unittest.TestCase):
     def setUpClass(cls):
         use_item_list(REAL_ITEMS_FILE)
         cls.addClassCleanup(use_item_list, PINNED_ITEMS_FILE)
+        use_effect_list(REAL_EFFECTS_FILE)
+        cls.addClassCleanup(use_effect_list, PINNED_EFFECTS_FILE)
         cls.items = heroes.game_items()
 
     def test_every_id_is_an_item_id_used_once(self):
@@ -92,6 +94,89 @@ class RealItemListTests(unittest.TestCase):
                 self.assertEqual(heroes.armor_piece(item.id), item.slot, item.id)
                 self.assertRegex(item.id, r"^SW\.Item\.[A-Za-z]+(Helmet|Chest|Leggings|Boots)$")
 
+    def test_the_effects_list_holds_what_saves_have_shown(self):
+        book = heroes.effect_book()
+        self.assertEqual((book.max_effects, book.talisman_xp), (4, (18480, 73920)))
+        self.assertEqual(book.enchant_points["Unique"], [3, 8, 15])  # tiers I and II have been seen in a save
+        self.assertEqual(set(book.enchant_points), set(heroes.RARITIES))
+        self.assertGreaterEqual(len({choice.effect for choice in book.effects}), 18)
+        by_effect: dict = {}
+        for choice in book.effects:
+            by_effect.setdefault((choice.effect, choice.template.rsplit(".", 1)[0]), []).append(choice)
+            self.assertRegex(choice.effect, r"^SW\.Effect\.[A-Za-z]+$")
+            self.assertRegex(choice.template, r"^SW\.EffectTemplate\.[A-Za-z]+\.(I|II|III)$")
+            self.assertEqual(choice.template.rsplit(".", 1)[1], choice.tier)
+            self.assertFalse(choice.is_enchantment or choice.yours)
+            if not choice.seen:  # only where the game files' table gives the number, for an effect it names
+                self.assertTrue(choice.shown.endswith("%") and not choice.maybe, choice.title)
+                self.assertIn(choice.shown.rstrip("%"), choice.what, choice.title)  # and the game's wording agrees
+        for tiers in by_effect.values():
+            self.assertTrue(any(choice.seen for choice in tiers), tiers[0].name)  # nothing is listed on the table's word alone
+            self.assertEqual(len({choice.tier for choice in tiers}), len(tiers), tiers[0].name)
+        # Checked against the developer's own save: what the game wrote for these tiers.
+        saved = {(choice.title, choice.strength, choice.effect.rsplit(".", 1)[1], choice.template.split(".")[2]) for choice in book.effects if choice.seen}
+        self.assertTrue({
+            ("Critical Edge II", 0.2, "CriticalEdge", "CriticalEdge"),
+            ("Cooldown II", -0.15, "Cooldown", "Cooldown"),
+            ("Acrobat I", 0.1, "RollCooldown", "Acrobat"),  # the effect and its template don't share a name
+            ("Spiritual I", 1.25, "SoulMax", "BagOfSouls"),
+            ("Looter I", 0.2, "Looting", "Looting"),
+        } <= saved)
+        names = heroes.enchantments()
+        for choice in book.enchantments:
+            self.assertTrue(choice.seen and choice.is_enchantment, choice.title)  # an enchantment's number can't be worked out
+            self.assertEqual(choice.template, f"{choice.effect}.{choice.tier}")
+            self.assertIn(choice.name, names)
+            self.assertEqual(choice.slots, names[choice.name].slots)
+        self.assertEqual({(choice.title, choice.strength) for choice in book.enchantments},
+                         {("Ancient Alchemy I", 0.5), ("Ancient Alchemy II", 0.6), ("Healing Smite I", 0.3), ("Piercing I", 1)} | {
+                             (choice.title, choice.strength) for choice in book.enchantments
+                         })
+        self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.Radiance"), "Healing Smite")  # the book the save calls Radiance
+        # MetaBot's table says Critical Edge III is 30% and the game's wording for it says 40%: left out until a save shows it.
+        self.assertEqual([choice.tier for choice in book.effects if choice.name == "Critical Edge"], ["I", "II"])
+        self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
+        self.assertTrue(all(enchantment.levels and enchantment.what for enchantment in names.values()))
+
+    def test_the_kits_name_effects_and_enchantments_the_lists_know(self):
+        book = heroes.effect_book()
+        effects = {choice.name for choice in book.effects}
+        enchantments = heroes.enchantments()
+        for preset in presets.PRESETS:
+            for kit_item in preset.items:
+                self.assertTrue(set(kit_item.effects) <= effects, f"{preset.title}: {kit_item.name}: {kit_item.effects}")
+                self.assertTrue(set(kit_item.enchants) <= set(enchantments), f"{preset.title}: {kit_item.name}: {kit_item.enchants}")
+        # With the Enchantsmith unlocked, a kit puts on what the editor can write so far: Piercing on the Greatbow.
+        save = hero_save()
+        save["CharacterSaveV1"]["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
+        hero = Hero(save)
+        kit = next(preset for preset in presets.PRESETS if preset.title == "Greatbow sharpshooter")
+        plan = presets.plan(kit, hero, build_catalog([hero]), power=30, rarity="Unique")
+        made = {addition.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects]) for addition in plan.add}
+        self.assertEqual(made["Humbler Heartstring"], ("Piercing I", ["Marksman I"]))
+        self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge II"]))
+        self.assertEqual(made["Sharpshooter Fedora"], (None, ["Projectile Protection I"]))  # Ender Quiver hasn't been seen saved yet
+        self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown II", "Spiritual I"]))  # an artifact tops out at Special: two effects
+
+    def test_a_companions_talisman_is_added_the_way_the_game_saves_one(self):
+        # What the game saved for a Tasty Bone it handed over (the developer's own save, 2026-10-05).
+        game = {
+            "Effects": [],
+            "ItemProgression": {"CurrentLevel": 0, "CurrentXP": 0, "ItemLevels": [
+                {"LevelEffects": [], "LevelTags": ["SW.Talisman.Wolf.Level.1"]},
+                {"LevelEffects": [], "LevelTags": ["SW.Talisman.Wolf.Level.2"]},
+                {"LevelEffects": [], "LevelTags": ["SW.Talisman.Wolf.Level.3"]},
+            ]},
+        }
+        save = hero_save()
+        save["CharacterSaveV1"]["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", seed=61))
+        hero = Hero(save)
+        entry = next(entry for entry in build_catalog([hero]) if entry.tag == "SW.Item.Talisman.Wolf")
+        self.assertEqual((entry.name, entry.confirmed_at(), entry.no_effect), ("Tasty Bone", True, False))
+        bone = hero.item(hero.add_item(entry.tag, entry.template))
+        self.assertEqual({key: bone.data[key] for key in game}, game)
+        self.assertEqual((bone.rarity, bone.power, bone.effect_lines()), ("None", -1, ["Level 1 of 3 (0 of 18,480 XP)."]))
+
     def test_a_talismans_levels_are_its_effect_as_a_save_holds_it(self):
         sigil = heroes.game_item("SW.Item.Talisman.HealthBoost")  # seen in the developer's own save
         self.assertEqual((sigil.name, sigil.confirmed), ("Sigil of Beeswax", True))
@@ -108,6 +193,9 @@ class RealItemListTests(unittest.TestCase):
                 continue
             self.assertEqual((item.kind, item.confirmed, len(item.levels)), ("Talisman", True, 3), item.name)
             for level in item.levels:
+                if "tags" in level:  # a companion's talisman: a tag at each level, and no effect of its own
+                    self.assertTrue(all(tag.startswith("SW.Talisman.") for tag in level["tags"]) and "effect" not in level, item.name)
+                    continue
                 self.assertTrue(level["effect"].startswith("SW.Effect.") and level["template"].startswith("SW.EffectTemplate."), item.name)
                 self.assertIsInstance(level["intensity"], (int, float))
         catalog = {entry.tag: entry for entry in build_catalog([Hero(hero_save())])}

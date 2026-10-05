@@ -123,14 +123,19 @@ def cmd_pictures(args: argparse.Namespace) -> int:
 
 def cmd_items(args: argparse.Namespace) -> int:
     """Every item the editor knows, with its ID and whether that ID has been seen in a real save."""
-    from .hero import enchantments, game_items
+    from .hero import effect_book, enchantments, game_items
 
     items = game_items()
     for item in items:
         unique = f"  (Unique: {item.unique})" if item.unique else ""
         print(f"{item.kind:<9} {item.name:<32} {item.id:<44} {'confirmed' if item.confirmed else 'unconfirmed'}{unique}")
     print(f"{len(items)} items, {sum(item.confirmed for item in items)} with confirmed IDs, and {len(enchantments())} enchantments.")
-    return 0 if items and enchantments() else 1
+    book = effect_book()
+    print(
+        f"{len({choice.effect for choice in book.effects})} gear effects ({len(book.effects)} tiers) and "
+        f"{len({choice.effect for choice in book.enchantments})} enchantments ({len(book.enchantments)} tiers) that can be put on an item."
+    )
+    return 0 if items and enchantments() and book.effects and book.enchantments else 1
 
 
 def cmd_verify(args: argparse.Namespace) -> int:

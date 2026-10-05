@@ -1,0 +1,511 @@
+{
+ "sources": [
+  "https://metabot.gg/en/minecraft-dungeons-2/effects",
+  "https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide",
+  "https://metabot.gg/en/minecraft-dungeons-2/talismans"
+ ],
+ "max_effects": 4,
+ "enchant_points": {
+  "Common": [
+   1,
+   3,
+   6
+  ],
+  "Rare": [
+   1,
+   4,
+   9
+  ],
+  "Special": [
+   2,
+   6,
+   12
+  ],
+  "Unique": [
+   3,
+   8,
+   15
+  ]
+ },
+ "talisman_xp": [
+  18480,
+  73920
+ ],
+ "effects": [
+  {
+   "effect": "SW.Effect.Cooldown",
+   "template": "SW.EffectTemplate.Cooldown",
+   "name": "Cooldown",
+   "category": "Utility",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/cooldown",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Reduces artifact cooldown time by 10%."
+    },
+    {
+     "tier": "II",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Reduces artifact cooldown time by 15%."
+    },
+    {
+     "tier": "III",
+     "strength": -0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Reduces artifact cooldown time by 20%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.CriticalEdge",
+   "template": "SW.EffectTemplate.CriticalEdge",
+   "name": "Critical Edge",
+   "category": "Attack",
+   "rolls_on": "Any weapon",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/critical-edge",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "All critical hits deal 10% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "All critical hits deal 20% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.CriticalHit",
+   "template": "SW.EffectTemplate.CriticalHit",
+   "name": "Critical Hit",
+   "category": "Attack",
+   "rolls_on": "Any weapon",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/critical-hit",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.05,
+     "shown": "5%",
+     "seen": true,
+     "text": "Increases chance of critical hits by 5%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Increases chance of critical hits by 10%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Increases chance of critical hits by 15%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Desperation",
+   "template": "SW.EffectTemplate.Desperation",
+   "name": "Desperation",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Expand",
+   "template": "SW.EffectTemplate.Expand",
+   "name": "Expand",
+   "name_from_id": true,
+   "maybe": "Totem Radius",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.HealingFocus",
+   "template": "SW.EffectTemplate.HealingFocus",
+   "name": "Healing Focus",
+   "name_from_id": true,
+   "maybe": "Healer",
+   "tiers": [
+    {
+     "tier": "II",
+     "strength": 0.35,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Knockback",
+   "template": "SW.EffectTemplate.Knockback",
+   "name": "Knockback",
+   "category": "Attack",
+   "rolls_on": "Any weapon",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/knockback",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Attacks do 15% more knockback."
+    },
+    {
+     "tier": "II",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Attacks do 20% more knockback."
+    },
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": false,
+     "text": "Attacks do 30% more knockback."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.LightningFocus",
+   "template": "SW.EffectTemplate.LightningFocus",
+   "name": "Lightning Focus",
+   "name_from_id": true,
+   "maybe": "Electromancer",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "seen": true
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Looting",
+   "template": "SW.EffectTemplate.Looting",
+   "name": "Looter",
+   "category": "Utility",
+   "rolls_on": "All gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/looter",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Grants a 20% chance to get additional loot drops."
+    },
+    {
+     "tier": "II",
+     "strength": 0.4,
+     "shown": "40%",
+     "seen": false,
+     "text": "Grants a 40% chance to get additional loot drops."
+    },
+    {
+     "tier": "III",
+     "strength": 0.6,
+     "shown": "60%",
+     "seen": false,
+     "text": "Grants a 60% chance to get additional loot drops."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Lucky",
+   "template": "SW.EffectTemplate.Lucky",
+   "name": "Luck",
+   "category": "Utility",
+   "rolls_on": "All gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/luck",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Grants a 10% chance to drop duplicate variations of items."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Grants a 15% chance to drop duplicate variations of items."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Grants a 20% chance to drop duplicate variations of items."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.MasterMarksman",
+   "template": "SW.EffectTemplate.MasterMarksman",
+   "name": "Marksman",
+   "category": "Attack",
+   "rolls_on": "Ranger gear, Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/marksman",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Critical hits with ranged weapons deal 15% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Critical hits with ranged weapons deal 20% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": false,
+     "text": "Critical hits with ranged weapons deal 25% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.ProjectileProtection",
+   "template": "SW.EffectTemplate.ProjectileProtection",
+   "name": "Projectile Protection",
+   "category": "Defense",
+   "rolls_on": "Fighter gear, Ranger gear, Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/projectile-protection",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Take 10% less damage from ranged attacks."
+    },
+    {
+     "tier": "II",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Take 15% less damage from ranged attacks."
+    },
+    {
+     "tier": "III",
+     "strength": -0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Take 20% less damage from ranged attacks."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.RollCooldown",
+   "template": "SW.EffectTemplate.Acrobat",
+   "name": "Acrobat",
+   "category": "Utility",
+   "rolls_on": "Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/acrobat",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Reduces rolling cooldown time by 10%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Reduces rolling cooldown time by 15%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": false,
+     "text": "Reduces rolling cooldown time by 25%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.SoulMax",
+   "template": "SW.EffectTemplate.BagOfSouls",
+   "name": "Spiritual",
+   "category": "Utility",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/spiritual",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 1.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Increases Soul capacity by 25%."
+    },
+    {
+     "tier": "II",
+     "strength": 1.3,
+     "shown": "30%",
+     "seen": false,
+     "text": "Increases Soul capacity by 30%."
+    },
+    {
+     "tier": "III",
+     "strength": 1.35,
+     "shown": "35%",
+     "seen": false,
+     "text": "Increases Soul capacity by 35%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.SwiftSneak",
+   "template": "SW.EffectTemplate.SwiftSneak",
+   "name": "Swift Sneak",
+   "name_from_id": true,
+   "maybe": "Prowler",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Vanguard",
+   "template": "SW.EffectTemplate.Vanguard",
+   "name": "Vanguard",
+   "category": "Attack",
+   "rolls_on": "Fighter gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/vanguard",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Deal 20% more damage to enemies who are at full health."
+    },
+    {
+     "tier": "II",
+     "strength": 0.35,
+     "shown": "35%",
+     "seen": false,
+     "text": "Deal 35% more damage to enemies who are at full health."
+    },
+    {
+     "tier": "III",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": false,
+     "text": "Deal 50% more damage to enemies who are at full health."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Vestige",
+   "template": "SW.EffectTemplate.Vestige",
+   "name": "Vestige",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Vivify",
+   "template": "SW.EffectTemplate.Vivify",
+   "name": "Vivify",
+   "name_from_id": true,
+   "maybe": "Ally",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "seen": true
+    }
+   ]
+  }
+ ],
+ "enchantments": [
+  {
+   "effect": "SW.Enchantment.Piercing",
+   "name": "Piercing",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.Radiance",
+   "name": "Healing Smite",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.3,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.SoulInfusedPotion",
+   "name": "Ancient Alchemy",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.5,
+     "seen": true
+    },
+    {
+     "tier": "II",
+     "strength": 0.6,
+     "seen": true
+    }
+   ]
+  }
+ ]
+}

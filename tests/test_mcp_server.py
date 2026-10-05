@@ -13,7 +13,7 @@ from dungeons2_editor import saves
 from dungeons2_editor.hero import Hero
 from dungeons2_editor.mcp_server import PROTOCOL_VERSIONS, EditorServer, serve_streams
 
-from .helpers import SETTINGS_TEXT, hero_save, make_profile, shift_encode
+from .helpers import SETTINGS_TEXT, enchanted, enchantment_effect, hero_save, make_profile, rolled, rolled_effect, shift_encode, talisman_item
 
 ROOT = Path(__file__).resolve().parent.parent
 HERO = "Character00000000-0000-1000-8000-000000000002"
@@ -83,6 +83,7 @@ class ProtocolTests(ServerTestCase):
         self.assertEqual(set(tools), {
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
+            "list_effects", "set_item_effects", "ready_talisman",
         })
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
@@ -226,15 +227,78 @@ class EditingTests(ServerTestCase):
     def test_effects_are_shown_as_the_game_saved_them(self):
         document = json.loads(json.dumps(hero_save()))
         sword = next(e for e in document["CharacterSaveV1"]["Inventory"]["Entries"] if e["ItemData"]["TypeTag"] == "SW.Item.Sword")
-        sword["ItemData"]["Effects"] = [{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [
-            {"TypeTag": "SW.Effect.FireAspect", "Intensity": 0.5, "Quality": 0, "EnchantmentPointsInvested": 2,
-             "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.FireAspect.I", "Locked": False}}]}]
+        sword["ItemData"]["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II")), enchanted(enchantment_effect("Radiance", 0.3))]
+        document["CharacterSaveV1"]["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        document["CharacterSaveV1"]["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
         self.profile = make_profile(
             self.dir / "saves2", {HERO: json.dumps(document, separators=(",", ":")).encode(), "GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT)}
         )
         self.server = EditorServer(self.profile, self.dir / "backups")
-        gear = {slot["slot"]: slot["item"] for slot in self.call("get_hero", hero="00000000")["gear"]}
-        self.assertEqual(gear["Melee weapon"]["effects"], [{"name": "Fire Aspect", "id": "SW.Effect.FireAspect", "strength": 0.5, "enchantment_points": 2}])
+        hero = self.call("get_hero", hero="00000000")
+        gear = {slot["slot"]: slot["item"] for slot in hero["gear"]}
+        self.assertEqual(gear["Melee weapon"]["effects"], [
+            {"name": "Critical Edge", "id": "SW.Effect.CriticalEdge", "strength": 0.2, "tier": "II"},
+            {"name": "Healing Smite", "id": "SW.Enchantment.Radiance", "strength": 0.3, "tier": "I", "enchantment": True, "enchantment_points": 3},
+        ])
+        sigil = next(item for item in hero["inventory"] if item["name"] == "Sigil of Beeswax")
+        self.assertEqual((sigil["talisman_level"], sigil["xp"], sigil["xp_for_next_level"]), (1, 90, 18480))
+        # Which town vendors the hero has unlocked, by the game's own records.
+        self.assertEqual(hero["vendors"], {"Village Merchant": False, "Blacksmith": False, "Enchantsmith": True})
+
+    def test_effects_and_an_enchantment_are_set_from_the_ones_the_editor_has_seen(self):
+        listed = self.call("list_effects")
+        self.assertEqual(listed["most_effects_on_an_item"], 4)
+        edge = next(entry for entry in listed["effects"] if entry["name"] == "Critical Edge")
+        self.assertEqual((edge["id"], edge["rolls_on"]), ("SW.Effect.CriticalEdge", "Any weapon"))
+        self.assertEqual(edge["tiers"], [{"tier": "I", "strength": "10%"}, {"tier": "II", "strength": "20%"}])
+        knock = next(entry for entry in listed["effects"] if entry["name"] == "Knockback")
+        self.assertEqual(knock["tiers"][1:], [{"tier": "II", "strength": "20%", "seen": False}, {"tier": "III", "strength": "30%", "seen": False}])
+        self.assertEqual(next(entry for entry in listed["effects"] if entry["name"] == "Lightning Focus")["probably_called"], "Electromancer")
+        smite = next(entry for entry in listed["enchantments"] if entry["name"] == "Healing Smite")
+        self.assertEqual((smite["goes_on"], smite["tiers"]), (["Melee", "Ranged"], [{"tier": "I"}]))
+        self.assertIn("Kills can create a Regenerating well (tiers I, II and III: 20% / 35% / 50% chance)", smite["does"])
+        self.assertEqual([entry["name"] for entry in self.call("list_effects", query="smite")["enchantments"]], ["Healing Smite"])
+        sword = self.ref_of("Sword")
+        # A name without a tier gets the best tier a save has shown; one no save has shown needs a yes.
+        done = self.call("set_item_effects", hero="00000000", item=sword, effects=["critical edge", "Looter I"], enchantment="Healing Smite")
+        self.assertEqual(done["done"], "The Sword: effects: Critical Edge II, Looter I; enchanted with Healing Smite I.")
+        self.assertEqual([effect["name"] + " " + effect["tier"] for effect in done["item"]["effects"]], ["Critical Edge II", "Looter I", "Healing Smite I"])
+        self.assertIn("hasn't opened the Enchantsmith", done["heads_up"])
+        self.assertEqual(done["unsaved_changes"], ["Sword: effects: Critical Edge II 20%, Looter I 20%, enchanted with Healing Smite I"])
+        self.assertIn("hasn't been seen in a real save yet", self.call("set_item_effects", hero="00000000", item=sword, effects=["Knockback III"]))
+        self.assertIn("Knockback III", self.call("set_item_effects", hero="00000000", item=sword, effects=["Knockback III"], allow_unseen=True)["done"])
+        self.assertIn("known at tier I, II, not III", self.call("set_item_effects", hero="00000000", item=sword, effects=["Critical Edge III"]))
+        # What can't be done says why, and leaves the draft as it was.
+        for arguments, why in (
+            ({"effects": ["Sharpness"]}, "can't write 'Sharpness' yet"),
+            ({"effects": ["Looter IV"]}, "can't write 'Looter IV' yet"),
+            ({"effects": ["Acrobat", "Knockback", "Looter", "Luck", "Vanguard"]}, "caps an item at 4 effects"),
+            ({"effects": "Looter"}, "effects is a list of names"),
+            ({"enchantment": "Piercing"}, "Piercing goes on ranged weapons"),
+            ({"enchantment": "Critical Edge"}, "can't write 'Critical Edge' yet"),
+            ({}, "Say what to set"),
+        ):
+            self.assertIn(why, self.call("set_item_effects", hero="00000000", item=sword, **arguments))
+        self.assertIn("Knockback III", json.dumps(self.call("preview_changes", hero="00000000")["unsaved_changes"]))
+        # Leaving one out keeps it; an empty list and "none" take them off.
+        cleared = self.call("set_item_effects", hero="00000000", item=sword, effects=[])
+        self.assertEqual([effect["name"] for effect in cleared["item"]["effects"]], ["Healing Smite"])
+        gone = self.call("set_item_effects", hero="00000000", item=sword, enchantment="none")
+        self.assertNotIn("effects", gone["item"])
+        self.assertEqual(gone["unsaved_changes"], [])
+        self.call("set_item_effects", hero="00000000", item=sword, effects=["Looter"])
+        self.call("save_changes", hero="00000000")
+        self.assertEqual(next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Sword").effect_lines(), ["Looter I 20%"])
+
+    def test_a_talisman_is_made_ready_to_level_up(self):
+        self.assertIn("only talismans do", self.call("ready_talisman", hero="00000000", item=self.ref_of("Sword")))
+        document = json.loads(json.dumps(hero_save()))
+        document["CharacterSaveV1"]["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        self.profile = make_profile(self.dir / "saves3", {HERO: json.dumps(document, separators=(",", ":")).encode()})
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        done = self.call("ready_talisman", hero="00000000", item=self.ref_of("Sigil of Beeswax"))
+        self.assertIn("XP is 18,479, one short of level 2", done["done"])
+        self.assertEqual((done["item"]["xp"], done["unsaved_changes"]), (18479, ["Sigil of Beeswax: XP 90 → 18,479"]))
 
     def test_guessed_ids_and_locked_slots_need_permission(self):
         self.assertIn("best guess", self.call("add_item", hero="00000000", item="Battlestaff"))

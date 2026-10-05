@@ -8,8 +8,12 @@ data came from; every preset links its pages.
 
 A preset can set stats, upgrade the gear you own, add items and equip them.
 Items whose save ID is only a best guess are added only when asked to (see
-hero.build_catalog). Enchantments can't be added yet, so presets suggest the
-ones to pick at the Enchantsmith instead.
+hero.build_catalog). A kit's weapons and armor also get an enchantment, once
+the hero has opened the Enchantsmith in the game, and the gear it adds gets
+the effects the game would roll for it. The editor can only write an
+enchantment or an effect it has seen in a real save (hero.effect_choices),
+so a kit names its picks best first and takes the first one that can be
+written; the rest stay suggestions for the Enchantsmith.
 """
 
 from __future__ import annotations
@@ -21,12 +25,15 @@ from .hero import (
     GEAR_SLOTS,
     NO_RARITY,
     STAT_CAPS,
+    TIERS,
     CatalogItem,
+    EffectChoice,
     Enchantment,
     GearSlot,
     Hero,
     Item,
     attribute_label,
+    effect_choices,
     enchantments,
     format_amount,
     item_group,
@@ -44,6 +51,8 @@ METABOT_TIERS = METABOT + "tier-list"
 METABOT_BUILDS = METABOT + "guides/best-builds"
 METABOT_ENCHANTING = METABOT + "guides/enchanting-guide"
 METABOT_ENCHANTMENTS = METABOT + "enchantments"
+METABOT_EFFECTS = METABOT + "effects"
+METABOT_MERCHANTS = METABOT + "merchants"
 # Where the secret talismans are hidden: a link only, since Maxroll's terms don't allow reusing its guides in software.
 MAXROLL_SECRETS = "https://maxroll.gg/minecraft-dungeons-2/guides/secret-talisman-locations-in-minecraft-dungeons-2"
 
@@ -51,6 +60,8 @@ GOALS, BEST_GEAR, KITS = "Goals", "Most powerful gear", "Kits"
 GROUPS = (GOALS, BEST_GEAR, KITS)
 TALISMAN_RARITY = NO_RARITY  # a talisman has no rarity (the game saves SW.Rarity.None) and no power
 TOP_ARTIFACT_RARITY = "Special"  # artifacts don't come in Unique
+# Effects the game rolls on an item it drops, by rarity (a Unique gets one, next to the effect of its own).
+ROLLED_EFFECTS = {"Rare": 1, "Special": 2, "Unique": 1}
 
 
 @dataclass(frozen=True)
@@ -60,7 +71,8 @@ class KitItem:
     why: str
     where: str = ""
     rarity: str | None = None  # always this rarity; None: the rarity picked in the window
-    enchants: tuple[str, ...] = ()  # enchantments to pick for it in the game, best first
+    enchants: tuple[str, ...] = ()  # enchantments for it, best first: the first the editor can write goes on
+    effects: tuple[str, ...] = ()  # gear effects for it, best first: as many go on as the game rolls at its rarity
 
 
 @dataclass(frozen=True)
@@ -144,11 +156,13 @@ PRESETS: tuple[Preset, ...] = (
     Preset(
         "Fully upgraded town",
         "Max out the Village Merchant, Enchantsmith and Blacksmith.",
-        "Sets all three vendors to level 3 and fills your Echo Shards. In the game the first vendor upgrade needs "
-        "level 15, 300 emeralds, 50 Echo Shards and 4 enchantment books, and the next Blacksmith and Enchantsmith "
-        "levels cost 20 / 40 and 30 / 60 Echo Shards.",
+        "Sets all three vendors to level 3 and fills your Echo Shards. At level 3 the Merchant sells Special items, "
+        "the Blacksmith re-rolls the effects on Unique items, and the Enchantsmith raises enchantments to tier III. "
+        "In the game the first upgrade comes at level 15, for 300 emeralds, 50 Echo Shards and 4 enchantment books, "
+        "and takes the Merchant and the Enchantsmith to level 2; the rest are paid for in Echo Shards. A vendor you "
+        "haven't unlocked yet keeps the level set here for when you do.",
         stats={"VillageMerchantUpgradeLevel": 3, "EnchantsmithUpgradeLevel": 3, "OldBlacksmithUpgradeLevel": 3, "SpringStone": 100},
-        sources=(METABOT_PROGRESSION,),
+        sources=(METABOT_PROGRESSION, METABOT_MERCHANTS),
     ),
     Preset(
         "Secret talisman hunt",
@@ -162,13 +176,16 @@ PRESETS: tuple[Preset, ...] = (
 )
 
 
-def _piece(name: str, kind: str, why: str, *enchants: str) -> KitItem:
-    return KitItem(name, kind, why, enchants=enchants)
+def _piece(name: str, kind: str, why: str, *enchants: str, effects: tuple[str, ...] = ()) -> KitItem:
+    return KitItem(name, kind, why, enchants=enchants, effects=effects)
 
 
-def _set(*pieces: tuple[str, str], enchants: tuple[str, str, str, str]) -> tuple[KitItem, ...]:
-    """Four armor pieces (helmet, chestplate, leggings, boots) with an enchantment each."""
-    return tuple(_piece(name, "Armor", why, enchant) for (name, why), enchant in zip(pieces, enchants))
+def _set(*pieces: tuple[str, str], enchants: tuple[tuple[str, ...], tuple[str, ...]], effects: tuple[str, ...] = ()) -> tuple[KitItem, ...]:
+    """Four armor pieces (helmet, chestplate, leggings, boots). The helmet and the chestplate take the
+    enchantments, as in MetaBot's build planner, which enchants one weapon, the helmet and the chestplate."""
+    return tuple(
+        _piece(name, "Armor", why, *enchant, effects=effects) for (name, why), enchant in zip(pieces, (*enchants, (), ()))
+    )
 
 
 def _kit(*, melee: KitItem, ranged: KitItem | None, armor: tuple[KitItem, ...], artifacts: dict[str, str], talismans: dict[str, str]) -> tuple[KitItem, ...]:
@@ -177,36 +194,62 @@ def _kit(*, melee: KitItem, ranged: KitItem | None, armor: tuple[KitItem, ...], 
     return (
         weapons
         + armor
-        + tuple(KitItem(name, "Artifact", why) for name, why in artifacts.items())
+        + tuple(KitItem(name, "Artifact", why, effects=ARTIFACT_EFFECTS) for name, why in artifacts.items())
         + tuple(KitItem(name, "Talisman", why) for name, why in talismans.items())
     )
 
 
-# The pieces of MetaBot's builds. Weapons and armor are base items: at Unique rarity they're the Unique named.
-RIFTSLASHER = _piece("Riftslasher", "Melee", "At Unique it's Pride of the Plains: +40% damage to the enemy you target.", "Lightning Surge")
-GREATBOW = _piece("Greatbow", "Ranged", "At Unique it's the Humbler Heartstring: arrows pierce up to 10 enemies.", "Chain Reaction")
-HEAVY_CROSSBOW = _piece("Heavy Crossbow", "Ranged", "At Unique it's The Close Ranger: double damage up close.", "Chain Reaction")
-AXE = _piece("Axe", "Melee", "At Unique it's the Hunter's Hatchet: arrows come back 35% faster.", "Lightning Surge")
+# Effects for the gear a kit adds. MetaBot's guides name no gear effects, so these are the editor's own picks,
+# best first, from the ones the game rolls on that kind of gear (MetaBot's effects page lists each effect's
+# pools): the first the editor has seen saved go on, as many as the game rolls at the item's rarity.
+MELEE_EFFECTS = ("Critical Edge", "Critical Hit", "Knockback")  # any weapon: harder and likelier critical hits
+RANGED_EFFECTS = ("Marksman", "Critical Edge", "Critical Hit")  # ranger and trickster gear, then any weapon
+HEAVY_EFFECTS = ("Knockback", "Critical Edge", "Critical Hit")
+ARTIFACT_EFFECTS = ("Cooldown", "Spiritual")  # any artifact: shorter cooldowns, and more souls to pay for them
+TRICKSTER_ARMOR = ("Acrobat", "Luck")  # rolls recharge sooner
+STURDY_ARMOR = ("Projectile Protection", "Luck")  # fighter, ranger and tank gear: less damage from ranged attacks
+MAGE_ARMOR = ("Spiritual", "Cooldown", "Luck")
+ANY_ARMOR = ("Luck",)
+
+# The pieces of MetaBot's builds. Weapons and armor are base items: at Unique rarity they're the Unique named. The
+# enchantments are the ones its build planner puts on each piece, then the alternatives its guide names.
+RIFTSLASHER = _piece(
+    "Riftslasher", "Melee", "At Unique it's Pride of the Plains: +40% damage to the enemy you target.", "Lightning Surge", "Fire Aspect",
+    effects=MELEE_EFFECTS,
+)
+GREATBOW = _piece(
+    "Greatbow", "Ranged", "At Unique it's the Humbler Heartstring: arrows pierce up to 10 enemies.", "Chain Reaction", "Piercing",
+    effects=RANGED_EFFECTS,
+)
+HEAVY_CROSSBOW = _piece(
+    "Heavy Crossbow", "Ranged", "At Unique it's The Close Ranger: double damage up close.", "Chain Reaction", "Piercing", effects=RANGED_EFFECTS
+)
+# In the melee build the crossbow is the back-up weapon, and MetaBot's planner leaves it without an enchantment.
+SPARE_CROSSBOW = _piece("Heavy Crossbow", "Ranged", "At Unique it's The Close Ranger: double damage up close.", effects=RANGED_EFFECTS)
+AXE = _piece("Axe", "Melee", "At Unique it's the Hunter's Hatchet: arrows come back 35% faster.", effects=MELEE_EFFECTS)
 TWISTED_WARDEN = _set(
     ("Sculk Digger Hood", "At Unique it's the Twisted Warden Blindfold: +45% melee critical damage."),
     ("Sculk Digger Robe", "At Unique it's the Twisted Warden Vest: 20% chance to dodge melee damage."),
     ("Sculk Digger Leggings", "At Unique they're the Twisted Warden Tights: Shadowcloaking lasts 45% longer."),
     ("Sculk Digger Boots", "At Unique they're the Twisted Warden Sneakers: +25% melee critical chance."),
-    enchants=("Dynamo", "Power Amplifier", "Dynamo", "Power Amplifier"),
+    enchants=(("Dynamo",), ("Power Amplifier",)),
+    effects=TRICKSTER_ARMOR,
 )
 SHARPSHOOTER = _set(
     ("Ranger Cap", "At Unique it's the Sharpshooter Fedora: 60% chance of extra arrows."),
     ("Ranger Jacket", "At Unique it's the Sharpshooter Duster: +30% ranged damage."),
     ("Ranger Leggings", "At Unique they're the Sharpshooter Chaps: arrows come back 35% faster."),
     ("Ranger Boots", "At Unique they're the Sharpshooter Spurs: carry 45% more arrows."),
-    enchants=("Ender Quiver", "Critical Quiver", "Ender Quiver", "Critical Quiver"),
+    enchants=(("Ender Quiver",), ("Critical Quiver",)),
+    effects=STURDY_ARMOR,
 )
 SCOUNDREL = _set(
     ("Scamp Hood", "At Unique it's the Scoundrel Cowl: a chance to stay in Shadowcloak when you attack."),
     ("Scamp Jacket", "At Unique it's the Scoundrel Blazer: double ranged damage up close."),
     ("Scamp Leggings", "At Unique they're the Scoundrel Chaps: 40% less time between shots."),
     ("Scamp Sneakers", "At Unique they're the Scoundrel Sneakers: faster while Shadowcloaking."),
-    enchants=("Tumbleshot", "Tumbleshot", "Critical Quiver", "Ender Quiver"),
+    enchants=(("Tumbleshot", "Ender Quiver"), ("Critical Quiver",)),  # the editor's picks: MetaBot names none for this variant
+    effects=TRICKSTER_ARMOR,
 )
 MELEE_ARTIFACTS = {
     "Warrior Drums": "Doubles critical hit damage while it plays.",
@@ -228,7 +271,7 @@ RANGED_TALISMANS = {
     "Twig of Dark Oak": "+20 / 40 / 60% ammo.",
     "Armadillo Amulet": "Rolls recharge 20-45% faster.",
 }
-GEAR_SOURCES = (METABOT_BUILDS, METABOT_TIERS, METABOT_ENCHANTING)
+GEAR_SOURCES = (METABOT_BUILDS, METABOT_TIERS, METABOT_ENCHANTING, METABOT_EFFECTS)
 
 PRESETS += (
     Preset(
@@ -274,7 +317,7 @@ PRESETS += (
         "Warrior Drums double critical hit damage, the Death Cap Mushroom speeds up your attacks and the Grindstone "
         "sharpens your weapon, all on 4-5 second cooldowns. Artifacts don't come in Unique, so Unique adds them as "
         "Special. Artifact slots 2 and 3 open at levels 5 and 10.",
-        items=tuple(KitItem(name, "Artifact", why) for name, why in MELEE_ARTIFACTS.items()),
+        items=tuple(KitItem(name, "Artifact", why, effects=ARTIFACT_EFFECTS) for name, why in MELEE_ARTIFACTS.items()),
         group=BEST_GEAR,
         choose_rarity=True,
         equip=True,
@@ -298,7 +341,7 @@ PRESETS += (
         "Melt bosses: critical hits, jump attacks and raw melee damage.",
         "The Twisted Warden set adds critical chance and critical damage, and Warrior Drums double critical damage "
         "while they play, so the two multiply each other. Open every fight with a jump attack for Ocelot's Paw.",
-        items=_kit(melee=RIFTSLASHER, ranged=HEAVY_CROSSBOW, armor=TWISTED_WARDEN, artifacts=MELEE_ARTIFACTS, talismans=MELEE_TALISMANS),
+        items=_kit(melee=RIFTSLASHER, ranged=SPARE_CROSSBOW, armor=TWISTED_WARDEN, artifacts=MELEE_ARTIFACTS, talismans=MELEE_TALISMANS),
         group=KITS,
         choose_rarity=True,
         equip=True,
@@ -333,14 +376,15 @@ PRESETS += (
         "and Health Synergy turns each of the three defensive artifacts into a heal. The full set is the first-clear "
         "reward of The Final Souldown. MetaBot's build doesn't name a ranged weapon, so yours stays.",
         items=_kit(
-            melee=_piece("War Hammer", "Melee", "At Unique it's the Heartbreaker: hits explode.", "Shockwave"),
+            melee=_piece("War Hammer", "Melee", "At Unique it's the Heartbreaker: hits explode.", "Shockwave", effects=HEAVY_EFFECTS),
             ranged=None,
             armor=_set(
                 ("Protector Helmet", "At Unique it's the Humbler Antenna: take 25% less damage."),
                 ("Protector Chestplate", "At Unique it's the Humbler Carapace: 40% more healing."),
                 ("Protector Shinguards", "At Unique they're the Humbler Greaves: +50% melee damage to enemies around your target."),
                 ("Protector Boots", "At Unique they're the Humbler Tarsi: 20% chance to dodge melee damage."),
-                enchants=("Health Synergy", "Bottomless Brew", "Health Synergy", "Health Synergy"),
+                enchants=(("Health Synergy",), ("Bottomless Brew",)),
+                effects=STURDY_ARMOR,
             ),
             artifacts={
                 "Warding Chimes": "5 seconds of invulnerability.",
@@ -365,14 +409,15 @@ PRESETS += (
         "Soul Reaper, Twisted Tooth and Soul Chip keep the souls coming, so an artifact is always ready. MetaBot's "
         "build doesn't name a ranged weapon, so yours stays.",
         items=_kit(
-            melee=_piece("Scythe", "Melee", "At Unique it's the Soul Reaper: +60% souls.", "Soul Blast"),
+            melee=_piece("Scythe", "Melee", "At Unique it's the Soul Reaper: +60% souls.", "Soul Blast", effects=MELEE_EFFECTS),
             ranged=None,
             armor=_set(
                 ("Sorcerer Hat", "At Unique it's the Alchemist Top Hat: your buffs cover a 55% bigger area."),
                 ("Sorcerer Robe", "At Unique it's the Alchemist Overcoat: artifacts deal 25% more damage."),
                 ("Sorcerer Leggings", "At Unique they're the Alchemist Trousers: heal 6% when you use an artifact."),
                 ("Sorcerer Boots", "At Unique they're the Alchemist Loafers: hold 50% more souls."),
-                enchants=("Artifact Amplifier", "Power Amplifier", "Artifact Amplifier", "Power Amplifier"),
+                enchants=(("Artifact Amplifier",), ("Power Amplifier",)),
+                effects=MAGE_ARMOR,
             ),
             artifacts={
                 "Soul Harvester": "Charges into a burst of soul damage.",
@@ -397,14 +442,19 @@ PRESETS += (
         "set) makes them deal 40% more damage and take 20% less. Companions draw enemies away from you, which makes "
         "this forgiving in co-op.",
         items=_kit(
-            melee=_piece("Wolf Claws", "Melee", "At Unique they're the Sculker Claws: a chance to vanish into Shadowcloak.", "Healing Smite"),
-            ranged=_piece("Scatter Crossbow", "Ranged", "At Unique it's the Harp Crossbow: 60% chance of extra bolts.", "Healing Smite"),
+            melee=_piece(
+                "Wolf Claws", "Melee", "At Unique they're the Sculker Claws: a chance to vanish into Shadowcloak.", "Healing Smite", effects=MELEE_EFFECTS
+            ),
+            ranged=_piece(
+                "Scatter Crossbow", "Ranged", "At Unique it's the Harp Crossbow: 60% chance of extra bolts.", "Healing Smite", effects=RANGED_EFFECTS
+            ),
             armor=_set(
                 ("Mushroom Cap", "At Unique it's the Fly Agaric Cap: poison attacks deal 20% more damage."),
                 ("Mushroom Robe", "At Unique it's the Fly Agaric Coat: heals you out of combat."),
                 ("Mushroom Leggings", "At Unique they're the Fly Agaric Trousers: companions deal 40% more damage."),
                 ("Mushroom Boots", "At Unique they're the Fly Agaric Galoshes: companions take 20% less damage."),
-                enchants=("Buddy Brew", "Buddy Brew", "Buddy Brew", "Buddy Brew"),
+                enchants=(("Buddy Brew",), ()),
+                effects=ANY_ARMOR,
             ),
             artifacts={
                 "Honey Dipper": "Traps enemies and brings bees into the fight.",
@@ -469,6 +519,8 @@ class Addition:
     found: CatalogItem
     rarity: str | None  # None keeps the rarity of the saved item it's laid out like
     slot: GearSlot | None = None  # where to equip it
+    enchantment: EffectChoice | None = None  # the enchantment it's given
+    effects: list[EffectChoice] = field(default_factory=list)  # the effects it's given
 
     @property
     def name(self) -> str:
@@ -492,6 +544,7 @@ class Owned:
     kit: KitItem
     index: int
     slot: GearSlot | None = None  # where to equip it; None leaves it where it is
+    enchantment: EffectChoice | None = None  # the enchantment your copy is given, when it has none
 
 
 @dataclass
@@ -506,10 +559,11 @@ class Plan:
     have: list[Owned] = field(default_factory=list)
     find: list[KitItem] = field(default_factory=list)
     upgrades: list[tuple[int, str, int]] = field(default_factory=list)  # (item index, rarity, power)
+    enchant: bool = False  # the hero has opened the Enchantsmith in the game, so the kit's items get enchanted
 
     @property
     def changes_anything(self) -> bool:
-        return bool(self.stats or self.add or self.upgrades or any(owned.slot for owned in self.have))
+        return bool(self.stats or self.add or self.upgrades or any(owned.slot or owned.enchantment for owned in self.have))
 
 
 def _names(item: Item) -> set[str]:
@@ -542,6 +596,34 @@ def _owned_copy(hero: Hero, kit_item: KitItem, found: CatalogItem | None, result
     return max(matches, key=lambda item: (item.equipped_slot is not None, item.power or 0), default=None)
 
 
+def _best(matches: list[EffectChoice]) -> EffectChoice | None:
+    """The highest tier of an effect that a real save has shown."""
+    order = {tier: position for position, tier in enumerate(TIERS)}
+    usable = [choice for choice in matches if choice.seen or choice.yours]
+    return max(usable, key=lambda choice: order.get(choice.tier, -1), default=None)
+
+
+def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice]) -> EffectChoice | None:
+    """The first of ``names`` (enchantments, best first) that the editor can write on an item of this kind, at
+    the highest tier a real save has shown. None when it can't write any of them yet."""
+    for name in names:
+        found = _best([choice for choice in known if choice.name == name and choice.is_enchantment and choice.fits(kind, piece)])
+        if found is not None:
+            return found
+    return None
+
+
+def pick_effects(names: tuple[str, ...], count: int, known: list[EffectChoice]) -> list[EffectChoice]:
+    """The first ``count`` of ``names`` (gear effects, best first) that the editor can write, each at the
+    highest tier a real save has shown."""
+    picked: list[EffectChoice] = []
+    for name in names:
+        found = _best([choice for choice in known if choice.name == name and not choice.is_enchantment])
+        if found is not None and len(picked) < count and found.effect not in {choice.effect for choice in picked}:
+            picked.append(found)
+    return picked
+
+
 def plan(
     preset: Preset,
     hero: Hero,
@@ -553,15 +635,22 @@ def plan(
     equip: bool = False,
     slots: list[GearSlot] | tuple[GearSlot, ...] = GEAR_SLOTS,
     check_level: bool = True,
+    enchant: bool | None = None,
+    effects: tuple[list[EffectChoice], list[EffectChoice]] | None = None,
 ) -> Plan:
     """What ``preset`` would do. Best guesses (an item whose ID is one, a talisman the editor can't give its
     effect) are only added with ``include_unconfirmed``.
 
     ``rarity`` is used by presets that ask for one. With ``equip`` the items it adds (or the hero
     already has) are equipped, in the preset's order, in slots the hero has opened (unless
-    ``check_level`` is off).
+    ``check_level`` is off). Its weapons and armor are enchanted when ``enchant`` is on, which by default
+    is when the hero has opened the Enchantsmith in the game; an item of the hero's own keeps the
+    enchantment it has. ``effects`` are the gear effects and enchantments that can be written
+    (``hero.effect_choices``; by default the editor's list and what this hero's items show).
     """
     result = Plan(power=power, rarity=rarity if preset.choose_rarity else None)
+    result.enchant = hero.vendors_opened()["Enchantsmith"] if enchant is None else enchant
+    gear_effects, known_enchantments = effects if effects is not None else effect_choices([hero])
     for name, value in preset.stats.items():
         if name in {a["AttributeName"] for a in hero.attributes()} and hero.attribute(name) != value:
             result.stats[name] = value
@@ -576,6 +665,15 @@ def plan(
             result.add.append(Addition(kit_item, found, rarity_for(kit_item, found, result.rarity)))
         else:
             result.unconfirmed.append((kit_item, found))
+    for addition in result.add:
+        kit_item, found = addition.kit, addition.found
+        if result.enchant:
+            addition.enchantment = pick_enchantment(kit_item.enchants, found.kind, found.piece, known_enchantments)
+        addition.effects = pick_effects(kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects)
+    for owned in result.have:
+        item = hero.item(owned.index)
+        if result.enchant and item.enchantment is None and item.can_be_enchanted:
+            owned.enchantment = pick_enchantment(owned.kit.enchants, item.kind, item.piece, known_enchantments)
     if equip:
         _choose_slots(preset, hero, result, slots, check_level)
     if preset.upgrade_gear:
@@ -650,11 +748,17 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
             why = _UNIQUE_INTRO.sub("", why)  # "At Unique it's the Heartbreaker: hits explode." -> "hits explode."
             why = why[:1].upper() + why[1:]
         note = "" if addition.confirmed else " (unconfirmed: without its effect)" if addition.found.no_effect else " (unconfirmed)"
-        lines.append(f"{line}: {why}{note}")
+        extras = [choice.title for choice in addition.effects]
+        if addition.enchantment is not None:
+            extras.append(f"enchanted with {addition.enchantment.title}")
+        lines.append(f"{line}: {why}{note}" + (f" With {', '.join(extras)}." if extras else ""))
     for owned in preset_plan.have:
         item = hero.item(owned.index)
+        enchanted = f", enchanted with {owned.enchantment.title}" if owned.enchantment is not None else ""
         if owned.slot is not None:
-            lines.append(f"Equip your {item.name} ({owned.slot.label.lower()})")
+            lines.append(f"Equip your {item.name} ({owned.slot.label.lower()}){enchanted}")
+        elif enchanted:
+            lines.append(f"Your {item.name}: {enchanted[2:]}")
         else:
             lines.append(f"Already have {item.name}" + (" (equipped)" if item.equipped_slot else ""))
     return lines
@@ -702,6 +806,11 @@ def enchant_suggestions(preset: Preset) -> list[tuple[KitItem, list[Enchantment 
     return [(kit_item, [known.get(name, name) for name in kit_item.enchants]) for kit_item in preset.items if kit_item.enchants]
 
 
+def enchanted_by(preset_plan: Plan) -> dict[int, EffectChoice]:
+    """The enchantment the plan puts on each of the preset's items that gets one, by ``id`` of the kit item."""
+    return {id(entry.kit): entry.enchantment for entry in [*preset_plan.add, *preset_plan.have] if entry.enchantment is not None}
+
+
 def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: bool = True, check_level: bool = True) -> None:
     """Make the planned changes to ``hero``. Nothing changes if a stat is refused."""
     if preset_plan.stats:
@@ -716,7 +825,7 @@ def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: 
         exact = template is not None and template.get("ItemData", {}).get("TypeTag") == addition.found.tag
         # Without a picked rarity, a saved copy of the item already has the right power; otherwise use the preset's.
         keep_power = exact and preset_plan.rarity is None
-        hero.add_item(
+        index = hero.add_item(
             addition.tag,
             template,
             rarity=addition.rarity,
@@ -724,3 +833,10 @@ def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: 
             slot=addition.slot,
             check_level=check_level,
         )
+        if addition.effects:
+            hero.set_effects(index, addition.effects)
+        if addition.enchantment is not None:
+            hero.set_enchantment(index, addition.enchantment)
+    for owned in preset_plan.have:
+        if owned.enchantment is not None:
+            hero.set_enchantment(owned.index, owned.enchantment)

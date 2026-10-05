@@ -114,7 +114,15 @@ def _reapply_hero(original: dict, edited: dict, newer: dict) -> tuple[dict, list
         if target is None:
             problems.append(f"{edited_item.name} isn't in the newer save any more, so your change to it was skipped.")
             continue
-        problems += _reapply_paths(original_item.entry, edited_item.entry, target.entry, where=f"{edited_item.name}, ")
+        skip: tuple[tuple, ...] = ()
+        if original_item.data.get("Effects") != edited_item.data.get("Effects"):
+            # An item's effects are one thing: the editor's whole list, or (if the game changed them too) the game's.
+            skip = (("ItemData", "Effects"),)
+            if target.data.get("Effects") == original_item.data.get("Effects"):
+                target.data["Effects"] = copy.deepcopy(edited_item.data.get("Effects"))
+            else:
+                problems.append(f"{edited_item.name}: the game changed its effects too, so the game's were kept.")
+        problems += _reapply_paths(original_item.entry, edited_item.entry, target.entry, skip=skip, where=f"{edited_item.name}, ")
         if original_item.equipped_slot != edited_item.equipped_slot and edited_item.equipped_slot:
             ours.add(id(target.entry))
     removed = []

@@ -9,7 +9,7 @@ from typing import Callable
 
 from . import document as doc
 from . import presets
-from .hero import MAX_ITEM_POWER, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount
+from .hero import MAX_ITEM_POWER, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount, vendors_text
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -21,9 +21,17 @@ NO_EFFECT_NOTE = (
     "talisman without one, and it may do nothing in the game."
 )
 ENCHANTING_HELP = (
-    "The editor can't add enchantments yet, so put these on at the Enchantsmith. Each weapon and armor piece takes "
-    "one enchantment, and a book works on any number of items. Enchanting costs enchantment points and Echo Shards, "
-    "which you can set in the editor."
+    "Each weapon and armor piece takes one enchantment, and a book works on any number of items. At the Enchantsmith "
+    "an enchantment costs enchantment points and Echo Shards, which you can set in the editor."
+)
+ENCHANTS_ADDED = (
+    "This hero has unlocked the Enchantsmith, so the editor puts an enchantment on where it can: it writes one exactly "
+    "as a real save holds it, so only the ones it has seen so far, at the highest tier seen. Enchant an item with any "
+    "other in the game and the editor can copy that one from your save. The rest are for you to pick at the Enchantsmith."
+)
+ENCHANTS_LEFT_OFF = (
+    "This hero hasn't opened the Enchantsmith in the game yet, so the editor leaves enchantments off. Once it has, "
+    "this kit adds the ones the editor can write. These are the ones to pick there."
 )
 
 
@@ -39,10 +47,12 @@ class PresetsDialog(tk.Toplevel):
         text_font: object,
         slots: list[GearSlot] | None = None,
         icons: IconLibrary | None = None,
+        effects: tuple[list, list] | None = None,
     ):
         super().__init__(parent)
         self.hero = hero
         self.catalog = catalog
+        self.effects = effects  # the gear effects and enchantments that can be written (hero.effect_choices)
         self.advanced = advanced
         self.on_applied = on_applied
         self.slots = slots
@@ -222,6 +232,7 @@ class PresetsDialog(tk.Toplevel):
             equip=self.equip_var.get() and bool(preset.items),
             slots=self.slots or presets.GEAR_SLOTS,
             check_level=not self.advanced,
+            effects=self.effects,
         )
         self._write(preset)
         if self.winfo_ismapped():
@@ -249,6 +260,19 @@ class PresetsDialog(tk.Toplevel):
         suggestions = presets.enchant_suggestions(preset)
         if suggestions:
             self._write_enchantments(suggestions)
+        rolled = [(addition.name, [choice.title for choice in addition.effects]) for addition in self.plan.add if addition.effects]
+        if rolled:
+            text.insert("end", "Effects\n", "heading")
+            text.insert(
+                "end",
+                "Gear the kit adds gets the effects the game would roll for it: one on a Rare or Unique item, two on a Special "
+                "one. MetaBot's guides name no gear effects, so these are the editor's own picks, from the ones the game rolls "
+                "on that kind of gear and the editor has seen saved. Change effects… on an item's card changes them.\n",
+                "muted",
+            )
+            for name, titles in rolled:
+                text.insert("end", f"\t{name}\t", "row")
+                text.insert("end", ", ".join(titles) + "\n", "row")
         sources = list(preset.sources)
         if suggestions and presets.METABOT_ENCHANTMENTS not in sources:
             sources.append(presets.METABOT_ENCHANTMENTS)
@@ -269,6 +293,8 @@ class PresetsDialog(tk.Toplevel):
             text.insert("end", f"•  {line}\n")
         if not lines:
             text.insert("end", "Nothing to change: this hero already matches.\n", "muted")
+        if any("UpgradeLevel" in name for name in self.preset.stats):
+            text.insert("end", vendors_text(self.hero) + "\n", "muted")  # a vendor's level only shows once it's unlocked
         if plan.unconfirmed:
             text.insert("end", "Unconfirmed items\n", "heading")
             if any(found.no_effect for _kit, found in plan.unconfirmed):
@@ -362,23 +388,30 @@ class PresetsDialog(tk.Toplevel):
     def _write_enchantments(self, suggestions: list[tuple[presets.KitItem, list[Enchantment | str]]]) -> None:
         """One line per item, then what each enchantment does, once."""
         text = self.text
-        text.insert("end", "Enchantments to pick in the game\n", "heading")
-        text.insert("end", ENCHANTING_HELP + "\n", "muted")
+        added = presets.enchanted_by(self.plan)
+        text.insert("end", "Enchantments\n" if self.plan.enchant else "Enchantments to pick in the game\n", "heading")
+        text.insert("end", (ENCHANTS_ADDED if self.plan.enchant else ENCHANTS_LEFT_OFF) + " " + ENCHANTING_HELP + "\n", "muted")
         described: dict[str, Enchantment] = {}
         for kit_item, picks in suggestions:
             found = presets.find_item(kit_item.name, self.catalog)
             place = presets.place_of(found.kind, found.piece) if found else kit_item.kind
             text.insert("end", f"\t{place}\t", "row")
+            given = added.get(id(kit_item))
             for position, pick in enumerate(picks):
                 name = pick.name if isinstance(pick, Enchantment) else pick
                 text.insert("end", ("" if position == 0 else " or ") + name, ("row", "bold"))
                 if isinstance(pick, Enchantment):
                     described.setdefault(pick.name, pick)
-                    if pick.book:
+                    if given is not None and given.name == name:
+                        text.insert("end", f" (added at tier {given.tier})" if given.tier else " (added)", ("row", "muted"))
+                    elif pick.book:
                         text.insert("end", f" (book: {pick.book})", ("row", "muted"))
             text.insert("end", "\n", "row")
         for enchantment in described.values():
-            text.insert("end", f"{enchantment.name}: {enchantment.tier3}\n", "muted")
+            if enchantment.what and enchantment.levels:  # what it does, with its numbers at each tier
+                text.insert("end", f"{enchantment.name}: {enchantment.what}. Tiers I, II and III: {enchantment.levels}.\n", "muted")
+            else:
+                text.insert("end", f"{enchantment.name}: {enchantment.tier3}\n", "muted")
 
     def _accept_guesses(self) -> bool:
         """Ask before adding items, or using slots, whose names in the game are best guesses, and before adding

@@ -25,7 +25,7 @@ from .hero import (
     slots_for,
     sort_items,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, number_text, power_text, talisman_hint
+from .hero_editing import SAVE_REMINDER, HeroEditing, effects_action, number_text, power_text, talisman_hint, vendors_text
 from .icons import IconLibrary
 from .item_picker import slot_open
 
@@ -104,9 +104,11 @@ class HeroTab(HeroEditing, ttk.Frame):
         stats.columnconfigure(0, weight=1)
         self.stats_fields = ttk.Frame(stats)
         self.stats_fields.grid(row=0, column=0, sticky="w")
+        self.vendors_var = tk.StringVar()
+        ttk.Label(stats, textvariable=self.vendors_var, style="Muted.TLabel", wraplength=900, justify="left").grid(row=1, column=0, sticky="w", pady=(8, 0))
         self.stats_message_var = tk.StringVar()
         self.stats_message = ttk.Label(stats, textvariable=self.stats_message_var, style="Muted.TLabel")
-        self.stats_message.grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.stats_message.grid(row=2, column=0, sticky="w", pady=(4, 0))
 
         items = ttk.LabelFrame(self, text="Items", padding=10)
         items.grid(row=2, column=0, sticky="nsew", pady=(10, 0))
@@ -236,6 +238,8 @@ class HeroTab(HeroEditing, ttk.Frame):
         self.change_button.pack(side="left")
         self.copy_button = ttk.Button(buttons, text="Make a copy", command=self.copy_item)
         self.copy_button.pack(side="left", padx=6)
+        self.effects_button = ttk.Button(buttons, text="Change effects…", command=self.change_effects)
+        self.effects_button.pack(side="left", padx=(0, 6))
         self.delete_button = ttk.Button(buttons, text="Delete", command=self.delete_item)
         self.delete_button.pack(side="left")
 
@@ -276,6 +280,7 @@ class HeroTab(HeroEditing, ttk.Frame):
 
     def _update_summary(self) -> None:
         hero = self.hero
+        self.vendors_var.set(vendors_text(hero) if hero is not None else "")
         if hero is None:
             self.summary_var.set("")
             return
@@ -450,7 +455,7 @@ class HeroTab(HeroEditing, ttk.Frame):
 
     def _show_item(self, index: int | None) -> None:
         inputs = [self.power_entry, self.count_entry, self.type_box, *self.rarity_buttons]
-        buttons = [self.equip_button, self.change_button, self.copy_button, self.delete_button]
+        buttons = [self.equip_button, self.change_button, self.copy_button, self.effects_button, self.delete_button]
         if index != self._shown:
             self._say_item("")
         self._shown = index
@@ -461,13 +466,14 @@ class HeroTab(HeroEditing, ttk.Frame):
             for widget in inputs + buttons:
                 widget.state(["disabled"])
             self.equip_button.configure(text="Equip")
+            self.effects_button.configure(text="Change effects…")
             self.preview.configure(image="")
             return
         item = self.hero.item(index)
         self.item_title_var.set(item.name)
         subtitle = ("Talisman" if item.is_talisman else f"{item.rarity} {item.kind.lower()}") + f"  ·  {item.where}"
         effects = item.effect_lines()
-        if effects:  # shown, not changed: the editor can't edit effects yet
+        if effects:
             subtitle += "\nEffects: " + "  ·  ".join(line.rstrip(".") for line in effects)
         self.item_subtitle_var.set(subtitle)
         self.preview.configure(image=self.icons.item_image(item.tag, item.rarity, PREVIEW_SIZE, item.name))
@@ -482,6 +488,10 @@ class HeroTab(HeroEditing, ttk.Frame):
         for widget in inputs + buttons:
             widget.state(["disabled"] if locked else ["!disabled"])
         self.equip_button.configure(text="Unequip" if item.equipped_slot else "Equip")
+        label, usable = effects_action(item)
+        self.effects_button.configure(text=label)
+        if not usable:
+            self.effects_button.state(["disabled"])
         if locked:
             if not self.item_message_var.get():
                 self._say_item("Cosmetics come from your game edition, so they can't be changed or copied.")
