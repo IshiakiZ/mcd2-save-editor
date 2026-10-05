@@ -1232,6 +1232,8 @@ class RestoreTests(WindowTestCase):
             double_click(top + height // 2)
             ask.assert_called_once()
         with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+            dialog.listing.focus_force()  # a key goes to whatever has the keyboard, and a test's window may not
+            dialog.update()
             dialog.listing.event_generate("<Return>")
             dialog.update()
         self.assertEqual(self.emeralds_saved(), 55)
