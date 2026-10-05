@@ -1,8 +1,9 @@
 name: Build and release
 
-# Push a tag like v1.0.1 to build the editor and publish MCD2SaveEditor.zip as a GitHub Release, with
-# MCD2SaveEditor-Nexus.zip beside it: the edition for Nexus Mods, which never goes online.
-# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps the zips as an artifact.
+# Push a tag like v1.0.1 to build the editor and publish MCD2SaveEditor.zip as a GitHub Release.
+# It also builds and checks MCD2SaveEditor-Nexus.zip, the edition for Nexus Mods, which never goes online. That
+# one isn't part of the release: it's kept as an artifact of the run (MCD2SaveEditor-Nexus), to be put on Nexus Mods.
+# Running it by hand (Actions → Build and release → Run workflow) just builds and keeps both zips as artifacts.
 on:
   push:
     tags: ["v*"]
@@ -127,16 +128,22 @@ jobs:
             dist/MCD2SaveEditor-Nexus.zip
             dist-nexus/MCD2SaveEditor/MCD2SaveEditor.exe
 
-      - name: Keep the zips
+      - name: Keep the zip
         uses: actions/upload-artifact@v4
         with:
           name: MCD2SaveEditor
-          path: |
-            dist/MCD2SaveEditor.zip
-            dist/MCD2SaveEditor-Nexus.zip
+          path: dist/MCD2SaveEditor.zip
+
+      # Not attached to the release: this edition is published on Nexus Mods only. It's downloaded from the run
+      # (gh run download <run> --name MCD2SaveEditor-Nexus) and uploaded there.
+      - name: Keep the Nexus edition's zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCD2SaveEditor-Nexus
+          path: dist/MCD2SaveEditor-Nexus.zip
 
       - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip dist/MCD2SaveEditor-Nexus.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md

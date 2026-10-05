@@ -88,11 +88,6 @@ anyway**. The editor keeps backups, pictures and settings in `%LOCALAPPDATA%\MCD
 folder, so a newer version can simply replace the folder. That's what the **Update** button does: when the editor
 opens it asks GitHub whether a newer version is out, and the button appears if one is.
 
-**An edition that never goes online:** each release also has **MCD2SaveEditor-Nexus.zip**, the editor as it's
-built for Nexus Mods, which doesn't host programs that go online. It's the same editor, except that it never
-connects to anything: it doesn't look for updates, it can't update itself, and it doesn't download item pictures
-(you paste or add your own). Pick it if you'd rather have that; you get new versions by downloading them.
-
 **Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
 installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
 double-click **Start Save Editor.bat**. Run that way, backups, pictures and settings stay in the unzipped folder.
@@ -127,9 +122,9 @@ You don't have to take anyone's word for what's in the download:
   one that workflow built, and from which commit. It works on the `MCD2SaveEditor.exe` inside as well.
 - **The source is all here.** The editor goes online for three things: when it opens, it asks GitHub whether a
   newer version is out; **Update** downloads that version; and it downloads item pictures from minecraft.wiki when
-  you ask. Links open in your browser. Nothing about you or your saves is sent anywhere. The edition in
-  `MCD2SaveEditor-Nexus.zip` does none of the three: everything that would open a connection is switched off when
-  it's built (`dungeons2_editor/edition.py`), and the build checks that it refuses.
+  you ask. Links open in your browser. Nothing about you or your saves is sent anywhere. The edition built for
+  Nexus Mods, which doesn't host programs that go online, does none of the three: everything that would open a
+  connection is switched off when it's built (`dungeons2_editor/edition.py`), and the build checks that it refuses.
 - **You can skip the .exe** and run it from source, as above.
 
 ### Code signing policy
