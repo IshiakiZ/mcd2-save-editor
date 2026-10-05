@@ -53,7 +53,10 @@
       "slot": "Boots",
       "set": "Bounty Hunter",
       "unique": "Dauntless Sabatons",
-      "unique_effect": "Increases Soul capacity by 50%."
+      "unique_effect": "Increases Soul capacity by 50%.",
+      "old_ids": [
+        "SW.Item.UndauntedBoots"
+      ]
     },
     {
       "name": "Bounty Hunter Chestplate",
@@ -63,7 +66,10 @@
       "slot": "Chestplate",
       "set": "Bounty Hunter",
       "unique": "Dauntless Pauldrons",
-      "unique_effect": "Take 25% less damage from ranged attacks."
+      "unique_effect": "Take 25% less damage from ranged attacks.",
+      "old_ids": [
+        "SW.Item.UndauntedChest"
+      ]
     },
     {
       "name": "Bounty Hunter Helmet",
@@ -73,7 +79,10 @@
       "slot": "Helmet",
       "set": "Bounty Hunter",
       "unique": "Dauntless Horns",
-      "unique_effect": "Attacks do 40% more knockback."
+      "unique_effect": "Attacks do 40% more knockback.",
+      "old_ids": [
+        "SW.Item.UndauntedHelmet"
+      ]
     },
     {
       "name": "Bounty Hunter Shinguards",
@@ -83,7 +92,10 @@
       "slot": "Leggings",
       "set": "Bounty Hunter",
       "unique": "Dauntless Greaves",
-      "unique_effect": "Deal 60% more damage to enemies who are at full health."
+      "unique_effect": "Deal 60% more damage to enemies who are at full health.",
+      "old_ids": [
+        "SW.Item.UndauntedLeggings"
+      ]
     },
     {
       "name": "Disciple Leggings",
@@ -213,7 +225,10 @@
       "slot": "Boots",
       "set": "Nomad",
       "unique": "Rover Sabatons",
-      "unique_effect": "Increases damage dealt by 25% of player's total missing health."
+      "unique_effect": "Increases damage dealt by 25% of player's total missing health.",
+      "old_ids": [
+        "SW.Item.VoyagerBoots"
+      ]
     },
     {
       "name": "Nomad Chestplate",
@@ -223,7 +238,10 @@
       "slot": "Chestplate",
       "set": "Nomad",
       "unique": "Rover Pauldrons",
-      "unique_effect": "Grants a 25% chance to deflect enemy projectiles."
+      "unique_effect": "Grants a 25% chance to deflect enemy projectiles.",
+      "old_ids": [
+        "SW.Item.VoyagerChest"
+      ]
     },
     {
       "name": "Nomad Hood",
@@ -233,7 +251,10 @@
       "slot": "Helmet",
       "set": "Nomad",
       "unique": "Rover Visor",
-      "unique_effect": "Increases chance of critical hits with melee attacks by 25%."
+      "unique_effect": "Increases chance of critical hits with melee attacks by 25%.",
+      "old_ids": [
+        "SW.Item.VoyagerHelmet"
+      ]
     },
     {
       "name": "Nomad Leggings",
@@ -243,7 +264,10 @@
       "slot": "Leggings",
       "set": "Nomad",
       "unique": "Rover Gaiters",
-      "unique_effect": "Increases chance to stagger enemies on hit by 60%."
+      "unique_effect": "Increases chance to stagger enemies on hit by 60%.",
+      "old_ids": [
+        "SW.Item.VoyagerLeggings"
+      ]
     },
     {
       "name": "Phantom Boots",
@@ -293,7 +317,10 @@
       "slot": "Boots",
       "set": "Protector",
       "unique": "Humbler Tarsi",
-      "unique_effect": "Grants a 20% chance to evade melee damage."
+      "unique_effect": "Grants a 20% chance to evade melee damage.",
+      "old_ids": [
+        "SW.Item.StalwartBoots"
+      ]
     },
     {
       "name": "Protector Chestplate",
@@ -303,7 +330,10 @@
       "slot": "Chestplate",
       "set": "Protector",
       "unique": "Humbler Carapace",
-      "unique_effect": "Increases all healing received by 40%."
+      "unique_effect": "Increases all healing received by 40%.",
+      "old_ids": [
+        "SW.Item.StalwartChest"
+      ]
     },
     {
       "name": "Protector Helmet",
@@ -313,7 +343,10 @@
       "slot": "Helmet",
       "set": "Protector",
       "unique": "Humbler Antenna",
-      "unique_effect": "Take 25% less damage."
+      "unique_effect": "Take 25% less damage.",
+      "old_ids": [
+        "SW.Item.StalwartHelmet"
+      ]
     },
     {
       "name": "Protector Shinguards",
@@ -323,7 +356,10 @@
       "slot": "Leggings",
       "set": "Protector",
       "unique": "Humbler Greaves",
-      "unique_effect": "Melee attacks deal 50% more damage to secondary targets."
+      "unique_effect": "Melee attacks deal 50% more damage to secondary targets.",
+      "old_ids": [
+        "SW.Item.StalwartLeggings"
+      ]
     },
     {
       "name": "Ranger Boots",
@@ -373,7 +409,10 @@
       "slot": "Boots",
       "set": "Realmreacher",
       "unique": "Soul Corruptor Sandals",
-      "unique_effect": "Increases chance of critical hits from ranged attacks by 25%."
+      "unique_effect": "Increases chance of critical hits from ranged attacks by 25%.",
+      "old_ids": [
+        "SW.Item.TimewornBoots"
+      ]
     },
     {
       "name": "Realmreacher Hat",
@@ -383,7 +422,10 @@
       "slot": "Helmet",
       "set": "Realmreacher",
       "unique": "Soul Corruptor Mask",
-      "unique_effect": "Charged ranged attacks deal 60% more damage."
+      "unique_effect": "Charged ranged attacks deal 60% more damage.",
+      "old_ids": [
+        "SW.Item.TimewornHelmet"
+      ]
     },
     {
       "name": "Realmreacher Leggings",
@@ -393,7 +435,10 @@
       "slot": "Leggings",
       "set": "Realmreacher",
       "unique": "Soul Corruptor Sash",
-      "unique_effect": "Critical hits with ranged weapons deal 45% more damage."
+      "unique_effect": "Critical hits with ranged weapons deal 45% more damage.",
+      "old_ids": [
+        "SW.Item.TimewornLeggings"
+      ]
     },
     {
       "name": "Realmreacher Robe",
@@ -403,7 +448,10 @@
       "slot": "Chestplate",
       "set": "Realmreacher",
       "unique": "Soul Corruptor Duster",
-      "unique_effect": "Increases the area of all positive status effects by 55%."
+      "unique_effect": "Increases the area of all positive status effects by 55%.",
+      "old_ids": [
+        "SW.Item.TimewornChest"
+      ]
     },
     {
       "name": "Redstone Boots",
@@ -493,7 +541,10 @@
       "slot": "Boots",
       "set": "Sculk Digger",
       "unique": "Twisted Warden Sneakers",
-      "unique_effect": "Increases chance of critical hits with melee attacks by 25%."
+      "unique_effect": "Increases chance of critical hits with melee attacks by 25%.",
+      "old_ids": [
+        "SW.Item.CaveCrawlerBoots"
+      ]
     },
     {
       "name": "Sculk Digger Hood",
@@ -503,7 +554,10 @@
       "slot": "Helmet",
       "set": "Sculk Digger",
       "unique": "Twisted Warden Blindfold",
-      "unique_effect": "Critical hits with melee weapons deal 45% more damage."
+      "unique_effect": "Critical hits with melee weapons deal 45% more damage.",
+      "old_ids": [
+        "SW.Item.CaveCrawlerHelmet"
+      ]
     },
     {
       "name": "Sculk Digger Leggings",
@@ -513,7 +567,10 @@
       "slot": "Leggings",
       "set": "Sculk Digger",
       "unique": "Twisted Warden Tights",
-      "unique_effect": "Shadowcloaking lasts 45% longer."
+      "unique_effect": "Shadowcloaking lasts 45% longer.",
+      "old_ids": [
+        "SW.Item.CaveCrawlerLeggings"
+      ]
     },
     {
       "name": "Sculk Digger Robe",
@@ -523,7 +580,10 @@
       "slot": "Chestplate",
       "set": "Sculk Digger",
       "unique": "Twisted Warden Vest",
-      "unique_effect": "Grants a 20% chance to evade melee damage."
+      "unique_effect": "Grants a 20% chance to evade melee damage.",
+      "old_ids": [
+        "SW.Item.CaveCrawlerChest"
+      ]
     },
     {
       "name": "Sculker Boots",
@@ -533,7 +593,10 @@
       "slot": "Boots",
       "set": "Sculker",
       "unique": "Monarch Talons",
-      "unique_effect": "Deal 50% more damage to enemies affected by a negative status."
+      "unique_effect": "Deal 50% more damage to enemies affected by a negative status.",
+      "old_ids": [
+        "SW.Item.ScavengerBoots"
+      ]
     },
     {
       "name": "Sculker Mask",
@@ -543,7 +606,10 @@
       "slot": "Helmet",
       "set": "Sculker",
       "unique": "Monarch Crown",
-      "unique_effect": "Grants a 80% chance to get additional loot drops."
+      "unique_effect": "Grants a 80% chance to get additional loot drops.",
+      "old_ids": [
+        "SW.Item.ScavengerHelmet"
+      ]
     },
     {
       "name": "Sculker Robe",
@@ -553,7 +619,10 @@
       "slot": "Chestplate",
       "set": "Sculker",
       "unique": "Monarch Mantle",
-      "unique_effect": "Recover from negative statuses 50% faster."
+      "unique_effect": "Recover from negative statuses 50% faster.",
+      "old_ids": [
+        "SW.Item.ScavengerChest"
+      ]
     },
     {
       "name": "Sculker Slacks",
@@ -563,7 +632,10 @@
       "slot": "Leggings",
       "set": "Sculker",
       "unique": "Monarch Sash",
-      "unique_effect": "Increases Soul capacity by 50%."
+      "unique_effect": "Increases Soul capacity by 50%.",
+      "old_ids": [
+        "SW.Item.ScavengerLeggings"
+      ]
     },
     {
       "name": "Sifter Boots",
@@ -573,7 +645,10 @@
       "slot": "Boots",
       "set": "Sifter",
       "unique": "Mad Sifter Paws",
-      "unique_effect": "Grants a 25% chance to deflect enemy projectiles."
+      "unique_effect": "Grants a 25% chance to deflect enemy projectiles.",
+      "old_ids": [
+        "SW.Item.WellspringBoots"
+      ]
     },
     {
       "name": "Sifter Hood",
@@ -583,7 +658,10 @@
       "slot": "Helmet",
       "set": "Sifter",
       "unique": "Mad Sifter Mask",
-      "unique_effect": "Increases duration of negative statuses on enemies by 100%."
+      "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
+      "old_ids": [
+        "SW.Item.WellspringHelmet"
+      ]
     },
     {
       "name": "Sifter Leggings",
@@ -593,7 +671,10 @@
       "slot": "Leggings",
       "set": "Sifter",
       "unique": "Mad Sifter Slacks",
-      "unique_effect": "Increases duration of positive statuses applied to you by 20%."
+      "unique_effect": "Increases duration of positive statuses applied to you by 20%.",
+      "old_ids": [
+        "SW.Item.WellspringLeggings"
+      ]
     },
     {
       "name": "Sifter Robe",
@@ -603,7 +684,10 @@
       "slot": "Chestplate",
       "set": "Sifter",
       "unique": "Mad Sifter Vest",
-      "unique_effect": "Artifact attacks deal 25% more damage."
+      "unique_effect": "Artifact attacks deal 25% more damage.",
+      "old_ids": [
+        "SW.Item.WellspringChest"
+      ]
     },
     {
       "name": "Sorcerer Boots",
@@ -613,7 +697,10 @@
       "slot": "Boots",
       "set": "Sorcerer",
       "unique": "Alchemist Loafers",
-      "unique_effect": "Increases Soul capacity by 50%."
+      "unique_effect": "Increases Soul capacity by 50%.",
+      "old_ids": [
+        "SW.Item.EvocationBoots"
+      ]
     },
     {
       "name": "Sorcerer Hat",
@@ -623,7 +710,10 @@
       "slot": "Helmet",
       "set": "Sorcerer",
       "unique": "Alchemist Top Hat",
-      "unique_effect": "Increases the area of all positive status effects by 55%."
+      "unique_effect": "Increases the area of all positive status effects by 55%.",
+      "old_ids": [
+        "SW.Item.EvocationHelmet"
+      ]
     },
     {
       "name": "Sorcerer Leggings",
@@ -633,7 +723,10 @@
       "slot": "Leggings",
       "set": "Sorcerer",
       "unique": "Alchemist Trousers",
-      "unique_effect": "Restores 6% of max health when activating an artifact."
+      "unique_effect": "Restores 6% of max health when activating an artifact.",
+      "old_ids": [
+        "SW.Item.EvocationLeggings"
+      ]
     },
     {
       "name": "Sorcerer Robe",
@@ -643,7 +736,10 @@
       "slot": "Chestplate",
       "set": "Sorcerer",
       "unique": "Alchemist Overcoat",
-      "unique_effect": "Artifact attacks deal 25% more damage."
+      "unique_effect": "Artifact attacks deal 25% more damage.",
+      "old_ids": [
+        "SW.Item.EvocationChest"
+      ]
     },
     {
       "name": "Steel Wool Boots",
@@ -653,7 +749,10 @@
       "slot": "Boots",
       "set": "Steel Wool",
       "unique": "Rimefrost Plodders",
-      "unique_effect": "Increases duration of negative statuses on enemies by 100%."
+      "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
+      "old_ids": [
+        "SW.Item.FrostRimeBoots"
+      ]
     },
     {
       "name": "Steel Wool Cap",
@@ -663,7 +762,10 @@
       "slot": "Helmet",
       "set": "Steel Wool",
       "unique": "Rimefrost Icecap",
-      "unique_effect": "Frost attacks deal 30% more damage."
+      "unique_effect": "Frost attacks deal 30% more damage.",
+      "old_ids": [
+        "SW.Item.FrostRimeHelmet"
+      ]
     },
     {
       "name": "Steel Wool Leggings",
@@ -673,7 +775,10 @@
       "slot": "Leggings",
       "set": "Steel Wool",
       "unique": "Rimefrost Longjohns",
-      "unique_effect": "Melee attacks deal 50% more damage to secondary targets."
+      "unique_effect": "Melee attacks deal 50% more damage to secondary targets.",
+      "old_ids": [
+        "SW.Item.FrostRimeLeggings"
+      ]
     },
     {
       "name": "Steel Wool Sweater",
@@ -683,7 +788,10 @@
       "slot": "Chestplate",
       "set": "Steel Wool",
       "unique": "Rimefrost Armor",
-      "unique_effect": "Reduces damage taken from elemental attacks by 25%."
+      "unique_effect": "Reduces damage taken from elemental attacks by 25%.",
+      "old_ids": [
+        "SW.Item.FrostRimeChest"
+      ]
     },
     {
       "name": "Treehugger Chestplate",
@@ -693,7 +801,10 @@
       "slot": "Chestplate",
       "set": "Treehugger",
       "unique": "Woodsprite Barkpiece",
-      "unique_effect": "Increases the player's maximum health by 30%."
+      "unique_effect": "Increases the player's maximum health by 30%.",
+      "old_ids": [
+        "SW.Item.HewnBarkChest"
+      ]
     },
     {
       "name": "Treehugger Clogs",
@@ -703,7 +814,10 @@
       "slot": "Boots",
       "set": "Treehugger",
       "unique": "Woodsprite Root Boots",
-      "unique_effect": "Reduces ranged ammo cooldown time by 35%."
+      "unique_effect": "Reduces ranged ammo cooldown time by 35%.",
+      "old_ids": [
+        "SW.Item.HewnBarkBoots"
+      ]
     },
     {
       "name": "Treehugger Leggings",
@@ -713,7 +827,10 @@
       "slot": "Leggings",
       "set": "Treehugger",
       "unique": "Woodsprite Trunks",
-      "unique_effect": "Deals 100% of received damage back to the attacker."
+      "unique_effect": "Deals 100% of received damage back to the attacker.",
+      "old_ids": [
+        "SW.Item.HewnBarkLeggings"
+      ]
     },
     {
       "name": "Treehugger Mask",
@@ -723,7 +840,10 @@
       "slot": "Helmet",
       "set": "Treehugger",
       "unique": "Woodsprite Crown",
-      "unique_effect": "Companions take 20% less damage."
+      "unique_effect": "Companions take 20% less damage.",
+      "old_ids": [
+        "SW.Item.HewnBarkHelmet"
+      ]
     },
     {
       "name": "Undaunted Helmet",
@@ -741,7 +861,10 @@
       "slot": "Boots",
       "set": "Wolfpack",
       "unique": "Packleader Paws",
-      "unique_effect": "Grants a 50% chance to gain an additional arrow when ammo is regained."
+      "unique_effect": "Grants a 50% chance to gain an additional arrow when ammo is regained.",
+      "old_ids": [
+        "SW.Item.WolfclutchBoots"
+      ]
     },
     {
       "name": "Wolfpack Hood",
@@ -751,7 +874,10 @@
       "slot": "Helmet",
       "set": "Wolfpack",
       "unique": "Packleader Muzzle",
-      "unique_effect": "Ranged attacks deal 100% more damage from far away."
+      "unique_effect": "Ranged attacks deal 100% more damage from far away.",
+      "old_ids": [
+        "SW.Item.WolfclutchHelmet"
+      ]
     },
     {
       "name": "Wolfpack Jacket",
@@ -761,7 +887,10 @@
       "slot": "Chestplate",
       "set": "Wolfpack",
       "unique": "Packleader Hide",
-      "unique_effect": "Companions deal 40% more damage."
+      "unique_effect": "Companions deal 40% more damage.",
+      "old_ids": [
+        "SW.Item.WolfclutchChest"
+      ]
     },
     {
       "name": "Wolfpack Leggings",
@@ -771,7 +900,10 @@
       "slot": "Leggings",
       "set": "Wolfpack",
       "unique": "Packleader Fur Chaps",
-      "unique_effect": "Defeated companions come back 20% faster."
+      "unique_effect": "Defeated companions come back 20% faster.",
+      "old_ids": [
+        "SW.Item.WolfclutchLeggings"
+      ]
     },
     {
       "name": "Battle Banner",

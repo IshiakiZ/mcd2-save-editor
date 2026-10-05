@@ -149,6 +149,7 @@ class GameItem:
     name_from_id: bool = False  # the name is made from the ID; what the game calls it isn't known yet
     unique_id: str | None = None  # the Unique's own save ID, once it has been seen in a real save
     levels: tuple = ()  # a talisman's effect at each of its levels, once seen in a real save
+    old_ids: tuple[str, ...] = ()  # IDs from old saves that this item supersedes (renamed in game)
 
 
 @dataclass(frozen=True)
@@ -176,7 +177,7 @@ def game_items() -> tuple[GameItem, ...]:
         GameItem(
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
             e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")), e.get("unique_id"),
-            tuple(e.get("levels") or ()),
+            tuple(e.get("levels") or ()), tuple(e.get("old_ids") or ()),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")
@@ -1119,16 +1120,20 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     def no_effect(tag: str, levels: tuple = ()) -> bool:
         return tag_kind(tag) == "Talisman" and not levels and not _item_levels(by_tag.get(tag) or {})
 
+    superseded: set[str] = {oid for gi in game_items() for oid in gi.old_ids}
+    superseded |= {oid + "_Unique" for oid in superseded} | {oid + "_Unique1" for oid in superseded}
+
     catalog: dict[str, CatalogItem] = {}
     for game_item in game_items():
-        if game_item.id in catalog or item_group(game_item.id) in NOT_ADDABLE_GROUPS or template(game_item.id) is None:
+        if game_item.id in catalog or game_item.id in superseded or item_group(game_item.id) in NOT_ADDABLE_GROUPS or template(game_item.id) is None:
             continue
         if game_item.kind == BOOK_KIND and game_item.id not in by_tag:
             continue
+        confirmed = game_item.confirmed or game_item.id in seen or any(oid in seen for oid in game_item.old_ids)
         catalog[game_item.id] = CatalogItem(
             game_item.id,
             template(game_item.id),
-            confirmed=game_item.confirmed or game_item.id in seen,
+            confirmed=confirmed,
             title=game_item.name,
             unique=game_item.unique,
             kind_name=game_item.kind,
@@ -1137,7 +1142,7 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
             no_effect=no_effect(game_item.id, game_item.levels),
         )
     for tag in seen:
-        if tag in catalog or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
+        if tag in catalog or tag in superseded or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
             continue
         catalog[tag] = CatalogItem(tag, template(tag), no_effect=no_effect(tag))
     return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
