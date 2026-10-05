@@ -21,10 +21,12 @@ the full save for people who want it.
   levels (under **Stats & town**). Click a number to change it; changes apply as you type, and mistakes show up in
   red.
 - **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
-  delete them. Every gear slot is shown, including the ones your level hasn't opened yet.
+  delete them. Every gear slot is shown, including the ones your level hasn't opened yet. An item's card lists its
+  effects as the game saved them, and a talisman's level.
 - **Add items:** pick any of the game's 181 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
-  Unique rarity and a Sword is added as The Burning Blade. Items show their in-game names.
+  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. Items show their
+  in-game names.
 - **Presets:**
   - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
   - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
@@ -36,7 +38,7 @@ the full save for people who want it.
 - **Let an AI do it:** connect Claude or another AI assistant over MCP, and ask it for what you want ("give my hero
   the best melee kit at power 30"). It shows you its changes before anything is written. See
   [Let an AI customise your hero](#let-an-ai-customise-your-hero-mcp).
-- **Sorting and filters:** items by most powerful, highest item level, most item XP, rarest, most enchantments,
+- **Sorting and filters:** items by most powerful, highest item level, most item XP, rarest, most effects,
   newest, name or kind, and filters for each kind of item and the Village Merchant's stock; heroes by power, level,
   XP or emeralds.
 - **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own. The editor cuts the item
@@ -44,7 +46,9 @@ the full save for people who want it.
   item the wiki doesn't have, snip its tile in the game (Windows+Shift+S), pick it in the editor and press
   **Paste picture**: the editor cuts the item out and keeps it on your PC.
 - **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
-  The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it.
+  The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it. When your saves hold
+  item IDs or talisman effects the editor's list doesn't have, a **Share item IDs** button with the count appears
+  at the top; nothing is sent unless you send it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
@@ -54,6 +58,7 @@ the full save for people who want it.
 - **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
   after writing, and an automatic rollback if anything fails. If the game saves your hero while the editor is open,
   the editor loads the new version, or re-applies your unsaved changes to it, so neither side's progress is lost.
+  If a game update has changed how heroes are saved since the editor was last checked, it says so before you save.
 
 | Add items | Kits |
 |---|---|
@@ -175,14 +180,19 @@ your sign-in, account or device data.
   wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
   **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may drop the item. The editor asks
   before adding an unconfirmed item, and Restore… undoes it. Items you find in the game become confirmed
-  automatically. To help everyone else, press **Share item IDs…** on the Help page (or run
+  automatically, and so does an item you added under a guess once the game has kept it. An ID only counts as seen
+  when the game itself vouches for it: it's in the game's collections, in the Village Merchant's stock, or on an
+  item the game has shown you. What the editor wrote doesn't count, or its own guesses would come back looking
+  confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs (and what your talismans do, see below), nothing else from your save.
-- **Most Uniques are best guesses.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
+- **Most Uniques go by a pattern.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
   `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Thirty-five of those IDs have been
-  seen in real saves. The others follow the same pattern, so the editor adds them as Unconfirmed and asks first.
-  Making an item you already own Unique only turns it into its Unique when that ID has been seen; otherwise it keeps
-  its name and just gets Unique rarity, because a wrong guess would cost you the item.
+  seen in real saves, and every one is its base item's ID with `_Unique1` (weapons) or `_Unique` (armor) on the end.
+  So the editor adds the other Uniques under the ID that pattern gives, and says so when it does. If one were wrong,
+  the game would drop that item and keep the rest. Making an item you already own Unique is stricter: it only turns
+  into its Unique when that ID has been seen; otherwise it keeps its name and just gets Unique rarity, because a
+  wrong ID would cost you the item.
 - **Most talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
   at each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and
   1.35. The editor knows this for the Sigil of Beeswax and for any talisman one of your heroes has found, and adds
@@ -190,7 +200,8 @@ your sign-in, account or device data.
   effect, so it may do nothing in the game, and it asks first. **Share item IDs…** also lists what your own
   talismans do, so the editor can learn them for everyone. Talismans added by versions before 1.7.1 have no effect
   saved either; the editor points them out, and you can delete them and add them again.
-- **Enchantments** can't be added yet. Presets tell you which enchantments to put on at the Enchantsmith instead.
+- **Effects and enchantments** are shown but can't be changed or added yet. Presets tell you which enchantments to
+  put on at the Enchantsmith instead.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
@@ -253,6 +264,8 @@ Storms and the fastest progression. The editor's presets are built from it.
 ```
 python -m unittest discover -s tests -t .
 ```
+
+The tests run on every push and pull request, on Windows and on Linux (`.github/workflows/tests.yml`).
 
 | Path | What's in it |
 |---|---|

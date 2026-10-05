@@ -1023,6 +1023,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
                 self._say_item("You have this equipped. Unequip it to delete it or change it into another item.")
         elif item.stock_slot:
             self.equip_button.state(["disabled"])
+            self.change_button.state(["disabled"])  # what the merchant stocks is the game's doing
             if not self.item_message_var.get():
                 self._say_item("This is in the Village Merchant's stock, not your inventory. Make a copy to get one for yourself.")
         elif not slots_for(item.kind, item.piece, self._slot_list or self._slots()):

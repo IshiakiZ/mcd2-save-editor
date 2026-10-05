@@ -81,7 +81,8 @@ SIMPLE_HELP_SECTIONS = [
         "• The rest of your inventory is in the middle. Pick a filter to see one kind of item, or MERCHANT for the "
         "Village Merchant's stock. Double-click an item to put it on, and right-click any tile for its actions.\n"
         "• The card shows the item's power and rarity. Click a rarity or type a power to change it, and use the "
-        "buttons to equip it, copy it, change it into another item or delete it.\n"
+        "buttons to equip it, copy it, change it into another item or delete it. It also lists the item's effects "
+        "as the game saved them; the editor can't change those yet.\n"
         "• Level, XP and gear power are along the top, and enchantment points, emeralds and echo shards are in the "
         "top bar. Click a number to change it (the arrow keys change it by one). STATS & TOWN lists every stat, "
         "with the town upgrades.\n"
@@ -89,7 +90,7 @@ SIMPLE_HELP_SECTIONS = [
         "pick. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
         "money, the most powerful gear, or complete kits from top builds, with the best enchantments for each piece.\n"
         "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in"
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
         "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
     ),
@@ -119,7 +120,8 @@ SIMPLE_HELP_SECTIONS = [
         "Names come from the game's item list, so new items you pick up show their names. When the editor doesn't "
         "know what the game calls an item, its card says its name is made from its save ID: press NAME IT… and type "
         "the name the game shows. It's kept on this PC, and Share item IDs (above) can send it on so the editor learns "
-        "it for everyone.",
+        "it for everyone. When your saves hold item IDs or talisman effects the editor's list doesn't have, a SHARE "
+        "ITEM IDS button with the count appears in the top bar. Nothing is sent unless you send it.",
     ),
     ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore a backup… (in MENU)")),
     ("Where the data comes from", _DATA_TEXT),
@@ -135,6 +137,7 @@ HELP_SECTIONS = [
         "• Stats: type a new number or use the arrows. Changes are kept as you go.\n"
         "• Items: sort by power, level, XP, rarity and more (click a column heading or use Sort by). Pick an item "
         "to change its rarity, power or count, equip or unequip it, turn it into another item, make a copy or delete it. "
+        "Its effects are listed under its name as the game saved them; the editor can't change those yet. "
         "The Equipped view lists all 12 gear slots: pick one to put an item in it or take one off.\n"
         "• + Add items: pick any weapon, armor piece, artifact or talisman in the game and choose rarity, power and "
         "how many, and tick Equip it to put it straight on your hero. Pick Unique rarity to get an item's Unique "
@@ -145,7 +148,7 @@ HELP_SECTIONS = [
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
         "everything and lists the best enchantments to put on each piece at the Enchantsmith.\n"
         "Then press Save to game. Try a small change first and check it in the game.\n\n"
-        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in"
+        "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
     ),

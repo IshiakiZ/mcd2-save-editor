@@ -929,6 +929,8 @@ class SimpleModeTests(WindowTestCase):
         self.screen.pick_item(self.index_of("SW.Item.CurvedGreatsword"))
         self.assertEqual(self.screen.banner_text, "MERCHANT STOCK")
         self.assertTrue(self.screen.equip_button.instate(["disabled"]))
+        self.assertTrue(self.screen.change_button.instate(["disabled"]))  # the game stocks the merchant; a copy can be changed
+        self.assertTrue(self.screen.power_entry.instate(["!disabled"]))
         self.screen.copy_button.invoke()
         self.assertIn("Copied", self.screen.item_message_var.get())
         self.assertEqual(self.screen.banner_text, "INVENTORY")  # the copy is yours

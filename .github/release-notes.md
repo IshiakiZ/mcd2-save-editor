@@ -1,3 +1,27 @@
+## What's new in 1.8.0
+
+- **Effects on the item card.** An item's effects are listed with their strength, as the game saved them, and a
+  talisman shows its level and what its effect becomes at the next ones. They are shown only: the editor can't
+  change effects or add enchantments yet.
+- **Kits work at Unique rarity.** Every Unique found in a save so far has its base item's ID with `_Unique1`
+  (weapons) or `_Unique` (armor) on the end. The editor now adds the other Uniques under the ID that pattern gives,
+  without asking, and kits include them. If one turns out wrong, the game drops that one item and keeps the rest.
+  Making an item you already own Unique still waits until that Unique's own ID has been seen.
+- **"Confirmed" means the game said so.** An item ID counted as seen in your saves when it was anywhere in them.
+  But the editor writes to the inventory and the discovered-loot list itself, so an item it had added under a
+  guessed ID looked confirmed. Now an ID counts only when the game vouches for it: it's in the game's own
+  collections, in the Village Merchant's stock, or on an item the game has kept and shown you. **Share item IDs**
+  lists only those, and says how each one is known. In earlier reports, an ID that was new to the editor (most
+  Uniques, and every item saved under a name of its own) can't have come from the editor; one that only
+  "confirmed a guess" can't be told apart from the editor's own.
+- **A note when there's something to share.** When your saves hold item IDs or talisman effects the editor's list
+  doesn't have, a **Share item IDs** button with the count appears at the top. Nothing is sent unless you send it.
+  Every gap in the list closes only when players share what they've found, so please do.
+- **A heads-up after game updates.** If the game has changed how heroes are saved since this version was checked,
+  the editor says so before you save.
+- The Add items and Connect an AI windows keep their buttons on screens too small to show the whole window.
+- What's in the Village Merchant's stock can't be turned into another item any more: make a copy and change that.
+
 ## What's new in 1.7.2
 
 - **Restore works on scaled-up displays.** With Windows set to show everything at 125% or more, as it is on many
