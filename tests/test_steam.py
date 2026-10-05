@@ -138,6 +138,15 @@ class SteamProfileTests(unittest.TestCase):
         self.assertEqual(restored, ["Character0123456789abcdef"])
         self.assertEqual((self.folder / HERO_FILE).read_bytes(), original)
 
+    def test_a_save_that_is_gone_is_not_put_back_but_named(self):
+        saves.make_backup(self.folder, self.backups)
+        backup = saves.list_backups(self.backups)[0]
+        (self.folder / HERO_FILE).unlink()  # the hero was deleted in the game
+        profile = saves.SaveProfile(self.folder)
+        self.assertEqual(profile.restore_problems(backup), ["Offline hero (Ranger Deluxe) isn't in your saves any more."])
+        self.assertEqual(profile.restore(backup, self.backups, NOT_RUNNING), [])
+        self.assertFalse((self.folder / HERO_FILE).exists())
+
     def test_stamp_and_revision_notice_the_game_saving(self):
         stamp = saves.profile_stamp(self.folder)
         revision = saves.current_revision(self.folder, "Character0123456789abcdef")

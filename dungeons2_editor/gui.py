@@ -27,11 +27,13 @@ from .hero import HERO_SORTS, Hero, describe_changes, format_amount, is_hero_doc
 from .hero_tab import HeroTab
 from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
+from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
+from .restore_dialog import RestoreDialog
 
 APP_TITLE = "Minecraft Dungeons II Save Editor"
 SEARCH_LIMIT = 2000
-START_SIZE = (1280, 880)
+START_SIZE = (1280, 880)  # on a display at 100%; see layout.scaled_size
 MIN_SIZE = (960, 640)
 GAME_CHECK_SECONDS = 3
 CHANGED_COLOR = "#b35900"
@@ -263,8 +265,14 @@ class EditorApp:
                 self.root.iconbitmap(default=str(icon))
             except tk.TclError:
                 pass
-        self.root.geometry("{}x{}".format(*START_SIZE))
-        self.root.minsize(*MIN_SIZE)
+        width, height = scaled_size(self.root, *START_SIZE)
+        if (width, height) == START_SIZE:
+            self.root.geometry(f"{width}x{height}")
+        else:
+            # Grown for a scaled-up display, or cut down to a small screen: put it where all of it shows.
+            room = screen_room(self.root)
+            self.root.geometry(f"{width}x{height}+{max(0, (self.root.winfo_screenwidth() - width) // 2)}+{max(0, (room[1] - height) // 2)}")
+        self.root.minsize(*scaled_size(self.root, *MIN_SIZE))
         style = ttk.Style(self.root)
         if "vista" in style.theme_names():
             style.theme_use("vista")
@@ -769,14 +777,14 @@ class EditorApp:
     def _fit_window(self) -> None:
         """Simple mode's screen doesn't shrink well (the gear and the card have fixed sizes), so keep the
         window big enough for it, within the screen. Advanced mode keeps its usual minimum."""
+        least_width, least_height = scaled_size(self.root, *MIN_SIZE)
         if self.advanced_var.get():
-            self.root.minsize(*MIN_SIZE)
+            self.root.minsize(least_width, least_height)
             return
         self.root.update_idletasks()
-        most_width = self.root.winfo_screenwidth() - 40
-        most_height = self.root.winfo_screenheight() - 80
-        need_width = min(max(MIN_SIZE[0], self.simple_screen.winfo_reqwidth()), most_width)
-        need_height = min(max(MIN_SIZE[1], self.simple_screen.winfo_reqheight()), most_height)
+        most_width, most_height = screen_room(self.root)
+        need_width = min(max(least_width, self.simple_screen.winfo_reqwidth()), most_width)
+        need_height = min(max(least_height, self.simple_screen.winfo_reqheight()), most_height)
         self.root.minsize(need_width, need_height)
         width, height = self.root.winfo_width(), self.root.winfo_height()
         if self.root.winfo_ismapped() and (width < need_width or height < need_height):
@@ -1418,62 +1426,43 @@ class EditorApp:
         if not backups:
             messagebox.showinfo(APP_TITLE, "There are no backups of this save profile yet.", parent=self.root)
             return
+        RestoreDialog(self.root, backups, self._restore_backup)
 
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Restore a backup")
-        dialog.transient(self.root)
-        dialog.geometry("640x380")
-        frame = ttk.Frame(dialog, padding=12)
-        frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text="Pick the backup to put back. Your current saves are backed up first.").pack(anchor="w", pady=(0, 8))
-        listing = ttk.Treeview(frame, columns=("reason",), selectmode="browse")
-        listing.heading("#0", text="Made")
-        listing.heading("reason", text="Why")
-        listing.column("#0", width=170, stretch=False)
-        listing.column("reason", width=400)
-        listing.pack(fill="both", expand=True)
-        by_iid = {}
-        for backup in backups:
-            iid = listing.insert("", "end", text=f"{backup.created:%Y-%m-%d %H:%M:%S}", values=(backup.reason,))
-            by_iid[iid] = backup
-        first = listing.get_children()[0]
-        listing.selection_set(first)
-        listing.focus(first)
-
-        def restore() -> None:
-            selection = listing.selection()
-            if not selection:
-                return
-            backup = by_iid[selection[0]]
-            if not self._confirm_discard():
-                return
-            if not messagebox.askyesno(
-                "Restore", f"Put back the save data from {backup.created:%Y-%m-%d %H:%M:%S}?\n({backup.reason})", parent=dialog
-            ):
-                return
-            try:
-                restored = self.profile.restore(backup, self.backup_root)
-            except saves.GameRunningError as exc:
-                messagebox.showwarning(APP_TITLE, str(exc), parent=dialog)
-                return
-            except Exception as exc:
-                messagebox.showerror(APP_TITLE, str(exc), parent=dialog)
-                return
-            dialog.destroy()
-            if not restored:
+    def _restore_backup(self, backup: saves.Backup, dialog: tk.Toplevel) -> None:
+        """Put ``backup`` back, once you've said yes, and say what was restored and what couldn't be."""
+        if not self._confirm_discard():
+            return
+        if not messagebox.askyesno(
+            "Restore", f"Put back the save data from {backup.created:%Y-%m-%d %H:%M:%S}?\n({backup.reason})", parent=dialog
+        ):
+            return
+        try:
+            problems = self.profile.restore_problems(backup)
+            restored = self.profile.restore(backup, self.backup_root)
+        except saves.GameRunningError as exc:
+            messagebox.showwarning(APP_TITLE, str(exc), parent=dialog)
+            return
+        except Exception as exc:
+            messagebox.showerror(APP_TITLE, str(exc), parent=dialog)
+            return
+        dialog.destroy()
+        not_restored = "\n".join(f"• {problem}" for problem in problems)
+        if not restored:
+            if problems:
+                messagebox.showwarning(
+                    APP_TITLE,
+                    f"Nothing was put back.\n\n{not_restored}\n\nThe editor can only put a save back over one that's still in your save folder.",
+                    parent=self.root,
+                )
+            else:
                 messagebox.showinfo(APP_TITLE, "Nothing to restore: that backup matches your current save data.", parent=self.root)
-                return
-            self.change_count = 0
-            self._open_profile(self.profile.path, keep=self.container.name if self.container else None)
-            labels = ", ".join(saves.FRIENDLY_NAMES.get(name, name) for name in restored)
-            self.status_var.set(f"Restored {labels}")
-            messagebox.showinfo(APP_TITLE, f"Restored: {labels}", parent=self.root)
-
-        buttons = ttk.Frame(frame)
-        buttons.pack(fill="x", pady=(10, 0))
-        ttk.Button(buttons, text="Restore", style="Accent.TButton", command=restore).pack(side="right")
-        ttk.Button(buttons, text="Cancel", command=dialog.destroy).pack(side="right", padx=8)
-        dialog.grab_set()
+            return
+        self.change_count = 0
+        self._open_profile(self.profile.path, keep=self.container.name if self.container else None)
+        containers = {name: self.profile.get(name) for name in restored}
+        labels = ", ".join(container.label if container else name for name, container in containers.items())
+        self.status_var.set(f"Restored {labels}")
+        messagebox.showinfo(APP_TITLE, f"Restored: {labels}" + (f"\n\nNot put back:\n{not_restored}" if problems else ""), parent=self.root)
 
     # ---------------------------------------------------------------- pictures
 

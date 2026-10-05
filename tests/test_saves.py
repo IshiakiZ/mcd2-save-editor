@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 import os
 import tempfile
 import unittest
@@ -148,6 +149,29 @@ class SaveProfileTests(unittest.TestCase):
         before = snapshot(self.profile_path)
         self.assertEqual(profile.restore(saves.list_backups(self.backups)[0], self.backups, check_game=NOT_RUNNING), [])
         self.assertEqual(snapshot(self.profile_path), before)
+
+    def rewrite_index(self, change):
+        index = wgs.read_index(self.profile_path)
+        (self.profile_path / wgs.INDEX_FILE).write_bytes(wgs.serialize_index(dataclasses.replace(index, entries=change(index.entries))))
+
+    def test_restore_says_which_saves_it_cant_put_back(self):
+        profile = saves.SaveProfile(self.profile_path)
+        saves.make_backup(self.profile_path, self.backups)
+        backup = saves.list_backups(self.backups)[0]
+        self.assertEqual(profile.restore_problems(backup), [])
+        # Since the backup, the settings have changed and the hero has been deleted in the game.
+        profile.save("GlobalSaveDataDefault", self.edited_settings(profile), self.backups, check_game=NOT_RUNNING)
+        self.rewrite_index(lambda entries: [dataclasses.replace(e, sync_state=wgs.DELETED) if e.name == "OfflineHero" else e for e in entries])
+        profile = saves.SaveProfile(self.profile_path)
+        self.assertEqual(profile.restore_problems(backup), ["OfflineHero has been deleted in the game."])
+        self.assertEqual(profile.restore(backup, self.backups, check_game=NOT_RUNNING), ["GlobalSaveDataDefault"])  # the rest still goes back
+        # And once the game has dropped it from the folder altogether.
+        self.rewrite_index(lambda entries: [e for e in entries if e.name != "OfflineHero"])
+        profile = saves.SaveProfile(self.profile_path)
+        self.assertEqual(profile.restore_problems(backup), ["OfflineHero isn't in your saves any more."])
+        before = snapshot(self.profile_path)
+        self.assertEqual(profile.restore(backup, self.backups, check_game=NOT_RUNNING), [])
+        self.assertEqual(snapshot(self.profile_path), before)  # a save is never made up
 
 
 class HeroContainerTests(unittest.TestCase):

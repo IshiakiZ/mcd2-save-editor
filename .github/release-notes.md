@@ -1,3 +1,17 @@
+## What's new in 1.7.2
+
+- **Restore works on scaled-up displays.** With Windows set to show everything at 125% or more, as it is on many
+  laptops, the Restore window opened too small for its list of backups, and its Restore and Cancel buttons didn't
+  show at all: you could pick a backup but not put it back. The window now fits what's in it, the list scrolls, and
+  double-clicking a backup (or pressing Enter) restores it too. Thanks to [Blake5256](https://github.com/Blake5256)
+  for reporting it.
+- **The main window opens at a size that suits your display.** At 150% and up, buttons could be cut off until you
+  made the window bigger, among them Restore… and Back up now in Advanced mode. On a small screen the window no
+  longer opens taller than the screen.
+- Restore says what it put back by name ("Restored: Offline hero (Ranger)"). When a backup holds a hero that has
+  since been deleted in the game, it now says that hero can't be put back, where it used to say there was nothing
+  to restore.
+
 ## What's new in 1.7.1
 
 - **Talismans are added the way the game saves them.** A talisman has no rarity or power: a save holds what it does

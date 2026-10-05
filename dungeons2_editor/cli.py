@@ -92,9 +92,15 @@ def cmd_restore(args: argparse.Namespace) -> int:
     if not _confirm(f"Restore the save data from {backup.created:%Y-%m-%d %H:%M:%S} ({backup.reason})?", args.yes):
         print("Cancelled.")
         return 1
+    problems = profile.restore_problems(backup)
     restored = profile.restore(backup, args.backups)
-    print(f"Restored: {', '.join(restored)}" if restored else "Nothing to restore: the backup matches the current save data.")
-    return 0
+    if restored:
+        print(f"Restored: {', '.join(restored)}")
+    elif not problems:
+        print("Nothing to restore: the backup matches the current save data.")
+    for problem in problems:
+        print(f"Not put back: {problem}")
+    return 0 if restored or not problems else 1
 
 
 def cmd_pictures(args: argparse.Namespace) -> int:

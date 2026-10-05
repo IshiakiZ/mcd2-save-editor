@@ -128,7 +128,8 @@ from minecraft.wiki. Links open in your own browser.
 
 **Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
 save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
-back. Backups contain your sign-in token, so don't share them.
+back: pick one and press Restore. It writes a backup's saves over the ones in your save folder, so it can't bring
+back a hero you've since deleted in the game. Backups contain your sign-in token, so don't share them.
 
 > **Versions before 1.2.3 could lose edits and progress.** They wrote save files differently from the game (they
 > kept the old cloud ID), so the Xbox app's cloud sync could bring the old data back. Edits then didn't show up in
@@ -262,7 +263,7 @@ python -m unittest discover -s tests -t .
 | `dungeons2_editor/hero.py` | Hero stats and items, the add-item catalog, change summaries |
 | `dungeons2_editor/presets.py` | The presets, kits and the facts behind them |
 | `dungeons2_editor/data/` | The item and enchantment lists (`tools/build_item_catalog.py` rebuilds them) |
-| `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `layout.py` | The window and its dialogs |
+| `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `restore_dialog.py`, `layout.py` | The window, its dialogs, and sizing them for the display's scaling |
 | `dungeons2_editor/inventory_screen.py`, `game_style.py`, `game_art.py` | Simple mode's game-style screen, its colours and theme, and its pixel art |
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
 | `dungeons2_editor/icons.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the Minecraft Wiki downloader, and the names you give items |

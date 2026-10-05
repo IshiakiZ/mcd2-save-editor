@@ -308,21 +308,10 @@ class SaveProfile:
         On the Xbox layout, writing them as new revisions (instead of copying the
         old files back) makes Gaming Services upload them rather than
         re-download the cloud copy. On Steam the files are simply replaced. Returns the names of the containers that were restored.
+        Only a save that is still in the folder is put back; ``restore_problems`` says which ones aren't.
         """
         self._ensure_game_closed(check_game)
-        current = SaveProfile(self.path)
-        old = SaveProfile(backup.profile_copy)
-        to_restore = []
-        for old_container in old.containers:
-            now = current.get(old_container.name)
-            if (
-                old_container.kind is Kind.EDITABLE
-                and now is not None
-                and now.kind is Kind.EDITABLE
-                and set(now.blobs) == set(old_container.blobs)
-                and now.blobs != old_container.blobs
-            ):
-                to_restore.append(old_container)
+        to_restore, _problems = self._restore_plan(backup)
         if not to_restore:
             return []
 
@@ -339,6 +328,32 @@ class SaveProfile:
         _write_or_roll_back(write, self.path, safety)
         self.reload()
         return [container.name for container in to_restore]
+
+    def restore_problems(self, backup: Backup) -> list[str]:
+        """A sentence for each save in ``backup`` that ``restore`` can't put back, as things are now."""
+        return self._restore_plan(backup)[1]
+
+    def _restore_plan(self, backup: Backup) -> tuple[list[Container], list[str]]:
+        """The containers of ``backup`` that differ from what's saved now and can be written back, and why
+        each of the others can't. A save is only ever written over one that's still there: making a
+        container the game has removed would be a guess at how it tells the Xbox cloud about it."""
+        current = SaveProfile(self.path)
+        to_restore, problems = [], []
+        for old_container in SaveProfile(backup.profile_copy).containers:
+            if old_container.kind is not Kind.EDITABLE:
+                continue
+            now = current.get(old_container.name)
+            if now is None:
+                problems.append(f"{old_container.label} isn't in your saves any more.")
+            elif now.entry.sync_state == wgs.DELETED:
+                problems.append(f"{old_container.label} has been deleted in the game.")
+            elif now.kind is not Kind.EDITABLE:
+                problems.append(f"{old_container.label} can't be changed as it is now: {now.note}")
+            elif set(now.blobs) != set(old_container.blobs):
+                problems.append(f"{old_container.label} is stored in a different way now.")
+            elif now.blobs != old_container.blobs:
+                to_restore.append(old_container)
+        return to_restore, problems
 
     def _ensure_game_closed(self, check_game: Callable[[], list[str]] | None) -> None:
         running = (check_game or running_game_processes)()

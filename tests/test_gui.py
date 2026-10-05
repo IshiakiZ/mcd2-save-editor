@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 import gc
 import json
 import tempfile
@@ -9,9 +10,10 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, game_style, gui, saves, share_ids, updater
+from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs
 from dungeons2_editor.hero import Hero, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
+from dungeons2_editor.restore_dialog import RestoreDialog
 
 from .helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode
 
@@ -32,6 +34,7 @@ class WindowTestCase(unittest.TestCase):
 
     containers: dict = {}
     advanced = False
+    scaling: float | None = None  # Tk's pixels per point: 1.3333 on a display at 100%, 2.0 at 150%
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -45,6 +48,8 @@ class WindowTestCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.root = tk.Tk()
         self.root.withdraw()
+        if self.scaling:
+            self.root.tk.call("tk", "scaling", self.scaling)
         self.addCleanup(gc.collect)  # frees Tk objects on the main thread, after the window is destroyed
         self.addCleanup(self.root.destroy)
         self.make_icons()
@@ -1073,6 +1078,156 @@ class SimpleModeTests(WindowTestCase):
         self.assertEqual(self.screen.card_name_var.get(), "TEMPO TRUFFLE")
         self.assertEqual(json.loads(self.names_file.read_text(encoding="utf-8")), {"SW.Item.Artifact.HasteMushroom": "Tempo Truffle"})
         self.assertIn("SW.Item.Artifact.HasteMushroom - Tempo Truffle", share_ids.report_text([self.screen.hero], "9"))
+
+
+def size_of(window):
+    """(width, height) a window has been given."""
+    return tuple(int(side) for side in window.geometry().split("+")[0].split("x"))
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class RestoreTests(WindowTestCase):
+    """Restore a backup…: the way back from any change."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: hero_save_text().encode()}
+
+    def save_with_emeralds(self, emeralds):
+        screen = self.app.inventory
+        screen.stat_vars["Emeralds"].set(str(emeralds))
+        self.assertTrue(screen.commit_pending())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertEqual(self.emeralds_saved(), emeralds)
+
+    def emeralds_saved(self):
+        return saves.SaveProfile(self.profile_path).get(HERO).hero.attribute("Emeralds")
+
+    def open_restore(self):
+        self.app._restore_dialog()
+        self.root.update()
+        return next(w for w in self.root.winfo_children() if isinstance(w, RestoreDialog))
+
+    def show_on_screen(self, dialog):
+        """Windows are hidden in these tests; this one needs its real layout."""
+        self.root.deiconify()
+        dialog.deiconify()
+        dialog.update()
+        if not dialog.winfo_viewable():
+            self.skipTest("windows can't be shown here")
+
+    def assert_in_view(self, button, dialog):
+        self.assertTrue(button.winfo_ismapped())
+        self.assertGreater(button.winfo_height(), 5)
+        self.assertGreaterEqual(button.winfo_rooty(), dialog.winfo_rooty())
+        self.assertLessEqual(button.winfo_rooty() + button.winfo_height(), dialog.winfo_rooty() + dialog.winfo_height())
+        self.assertLessEqual(button.winfo_rootx() + button.winfo_width(), dialog.winfo_rootx() + dialog.winfo_width())
+
+    def test_restore_puts_back_the_save_from_before(self):
+        self.save_with_emeralds(777)
+        dialog = self.open_restore()
+        self.assertEqual(dialog.selected().reason, "Before saving Offline hero (Ranger Deluxe)")  # the newest is picked
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False):
+            dialog.restore_button.invoke()
+        self.assertTrue(dialog.winfo_exists())  # said no: nothing happens
+        self.assertEqual(self.emeralds_saved(), 777)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo") as told:
+            dialog.restore_button.invoke()
+        self.assertIn("Put back the save data from", ask.call_args.args[1])
+        self.assertEqual(told.call_args.args[1], "Restored: Offline hero (Ranger Deluxe)")
+        self.assertFalse(dialog.winfo_exists())
+        self.assertEqual(self.emeralds_saved(), 55)
+        self.assertEqual(self.app.inventory.stat_vars["Emeralds"].get(), "55")
+        self.assertEqual(self.app.status_var.get(), "Restored Offline hero (Ranger Deluxe)")
+        # Restoring backs up first, so it can be undone the same way.
+        self.assertTrue(saves.list_backups(self.dir / "backups")[0].reason.startswith("Before restoring backup from"))
+
+    def test_double_clicking_a_backup_restores_it(self):
+        self.save_with_emeralds(777)
+        dialog = self.open_restore()
+        self.show_on_screen(dialog)
+        row = dialog.listing.get_children()[0]
+        left, top, _width, height = dialog.listing.bbox(row)
+
+        def double_click(y):
+            for event in ("<ButtonPress-1>", "<ButtonRelease-1>") * 2:
+                dialog.listing.event_generate(event, x=left + 5, y=y)
+            dialog.update()
+
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            double_click(1)  # on the headings: not a backup
+            ask.assert_not_called()
+            double_click(top + height // 2)
+            ask.assert_called_once()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+            dialog.listing.event_generate("<Return>")
+            dialog.update()
+        self.assertEqual(self.emeralds_saved(), 55)
+
+    def test_the_buttons_keep_their_room_in_a_window_too_small_for_the_list(self):
+        for _ in range(3):
+            saves.make_backup(self.profile_path, self.dir / "backups")
+        dialog = self.open_restore()
+        self.show_on_screen(dialog)
+        self.assert_in_view(dialog.restore_button, dialog)
+        dialog.minsize(1, 1)
+        dialog.geometry(f"{dialog.winfo_width()}x{dialog.restore_button.winfo_height() * 4}")  # far less than the list asks for
+        dialog.update()
+        self.assert_in_view(dialog.restore_button, dialog)
+
+    def test_says_so_when_theres_nothing_to_put_back(self):
+        with mock.patch("tkinter.messagebox.showinfo") as told:
+            self.app._restore_dialog()
+        self.assertEqual(told.call_args.args[1], "There are no backups of this save profile yet.")
+        saves.make_backup(self.profile_path, self.dir / "backups")
+        dialog = self.open_restore()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo") as told:
+            dialog.restore()
+        self.assertEqual(told.call_args.args[1], "Nothing to restore: that backup matches your current save data.")
+        self.assertFalse(dialog.winfo_exists())
+
+    def test_says_which_save_couldnt_be_put_back(self):
+        self.save_with_emeralds(777)
+        index = wgs.read_index(self.profile_path)  # then the hero is deleted in the game
+        entries = [dataclasses.replace(entry, sync_state=wgs.DELETED) if entry.name == HERO else entry for entry in index.entries]
+        (self.profile_path / wgs.INDEX_FILE).write_bytes(wgs.serialize_index(dataclasses.replace(index, entries=entries)))
+        dialog = self.open_restore()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showwarning") as warned:
+            dialog.restore()
+        message = warned.call_args.args[1]
+        self.assertIn("Nothing was put back.", message)
+        self.assertIn("• Offline hero (Ranger Deluxe) has been deleted in the game.", message)
+        self.assertIn("can only put a save back over one that's still in your save folder", message)
+
+    def test_the_game_has_to_be_closed(self):
+        self.save_with_emeralds(777)
+        dialog = self.open_restore()
+        with mock.patch.object(saves, "running_game_processes", return_value=["Dungeons.exe"]), mock.patch(
+            "tkinter.messagebox.askyesno", return_value=True
+        ), mock.patch("tkinter.messagebox.showwarning") as warned:
+            dialog.restore()
+        self.assertIn("Minecraft Dungeons II is running", warned.call_args.args[1])
+        self.assertTrue(dialog.winfo_exists())  # still there, to try again once the game is closed
+        self.assertEqual(self.emeralds_saved(), 777)
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class ScaledDisplayTests(RestoreTests):
+    """The same on a display that Windows scales up to 150%, where text and buttons are half as big again.
+    The Restore window used to open at a fixed size there, with no room left for its Restore button."""
+
+    scaling = 2.0
+
+    def test_windows_are_as_big_as_the_scaling_needs(self):
+        self.assertEqual(size_of(self.root), layout.scaled_size(self.root, *gui.START_SIZE))
+        least = layout.scaled_size(self.root, *gui.MIN_SIZE)  # Simple mode may need more than that
+        self.assertTrue(all(got >= wanted for got, wanted in zip(self.root.minsize(), least)), (self.root.minsize(), least))
+        saves.make_backup(self.profile_path, self.dir / "backups")
+        dialog = self.open_restore()
+        self.show_on_screen(dialog)
+        needed = (dialog.winfo_reqwidth(), dialog.winfo_reqheight())
+        room = layout.screen_room(dialog)
+        self.assertEqual((dialog.winfo_width(), dialog.winfo_height()), (min(needed[0], room[0]), min(needed[1], room[1])))
+        self.assertGreater(needed[1], 380)  # the height the window used to have, whatever the scaling
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
