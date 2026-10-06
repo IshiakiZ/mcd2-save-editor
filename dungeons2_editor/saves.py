@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -103,6 +104,19 @@ def _linux_process_names() -> set[str]:
     return names
 
 
+_EXE_IN_COMMAND = re.compile(r"(?:^|[\\/\s])([^\\/]*?\.exe)(?=\s|$)", re.IGNORECASE)
+
+
+def _ps_process_names() -> set[str]:
+    """The same on a Mac, which has no /proc: the game runs under Wine there too (in CrossOver, Whisky and the
+    like), so its .exe is in a command line, and ps prints the command lines."""
+    try:
+        result = subprocess.run(["ps", "-Ao", "args="], capture_output=True, text=True, errors="replace", timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return {match.group(1).strip() for line in result.stdout.splitlines() for match in _EXE_IN_COMMAND.finditer(line)}
+
+
 def running_game_processes() -> list[str]:
     """Names of Minecraft Dungeons II processes that are currently running."""
     if os.name == "nt":
@@ -118,6 +132,8 @@ def running_game_processes() -> list[str]:
         except (OSError, subprocess.SubprocessError):
             return []
         names = {row[0] for row in csv.reader(result.stdout.splitlines()) if row}
+    elif sys.platform == "darwin":
+        names = _ps_process_names()
     else:
         names = _linux_process_names()
     return sorted(name for name in names if _is_game_process(name))

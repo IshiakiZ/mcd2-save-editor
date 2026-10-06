@@ -6,6 +6,9 @@ the Xbox build would use (``Character<id>.sav`` for a hero)::
     Windows   %LOCALAPPDATA%\\Dungeons2\\Saved\\SaveGames
     Linux     <steam>/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames
               (Proton; the folder inside the game's Wine prefix)
+    macOS     <bottle>/drive_c/users/<user>/AppData/Local/Dungeons2/Saved/SaveGames
+              (the game runs through a Windows layer there: CrossOver and Whisky keep a "bottle" per setup, which
+              is a Wine prefix; plain Wine's own prefix, ~/.wine, is looked in too, on Linux as well)
 
 ``Dungeons\\Saved\\SaveGames`` (no 2) has been reported as well, so that folder is looked in too.
 
@@ -50,6 +53,16 @@ _LINUX_STEAM_ROOTS = (
     ".var/app/com.valvesoftware.Steam/.steam/steam",
     ".var/app/com.valvesoftware.Steam/.steam/root",
     "snap/steam/common/.local/share/Steam",
+)
+
+
+# Wine prefixes outside Steam: plain Wine's own, and the folders CrossOver (on a Mac and on Linux) and Whisky
+# (on a Mac) keep their bottles in. A prefix holds a whole "C:" drive, with a folder per Windows user.
+_WINE_PREFIXES = (".wine",)
+_BOTTLE_FOLDERS = (
+    "Library/Application Support/CrossOver/Bottles",
+    "Library/Containers/com.isaacmarovitz.Whisky/Bottles",
+    ".cxoffice",
 )
 
 
@@ -169,7 +182,24 @@ def _candidate_folders() -> list[Path]:
             except OSError:
                 continue
             app_data.extend(user / "AppData" / "Local" for user in prefix_users)
+    for prefix in _wine_prefixes(home):
+        try:
+            users = sorted(user for user in (prefix / "drive_c" / "users").iterdir() if user.is_dir())
+        except OSError:
+            continue
+        app_data.extend(user / "AppData" / "Local" for user in users)
     return [folder / save_games for folder in app_data for save_games in (_SAVE_GAMES, _OTHER_SAVE_GAMES)]
+
+
+def _wine_prefixes(home: Path) -> list[Path]:
+    """Wine prefixes the game could be installed in outside Steam's own: see _WINE_PREFIXES."""
+    prefixes = [home / relative for relative in _WINE_PREFIXES]
+    for relative in _BOTTLE_FOLDERS:
+        try:
+            prefixes += sorted(bottle for bottle in (home / relative).iterdir() if bottle.is_dir())
+        except OSError:
+            continue
+    return prefixes
 
 
 def folder_label(folder: Path) -> str:

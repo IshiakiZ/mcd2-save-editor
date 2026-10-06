@@ -1,7 +1,7 @@
 # Minecraft Dungeons II Save Editor
 
 An unofficial save editor for **Minecraft Dungeons II** on PC: the **Xbox app / PC Game Pass** version and the
-**Steam** version, on Windows and on Linux (Steam through Proton). Change your offline hero's stats and gear, add and
+**Steam** version, on Windows, on Linux (Steam through Proton) and on a Mac (through CrossOver or Whisky). Change your offline hero's stats and gear, add and
 equip items, and apply ready-made presets and complete kits from top builds, without having to know anything about
 save files. It looks like the game's own inventory screen, so you already know your way around. Advanced mode shows
 the full save for people who want it.
@@ -108,7 +108,11 @@ Install [Pillow](https://pypi.org/project/pillow/) too (`py -m pip install pillo
 (`~/.local/share/Steam/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames`,
 also for Flatpak/Snap Steam and games on other Steam library drives). Hero saves are the `Character<id>.sav` files.
 If it can't find them, use **Menu → Open a save folder…** or `--profile <folder>`. On Linux, run it from source with
-**Start Save Editor.sh** (needs Python 3.10+ with Tkinter: `sudo apt install python3-tk` on Debian/Ubuntu). Close the
+**Start Save Editor.sh** (needs Python 3.10+ with Tkinter: `sudo apt install python3-tk` on Debian/Ubuntu). On a
+Mac the game runs through a Windows layer such as CrossOver or Whisky, and the editor looks in their bottles (and in
+a plain Wine prefix, `~/.wine`) for the same `SaveGames` folder; run it from source by double-clicking
+**Start Save Editor.command** (the first time, right-click it and choose **Open**; it needs Python 3.10+ from
+[python.org](https://www.python.org/downloads/macos/), whose installer includes Tkinter). Close the
 game, and let Steam finish syncing, before saving.
 
 ### Antivirus warnings, and checking the download
@@ -265,6 +269,10 @@ your sign-in, account or device data.
   has a button, **Add its own effect**. **Share item IDs…** lists the own effect of any Unique of yours that the
   editor has none for, or would write differently. (One it writes the same way proves nothing, since the Unique
   may be one you made with the editor.)
+- **The Mac is newer still.** The editor finds saves in CrossOver's and Whisky's bottles and can tell when the game
+  is running there, and its tests run on GitHub's Macs, but nobody has yet told the developer how it goes on a real
+  one. Try a small change first, and say how it went. If your saves are somewhere else, **Menu → Open a save
+  folder…** takes any `SaveGames` folder.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
@@ -335,7 +343,7 @@ Storms and the fastest progression. The editor's presets are built from it.
 python -m unittest discover -s tests -t .
 ```
 
-The tests run on every push and pull request, on Windows and on Linux (`.github/workflows/tests.yml`).
+The tests run on every push and pull request, on Windows, on Linux and on a Mac (`.github/workflows/tests.yml`).
 
 | Path | What's in it |
 |---|---|

@@ -215,6 +215,27 @@ class SteamDiscoveryTests(unittest.TestCase):
         folder = self.proton_folder(self.home / ".var/app/com.valvesoftware.Steam/.local/share/Steam")
         self.assertEqual(steam.find_folders(), [folder.resolve()])
 
+    def test_finds_the_game_in_a_wine_prefix_or_a_bottle(self):
+        # On a Mac the game runs through a Windows layer, which keeps a whole "C:" drive in a folder of its own.
+        saves_in_prefix = Path("drive_c", "users", "crossover", "AppData", "Local", "Dungeons2", "Saved", "SaveGames")
+        for prefix in (
+            ".wine",
+            "Library/Application Support/CrossOver/Bottles/Steam",
+            "Library/Containers/com.isaacmarovitz.Whisky/Bottles/6C3D2F0A-0000-4000-8000-000000000001",
+            ".cxoffice/Minecraft_Dungeons_II",
+        ):
+            with self.subTest(prefix):
+                folder = self.home / prefix / saves_in_prefix
+                folder.mkdir(parents=True)
+                (folder / HERO_FILE).write_bytes(hero_save_text().encode("utf-8"))
+                self.assertEqual(steam.find_folders(), [folder.resolve()])
+                self.assertEqual(saves.find_profiles(), [folder.resolve()])
+                shutil.rmtree(self.home / prefix.split("/")[0])
+        # A bottle without the game in it, and a file where a bottle would be, are passed over.
+        (self.home / ".cxoffice" / "Empty" / "drive_c" / "users" / "crossover").mkdir(parents=True)
+        (self.home / ".cxoffice" / "cxoffice.conf").write_text("", encoding="utf-8")
+        self.assertEqual(steam.find_folders(), [])
+
     def test_finds_a_game_on_another_steam_library(self):
         main = self.home / ".local/share/Steam"
         (main / "steamapps").mkdir(parents=True)
@@ -278,6 +299,23 @@ class GameProcessTests(unittest.TestCase):
             saves, "_linux_process_names", return_value={"Dungeons-Win64-Shipping.exe", "wineserver.exe", "steam.exe"}
         ):
             self.assertEqual(saves.running_game_processes(), ["Dungeons-Win64-Shipping.exe"])
+
+    def test_on_a_mac_the_game_is_found_in_what_ps_prints(self):
+        printed = "\n".join([
+            "/usr/sbin/cfprefsd agent",
+            r"/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wineloader C:\Program Files (x86)\Steam\steamapps\common\Minecraft Dungeons II\Dungeons\Binaries\Win64\Dungeons-Win64-Shipping.exe -steam",
+            r"C:\windows\system32\winedevice.exe",
+            "wineserver.exe",
+            "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+        ])
+        ran = mock.Mock(stdout=printed)
+        with mock.patch.object(saves.subprocess, "run", return_value=ran) as run:
+            self.assertEqual(saves._ps_process_names(), {"Dungeons-Win64-Shipping.exe", "winedevice.exe", "wineserver.exe"})
+            with mock.patch.object(os, "name", "posix"), mock.patch.object(saves.sys, "platform", "darwin"):
+                self.assertEqual(saves.running_game_processes(), ["Dungeons-Win64-Shipping.exe"])
+        self.assertEqual(run.call_args.args[0], ["ps", "-Ao", "args="])
+        with mock.patch.object(saves.subprocess, "run", side_effect=OSError("no ps here")):
+            self.assertEqual(saves._ps_process_names(), set())
 
     def test_linux_scan_reads_wine_style_command_lines(self):
         with tempfile.TemporaryDirectory() as tmp:
