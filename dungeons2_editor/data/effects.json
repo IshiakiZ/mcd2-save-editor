@@ -1823,8 +1823,7 @@
  "enchantments": [
   {
    "effect": "SW.Enchantment.Arcane",
-   "name": "Arcane",
-   "name_from_id": true,
+   "name": "Artifact Amplifier",
    "tiers": [
     {
      "tier": "III",
@@ -1979,8 +1978,7 @@
   },
   {
    "effect": "SW.Enchantment.Unstoppable",
-   "name": "Unstoppable",
-   "name_from_id": true,
+   "name": "Cow Stampede",
    "tiers": [
     {
      "tier": "III",

@@ -1,3 +1,13 @@
+## What's new in 1.11.1
+
+- **A new icon:** a chest, in the editor's own colours.
+- **Two enchantments under the game's names.** What the save calls Unstoppable is **Cow Stampede**:
+  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl) read the name off the game
+  ([issue 23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)). And what it calls Arcane is **Artifact
+  Amplifier**, the one armor enchantment whose tier III number is the 9 a save holds for it. Both are now offered
+  for armor only, with what they do, and their books go by those names.
+- Questions, ideas and builds now have a home: [Discussions](https://github.com/IshiakiZ/mcd2-save-editor/discussions).
+
 ## What's new in 1.11.0
 
 - **Best for: the editor's picks of effects for an item.** In the effects window (Change effects…), choose what you

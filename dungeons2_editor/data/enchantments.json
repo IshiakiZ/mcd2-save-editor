@@ -85,8 +85,7 @@
    "triggers": "Rolling",
    "book": "Any area",
    "tier3": "Slamming into enemies deals damage and knocks them back.",
-   "what": "Rolling into enemies damages and knocks them back",
-   "levels": "Same text at every level"
+   "what": "Rolling into enemies damages and knocks them back"
   },
   {
    "name": "Crash Landing",
@@ -416,8 +415,7 @@
    "triggers": "Rolling, Projectiles",
    "book": "The Sift",
    "tier3": "Rolling fires a barrage of arrows targeting nearby enemies.",
-   "what": "Rolling fires a barrage of arrows at nearby enemies",
-   "levels": "Same text at every level"
+   "what": "Rolling fires a barrage of arrows at nearby enemies"
   }
  ]
 }

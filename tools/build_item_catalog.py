@@ -249,12 +249,18 @@ SET_NAMES = {
 # it only offers to add one a hero already has.
 BOOK_IDS = {
     "Ancient Alchemy": "SoulInfusedPotion",
+    # Arcane by what a save holds for it: 9 at tier III, on leggings (/issues/23). Artifact Amplifier is the one
+    # armor enchantment with a 9 there (it lasts 6, 7.5 and 9 seconds).
+    "Artifact Amplifier": "Arcane",
     # PotionBarrier by what a save holds for it: 6 at tier III, on a helmet. Barrier Brew is the armor enchantment
     # whose potion makes a Fortifying well for 2, 4 and 6 seconds (the other brew with those numbers, Buddy Brew,
     # is PotionSharing).
     "Barrier Brew": "PotionBarrier",
     "Buddy Brew": "PotionSharing",
     "Chain Reaction": "ChainReaction",
+    # Unstoppable by its owner's word: the player whose Monstrosity Horns carry it read its name off the game
+    # (/issues/23). MetaBot gives it no numbers to check against (the same text at every level).
+    "Cow Stampede": "Unstoppable",
     "Critical Quiver": "CriticalQuiver",
     "Dynamo": "Dynamo",
     "Ender Quiver": "ExpandedQuiver",
@@ -785,6 +791,13 @@ def archetypes(pages: dict[str, list], builds: dict[str, list], effects: list[di
     return found
 
 
+def leveled(row: dict[str, str]) -> dict[str, str]:
+    """What an enchantment does and its numbers at tiers I to III, from a row of MetaBot's enchanting guide. One
+    that does the same at every tier (Cow Stampede) has words in place of numbers there, which are left out."""
+    levels = row["I / II / III"]
+    return {"what": row["EFFECT"], **({} if levels.lower().startswith("same text") else {"levels": levels})}
+
+
 def own_effects(items: dict[str, dict]) -> None:
     """Check the Uniques' own effects against MetaBot's words for them, and give a Unique nobody has seen the
     effect of one that does the same thing.
@@ -893,7 +906,7 @@ def main() -> None:
             "triggers": row["TRIGGERS ON"],
             "book": row.get("BOOK DROPS IN", ""),
             "tier3": row["AT TIER III"],
-            **({"what": by_level[row["ENCHANTMENT"]]["EFFECT"], "levels": by_level[row["ENCHANTMENT"]]["I / II / III"]} if row["ENCHANTMENT"] in by_level else {}),
+            **(leveled(by_level[row["ENCHANTMENT"]]) if row["ENCHANTMENT"] in by_level else {}),
         }
         for row in rows(pages["enchantments"], "ENCHANTMENT", "SLOT", "CATEGORY")
     ]

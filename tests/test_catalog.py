@@ -166,7 +166,9 @@ class RealItemListTests(unittest.TestCase):
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
-        self.assertTrue(all(enchantment.levels and enchantment.what for enchantment in names.values()))
+        self.assertTrue(all(enchantment.what for enchantment in names.values()))
+        # Two do the same at every tier, so there are no numbers to give for them.
+        self.assertEqual(sorted(name for name, enchantment in names.items() if not enchantment.levels), ["Cow Stampede", "Tumbleshot"])
 
     def test_the_kits_name_effects_and_enchantments_the_lists_know(self):
         book = heroes.effect_book()
@@ -347,6 +349,13 @@ class RealItemListTests(unittest.TestCase):
         for book in books:
             self.assertIn(book.name, heroes.enchantments(), book.id)
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
+        # Two that players' saves and words tied to their names: they go on armor, as the game has them.
+        named = {choice.effect: choice for choice in heroes.effect_choices()[1]}
+        amplifier, stampede = named["SW.Enchantment.Arcane"], named["SW.Enchantment.Unstoppable"]
+        self.assertEqual((amplifier.title, amplifier.strength, amplifier.slots, amplifier.levels), ("Artifact Amplifier III", 9, ("Armor",), "6 / 7.5 / 9 seconds"))
+        self.assertEqual((stampede.title, stampede.slots, stampede.levels), ("Cow Stampede III", ("Armor",), ""))
+        self.assertEqual(stampede.what, "Rolling into enemies damages and knocks them back")
+        self.assertTrue(stampede.fits("Armor", "Helmet") and not stampede.fits("Melee"))
 
     def test_every_item_that_rolls_effects_has_its_archetypes(self):
         gear = [item for item in self.items if item.kind in heroes.EFFECT_KINDS]

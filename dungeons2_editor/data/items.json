@@ -3679,6 +3679,12 @@
    "confirmed": true
   },
   {
+   "name": "Artifact Amplifier",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Arcane",
+   "confirmed": true
+  },
+  {
    "name": "Barrier Brew",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.PotionBarrier",
@@ -3694,6 +3700,12 @@
    "name": "Chain Reaction",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.ChainReaction",
+   "confirmed": true
+  },
+  {
+   "name": "Cow Stampede",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Unstoppable",
    "confirmed": true
   },
   {
