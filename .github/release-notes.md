@@ -2,7 +2,7 @@
 
 - **115 of the 116 Uniques come with their own effect** (85 in 1.10.1).
   [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl)'s list
-  ([issue 23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)) has twenty-eight that nobody had sent: the
+  ([issue 23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)) has twenty-seven that nobody had sent: the
   Shackler, the Elemental Staff, the Golden Glaive, the Soul Reaper, the Sage Belt, the Woodsprite Barkpiece and
   more. [Blake5256](https://github.com/Blake5256)'s ([issue 22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22))
   has the Humbler Heartstring, the Greatbow kit's bow, whose arrows pierce ten enemies. The one left is the

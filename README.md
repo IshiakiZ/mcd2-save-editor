@@ -356,7 +356,7 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [Blake5256](https://github.com/Blake5256)'s ([#21](https://github.com/IshiakiZ/mcd2-save-editor/issues/21),
   [#22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22)), with thirty-one more and twenty-nine other items;
   and [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl)'s
-  ([#23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)), with twenty-eight Uniques nobody had sent and the
+  ([#23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)), with twenty-seven Uniques nobody had sent and the
   last three talismans.
   [dtreddy30-source](https://github.com/dtreddy30-source) found that Uniques from the editor were missing it
   ([#19](https://github.com/IshiakiZ/mcd2-save-editor/issues/19)).
