@@ -11,6 +11,9 @@ the full save for people who want it.
 > **Also from the same developer:** [**Lemma**](https://lemma.ishiakiz.com), a free creative studio for Minecraft, and
 > [**Batchly**](https://batch-ly.com), free browser games, tools and experiments.
 
+**Questions, ideas and builds** go in [Discussions](https://github.com/IshiakiZ/mcd2-save-editor/discussions); bugs, and the
+lists of item IDs the editor makes for you, in [Issues](https://github.com/IshiakiZ/mcd2-save-editor/issues).
+
 ## Features
 
 - **Looks like the game:** your gear on the left (weapons, armor, artifacts, talismans) as tiles in their rarity's
