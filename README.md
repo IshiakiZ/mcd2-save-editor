@@ -250,7 +250,7 @@ your sign-in, account or device data.
   Which of an item's effects serve a goal best is the editor's own judgement, from what the game says each effect
   does: a bonus that always applies comes before one that needs a critical hit or a charged shot, and that before
   one that needs the right enemy or moment. Nobody has measured one effect against another. A pick is at the best
-  tier a real save has shown, and an effect that boosts one element's attacks is only picked when your hero has an
+  tier a real save has shown, it is never the effect a Unique already comes with, and an effect that boosts one element's attacks is only picked when your hero has an
   artifact of that element equipped. No effect on gear gives XP: The Eye of Experience talisman does (Presets,
   Most XP). You can still add any effect to any item by hand; the window says when the game wouldn't roll it there.
   The game keeps such an effect (The Close Ranger wore a Ranger's Marksman through eleven of the game's own saves);

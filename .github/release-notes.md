@@ -1,5 +1,13 @@
 ## What's new in 1.12.1
 
+- **Fixed: enchantment points and Echo Shards were under each other's picture.** In the game the purple square is
+  enchantment points and the blue sparkle is Echo Shards; the editor's top bar had the two numbers the other way
+  round, so the one you changed wasn't the one you meant. The numbers themselves were always saved right. Thanks to
+  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl) for
+  [reporting it](https://github.com/IshiakiZ/mcd2-save-editor/discussions/27).
+- **Best for no longer picks the effect a Unique already comes with.** It could put a rolled Duelist on the Pride of
+  the Plains, whose own effect is Duelist. The game does roll that, but nobody knows that the two add up, so the
+  place now goes to the next pick, as it already did in the kits.
 - **Two more gear effects, 60 in all:** Shackler and Point Blank, from
   [Frikduf](https://github.com/Frikduf)'s list ([issue 26](https://github.com/IshiakiZ/mcd2-save-editor/issues/26)).
 - **Five more enchantments, 18 in all:** Chain Reaction and Thundering at tier III, Somersault at tier II, Health

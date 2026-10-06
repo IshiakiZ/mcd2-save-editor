@@ -404,7 +404,7 @@ class EffectsDialog(tk.Toplevel):
             return False
         self.goal_var.set(found.name)
         gear = self.choices[EFFECTS]
-        wanted = recommend.candidates(found, item.kind, item.archetypes, gear, self.elements)
+        wanted = recommend.candidates(found, item.kind, item.archetypes, gear, self.elements, own={effect.tag for effect in self.own})
         picked = wanted[: self.most]
         if not picked:
             self.best_var.set(recommend.nothing(found, item.name, item.kind, item.archetypes, gear))

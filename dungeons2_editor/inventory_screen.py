@@ -65,16 +65,17 @@ POWER_PARTS = (
     ("Armor", "chestplate", "All four armor pieces added up"),
     ("Artifact", "artifact", "All three artifacts added up"),
 )
-# The currencies in the top bar, in the game's order and colours.
+# The currencies in the top bar, in the game's order and colours: Echo Shards are the blue sparkle, and enchantment
+# points the purple square. (Up to 1.12.0 the editor had the two numbers under each other's picture.)
 CURRENCIES = (  # name, icon, colour, digits shown
-    ("EnchantmentPoints", "enchant", "#8fd3ff", 3),
+    ("SpringStone", "echo", "#8fd3ff", 3),
     ("Emeralds", "emerald", "#3fcf52", 5),
-    ("SpringStone", "echo", "#b86cf0", 3),
+    ("EnchantmentPoints", "enchant", "#b86cf0", 3),
 )
 STAT_ICONS = {
-    "EnchantmentPoints": ("enchant", "#8fd3ff"),
+    "EnchantmentPoints": ("enchant", "#b86cf0"),
     "Emeralds": ("emerald", "#3fcf52"),
-    "SpringStone": ("echo", "#b86cf0"),
+    "SpringStone": ("echo", "#8fd3ff"),
     "Level": ("power", gs.LEVEL),
     "XP": ("xp", "#a6e05a"),
 }
@@ -306,7 +307,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         ttk.Button(buttons, text="+ ADD ITEMS…", style="Accent.TButton", command=self.open_add_items).pack(side="left", padx=(8, 0))
 
     def make_currency_strip(self, parent: tk.Misc) -> ttk.Frame:
-        """The currencies (enchantment points, emeralds, echo shards), to put in the window's top bar."""
+        """The currencies (echo shards, emeralds, enchantment points), to put in the window's top bar."""
         strip = ttk.Frame(parent, style="Bar.TFrame")
         self._currency_icons: list[tuple[ttk.Label, str, str, str]] = []
         for name, icon, color, digits in CURRENCIES:

@@ -54,6 +54,16 @@ class PickTests(unittest.TestCase):
         self.assertEqual(self.picks("Damage", "Armor", ("Mage",), gear, elements={"Fire"}), ["Sorcerer III", "Pyromancer III"])
         self.assertEqual(self.picks("Damage", "Artifact", (), gear, elements={"Frost", "Fire", "Wind"}), ["Sorcerer III", "Pyromancer III", "Cryomancer III"])
 
+    def test_what_the_item_comes_with_is_left_out(self):
+        gear = effect("Sharpness", "Any weapon") + effect("Duelist", "Fighter gear") + effect("Swiftness", "Fighter gear")
+        self.assertEqual(self.picks("Damage", "Melee", ("Fighter",), gear), ["Sharpness III", "Duelist III", "Swiftness III"])
+        # The Pride of the Plains comes with Duelist: the place goes to the next pick.
+        self.assertEqual(self.picks("Damage", "Melee", ("Fighter",), gear, own={"SW.Effect.Duelist"}), ["Sharpness III", "Swiftness III"])
+        self.assertEqual(
+            [choice.title for choice in recommend.best(recommend.goal("Damage"), "Melee", ("Fighter",), gear, 1, own={"SW.Effect.Sharpness"})],
+            ["Duelist III"],
+        )
+
     def test_the_picks_go_first_and_what_was_there_stays_while_it_fits(self):
         sharpness, impact, looter, luck = (effect(name, "All gear") for name in ("Sharpness", "Impact", "Looter", "Luck"))
         had = [looter[0], sharpness[0], luck[1]]

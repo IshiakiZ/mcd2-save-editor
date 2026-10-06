@@ -109,12 +109,18 @@ def _order(found: Goal, kind: str, elements: Iterable[str]) -> list[str]:
     return sorted(names, key=lambda name: 0 if name in first else 2 if name in last else 1)  # sorted keeps the order within each
 
 
-def candidates(found: Goal, kind: str, tags: Iterable[str], choices: Iterable[EffectChoice], elements: Iterable[str] = ()) -> list[EffectChoice]:
+def candidates(
+    found: Goal, kind: str, tags: Iterable[str], choices: Iterable[EffectChoice], elements: Iterable[str] = (), own: Iterable[str] = ()
+) -> list[EffectChoice]:
     """Every effect that serves the goal and that the game can roll on an item of this kind with these
-    archetypes, best first, each at the best tier a real save has shown (else the best there is)."""
-    tags = tuple(tags)
+    archetypes, best first, each at the best tier a real save has shown (else the best there is). The effects the
+    item comes with (``own``, by their IDs) are left out: the game can roll a Unique its own effect a second time,
+    but nobody knows that the two add up, so the place goes to the next pick."""
+    tags, own = tuple(tags), set(own)
     by_name: dict[str, list[EffectChoice]] = {}
     for choice in choices:
+        if choice.effect in own:
+            continue
         if not choice.is_enchantment and not choice.yours and choice.tier in TIERS and choice.rolls_on_item(kind, tags):
             by_name.setdefault(choice.name, []).append(choice)
     made = []
@@ -126,9 +132,11 @@ def candidates(found: Goal, kind: str, tags: Iterable[str], choices: Iterable[Ef
     return made
 
 
-def best(found: Goal, kind: str, tags: Iterable[str], choices: Iterable[EffectChoice], room: int, elements: Iterable[str] = ()) -> list[EffectChoice]:
+def best(
+    found: Goal, kind: str, tags: Iterable[str], choices: Iterable[EffectChoice], room: int, elements: Iterable[str] = (), own: Iterable[str] = ()
+) -> list[EffectChoice]:
     """The effects to put on an item for a goal: the best ``room`` of the candidates."""
-    return candidates(found, kind, tags, choices, elements)[: max(room, 0)]
+    return candidates(found, kind, tags, choices, elements, own)[: max(room, 0)]
 
 
 def keep(picked: list[EffectChoice], had: list[EffectChoice], room: int) -> list[EffectChoice]:

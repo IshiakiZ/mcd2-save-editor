@@ -145,7 +145,7 @@ ICONS: dict[str, tuple[str, ...]] = {
         "....oooo....",
         "............",
     ),
-    "echo": (
+    "enchant": (
         "..oooooooo..",
         ".o++++++++o.",
         "o+oooooooo#o",
@@ -159,7 +159,7 @@ ICONS: dict[str, tuple[str, ...]] = {
         ".o--------o.",
         "..oooooooo..",
     ),
-    "enchant": (
+    "echo": (
         ".....oo.....",
         ".....o+o....",
         "....o++#o...",

@@ -898,7 +898,7 @@ def _best_for(hero: Hero, index: int, name: str, gear: list[EffectChoice]) -> st
         raise ToolError(f"{the(item.name, start=True)} can't have effects: the game rolls them on weapons, armor and artifacts.")
     elements = hero.elements_in_play() | ({item.element} if item.element else set())
     room = max(effect_book().max_effects - len(item.own_effects), 0)
-    picked = recommend.best(goal, item.kind, item.archetypes, gear, room, elements)
+    picked = recommend.best(goal, item.kind, item.archetypes, gear, room, elements, own={effect.tag for effect in item.own_effects})
     if not picked:
         raise ToolError(recommend.nothing(goal, item.name, item.kind, item.archetypes, gear))
     had = [effect.as_choice() for effect in item.rolled_effects]
