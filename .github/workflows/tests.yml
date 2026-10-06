@@ -30,10 +30,11 @@ jobs:
       - name: Run the tests
         if: runner.os == 'Windows'
         run: python -m unittest discover -s tests -t .
-      # Each test is named as it runs, so one that stops on a Mac shows which it is.
+      # Each test is named as it runs, and if they aren't done in five minutes Python says where every thread is
+      # and stops: a window test that hangs on a Mac then shows which one, and at which line.
       - name: Run the tests, naming each
         if: runner.os == 'macOS'
-        run: python -m unittest discover -s tests -t . -v
+        run: python -X faulthandler -c "import faulthandler, unittest; faulthandler.dump_traceback_later(300, exit=True); unittest.main(module=None, argv=['unittest', 'discover', '-s', 'tests', '-t', '.', '-v'])"
       # The window tests need a display, which a Linux runner doesn't have: xvfb gives them one.
       - name: Run the tests on a virtual display
         if: runner.os == 'Linux'
