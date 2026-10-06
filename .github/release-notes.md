@@ -9,19 +9,24 @@
     and a Tank's chestplate is told that the game rolls no mobility effect on it, and which gear it does roll them
     on. Each item's archetypes and each effect's pools come from MetaBot's tables, and players' lists bear them
     out: 338 of the 342 effects the game rolled on those items are in the pool this predicts, and the other four
-    are on items their owner had changed with the editor.
+    are on items their owner had changed with the editor. All nine effects on the next drops in the developer's
+    own game were in their item's pool too.
   - **Which of them is best is the editor's own judgement,** not a measurement: bonuses that always apply come
     first, then critical hits and charged shots, then the ones that need the right enemy or moment. Each pick is
     at the best tier a real save has shown.
   - An effect that boosts one element's attacks (Pyromancer and the like) is only picked when your hero has an
     artifact of that element equipped. No effect on gear gives XP: the window points to The Eye of Experience.
-  - Picking an effect by hand, the window now says when the game wouldn't roll it on that item. You can still add it.
+  - Picking an effect by hand, the window now says when the game wouldn't roll it on that item. You can still add
+    it, and the game keeps it (The Close Ranger wore a Ranger's Marksman through eleven of the game's own saves);
+    whether it does anything there hasn't been tested.
 - **Kits follow the same rule.** A kit no longer gives an item an effect the game doesn't roll on it: The Close
   Ranger, which is Fighter and Tank gear, got Marksman (a Ranger's and Trickster's effect) and now gets Critical
   Edge.
 - **Checked in the game: a Unique from the editor has its own effect working.** The Prime Enchanter's Gauntlets,
   added with the editor, came with their effect in play. Theirs is one of the odd ones (an enchantment saved
-  under another name), so it was the one to try.
+  under another name), so it was the one to try. And a whole kit from the editor (Pride of the Plains, The Close
+  Ranger, the Twisted Warden set, three artifacts and a talisman) was worn through eleven of the game's saves
+  with every effect, own effect and enchantment kept as the editor wrote it.
 - **Flatpak Steam:** the editor already looked in Flatpak Steam's folder for your saves; it now looks under each
   of the names Flatpak gives that folder.
 - **Three more Uniques' own effects count as seen:** the Alchemist Top Hat, the Woodsprite Crown and the Dreamruler

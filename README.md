@@ -238,12 +238,15 @@ your sign-in, account or device data.
   archetype the item carries (a Greatbow is Fighter and Ranger gear). MetaBot lists every item's archetypes and
   every effect's pools, and players' lists bear it out: of the 342 effects the game rolled on the items in them,
   338 are in the pool this predicts, and the other four are on items their owner had changed with the editor.
+  All nine effects on the next drops in the developer's own game were in their item's pool too.
   Which of an item's effects serve a goal best is the editor's own judgement, from what the game says each effect
   does: a bonus that always applies comes before one that needs a critical hit or a charged shot, and that before
   one that needs the right enemy or moment. Nobody has measured one effect against another. A pick is at the best
   tier a real save has shown, and an effect that boosts one element's attacks is only picked when your hero has an
   artifact of that element equipped. No effect on gear gives XP: The Eye of Experience talisman does (Presets,
   Most XP). You can still add any effect to any item by hand; the window says when the game wouldn't roll it there.
+  The game keeps such an effect (The Close Ranger wore a Ranger's Marksman through eleven of the game's own saves);
+  whether it does anything there hasn't been tested.
 - **A Unique's own effect: 115 of the 116.** In the game a Unique has an effect of its own, the one its card
   describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on the item, apart
   from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 96 Uniques that
