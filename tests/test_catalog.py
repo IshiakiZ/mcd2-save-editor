@@ -75,14 +75,14 @@ class RealItemListTests(unittest.TestCase):
         clover = ids["Lucky Clover"]
         self.assertEqual((clover.id, clover.confirmed, [level["intensity"] for level in clover.levels]), ("SW.Item.Talisman.DoubleDrop", True, [0.02, 0.04, 0.07]))
         self.assertTrue(all(level["effect"] == "SW.Effect.Looting" for level in clover.levels))
-        # A companion's talisman carries a tag at each level and no effect: two more were reported with theirs.
-        for name, tag in (("Golem Kit", "IronGolem"), ("Wobblestone", "Wobble")):
+        # A companion's talisman carries a tag at each level and no effect: all four have been reported with theirs.
+        for name, tag in (("Golem Kit", "IronGolem"), ("Prickle's Mark", "Prickle"), ("Wobblestone", "Wobble"), ("Tasty Bone", "Wolf")):
             self.assertEqual((ids[name].id, ids[name].confirmed), (f"SW.Item.Talisman.{tag}", True))
             self.assertEqual(list(ids[name].levels), [{"tags": [f"SW.Talisman.{tag}.Level.{level}"]} for level in (1, 2, 3)])
-        # Seen in saves with three levels and no effect at any of them, before reports showed tags: not known yet.
-        prickle = ids["Prickle's Mark"]
-        self.assertEqual((prickle.id, prickle.confirmed, prickle.levels), ("SW.Item.Talisman.Prickle", True, ()))
-        self.assertGreaterEqual(sum(bool(item.levels) for item in self.items), 20)
+        # The talismans nobody has found yet are the only ones the editor can't give their effect.
+        self.assertEqual(sorted(item.name for item in self.items if item.kind == "Talisman" and not item.levels),
+                         ["Medallion of Momentum", "Ocelot's Paw", "Wonderful Wheat"])
+        self.assertFalse([item.name for item in self.items if item.kind == "Talisman" and not item.levels and item.confirmed])
 
     def test_every_unique_seen_follows_the_pattern_the_guesses_use(self):
         # CatalogItem.tag_at guesses an unseen Unique's ID this way, so a Unique that breaks it should be noticed.
@@ -146,8 +146,14 @@ class RealItemListTests(unittest.TestCase):
         self.assertTrue({("Ancient Alchemy III", 0.85), ("Barrier Brew III", 6), ("Swirling III", 1), ("Blowback III", 0.5)} <= saved_enchantments)
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.PotionBarrier"), "Barrier Brew")
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.Radiance"), "Healing Smite")  # the book the save calls Radiance
-        # MetaBot's table says Critical Edge III is 30% and the game's wording for it says 40%: left out until a save shows it.
-        self.assertEqual([choice.tier for choice in book.effects if choice.name == "Critical Edge"], ["I", "II"])
+        # MetaBot's table says Critical Edge III is 30% and the game's wording for it says 40%. A save settled it: 0.3
+        # (the 40% is the tier a Unique carries). Recovery has the same clash, and no save has shown its tier III:
+        # a tier like that is left out until one does.
+        self.assertEqual([(choice.tier, choice.strength, choice.seen) for choice in book.effects if choice.name == "Critical Edge"],
+                         [("I", 0.1, True), ("II", 0.2, True), ("III", 0.3, True)])
+        self.assertEqual([choice.tier for choice in book.effects if choice.name == "Recovery"], ["I", "II"])
+        # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
+        self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
         self.assertTrue(all(enchantment.levels and enchantment.what for enchantment in names.values()))
 
@@ -167,16 +173,17 @@ class RealItemListTests(unittest.TestCase):
         plan = presets.plan(kit, hero, build_catalog([hero]), power=30, rarity="Unique")
         made = {addition.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects]) for addition in plan.add}
         # Each gets the highest tier of its effect that a save has shown.
-        self.assertEqual(made["Humbler Heartstring"], ("Piercing I", ["Marksman II"]))
-        self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge II"]))
-        self.assertEqual(made["Sharpshooter Fedora"], (None, ["Projectile Protection III"]))  # Ender Quiver hasn't been seen saved yet
-        self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown II", "Spiritual I"]))  # an artifact tops out at Special: two effects
+        self.assertEqual(made["Humbler Heartstring"], ("Piercing III", ["Marksman III"]))
+        self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge III"]))
+        self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
+        self.assertEqual(made["Sharpshooter Duster"], (None, ["Projectile Protection III"]))  # Critical Quiver hasn't been seen saved yet
+        self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown II", "Spiritual III"]))  # an artifact tops out at Special: two effects
 
     def test_uniques_come_with_the_effect_saves_show(self):
         uniques = [item for item in self.items if item.unique]
         owned = [item for item in uniques if item.unique_own is not None]
-        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 51)
-        self.assertGreaterEqual(len(owned), 73)
+        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 65)
+        self.assertGreaterEqual(len(owned), 85)
         for item in owned:
             own = item.unique_own
             self.assertRegex(own.effect, r"^SW\.(Effect|Enchantment)\.[A-Za-z.]+$", item.unique)
@@ -198,9 +205,14 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(own["Prime Enchanter's Gauntlets"], ("SW.Enchantment.MaulerDive", 1, "SW.Enchantment.MaulerDive"))
         self.assertEqual(own["Sculker Claws"], ("SW.Enchantment.ClawingShadow.Unique", 0.08, "SW.Enchantment.ClawingShadow.Unique"))
         self.assertEqual(own["Redstone Wrecker"], ("SW.Enchantment.FireAspect", 1, "SW.Enchantment.FlameBelch.Unique"))
-        # The Slaymore hasn't been seen; the Humbler Greaves, which deal the same 50% to secondary targets, have.
+        # The Slaymore hasn't been seen; two Uniques that deal the same 50% to secondary targets have.
         slaymore = next(item for item in owned if item.unique == "Slaymore").unique_own
-        self.assertEqual((slaymore.seen, slaymore.like, slaymore.template), (False, "Humbler Greaves", "SW.EffectTemplate.SweepingEdge.Unique"))
+        self.assertEqual((slaymore.seen, slaymore.template), (False, "SW.EffectTemplate.SweepingEdge.Unique"))
+        self.assertIn(slaymore.like, ("Humbler Greaves", "Rimefrost Longjohns"))
+        # An effect with no tiers has no tier on its template: the Lullaby Blade's Soulsick on hit.
+        self.assertEqual(own["Lullaby Blade"], ("SW.Effect.SoulCurse", 1, "SW.EffectTemplate.SoulCurse"))
+        # Three Uniques that say the same thing, each seen: saved alike.
+        self.assertEqual({own[name] for name in ("Rimefrost Plodders", "Oracle Mantle", "Mad Sifter Mask")}, {("SW.Effect.Saboteur", 1, "SW.EffectTemplate.Saboteur.Unique")})
         # Nothing is worked out for a Unique that says something no seen Unique says.
         self.assertIsNone(next(item for item in uniques if item.unique == "Humbler Heartstring").unique_own)
 

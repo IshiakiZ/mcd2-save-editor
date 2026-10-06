@@ -1,3 +1,21 @@
+## What's new in 1.10.1
+
+- **85 of the 116 Uniques come with their own effect** (73 in 1.10.0). [Blake5256](https://github.com/Blake5256)'s
+  list ([issue 21](https://github.com/IshiakiZ/mcd2-save-editor/issues/21)) has thirty-one Uniques the game made.
+  Nine are new to the editor, the Ranger's Promise, the Venomous Fangs and the Lullaby Blade among them, and every
+  Unique on both players' lists is saved the same way on each. It also held five Uniques whose effect 1.10.0 had
+  taken from a Unique that does the same thing: each is saved exactly as the editor wrote it.
+- **53 gear effects, up from 37:** Sharpness, Impact, Venomancer, Cryomancer, Evasion, Recovery, Aim, Stealth,
+  Swiftness, Momentum, Ranger, Fletcher, Sniper and others, most under the game's name for them. Critical Edge III
+  is in too: the game's files give two numbers for it, and a save settled it at 30%.
+- **Nine enchantments, up from six:** Ender Quiver, Gravity Pulse and one the save calls Borealis at tier III, and
+  Healing Smite and Piercing at tier III as well as I. Kits put on the highest tier a save has shown, so the
+  Greatbow kit's Ender Quiver goes on now.
+- **Prickle's Mark is added the way the game saves it,** which makes 21 of the 24 talismans; the other three haven't
+  turned up in anyone's save yet.
+- **105 of the 116 Uniques have their own ID confirmed** (four more).
+- Rebuilt with the editor, all 120 items on the two lists come out the same as the game's own, key for key.
+
 ## What's new in 1.10.0
 
 - **Uniques come with their own effect.** In the game a Unique has an effect of its own, the one its card describes.

@@ -206,7 +206,14 @@
    "set": "Mushroom",
    "unique": "Fly Agaric Cap",
    "unique_effect": "Poison attacks deal 20% more damage.",
-   "unique_id": "SW.Item.MushroomHelmet_Unique"
+   "unique_id": "SW.Item.MushroomHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.PoisonFocus",
+    "strength": 0.2,
+    "template": "SW.EffectTemplate.PoisonFocus.Unique",
+    "seen": false,
+    "like": "Venomous Fangs"
+   }
   },
   {
    "name": "Mushroom Leggings",
@@ -291,7 +298,13 @@
    "set": "Mystic",
    "unique": "Oracle Mantle",
    "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
-   "unique_id": "SW.Item.MysticChest_Unique"
+   "unique_id": "SW.Item.MysticChest_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Saboteur",
+    "strength": 1,
+    "template": "SW.EffectTemplate.Saboteur.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Nomad Boots",
@@ -409,7 +422,13 @@
    "set": "Phantom",
    "unique": "Dreamruler Pyjamas",
    "unique_effect": "Increases movement speed by 40% while Shadowcloaking.",
-   "unique_id": "SW.Item.PhantomLeggings_Unique"
+   "unique_id": "SW.Item.PhantomLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SwiftSneak",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.SwiftSneak.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Protector Boots",
@@ -425,8 +444,7 @@
     "effect": "SW.Effect.Sidestep",
     "strength": 0.2,
     "template": "SW.EffectTemplate.Sidestep.Unique",
-    "seen": false,
-    "like": "Twisted Warden Vest"
+    "seen": true
    }
   },
   {
@@ -547,7 +565,13 @@
    "set": "Realmreacher",
    "unique": "Soul Corruptor Sandals",
    "unique_effect": "Increases chance of critical hits from ranged attacks by 25%.",
-   "unique_id": "SW.Item.TimewornBoots_Unique"
+   "unique_id": "SW.Item.TimewornBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.EagleEye",
+    "strength": 0.25,
+    "template": "SW.EffectTemplate.EagleEye.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Realmreacher Hat",
@@ -712,7 +736,14 @@
    "set": "Scamp",
    "unique": "Scoundrel Sneakers",
    "unique_effect": "Increases movement speed by 40% while Shadowcloaking.",
-   "unique_id": "SW.Item.ScampBoots_Unique"
+   "unique_id": "SW.Item.ScampBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SwiftSneak",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.SwiftSneak.Unique",
+    "seen": false,
+    "like": "Dreamruler Pyjamas"
+   }
   },
   {
    "name": "Sculk Digger Boots",
@@ -859,7 +890,14 @@
    "slot": "Helmet",
    "set": "Sifter",
    "unique": "Mad Sifter Mask",
-   "unique_effect": "Increases duration of negative statuses on enemies by 100%."
+   "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
+   "unique_id": "SW.Item.WellspringHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Saboteur",
+    "strength": 1,
+    "template": "SW.EffectTemplate.Saboteur.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Sifter Leggings",
@@ -880,12 +918,12 @@
    "set": "Sifter",
    "unique": "Mad Sifter Vest",
    "unique_effect": "Artifact attacks deal 25% more damage.",
+   "unique_id": "SW.Item.WellspringChest_Unique",
    "unique_own": {
     "effect": "SW.Effect.Vestige",
     "strength": 0.25,
     "template": "SW.EffectTemplate.Vestige.Unique",
-    "seen": false,
-    "like": "Alchemist Overcoat"
+    "seen": true
    }
   },
   {
@@ -929,8 +967,7 @@
     "effect": "SW.Effect.ArtifactHealing",
     "strength": 0.06,
     "template": "SW.EffectTemplate.ArtifactHealing.Unique",
-    "seen": false,
-    "like": "Monstrosity Armor"
+    "seen": true
    }
   },
   {
@@ -958,7 +995,14 @@
    "slot": "Boots",
    "set": "Steel Wool",
    "unique": "Rimefrost Plodders",
-   "unique_effect": "Increases duration of negative statuses on enemies by 100%."
+   "unique_effect": "Increases duration of negative statuses on enemies by 100%.",
+   "unique_id": "SW.Item.FrostRimeBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Saboteur",
+    "strength": 1,
+    "template": "SW.EffectTemplate.Saboteur.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Steel Wool Cap",
@@ -968,7 +1012,14 @@
    "slot": "Helmet",
    "set": "Steel Wool",
    "unique": "Rimefrost Icecap",
-   "unique_effect": "Frost attacks deal 30% more damage."
+   "unique_effect": "Frost attacks deal 30% more damage.",
+   "unique_id": "SW.Item.FrostRimeHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.FrostFocus",
+    "strength": 0.3,
+    "template": "SW.EffectTemplate.FrostFocus.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Steel Wool Leggings",
@@ -984,8 +1035,7 @@
     "effect": "SW.Effect.SweepingEdge",
     "strength": 0.5,
     "template": "SW.EffectTemplate.SweepingEdge.Unique",
-    "seen": false,
-    "like": "Humbler Greaves"
+    "seen": true
    }
   },
   {
@@ -1428,7 +1478,13 @@
    "confirmed": true,
    "unique": "Lullaby Blade",
    "unique_effect": "Applies Soulsick status to enemies on hit.",
-   "unique_id": "SW.Item.CurvedGreatsword_Unique1"
+   "unique_id": "SW.Item.CurvedGreatsword_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.SoulCurse",
+    "strength": 1,
+    "template": "SW.EffectTemplate.SoulCurse",
+    "seen": true
+   }
   },
   {
    "name": "Double Daggers",
@@ -1437,7 +1493,13 @@
    "confirmed": true,
    "unique": "Venomous Fangs",
    "unique_effect": "Poison attacks deal 20% more damage.",
-   "unique_id": "SW.Item.Daggers_Unique1"
+   "unique_id": "SW.Item.Daggers_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.PoisonFocus",
+    "strength": 0.2,
+    "template": "SW.EffectTemplate.PoisonFocus.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Double Sickles",
@@ -1515,7 +1577,14 @@
    "confirmed": true,
    "unique": "Frostbiter",
    "unique_effect": "Frost attacks deal 30% more damage.",
-   "unique_id": "SW.Item.StraightSword_Unique1"
+   "unique_id": "SW.Item.StraightSword_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.FrostFocus",
+    "strength": 0.3,
+    "template": "SW.EffectTemplate.FrostFocus.Unique",
+    "seen": false,
+    "like": "Rimefrost Icecap"
+   }
   },
   {
    "name": "Mace",
@@ -1745,7 +1814,13 @@
    "confirmed": true,
    "unique": "Ranger's Promise",
    "unique_effect": "Increases chance of critical hits from ranged attacks by 25%.",
-   "unique_id": "SW.Item.Bow_Unique1"
+   "unique_id": "SW.Item.Bow_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.EagleEye",
+    "strength": 0.25,
+    "template": "SW.EffectTemplate.EagleEye.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Crossbow",
@@ -1867,8 +1942,7 @@
     "effect": "SW.Effect.Sidestep",
     "strength": 0.2,
     "template": "SW.EffectTemplate.Sidestep.Unique",
-    "seen": false,
-    "like": "Twisted Warden Vest"
+    "seen": true
    }
   },
   {
@@ -2143,7 +2217,24 @@
    "name": "Prickle's Mark",
    "kind": "Talisman",
    "id": "SW.Item.Talisman.Prickle",
-   "confirmed": true
+   "confirmed": true,
+   "levels": [
+    {
+     "tags": [
+      "SW.Talisman.Prickle.Level.1"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Prickle.Level.2"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Prickle.Level.3"
+     ]
+    }
+   ]
   },
   {
    "name": "Sculk Badge",
