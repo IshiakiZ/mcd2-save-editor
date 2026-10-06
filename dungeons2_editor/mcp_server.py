@@ -73,7 +73,8 @@ INSTRUCTIONS = (
     "Mobility, Loot, Artifacts and souls, Companions) it picks the effects itself, out of the ones the game can roll "
     "on that item; that choice is the editor's judgement, so say so if asked. A Unique comes with an effect of its own "
     "(unique_effect): the editor adds it with the Unique where it has seen how the game saves it, and "
-    "add_unique_effect gives it to a Unique that's without it (unique_effect_note says when one is). ready_talisman "
+    "add_unique_effect gives it to a Unique that's without it (unique_effect_note says when one is). set_talisman_level "
+    "puts a talisman at a level outright, as the game saves a level-up; for a companion's talisman ready_talisman "
     "puts a talisman one XP short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
     "apply_preset add enchantments once the Enchantsmith is one of them."
 )
@@ -571,6 +572,21 @@ class EditorServer:
 
         return self._edit(args["hero"], change)
 
+    def set_talisman_level(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            index = _index_of(hero, args["item"])
+            level = args.get("level")
+            if isinstance(level, float) and level.is_integer():
+                level = int(level)
+            try:
+                hero.set_talisman_level(index, level)
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            item = hero.item(index)
+            return f"{the(item.name, start=True)} is level {item.level + 1} now.", {"item": _item_info(item, _refs(hero), {})}
+
+        return self._edit(args["hero"], change)
+
     def ready_talisman(self, args: dict) -> dict:
         def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
             index = _index_of(hero, args["item"])
@@ -761,6 +777,11 @@ class EditorServer:
                  "in the game, saved the way the game saves it. For a Unique an older version of the editor made. It can't be done "
                  "for a Unique whose own effect the editor hasn't seen in a save.",
                  {"hero": HERO, "item": ITEM}, self.add_unique_effect, ("hero", "item")),
+            Tool("set_talisman_level", "Set a talisman's level", "Put a talisman at level 1, 2 or 3, saved the way the game "
+                 "saves a level-up: its level, its effect at that level, and enough XP for it. For a companion's talisman, "
+                 "which levels up another way, use ready_talisman instead.",
+                 {"hero": HERO, "item": ITEM, "level": {"type": "integer", "minimum": 1, "maximum": 3, "description": "1 is the level a talisman starts at."}},
+                 self.set_talisman_level, ("hero", "item", "level")),
             Tool("ready_talisman", "Ready a talisman to level up", "Put a talisman one XP short of its next level: the game levels it up the next time it "
                  "earns XP while equipped. A talisman's effect follows its level, which only the game changes.",
                  {"hero": HERO, "item": ITEM}, self.ready_talisman, ("hero", "item")),

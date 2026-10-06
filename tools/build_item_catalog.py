@@ -342,7 +342,7 @@ GEAR_EFFECTS = {
     "Friendship": ("Friendship", {"II": -0.1}),
     "FrostFocus": ("FrostFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Gambler": ("Gambler", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35}),
+    "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35, "III": 0.5}),
     "Knockback": ("Knockback", {"I": 0.15, "II": 0.2, "III": 0.3}),
     "LightningFocus": ("LightningFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Looting": ("Looting", {"I": 0.2, "II": 0.4, "III": 0.6}),
@@ -380,7 +380,7 @@ GEAR_EFFECTS = {
     "Thorns": ("Thorns", {"II": 0.65}),
     "Vanguard": ("Vanguard", {"I": 0.2}),
     "Vestige": ("Vestige", {"I": 0.1, "II": 0.15}),
-    "Vivify": ("Vivify", {"I": 0.15, "III": 0.5}),
+    "Vivify": ("Vivify", {"I": 0.15, "II": 0.3, "III": 0.5}),
 }
 # What the game calls an effect, by its template, where there's no doubt: the template is named as MetaBot names
 # the effect (or all but), and every strength a save has shown is MetaBot's number for that tier. For these the

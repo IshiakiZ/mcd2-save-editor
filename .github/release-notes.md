@@ -1,3 +1,18 @@
+## What's new in 1.13.0
+
+- **Level up a talisman.** A talisman's card has **Level up** now: it raises the talisman a level, saved exactly as
+  the game saves a level-up. The developer's own save showed how: the level goes up by one, the talisman's effect
+  becomes the next level's (the item carries every level's effect with it), and its XP carries on from where it
+  was. Done with the editor to three talismans in the save from before, it gave the very entries the game had
+  written, key for key. Level 3 follows the same pattern; no save with a level-3 talisman has been seen yet.
+- A companion's talisman (the Tasty Bone and the like) levels up another way, which hasn't been seen, so it keeps
+  **Ready to level up**: one XP short, and the game does the rest.
+- The list of changes before you save names a talisman's new level, and the AI server has `set_talisman_level`.
+- **Two more tiers seen in the game:** Ally II and Healer III, on gear the game dropped. Both were already offered
+  from the game files' numbers, and both turned out as written.
+- **Level 100 holds.** A hero set to level 100 has kept it, and the game drops gear at power 150 for it. The README's
+  caution about very high values now speaks of power, not level.
+
 ## What's new in 1.12.1
 
 - **Fixed: enchantment points and Echo Shards were under each other's picture.** In the game the purple square is

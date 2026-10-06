@@ -978,6 +978,23 @@ class Item:
         return not self.is_cosmetic and self.kind in ENCHANTABLE_KINDS
 
     @property
+    def level_effects(self) -> list[list]:
+        """A talisman's effect at each of its levels, as the item itself carries them (ItemLevels). Empty for
+        anything else, and for a talisman that levels up another way (a companion's has tags, not effects)."""
+        levels = self.progression.get("ItemLevels")
+        if not self.is_talisman or not isinstance(levels, list) or not levels:
+            return []
+        effects = [level.get("LevelEffects") if isinstance(level, dict) else None for level in levels]
+        return effects if all(isinstance(listed, list) and listed for listed in effects) else []
+
+    @property
+    def can_be_leveled(self) -> bool:
+        """Whether the editor can put this talisman at another level itself: it has its levels' effects with it,
+        and its own effect is saved the way the game saves a talisman's."""
+        own = [batch for batch in self.data.get("Effects") or [] if isinstance(batch, dict) and batch.get("TypeTag") == _UPGRADABLE]
+        return len(self.level_effects) > 1 and len(own) == 1 and isinstance(self.level, int)
+
+    @property
     def next_level_xp(self) -> int | None:
         """XP a talisman needs for its next level, counted from the level before. None at the last level, for
         anything else, or when the editor doesn't know."""
@@ -1364,11 +1381,43 @@ class Hero:
                 f"The {item.name} is at its last level." if item.is_talisman and item.progression.get("ItemLevels")
                 else f"The editor doesn't know what the {item.name} needs for its next level."
             )
-        # Whether a save counts a talisman's XP from nothing or from its last level-up hasn't been seen, so
-        # past the first level this is the higher of the two: either way the next XP earned is enough.
+        # A save counts a talisman's XP from nothing: it isn't set back at a level-up. Whether the second number
+        # the game files give (73,920) is the XP at level 3 or the XP from level 2 on hasn't been seen, so past the
+        # first level this is the higher of the two: either way the next XP earned is enough.
         target = sum(effect_book().talisman_xp[: item.level + 1]) - 1
         self.set_item_xp(index, max(target, 0))
         return target
+
+    def set_talisman_level(self, index: int, level: int) -> None:
+        """Put a talisman at a level (1 is the one it starts at), the way the game saves a level-up. A real save
+        showed it: the level goes up by one, the talisman's effect becomes that level's (the item carries every
+        level's effect with it), and its XP stays as it was, counted from nothing. So the XP is brought to at
+        least what the level takes, and kept under what the next one takes, or the next XP earned would move it."""
+        item = self._gear(index)
+        if not item.is_talisman:
+            raise ValueError(f"{the(item.name, start=True)} has no levels: only talismans do.")
+        effects = item.level_effects
+        if not item.can_be_leveled:
+            raise ValueError(
+                f"The editor can't set the level of {the(item.name)}: "
+                + ("it hasn't seen how the game saves a level-up of a talisman like this one (a companion's)." if item.progression.get("ItemLevels") else "it doesn't know its levels.")
+            )
+        if isinstance(level, bool) or not isinstance(level, int) or not 1 <= level <= len(effects):
+            raise ValueError(f"{the(item.name, start=True)} has levels 1 to {len(effects)}.")
+        steps = [int(step) for step in effect_book().talisman_xp]
+        if len(steps) < len(effects) - 1:
+            raise ValueError(f"The editor doesn't know the XP {the(item.name)} needs for its levels.")
+        # What a level takes, counted from nothing. The game files' second number may be the XP at level 3 or the
+        # XP from level 2 on: the level's own XP is the higher reading, and the XP to stay under the lower one.
+        least = sum(steps[: level - 1])
+        most = None if level == len(effects) else max(min(steps[level - 1], sum(steps[:level])), least + 1) - 1
+        xp = item.xp if _is_number(item.xp) else 0
+        xp = max(xp, least) if most is None else min(max(xp, least), most)
+        batch = next(batch for batch in item.data["Effects"] if isinstance(batch, dict) and batch.get("TypeTag") == _UPGRADABLE)
+        batch["EffectsInThisBatch"] = copy.deepcopy(effects[level - 1])
+        progression = item.data["ItemProgression"]
+        progression["CurrentLevel"] = level - 1
+        progression["CurrentXP"] = int(xp) if float(xp).is_integer() else xp
 
     # ------------------------------------------------------------ the town
 
@@ -1847,6 +1896,8 @@ def describe_changes(before: dict, after: dict) -> list[str]:
             parts.append(f"enchanted with {now.title}" if now else "enchantment taken off")
         if other.tag == item.tag and item.own_effect_missing and not other.own_effect_missing:
             parts.append("given its own effect")
+        if other.is_talisman and other.level != item.level and isinstance(item.level, int) and isinstance(other.level, int):
+            parts.append(f"level {item.level + 1} → {other.level + 1}")
         if other.is_talisman and other.xp != item.xp:
             parts.append(f"XP {format_amount(item.xp)} → {format_amount(other.xp)}")
         if other.equipped_slot != item.equipped_slot:

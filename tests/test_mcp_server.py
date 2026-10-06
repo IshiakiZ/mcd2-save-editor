@@ -83,7 +83,7 @@ class ProtocolTests(ServerTestCase):
         self.assertEqual(set(tools), {
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
-            "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman",
+            "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
         })
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
@@ -335,6 +335,20 @@ class EditingTests(ServerTestCase):
         done = self.call("ready_talisman", hero="00000000", item=self.ref_of("Sigil of Beeswax"))
         self.assertIn("XP is 18,479, one short of level 2", done["done"])
         self.assertEqual((done["item"]["xp"], done["unsaved_changes"]), (18479, ["Sigil of Beeswax: XP 90 → 18,479"]))
+
+    def test_a_talisman_is_put_at_a_level(self):
+        self.assertIn("only talismans do", self.call("set_talisman_level", hero="00000000", item=self.ref_of("Sword"), level=2))
+        document = json.loads(json.dumps(hero_save()))
+        document["CharacterSaveV1"]["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
+        self.profile = make_profile(self.dir / "saves4", {HERO: json.dumps(document, separators=(",", ":")).encode()})
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        sigil = self.ref_of("Sigil of Beeswax")
+        self.assertIn("has levels 1 to 3", self.call("set_talisman_level", hero="00000000", item=sigil, level=9))
+        done = self.call("set_talisman_level", hero="00000000", item=sigil, level=2)
+        self.assertEqual(done["done"], "The Sigil of Beeswax is level 2 now.")
+        self.assertEqual((done["item"]["talisman_level"], done["item"]["xp"]), (2, 18480))
+        self.assertEqual(done["item"]["effects"][0]["strength"], 1.25)
+        self.assertEqual(done["unsaved_changes"], ["Sigil of Beeswax: level 1 → 2, XP 90 → 18,480"])
 
     def test_guessed_ids_and_locked_slots_need_permission(self):
         self.assertIn("best guess", self.call("add_item", hero="00000000", item="Battlestaff"))

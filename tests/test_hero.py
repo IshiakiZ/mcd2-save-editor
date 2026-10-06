@@ -475,6 +475,57 @@ class HeroTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "doesn't know what"):
             self.hero.ready_talisman(bare)
 
+    def test_a_talisman_is_put_at_a_level_the_way_the_game_saves_a_level_up(self):
+        # A Sigil of Beeswax at 17,765 XP, as it was in a real save before the game levelled it up.
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=17765, seed=61))
+        index = self.item_index("SW.Item.Talisman.HealthBoost")
+        sigil = self.hero.item(index)
+        self.assertTrue(sigil.can_be_leveled)
+        self.assertEqual([listed[0]["Intensity"] for listed in sigil.level_effects], [1.2, 1.25, 1.35])
+        was = copy.deepcopy(sigil.entry)
+        self.hero.set_talisman_level(index, 2)
+        # The game changed four things, and so does the editor: the level, the effect's strength and its template
+        # (they become level 2's, which the talisman carries with it), and nothing else but the XP, which the
+        # game doesn't set back: here it's brought up to what level 2 takes.
+        differs = sorted(key for key in ("Effects", "ItemProgression") if sigil.data[key] != was["ItemData"][key])
+        self.assertEqual(differs, ["Effects", "ItemProgression"])
+        self.assertEqual({key: value for key, value in sigil.data.items() if key not in differs}, {key: value for key, value in was["ItemData"].items() if key not in differs})
+        effect = sigil.data["Effects"][0]["EffectsInThisBatch"][0]
+        self.assertEqual((effect["Intensity"], effect["GeneratorData"]["GeneratorParentTemplate"]), (1.25, "SW.EffectTemplate.HealthBoost.II"))
+        self.assertEqual((sigil.level, sigil.xp, type(sigil.xp)), (1, 18480, int))
+        self.assertEqual(sigil.entry, talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=1, xp=18480, seed=61))
+        self.assertEqual(sigil.effect_lines(), ["Health Boost 1.25", "Level 2 of 3. At the next level: 1.35."])
+        # XP past the level's mark stays as it is, as in the save (21,089 at level 2).
+        self.hero.set_item_xp(index, 21089)
+        self.hero.set_talisman_level(index, 2)
+        self.assertEqual((sigil.level, sigil.xp), (1, 21089))
+        # The top level: enough XP for it whichever way the game counts the second step.
+        self.hero.set_talisman_level(index, 3)
+        self.assertEqual(sigil.entry, talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=2, xp=92400, seed=61))
+        # Back down: the XP goes under what the next level takes, or the next XP earned would level it up again.
+        self.hero.set_talisman_level(index, 2)
+        self.assertEqual((sigil.level, sigil.xp), (1, 73919))
+        self.hero.set_talisman_level(index, 1)
+        self.assertEqual(sigil.entry, talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=0, xp=18479, seed=61))
+        for bad in (0, 4, -1, True, "2", 2.0, None):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, "has levels 1 to 3"):
+                self.hero.set_talisman_level(index, bad)
+        with self.assertRaisesRegex(ValueError, "only talismans do"):
+            self.hero.set_talisman_level(self.item_index("SW.Item.Sword"), 2)
+        # A companion's talisman levels up by tags, not by an effect: nobody has seen that saved yet.
+        wolf = talisman_item("SW.Item.Talisman.Wolf", "Wolf", seed=62)
+        wolf["ItemData"]["Effects"] = []
+        wolf["ItemData"]["ItemProgression"]["ItemLevels"] = [{"LevelEffects": [], "LevelTags": [f"SW.Talisman.Wolf.Level.{level}"]} for level in (1, 2, 3)]
+        self.body["Inventory"]["Entries"].append(wolf)
+        bone = self.hero.item(self.item_index("SW.Item.Talisman.Wolf"))
+        self.assertEqual((bone.can_be_leveled, bone.level_effects), (False, []))
+        with self.assertRaisesRegex(ValueError, "hasn't seen how the game saves a level-up of a talisman like this one"):
+            self.hero.set_talisman_level(bone.index, 2)
+        bare = self.hero.add_item("SW.Item.Talisman.SomethingNew", self.entry("SW.Item.Sword"))
+        with self.assertRaisesRegex(ValueError, "doesn't know its levels"):
+            self.hero.set_talisman_level(bare, 2)
+        self.assertFalse(self.hero.item(self.item_index("SW.Item.Sword")).can_be_leveled)
+
     def test_the_town_vendors_a_hero_has_opened(self):
         # Nothing says this hero has been to a vendor. The Village Merchant's stock doesn't: a hero has that from
         # the start, before the Merchant has been found.

@@ -700,7 +700,7 @@
      "tier": "III",
      "strength": 0.5,
      "shown": "50%",
-     "seen": false,
+     "seen": true,
      "text": "Increases healing given to yourself and allies by 50%."
     }
    ]
@@ -1869,7 +1869,7 @@
      "tier": "II",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Positive statuses you apply to yourself and allies last 30% longer."
     },
     {

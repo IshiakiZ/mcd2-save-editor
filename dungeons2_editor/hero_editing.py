@@ -45,6 +45,8 @@ def effects_action(item: Item) -> tuple[str, bool]:
     """(what the button for an item's effects says, whether it can be pressed). For a talisman it's the button
     that gets it ready to level up: a talisman's effect follows its level."""
     if item.is_talisman:
+        if item.can_be_leveled:  # the editor levels it up itself, as the game saves a level-up
+            return "Level up", item.level + 1 < len(item.level_effects)
         return "Ready to level up", item.next_level_xp is not None
     if item.can_get_own_effect and not item.stock_slot:
         return "Add its own effect", True  # a Unique from before the editor could write that one
@@ -305,7 +307,10 @@ class HeroEditing:
         index = self._shown
         item = self.hero.item(index)
         if item.is_talisman:
-            self._ready_talisman(index)
+            if item.can_be_leveled:
+                self._level_up_talisman(index)
+            else:
+                self._ready_talisman(index)
             return
         if item.can_get_own_effect:
             self._give_own_effect(index)
@@ -332,6 +337,19 @@ class HeroEditing:
             return
         self._fill_items()
         self._say_item(f"Effects changed. {SAVE_REMINDER}")
+        self.on_change()
+
+    def _level_up_talisman(self, index: int) -> None:
+        item = self.hero.item(index)
+        try:
+            self.hero.set_talisman_level(index, item.level + 2)
+        except ValueError as exc:
+            self._say_item(str(exc), error=True)
+            return
+        self._fill_items()
+        item = self.hero.item(index)
+        last = " That's its top level." if item.level + 1 == len(item.level_effects) else ""
+        self._say_item(f"{the(item.name, start=True)} is level {item.level + 1} now, saved the way the game saves a level-up.{last} {SAVE_REMINDER}")
         self.on_change()
 
     def _ready_talisman(self, index: int) -> None:

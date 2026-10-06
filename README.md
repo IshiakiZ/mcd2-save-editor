@@ -34,8 +34,9 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   A Sword is Fighter gear, so for damage it gets Sharpness, Duelist, Swiftness and Critical Hit; a Ranger's boots
   get Speed for mobility, and a Tank's chestplate is told the game rolls no mobility effect on it. See
   [how it picks](#what-it-cant-do).
-- **Talisman levels:** an item's card shows a talisman's level and how far it is from the next one, and **Ready to
-  level up** puts it one XP short, so the game levels it up the next time you earn XP with it on.
+- **Talisman levels:** an item's card shows a talisman's level, and **Level up** raises it a level, saved exactly
+  as the game saves a level-up. (A companion's talisman levels up another way, so it gets **Ready to level up**:
+  one XP short, and the game does the rest the next time you earn XP with it on.)
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. A Unique comes with
@@ -186,8 +187,8 @@ the exact setup for your PC, with Copy buttons. In short:
 - **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor\MCD2SaveEditor.exe" mcp`
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
-set stats, add, change, equip, copy and delete items, give an item effects and an enchantment, get a talisman ready
-to level up, and apply presets. Its changes collect in a draft, like unsaved
+set stats, add, change, equip, copy and delete items, give an item effects and an enchantment, set a talisman's
+level, and apply presets. Its changes collect in a draft, like unsaved
 changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
 and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
 game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
@@ -226,9 +227,13 @@ your sign-in, account or device data.
   Wheat's ID with a small "sw", `sw.Item.Talisman.Llama`.) A talisman added by a version before 1.7.1, or by a
   later one that didn't know it yet, has no effect saved and may do nothing in the game; the editor points those
   out, and you can delete them and add them again.
-- **A talisman's level is the game's to change.** The editor sets the XP a talisman has earned and leaves the
-  levelling up to the game: **Ready to level up** puts it one XP short of the next level (18,480 XP for level 2
-  and 73,920 more for level 3), and the next XP you earn with it equipped does the rest.
+- **A talisman's level: set by the editor, except for a companion's.** A real save showed how the game saves a
+  level-up: the level goes up by one, the talisman's effect becomes the next level's (the item carries every level's
+  effect with it), and its XP carries on from where it was. **Level up** does exactly that. Done with the editor to
+  three talismans in the save from before, it gave the very entries the game had written, key for key. Level 3
+  follows the same pattern, but no save with a level-3 talisman has been seen yet. A companion's talisman (the Tasty
+  Bone and the like) levels up by tags, which hasn't been seen either: for those, **Ready to level up** puts it one
+  XP short of the next level (18,480 XP for level 2), and the next XP you earn with it equipped does the rest.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
   files, so the editor learns how each one is saved from real saves: 60 gear effects and 18 enchantments so far
   (Ancient Alchemy at every tier; Healing Smite and Piercing at tiers I and III; Ender Quiver at II and III;
@@ -282,10 +287,11 @@ your sign-in, account or device data.
   Cloud, if on, uploads the edited file when the game closes.
 - **If you're asked which save to keep.** After an edit, the game, the Xbox app or Steam may ask whether to keep the
   cloud's save or this PC's. Keep this PC's: that's the one with your changes.
-- **Very high power or level may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10
-  all stuck, but in a save with level 100 and twelve items at power 135 the game put the level back to 1 and
-  removed the items. Most of those twelve had guessed IDs, so it's not yet clear which part it rejected; stay
-  close to your level to be safe.
+- **Very high power may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10 all
+  stuck, and a hero set to level 100 has kept it since (the game went on to drop gear at power 150 for it). But in
+  an earlier save with level 100 and twelve items at power 135, the game put the level back to 1 and removed the
+  items. Most of those twelve had guessed IDs, which now looks like the likelier cause; stay close to what the game
+  gives at your level to be safe.
 - Item power caps and some other numbers come from community datamines, not from the game's own tables.
 
 ## How it works

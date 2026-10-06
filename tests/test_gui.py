@@ -294,18 +294,38 @@ class HeroTabTests(WindowTestCase):
         self.select_item("Hero")
         self.assertTrue(button.instate(["disabled"]))
 
-    def test_a_talisman_is_made_ready_to_level_up(self):
+    def test_a_talisman_is_levelled_up(self):
         self.tab.hero.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", xp=90, seed=61))
         self.tab._fill_items()
         self.select_item("Sigil of Beeswax")
         button = self.tab.effects_button
-        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Ready to level up", True))
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Level up", True))
         self.assertIn("Level 1 of 3 (90 of 18,480 XP)", self.tab.item_subtitle_var.get())
         button.invoke()
-        self.assertIn("XP set to 18,479, one short of level 2", self.tab.item_message_var.get())
-        self.assertIn("Level 1 of 3 (18,479 of 18,480 XP)", self.tab.item_subtitle_var.get())
+        self.assertIn("The Sigil of Beeswax is level 2 now, saved the way the game saves a level-up.", self.tab.item_message_var.get())
+        self.assertIn("Level 2 of 3", self.tab.item_subtitle_var.get())
+        button.invoke()
+        self.assertIn("is level 3 now, saved the way the game saves a level-up. That's its top level.", self.tab.item_message_var.get())
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Level up", False))
         self.save()
-        self.assertEqual(next(item for item in self.saved_hero().items() if item.is_talisman).xp, 18479)
+        saved = next(item for item in self.saved_hero().items() if item.is_talisman)
+        self.assertEqual((saved.level, saved.xp, saved.effects[0].strength, saved.effects[0].template), (2, 92400, 1.35, "SW.EffectTemplate.HealthBoost.III"))
+
+    def test_a_companions_talisman_is_made_ready_to_level_up(self):
+        # It levels up by tags, not by an effect, which nobody has seen saved yet: the game does that one itself.
+        wolf = talisman_item("SW.Item.Talisman.Wolf", "Wolf", xp=90, seed=62)
+        wolf["ItemData"]["Effects"] = []
+        wolf["ItemData"]["ItemProgression"]["ItemLevels"] = [{"LevelEffects": [], "LevelTags": [f"SW.Talisman.Wolf.Level.{level}"]} for level in (1, 2, 3)]
+        self.tab.hero.body["Inventory"]["Entries"].append(wolf)
+        self.tab._fill_items()
+        self.select_item("Tasty Bone")
+        button = self.tab.effects_button
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("Ready to level up", True))
+        button.invoke()
+        self.assertIn("XP set to 18,479, one short of level 2", self.tab.item_message_var.get())
+        self.save()
+        saved = next(item for item in self.saved_hero().items() if item.is_talisman)
+        self.assertEqual((saved.level, saved.xp), (0, 18479))
 
     def test_the_town_vendors_the_hero_has_unlocked(self):
         self.assertTrue(self.tab.vendors_var.get().startswith("This hero hasn't opened a town vendor in the game yet."))
@@ -1123,11 +1143,11 @@ class SimpleModeTests(WindowTestCase):
         self.screen.pick_item(sigil)
         self.assertEqual(self.screen.enchant_title.get(), "EFFECT")
         self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Health Boost 1.2", "Level 1 of 3 (0 of 18,480 XP). At the next levels: 1.25, then 1.35."])
-        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("READY TO LEVEL UP", True))
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("LEVEL UP", True))
         button.invoke()
-        self.assertEqual(self.screen.hero.item(sigil).xp, 18479)
-        self.assertIn("XP set to 18,479, one short of level 2", self.screen.item_message_var.get())
-        self.assertIn("(18,479 of 18,480 XP)", self.screen.enchant_text.get())
+        self.assertEqual((self.screen.hero.item(sigil).level, self.screen.hero.item(sigil).xp), (1, 18480))
+        self.assertIn("The Sigil of Beeswax is level 2 now, saved the way the game saves a level-up.", self.screen.item_message_var.get())
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Health Boost 1.25", "Level 2 of 3. At the next level: 1.35."])
         # An artifact gets effects but no enchantment; the merchant's stock is left alone; a cosmetic has nothing to show.
         horn = self.screen.hero.add_item("SW.Item.Artifact.RallyingHorn", entry.template)
         self.screen.refresh()
