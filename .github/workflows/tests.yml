@@ -27,16 +27,14 @@ jobs:
           python-version: "3.12"
       - name: Install Pillow
         run: python -m pip install pillow
+      # On a Mac the tests that open the editor's window skip themselves: see _tk_available in tests/test_gui.py.
       - name: Run the tests
-        if: runner.os == 'Windows'
+        if: runner.os != 'Linux'
         run: python -m unittest discover -s tests -t .
-      # Probes, while the window tests don't finish on a Mac: what keeps Tk busy when it draws the editor's window?
-      - name: Probe the editor's window on a Mac
-        if: runner.os == 'macOS'
+      # The window tests need a display, which a Linux runner doesn't have: xvfb gives them one.
+      - name: Run the tests on a virtual display
+        if: runner.os == 'Linux'
         run: |
-          echo "--- Simple mode"
-          python -m tests.mac_probe || true
-          echo "--- Advanced mode"
-          python -m tests.mac_probe advanced || true
-          echo "--- the tests that open no window"
-          python -m unittest tests.test_steam tests.test_hero tests.test_recommend tests.test_catalog tests.test_saves 2>&1 | grep -E "^(FAIL|ERROR)|Error|Ran |^OK|FAILED|^    self\.|^[-+?] " | head -30 || true
+          sudo apt-get update
+          sudo apt-get install -y xvfb python3-tk
+          xvfb-run --auto-servernum python -m unittest discover -s tests -t .

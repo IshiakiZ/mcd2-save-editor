@@ -4,8 +4,9 @@
   where those keep them: in CrossOver's and Whisky's bottles, and in a plain Wine prefix (`~/.wine`, on Linux too).
   It can tell when the game is running on a Mac, so it won't save over a game in play. Run it from source by
   double-clicking **Start Save Editor.command** (the first time, right-click it and choose Open); it needs Python
-  3.10 or newer from python.org. The tests now run on GitHub's Macs as well as on Windows and Linux. Nobody has
-  tried it on a real Mac yet, so try a small change first and say how it went. This download is still the Windows
+  3.10 or newer from python.org. The tests of everything but the window now pass on GitHub's Macs; the window's own
+  tests can't run there yet, and nobody has tried the editor on a real Mac, so try a small change first and say
+  how it went. This download is still the Windows
   program: on a Mac and on Linux the editor runs from the source.
 
 ## What's new in 1.11.1

@@ -295,7 +295,7 @@ class GameProcessTests(unittest.TestCase):
             self.assertFalse(saves._is_game_process(name), name)
 
     def test_proton_process_is_found_from_its_command_line(self):
-        with mock.patch.object(os, "name", "posix"), mock.patch.object(
+        with mock.patch.object(os, "name", "posix"), mock.patch.object(saves.sys, "platform", "linux"), mock.patch.object(
             saves, "_linux_process_names", return_value={"Dungeons-Win64-Shipping.exe", "wineserver.exe", "steam.exe"}
         ):
             self.assertEqual(saves.running_game_processes(), ["Dungeons-Win64-Shipping.exe"])

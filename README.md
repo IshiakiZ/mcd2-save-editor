@@ -270,8 +270,9 @@ your sign-in, account or device data.
   editor has none for, or would write differently. (One it writes the same way proves nothing, since the Unique
   may be one you made with the editor.)
 - **The Mac is newer still.** The editor finds saves in CrossOver's and Whisky's bottles and can tell when the game
-  is running there, and its tests run on GitHub's Macs, but nobody has yet told the developer how it goes on a real
-  one. Try a small change first, and say how it went. If your saves are somewhere else, **Menu → Open a save
+  is running there. The tests of everything but the window pass on GitHub's Macs; the window's own tests can't run
+  there yet (the window comes up, but the tests wait for Tk to go quiet and on a Mac it doesn't), and nobody has
+  yet told the developer how it goes on a real one. Try a small change first, and say how it went. If your saves are somewhere else, **Menu → Open a save
   folder…** takes any `SaveGames` folder.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
