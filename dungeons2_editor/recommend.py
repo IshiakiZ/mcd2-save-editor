@@ -29,7 +29,7 @@ ELEMENT_EFFECTS = {"Fire": "Pyromancer", "Frost": "Cryomancer", "Lightning": "El
 # an artifact, the ones for artifacts come first.
 ABOUT = {
     MELEE: ("Sharpness", "Duelist", "Swiftness", "Precision", "Strength", "Brawler"),
-    RANGED: ("Impact", "Ranger", "Sharpshooter", "Aim", "Marksman", "Sniper"),
+    RANGED: ("Impact", "Ranger", "Sharpshooter", "Aim", "Marksman", "Sniper", "Point Blank"),
     ARTIFACT: ("Sorcerer", *ELEMENT_EFFECTS.values()),
 }
 
@@ -54,7 +54,7 @@ GOALS = (
             # Needs a charged shot or a critical hit.
             "Sharpshooter", "Critical Hit", "Critical Edge", "Precision", "Aim", "Strength", "Marksman",
             # Needs the right enemy or the right moment.
-            "Brawler", "Bully", "Sniper", "Vanguard", "Bounty Hunter", "Finesse", "Persistence", "Prickly",
+            "Brawler", "Bully", "Sniper", "Point Blank", "Vanguard", "Bounty Hunter", "Finesse", "Persistence", "Prickly",
         ),
         "bonuses that always apply first, then critical hits and charged shots, then ones that need the right enemy or moment.",
         by_kind=True,

@@ -1,3 +1,13 @@
+## What's new in 1.12.1
+
+- **Two more gear effects, 60 in all:** Shackler and Point Blank, from
+  [Frikduf](https://github.com/Frikduf)'s list ([issue 26](https://github.com/IshiakiZ/mcd2-save-editor/issues/26)).
+- **Five more enchantments, 18 in all:** Chain Reaction and Thundering at tier III, Somersault at tier II, Health
+  Synergy at tier I, and one the save calls Lingering Power, from the same list. Ender Quiver can now be put on at
+  tier II as well.
+- The Greatbow kit enchants the Humbler Heartstring with Chain Reaction, the build's first choice for it, now that
+  the editor knows how the game saves it.
+
 ## What's new in 1.12.0
 
 - **The editor on a Mac.** The game runs there through a Windows layer, and the editor now looks for your saves

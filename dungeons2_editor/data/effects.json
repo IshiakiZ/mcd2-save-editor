@@ -95,6 +95,37 @@
    ]
   },
   {
+   "effect": "SW.Effect.Chains",
+   "template": "SW.EffectTemplate.Chains",
+   "name": "Shackler",
+   "category": "Attack",
+   "rolls_on": "Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/shackler",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Attacks have a 10% chance to inflict the Chained status on hits."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Attacks have a 15% chance to inflict the Chained status on hits."
+    },
+    {
+     "tier": "III",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Attacks have a 25% chance to inflict the Chained status on hits."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.Committed",
    "template": "SW.EffectTemplate.Committed",
    "name": "Bounty Hunter",
@@ -950,6 +981,37 @@
      "shown": "3%",
      "seen": true,
      "text": "Grants a 3% chance of higher rarity loot drops."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.PointBlank",
+   "template": "SW.EffectTemplate.PointBlank",
+   "name": "Point Blank",
+   "category": "Attack",
+   "rolls_on": "Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/point-blank",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Ranged attacks deal 25% more damage at close range."
+    },
+    {
+     "tier": "II",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": false,
+     "text": "Ranged attacks deal 50% more damage at close range."
+    },
+    {
+     "tier": "III",
+     "strength": 0.75,
+     "shown": "75%",
+     "seen": false,
+     "text": "Ranged attacks deal 75% more damage at close range."
     }
    ]
   },
@@ -1857,9 +1919,25 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.ChainReaction",
+   "name": "Chain Reaction",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 5,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.ExpandedQuiver",
    "name": "Ender Quiver",
    "tiers": [
+    {
+     "tier": "II",
+     "strength": 3,
+     "seen": true
+    },
     {
      "tier": "III",
      "strength": 4,
@@ -1885,6 +1963,40 @@
     {
      "tier": "III",
      "strength": 0,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.HealthSynergy",
+   "name": "Health Synergy",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.LingeringPower",
+   "name": "Lingering Power",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.244871,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.MultiRoll",
+   "name": "Somersault",
+   "tiers": [
+    {
+     "tier": "II",
+     "strength": 2,
      "seen": true
     }
    ]
@@ -1972,6 +2084,17 @@
     {
      "tier": "III",
      "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.Thundering",
+   "name": "Thundering",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.264703,
      "seen": true
     }
    ]

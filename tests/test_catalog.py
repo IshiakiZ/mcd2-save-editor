@@ -187,8 +187,8 @@ class RealItemListTests(unittest.TestCase):
         made = {addition.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects]) for addition in plan.add}
         # Each gets the highest tier of its effect that a save has shown.
         # The Humbler Heartstring comes with Piercing of its own (ten enemies), so the kit doesn't spend its
-        # enchantment on Piercing as well; Chain Reaction, the guide's first choice for it, hasn't been seen saved yet.
-        self.assertEqual(made["Humbler Heartstring"], (None, ["Marksman III"]))
+        # enchantment on Piercing as well: it gets Chain Reaction, the guide's first choice for it.
+        self.assertEqual(made["Humbler Heartstring"], ("Chain Reaction III", ["Marksman III"]))
         heartstring = hero.item(hero.add_item("SW.Item.Greatbow", build_catalog([hero])[0].template, rarity="Unique", power=30))
         self.assertEqual(heartstring.effect_lines(), ["Its own: Piercing"])
         # You can still do it by hand: the game lets an item be enchanted with what it has built in.
@@ -356,6 +356,24 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual((stampede.title, stampede.slots, stampede.levels), ("Cow Stampede III", ("Armor",), ""))
         self.assertEqual(stampede.what, "Rolling into enemies damages and knocks them back")
         self.assertTrue(stampede.fits("Armor", "Helmet") and not stampede.fits("Melee"))
+
+    def test_what_a_players_list_added_that_the_editor_could_not_have_written(self):
+        # /issues/26, made with 1.12.0, which had neither of these effects and none of these enchantment tiers.
+        gear, enchantments = heroes.effect_choices()
+        seen = {(choice.name, choice.tier): (choice.effect, choice.strength, choice.seen) for choice in gear + enchantments}
+        self.assertEqual(seen[("Shackler", "III")], ("SW.Effect.Chains", 0.25, True))
+        self.assertEqual(seen[("Point Blank", "I")], ("SW.Effect.PointBlank", 0.25, True))
+        self.assertEqual((seen[("Shackler", "I")][2], seen[("Point Blank", "III")][2]), (False, False))  # from the game files' table
+        self.assertEqual(seen[("Chain Reaction", "III")], ("SW.Enchantment.ChainReaction", 5, True))
+        self.assertEqual(seen[("Somersault", "II")], ("SW.Enchantment.MultiRoll", 2, True))
+        self.assertEqual(seen[("Health Synergy", "I")], ("SW.Enchantment.HealthSynergy", 0.15, True))
+        self.assertEqual(seen[("Thundering", "III")], ("SW.Enchantment.Thundering", 0.264703, True))
+        self.assertEqual(seen[("Lingering Power", "III")], ("SW.Enchantment.LingeringPower", 0.244871, True))  # no name for it yet
+        self.assertEqual((seen[("Ender Quiver", "II")], seen[("Ender Quiver", "III")]), (("SW.Enchantment.ExpandedQuiver", 3, True), ("SW.Enchantment.ExpandedQuiver", 4, True)))
+        # They roll where the game rolled them: Shackler on a Support's crossbow, Point Blank on a Tank's.
+        by_name = {choice.name: choice for choice in gear}
+        self.assertTrue(by_name["Shackler"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.ScatterCrossbow_Unique1")))
+        self.assertTrue(by_name["Point Blank"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.HeavyCrossbow")))
 
     def test_every_item_that_rolls_effects_has_its_archetypes(self):
         gear = [item for item in self.items if item.kind in heroes.EFFECT_KINDS]

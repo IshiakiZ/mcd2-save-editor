@@ -230,10 +230,11 @@ your sign-in, account or device data.
   levelling up to the game: **Ready to level up** puts it one XP short of the next level (18,480 XP for level 2
   and 73,920 more for level 3), and the next XP you earn with it equipped does the rest.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 58 gear effects and 13 enchantments so far
-  (Ancient Alchemy at every tier, Healing Smite and Piercing at tiers I and III, and at tier III Ender Quiver, Fire
-  Aspect, Gravity Pulse, Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and two the save calls
-  Blowback and Borealis), plus whatever is on your own items. The editor knows what the game calls all 58 effects, and the
+  files, so the editor learns how each one is saved from real saves: 60 gear effects and 18 enchantments so far
+  (Ancient Alchemy at every tier; Healing Smite and Piercing at tiers I and III; Ender Quiver at II and III;
+  Somersault at II; Health Synergy at I; and at tier III Chain Reaction, Thundering, Fire Aspect, Gravity Pulse,
+  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and three the save calls Blowback, Borealis
+  and Lingering Power), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
   game's own numbers for them are published (MetaBot's table), so it also offers the tiers nobody has sent yet; it
   marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
