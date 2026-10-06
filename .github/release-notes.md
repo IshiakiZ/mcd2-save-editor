@@ -1,16 +1,26 @@
 ## What's new in 1.10.2
 
-- **The Humbler Heartstring comes with its own effect:** its arrows pierce up to ten enemies. That's the Greatbow
-  kit's bow, and it makes 86 of the 116 Uniques. From [Blake5256](https://github.com/Blake5256)'s list
-  ([issue 22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22)).
-- **An item is never given the effect it already comes with.** The Heartstring's own effect is Piercing, so the
-  Greatbow kit no longer enchants it with Piercing as well, and Change effects won't either. Nobody has seen an item
-  hold the same effect twice.
+- **115 of the 116 Uniques come with their own effect** (85 in 1.10.1).
+  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl)'s list
+  ([issue 23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)) has twenty-eight that nobody had sent: the
+  Shackler, the Elemental Staff, the Golden Glaive, the Soul Reaper, the Sage Belt, the Woodsprite Barkpiece and
+  more. [Blake5256](https://github.com/Blake5256)'s ([issue 22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22))
+  has the Humbler Heartstring, the Greatbow kit's bow, whose arrows pierce ten enemies. The one left is the
+  Packleader Paws.
+- **All 24 talismans come with what they do.** The Ocelot's Paw, the Medallion of Momentum and the Wonderful Wheat
+  were the last three, and every item in the game now has an ID seen in a real save.
+- **58 gear effects, each under the game's name for it,** and **13 enchantments:** Fire Aspect and Springload at
+  tier III, and two more the save calls Arcane and Unstoppable.
 - **Share item IDs only lists a Unique's own effect when the editor wouldn't have written it.** Since 1.10.0 the
   editor gives a Unique its own effect, so finding that same effect on a Unique in a save proves nothing: it may be
   an item you made Unique with the editor. The list now shows a Unique's own effect only where the editor has none
   for that Unique, or would write a different one.
-- **54 gear effects** (Resilience is new), with more tiers of Sharpshooter, Stealth, Impact and Cryomancer.
+- **Kits don't double up on what a Unique already does.** The Humbler Heartstring comes with Piercing, so the
+  Greatbow kit no longer spends its enchantment on Piercing too. You still can, by hand: the game allows it.
+- The editor writes three things the way the game spells them, odd as they are: the Wonderful Wheat's ID with a
+  small "sw", Springload's template with a small l, and one effect template with a small t.
+- Rebuilt with the editor, all 180 items on the three biggest lists come out the same as the game's own, key for
+  key.
 
 ## What's new in 1.10.1
 

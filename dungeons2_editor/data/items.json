@@ -32,7 +32,13 @@
    "set": "Beekeeper",
    "unique": "Hivemind Trousers",
    "unique_effect": "Recover from negative statuses 50% faster.",
-   "unique_id": "SW.Item.HoneyLeggings_Unique"
+   "unique_id": "SW.Item.HoneyLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Resilience",
+    "strength": -0.5,
+    "template": "SW.EffectTemplate.Resilience.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Beekeeper Suit",
@@ -77,7 +83,14 @@
    "set": "Bounty Hunter",
    "unique": "Dauntless Sabatons",
    "unique_effect": "Increases Soul capacity by 50%.",
-   "unique_id": "SW.Item.UndauntedBoots_Unique"
+   "unique_id": "SW.Item.UndauntedBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SoulMax",
+    "strength": 1.5,
+    "template": "SW.EffectTemplate.BagOfSouls.Unique",
+    "seen": false,
+    "like": "Alchemist Loafers"
+   }
   },
   {
    "name": "Bounty Hunter Chestplate",
@@ -106,7 +119,13 @@
    "set": "Bounty Hunter",
    "unique": "Dauntless Horns",
    "unique_effect": "Attacks do 40% more knockback.",
-   "unique_id": "SW.Item.UndauntedHelmet_Unique"
+   "unique_id": "SW.Item.UndauntedHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Knockback",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.Knockback.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Bounty Hunter Shinguards",
@@ -117,7 +136,13 @@
    "set": "Bounty Hunter",
    "unique": "Dauntless Greaves",
    "unique_effect": "Deal 60% more damage to enemies who are at full health.",
-   "unique_id": "SW.Item.UndauntedLeggings_Unique"
+   "unique_id": "SW.Item.UndauntedLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Vanguard",
+    "strength": 0.6,
+    "template": "SW.EffectTemplate.Vanguard.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Disciple Leggings",
@@ -127,7 +152,14 @@
    "slot": "Leggings",
    "set": "Disciple",
    "unique": "Sage Belt",
-   "unique_effect": "Reduces rolling cooldown time by 40%."
+   "unique_effect": "Reduces rolling cooldown time by 40%.",
+   "unique_id": "SW.Item.DiscipleLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.RollCooldown",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.Acrobat.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Disciple mask",
@@ -224,7 +256,13 @@
    "set": "Mushroom",
    "unique": "Fly Agaric Trousers",
    "unique_effect": "Companions deal 40% more damage.",
-   "unique_id": "SW.Item.MushroomLeggings_Unique"
+   "unique_id": "SW.Item.MushroomLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.BeastBoss",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.BeastBoss.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Mushroom Robe",
@@ -235,7 +273,13 @@
    "set": "Mushroom",
    "unique": "Fly Agaric Coat",
    "unique_effect": "Restores health by 15% per second after 5 seconds out of combat.",
-   "unique_id": "SW.Item.MushroomChest_Unique"
+   "unique_id": "SW.Item.MushroomChest_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Regeneration",
+    "strength": 0.15,
+    "template": "SW.EffectTemplate.Regeneration.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Mystic Boots",
@@ -348,7 +392,14 @@
    "slot": "Helmet",
    "set": "Nomad",
    "unique": "Rover Visor",
-   "unique_effect": "Increases chance of critical hits with melee attacks by 25%."
+   "unique_effect": "Increases chance of critical hits with melee attacks by 25%.",
+   "unique_id": "SW.Item.VoyagerHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Precision",
+    "strength": 0.25,
+    "template": "SW.EffectTemplate.Precision.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Nomad Leggings",
@@ -394,6 +445,7 @@
    "set": "Phantom",
    "unique": "Dreamruler Cover",
    "unique_effect": "Melee attacks deal 40% more damage to primary targets.",
+   "unique_id": "SW.Item.PhantomChest_Unique",
    "unique_own": {
     "effect": "SW.Effect.Duelist",
     "strength": 0.4,
@@ -411,7 +463,13 @@
    "set": "Phantom",
    "unique": "Dreamruler Crown",
    "unique_effect": "Increases souls gained by 60%.",
-   "unique_id": "SW.Item.PhantomHelmet_Unique"
+   "unique_id": "SW.Item.PhantomHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SoulGatherMultiply",
+    "strength": 0.6,
+    "template": "SW.EffectTemplate.SoulSiphon.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Phantom Pants",
@@ -473,7 +531,13 @@
    "set": "Protector",
    "unique": "Humbler Antenna",
    "unique_effect": "Take 25% less damage.",
-   "unique_id": "SW.Item.StalwartHelmet_Unique"
+   "unique_id": "SW.Item.StalwartHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Protection",
+    "strength": -0.25,
+    "template": "SW.Effecttemplate.Protection.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Protector Shinguards",
@@ -501,7 +565,13 @@
    "set": "Ranger",
    "unique": "Sharpshooter Spurs",
    "unique_effect": "Carry 45% more ammo.",
-   "unique_id": "SW.Item.RealmreacherBoots_Unique"
+   "unique_id": "SW.Item.RealmreacherBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.AmmoCapacity",
+    "strength": 1.45,
+    "template": "SW.EffectTemplate.AmmoCapacity.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Ranger Cap",
@@ -582,7 +652,13 @@
    "set": "Realmreacher",
    "unique": "Soul Corruptor Mask",
    "unique_effect": "Charged ranged attacks deal 60% more damage.",
-   "unique_id": "SW.Item.TimewornHelmet_Unique"
+   "unique_id": "SW.Item.TimewornHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Supercharge",
+    "strength": 0.6,
+    "template": "SW.EffectTemplate.Supercharge.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Realmreacher Leggings",
@@ -593,7 +669,13 @@
    "set": "Realmreacher",
    "unique": "Soul Corruptor Sash",
    "unique_effect": "Critical hits with ranged weapons deal 45% more damage.",
-   "unique_id": "SW.Item.TimewornLeggings_Unique"
+   "unique_id": "SW.Item.TimewornLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.MasterMarksman",
+    "strength": 0.45,
+    "template": "SW.EffectTemplate.MasterMarksman.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Realmreacher Robe",
@@ -690,7 +772,13 @@
    "set": "Scamp",
    "unique": "Scoundrel Cowl",
    "unique_effect": "Grants a 25% chance to stay in Shadowcloaking when attacking.",
-   "unique_id": "SW.Item.ScampHelmet_Unique"
+   "unique_id": "SW.Item.ScampHelmet_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Gambler",
+    "strength": 0.25,
+    "template": "SW.EffectTemplate.Gambler.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Scamp Jacket",
@@ -754,7 +842,14 @@
    "set": "Sculk Digger",
    "unique": "Twisted Warden Sneakers",
    "unique_effect": "Increases chance of critical hits with melee attacks by 25%.",
-   "unique_id": "SW.Item.CaveCrawlerBoots_Unique"
+   "unique_id": "SW.Item.CaveCrawlerBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Precision",
+    "strength": 0.25,
+    "template": "SW.EffectTemplate.Precision.Unique",
+    "seen": false,
+    "like": "Rover Visor"
+   }
   },
   {
    "name": "Sculk Digger Hood",
@@ -851,7 +946,13 @@
    "set": "Sculker",
    "unique": "Monarch Mantle",
    "unique_effect": "Recover from negative statuses 50% faster.",
-   "unique_id": "SW.Item.ScavengerChest_Unique"
+   "unique_id": "SW.Item.ScavengerChest_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Resilience",
+    "strength": -0.5,
+    "template": "SW.EffectTemplate.Resilience.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Sculker Slacks",
@@ -862,7 +963,13 @@
    "set": "Sculker",
    "unique": "Monarch Sash",
    "unique_effect": "Increases Soul capacity by 50%.",
-   "unique_id": "SW.Item.ScavengerLeggings_Unique"
+   "unique_id": "SW.Item.ScavengerLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SoulMax",
+    "strength": 1.5,
+    "template": "SW.EffectTemplate.BagOfSouls.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Sifter Boots",
@@ -907,7 +1014,14 @@
    "slot": "Leggings",
    "set": "Sifter",
    "unique": "Mad Sifter Slacks",
-   "unique_effect": "Increases duration of positive statuses applied to you by 20%."
+   "unique_effect": "Increases duration of positive statuses applied to you by 20%.",
+   "unique_id": "SW.Item.WellspringLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.StatusBuff",
+    "strength": 1.2,
+    "template": "SW.EffectTemplate.StatusBuff.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Sifter Robe",
@@ -934,7 +1048,14 @@
    "slot": "Boots",
    "set": "Sorcerer",
    "unique": "Alchemist Loafers",
-   "unique_effect": "Increases Soul capacity by 50%."
+   "unique_effect": "Increases Soul capacity by 50%.",
+   "unique_id": "SW.Item.EvocationBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.SoulMax",
+    "strength": 1.5,
+    "template": "SW.EffectTemplate.BagOfSouls.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Sorcerer Hat",
@@ -945,6 +1066,7 @@
    "set": "Sorcerer",
    "unique": "Alchemist Top Hat",
    "unique_effect": "Increases the area of all positive status effects by 55%.",
+   "unique_id": "SW.Item.EvocationHelmet_Unique",
    "unique_own": {
     "effect": "SW.Effect.Expand",
     "strength": 0.55,
@@ -1065,7 +1187,13 @@
    "set": "Treehugger",
    "unique": "Woodsprite Barkpiece",
    "unique_effect": "Increases the player's maximum health by 30%.",
-   "unique_id": "SW.Item.HewnBarkChest_Unique"
+   "unique_id": "SW.Item.HewnBarkChest_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.HealthBoost",
+    "strength": 1.3,
+    "template": "SW.EffectTemplate.HealthBoost.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Treehugger Clogs",
@@ -1093,7 +1221,13 @@
    "set": "Treehugger",
    "unique": "Woodsprite Trunks",
    "unique_effect": "Deals 100% of received damage back to the attacker.",
-   "unique_id": "SW.Item.HewnBarkLeggings_Unique"
+   "unique_id": "SW.Item.HewnBarkLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.Thorns",
+    "strength": 1,
+    "template": "SW.EffectTemplate.Thorns.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Treehugger Mask",
@@ -1104,6 +1238,7 @@
    "set": "Treehugger",
    "unique": "Woodsprite Crown",
    "unique_effect": "Companions take 20% less damage.",
+   "unique_id": "SW.Item.HewnBarkHelmet_Unique",
    "unique_own": {
     "effect": "SW.Effect.Friendship",
     "strength": -0.2,
@@ -1148,7 +1283,14 @@
    "slot": "Chestplate",
    "set": "Wolfpack",
    "unique": "Packleader Hide",
-   "unique_effect": "Companions deal 40% more damage."
+   "unique_effect": "Companions deal 40% more damage.",
+   "unique_id": "SW.Item.WolfclutchChest_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.BeastBoss",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.BeastBoss.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Wolfpack Leggings",
@@ -1158,7 +1300,14 @@
    "slot": "Leggings",
    "set": "Wolfpack",
    "unique": "Packleader Fur Chaps",
-   "unique_effect": "Defeated companions come back 20% faster."
+   "unique_effect": "Defeated companions come back 20% faster.",
+   "unique_id": "SW.Item.WolfclutchLeggings_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.FriendsForever",
+    "strength": -0.2,
+    "template": "SW.EffectTemplate.FriendsForever.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Battle Banner",
@@ -1438,7 +1587,13 @@
    "confirmed": true,
    "unique": "Elemental Staff",
    "unique_effect": "Chance to grant random elemental melee buff when defeating an enemy.",
-   "unique_id": "SW.Item.Battlestaff_Unique1"
+   "unique_id": "SW.Item.Battlestaff_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.ElementalHit",
+    "strength": 1,
+    "template": "SW.EffectTemplate.ElementalHit.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Claymore",
@@ -1538,7 +1693,13 @@
    "confirmed": true,
    "unique": "Golden Glaive",
    "unique_effect": "Deal 60% more damage to enemies who are at full health.",
-   "unique_id": "SW.Item.Glaive_Unique1"
+   "unique_id": "SW.Item.Glaive_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.Vanguard",
+    "strength": 0.6,
+    "template": "SW.EffectTemplate.Vanguard.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Greataxe",
@@ -1622,7 +1783,14 @@
    "id": "SW.Item.GiantMallet",
    "confirmed": true,
    "unique": "Monster Masher",
-   "unique_effect": "Take 25% less damage."
+   "unique_effect": "Take 25% less damage.",
+   "unique_id": "SW.Item.GiantMallet_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.Protection",
+    "strength": -0.25,
+    "template": "SW.Effecttemplate.Protection.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Pickaxe",
@@ -1691,7 +1859,13 @@
    "confirmed": true,
    "unique": "Rascal's Razor",
    "unique_effect": "Reduces rolling cooldown time by 40%.",
-   "unique_id": "SW.Item.Sabre_Unique1"
+   "unique_id": "SW.Item.Sabre_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.RollCooldown",
+    "strength": 0.4,
+    "template": "SW.EffectTemplate.Acrobat.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Scythe",
@@ -1700,7 +1874,13 @@
    "confirmed": true,
    "unique": "Soul Reaper",
    "unique_effect": "Increases souls gained by 60%.",
-   "unique_id": "SW.Item.Scythe_Unique1"
+   "unique_id": "SW.Item.Scythe_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.SoulGatherMultiply",
+    "strength": 0.6,
+    "template": "SW.EffectTemplate.SoulSiphon.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Short Spear",
@@ -1829,7 +2009,13 @@
    "confirmed": true,
    "unique": "The Shackler",
    "unique_effect": "Attacks have a 30% chance to inflict the Chained status on hits.",
-   "unique_id": "SW.Item.Crossbow_Unique1"
+   "unique_id": "SW.Item.Crossbow_Unique1",
+   "unique_own": {
+    "effect": "SW.Effect.Chains",
+    "strength": 0.3,
+    "template": "SW.EffectTemplate.Chains.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Dual Crossbows",
@@ -2208,16 +2394,50 @@
   {
    "name": "Medallion of Momentum",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.MedallionOfMomentum",
-   "confirmed": false,
-   "effect": "Increases movement speed by 30% if moving for more than 3 seconds."
+   "id": "SW.Item.Talisman.SpeedIncrement",
+   "confirmed": true,
+   "effect": "Increases movement speed by 30% if moving for more than 3 seconds.",
+   "levels": [
+    {
+     "effect": "SW.Effect.SpeedIncrement",
+     "intensity": 1,
+     "template": "SW.EffectTemplate.SpeedIncrement.I"
+    },
+    {
+     "effect": "SW.Effect.SpeedIncrement",
+     "intensity": 2,
+     "template": "SW.EffectTemplate.SpeedIncrement.II"
+    },
+    {
+     "effect": "SW.Effect.SpeedIncrement",
+     "intensity": 3,
+     "template": "SW.EffectTemplate.SpeedIncrement.III"
+    }
+   ]
   },
   {
    "name": "Ocelot's Paw",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.OcelotsPaw",
-   "confirmed": false,
-   "effect": "Jumping melee attacks deal 35% more damage."
+   "id": "SW.Item.Talisman.Plummeting",
+   "confirmed": true,
+   "effect": "Jumping melee attacks deal 35% more damage.",
+   "levels": [
+    {
+     "effect": "SW.Effect.Plummeting",
+     "intensity": 1.1,
+     "template": "SW.EffectTemplate.Plummeting.I"
+    },
+    {
+     "effect": "SW.Effect.Plummeting",
+     "intensity": 1.2,
+     "template": "SW.EffectTemplate.Plummeting.II"
+    },
+    {
+     "effect": "SW.Effect.Plummeting",
+     "intensity": 1.35,
+     "template": "SW.EffectTemplate.Plummeting.III"
+    }
+   ]
   },
   {
    "name": "Prickle's Mark",
@@ -2483,8 +2703,25 @@
   {
    "name": "Wonderful Wheat",
    "kind": "Talisman",
-   "id": "SW.Item.Talisman.WonderfulWheat",
-   "confirmed": false
+   "id": "sw.Item.Talisman.Llama",
+   "confirmed": true,
+   "levels": [
+    {
+     "tags": [
+      "SW.Talisman.Llama.Level.1"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Llama.Level.2"
+     ]
+    },
+    {
+     "tags": [
+      "SW.Talisman.Llama.Level.3"
+     ]
+    }
+   ]
   },
   {
    "name": "Ancient Alchemy",

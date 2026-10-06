@@ -72,7 +72,8 @@ STAT_MINIMUMS = {"Level": 1, "VillageMerchantUpgradeLevel": 1, "EnchantsmithUpgr
 # Item groups (SW.Item.<Group>.<Name>) that can't be added: they come from editions and
 # pre-orders, drive quests, or are really currencies.
 NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
-_ITEM_TAG = re.compile(r"SW\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
+# An item ID. The game writes one with a small "sw" (sw.Item.Talisman.Llama, the Wonderful Wheat), so both count.
+_ITEM_TAG = re.compile(r"(?:SW|sw)\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
 _UNIQUE_SUFFIX = re.compile(r"_Unique\d*$")  # on a Unique's own ID: SW.Item.Sword_Unique1, SW.Item.MysticHelmet_Unique
 NO_RARITY = "None"  # what a talisman has: SW.Rarity.None
 # A talisman has no power either. This is what the game saves in its place.
@@ -341,7 +342,8 @@ def effect_book() -> EffectBook:
         for entry in entries if isinstance(entries, list) else []:
             if not isinstance(entry, dict) or not isinstance(entry.get("effect"), str) or not entry.get("name"):
                 continue
-            base = entry["effect"] if enchantment else entry.get("template")
+            # An enchantment's template is its effect's name with the tier, unless a save spells it another way.
+            base = (entry.get("template") or entry["effect"]) if enchantment else entry.get("template")
             known = by_name.get(entry["name"]) if enchantment else None
             for tier in entry.get("tiers") or []:
                 if not isinstance(base, str) or not isinstance(tier, dict) or tier.get("tier") not in TIERS or not _is_number(tier.get("strength")):
@@ -1223,7 +1225,8 @@ class Hero:
         SW.Item.Effect.Rerollable), each exactly as a real save holds that tier. An effect the item keeps is
         left as it is. Any other effect the item has (an enchantment, a Unique's own) isn't touched, and
         counts towards the most the game gives an item. No effects at all removes the batch, which is how
-        the game saves a Common item.
+        the game saves a Common item. An effect the item also comes with is fine: the game rolls those too
+        (a Pride of the Plains, whose own effect is Duelist, has been seen with Duelist III rolled on it).
         """
         item, batches = self._effects_item(index)
         wanted = list(choices)
@@ -1233,9 +1236,6 @@ class Hero:
             raise ValueError("An enchantment isn't one of the effects the game rolls. Set it as the item's enchantment.")
         if len({choice.effect for choice in wanted}) != len(wanted):
             raise ValueError("An item can't have the same effect twice.")
-        mine = next((choice for choice in wanted if any(effect.tag == choice.effect for effect in item.own_effects)), None)
-        if mine is not None:
-            raise ValueError(f"{the(item.name, start=True)} comes with {mine.name} of its own already.")
         most = effect_book().max_effects
         own = len(item.own_effects)
         if len(wanted) + own > most:
@@ -1279,9 +1279,6 @@ class Hero:
             raise ValueError(f"The {item.name} can't be enchanted: enchantments go on weapons and armor.")
         if not choice.fits(item.kind, item.piece):
             raise ValueError(f"{choice.name} goes on {_slot_words(choice.slots)}, and the {item.name} isn't one.")
-        if any(effect.tag == choice.effect for effect in item.own_effects):
-            # Some Uniques come with an enchantment as the effect of their own. Nobody has seen an item hold one twice.
-            raise ValueError(f"{the(item.name, start=True)} comes with {choice.name} of its own already.")
         kept = batch.get("EffectsInThisBatch") if batch is not None else None
         if isinstance(kept, list) and len(kept) == 1 and _effect_key(kept[0]) == (choice.effect, choice.template):
             return  # it has this one already

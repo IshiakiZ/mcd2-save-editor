@@ -606,8 +606,9 @@ def _best(matches: list[EffectChoice]) -> EffectChoice | None:
 def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice], own: str = "") -> EffectChoice | None:
     """The first of ``names`` (enchantments, best first) that the editor can write on an item of this kind, at
     the highest tier a real save has shown. None when it can't write any of them yet. ``own`` is the effect the
-    item comes with, if it's a Unique: it isn't given that one a second time (the Humbler Heartstring comes
-    with Piercing)."""
+    item comes with, if it's a Unique: a kit doesn't spend an enchantment on that one again (the Humbler
+    Heartstring comes with Piercing for ten enemies; the game would allow it, but nobody knows that it adds
+    anything)."""
     for name in names:
         found = _best([choice for choice in known if choice.name == name and choice.is_enchantment and choice.fits(kind, piece) and choice.effect != own])
         if found is not None:
@@ -617,7 +618,8 @@ def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known
 
 def pick_effects(names: tuple[str, ...], count: int, known: list[EffectChoice], own: str = "") -> list[EffectChoice]:
     """The first ``count`` of ``names`` (gear effects, best first) that the editor can write, each at the
-    highest tier a real save has shown, leaving out the effect the item comes with (``own``)."""
+    highest tier a real save has shown. A kit leaves out the effect the item comes with (``own``): the game
+    can roll it as well, but nobody knows that the two add up."""
     picked: list[EffectChoice] = []
     for name in names:
         found = _best([choice for choice in known if choice.name == name and not choice.is_enchantment and choice.effect != own])

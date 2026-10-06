@@ -56,8 +56,8 @@ BOOK = "Enchantment Book"
 
 # IDs seen in real saves, without the SW.Item. in front: the developer's own, and the ones players sent in
 # https://github.com/IshiakiZ/mcd2-save-editor/issues/2, /issues/7, /issues/9, /issues/11, /issues/12, /issues/15,
-# /issues/17, /issues/20, /issues/21 and /issues/22. From /issues/11 on, a report only lists IDs the game itself
-# vouches for.
+# /issues/17, /issues/20, /issues/21, /issues/22 and /issues/23. From /issues/11 on, a report only lists IDs the
+# game itself vouches for.
 CONFIRMED_IDS = {
     PREFIX + name
     for name in """
@@ -98,9 +98,9 @@ CONFIRMED_IDS = {
     Talisman.ArtifactCooldown Talisman.DropChance Talisman.EmeraldIncrease Talisman.ExperienceIncrease
     Talisman.FiringEmeralds Talisman.Healing Talisman.HealthyStrike Talisman.IronGolem Talisman.Prickle
     Talisman.RollingCooldown Talisman.SoulCapacity Talisman.StatusBuff Talisman.Wobble
-    Talisman.DoubleDrop
+    Talisman.DoubleDrop Talisman.Plummeting Talisman.SpeedIncrement
     """.split()
-}
+} | {"sw.Item.Talisman.Llama"}
 # Uniques' own IDs seen in real saves. Each is its base item's ID with _Unique1 (weapons) or _Unique (armor).
 UNIQUE_IDS = {
     PREFIX + name
@@ -130,6 +130,8 @@ UNIQUE_IDS = {
     DiscipleBoots_Unique DiscipleChest_Unique DiscipleHelmet_Unique HewnBarkBoots_Unique ScavengerBoots_Unique
     VoyagerBoots_Unique
     FrostRimeBoots_Unique FrostRimeHelmet_Unique WellspringChest_Unique WellspringHelmet_Unique
+    DiscipleLeggings_Unique EvocationBoots_Unique EvocationHelmet_Unique GiantMallet_Unique1 HewnBarkHelmet_Unique
+    PhantomChest_Unique VoyagerHelmet_Unique WellspringLeggings_Unique WolfclutchChest_Unique WolfclutchLeggings_Unique
     """.split()
 }
 # What a save calls an item, where that isn't the name players see with the spaces taken out.
@@ -200,10 +202,19 @@ KNOWN_IDS = {
     "Tendrils of the Sprout": "Talisman.HealthyStrike",  # and a player who has one said so
     "The Eye of Experience": "Talisman.ExperienceIncrease",
     "Thrifty Pendant": "Talisman.FiringEmeralds",
+    "Ocelot's Paw": "Talisman.Plummeting",  # "Jumping melee attacks deal 35% more damage" is Plummeting 1.35
+    # By what's left: the one talisman about moving fast, saved with 1, 2 and 3 for its 30% after 3 seconds.
+    "Medallion of Momentum": "Talisman.SpeedIncrement",
     # By their names: none of these has an effect with a number, in a save or on MetaBot.
     "Golem Kit": "Talisman.IronGolem",
     "Prickle's Mark": "Talisman.Prickle",
     "Wobblestone": "Talisman.Wobble",
+}
+# An ID a save spells its own way. The Wonderful Wheat is the companion talisman left over once the other three
+# were named (a llama's, to go by the save), and the game writes its ID with a small "sw": the one ID seen that
+# doesn't begin SW.Item. The editor writes it the same way.
+EXACT_IDS = {
+    "Wonderful Wheat": "sw.Item.Talisman.Llama",
 }
 # Armor sets named differently in saves. Two come from their Uniques' IDs rather than from a report of the set
 # itself: RealmreacherChest_Unique is the Sharpshooter Duster, the Unique Ranger Jacket, and UndauntedHelmet_Unique
@@ -270,18 +281,21 @@ TALISMAN_LEVELS = {
     "Talisman.Healing": ("Regeneration", "Healing", (0.01, 0.03, 0.05)),  # Healing Heart: 5% health a second
     "Talisman.HealthBoost": ("HealthBoost", "HealthBoost", (1.2, 1.25, 1.35)),  # Sigil of Beeswax: +20 / 25 / 35% max health
     "Talisman.HealthyStrike": ("HealthyStrike", "HealthyStrike", (1, 2, 3)),  # Tendrils of the Sprout: 300% damage
+    "Talisman.Plummeting": ("Plummeting", "Plummeting", (1.1, 1.2, 1.35)),  # Ocelot's Paw: 35% more jump-attack damage
     "Talisman.PotionCooldown": ("PotionCooldown", "PotionCooldown", (-0.1, -0.15, -0.25)),  # Glowstone Flask
     "Talisman.RangedBuff": ("Power", "RangedBuff", (0.1, 0.15, 0.25)),  # Amethyst Lens: 25% more ranged damage
     "Talisman.RollingCooldown": ("RollCooldown", "RollingCooldown", (0.2, 0.25, 0.45)),  # Armadillo Amulet
     "Talisman.SoulCapacity": ("SoulMax", "SoulCapacity", (1.15, 1.2, 1.35)),  # Soul Chip: 35% more Soul capacity
     "Talisman.SoulGather": ("SoulGather", "SoulGather", (0.4, 0.8, 1.4)),  # Twisted Tooth: 140% more souls
+    "Talisman.SpeedIncrement": ("SpeedIncrement", "SpeedIncrement", (1, 2, 3)),  # Medallion of Momentum
     "Talisman.StatusBuff": ("StatusBuff", "StatusBuff", (1.1, 1.15, 1.25)),  # Sculk Badge: statuses last 25% longer
 }
 # A companion's talisman has no effect of its own: each level carries a tag instead (SW.Talisman.Wolf.Level.1 to
-# .3), and the game does the rest. The Tasty Bone has been seen whole in a real save, and /issues/20 and /issues/21
-# list the other three with their tags.
+# .3), and the game does the rest. The Tasty Bone has been seen whole in a real save, and /issues/20, /issues/21
+# and /issues/23 list the other four with their tags.
 TALISMAN_LEVEL_TAGS = {
     "Talisman.IronGolem": "SW.Talisman.IronGolem.Level",  # Golem Kit
+    "Talisman.Llama": "SW.Talisman.Llama.Level",  # Wonderful Wheat
     "Talisman.Prickle": "SW.Talisman.Prickle.Level",  # Prickle's Mark
     "Talisman.Wobble": "SW.Talisman.Wobble.Level",  # Wobblestone
     "Talisman.Wolf": "SW.Talisman.Wolf.Level",  # Tasty Bone
@@ -291,7 +305,7 @@ TALISMAN_LEVEL_TAGS = {
 # SW.EffectTemplate.<template>.<tier> and the strength is the save's Intensity. Everything here was written by
 # the game: the developer's own play, and players' Share item IDs reports.
 GEAR_EFFECTS = {
-    "ArrowBurst": ("ArrowBurst", {"I": 0.2, "III": 0.3}),
+    "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"II": 0.25}),
     "Committed": ("Committed", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "Constitution": ("Constitution", {"I": 0.1, "II": 0.2}),
@@ -300,13 +314,15 @@ GEAR_EFFECTS = {
     "CriticalHit": ("CriticalHit", {"I": 0.05, "II": 0.1, "III": 0.15}),
     "Deflect": ("Deflect", {"III": 0.2}),
     "Desperation": ("Desperation", {"I": 0.1, "II": 0.15, "III": 0.2}),
+    "Duelist": ("Duelist", {"II": 0.25, "III": 0.3}),
     "EagleEye": ("EagleEye", {"II": 0.15}),
     "ElementalProtection": ("ElementalProtection", {"II": -0.15}),
     "EmeraldsIncrease": ("Prospector", {"I": 0.05, "III": 0.15}),
     "Expand": ("Expand", {"I": 0.2}),
     "Finesse": ("Finesse", {"II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1}),
+    "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1, "III": -0.15}),
+    "Friendship": ("Friendship", {"II": -0.1}),
     "FrostFocus": ("FrostFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Gambler": ("Gambler", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35}),
@@ -326,18 +342,20 @@ GEAR_EFFECTS = {
     "ProjectileProtection": ("ProjectileProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "RapidStrike": ("RapidStrike", {"III": 0.2}),
-    "Reconstruction": ("Reconstruction", {"II": -0.2}),
+    "Reconstruction": ("Reconstruction", {"II": -0.2, "III": -0.25}),
     "Reeling": ("Reeling", {"I": 0.2}),
     "Regeneration": ("Regeneration", {"I": 0.05, "II": 0.075, "III": 0.1}),
-    "Resilience": ("Resilience", {"I": -0.2, "III": -0.3}),
+    "Resilience": ("Resilience", {"I": -0.2, "II": -0.25, "III": -0.3}),
     "RollCooldown": ("Acrobat", {"I": 0.1, "II": 0.15}),
-    "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25}),
+    "Saboteur": ("Saboteur", {"II": 0.6, "III": 0.8}),
+    "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25, "III": 0.35}),
     "Sharpness": ("Sharpness", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Sidestep": ("Sidestep", {"I": 0.1, "III": 0.2}),
     "Sniper": ("Sniper", {"II": 0.5}),
     "SoulFocus": ("SoulFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "SoulGatherMultiply": ("SoulSiphon", {"II": 0.35, "III": 0.45}),
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
+    "SpeedBoost": ("SpeedBoost", {"II": 0.1, "III": 0.15}),
     "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
     "SweepingEdge": ("SweepingEdge", {"II": 0.3}),
     "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2}),
@@ -357,10 +375,13 @@ GEAR_EFFECTS = {
 # Recovery, not its Constitution. Sharpness and Potion Maker are tied by a talisman instead (the Fist of Iron and
 # the Glowstone Flask are saved with the same effects). Reaper, Prickly and Sharpshooter are the only effects with
 # the numbers saves show for SoulSiphon (35% and 45%), Thorns (65%) and Supercharge (30%, 35% and 40%), and
-# Resilience has its own name and all its numbers.
+# Resilience has its own name and all its numbers. Bowyer and Speed are the last effects left for the numbers of
+# ArrowBurst (20%, 25%, 30%) and SpeedBoost (10%, 15%) once every other effect with those numbers was tied.
 EFFECT_NAMES = {
     "Acrobat": "Acrobat",
+    "ArrowBurst": "Bowyer",
     "BagOfSouls": "Spiritual",
+    "BeastBoss": "Pack Leader",
     "Committed": "Bounty Hunter",
     "Constitution": "Recovery",
     "Cooldown": "Cooldown",
@@ -368,12 +389,16 @@ EFFECT_NAMES = {
     "CriticalHit": "Critical Hit",
     "Deflect": "Deflection",
     "Desperation": "Persistence",
+    "Duelist": "Duelist",
     "EagleEye": "Aim",
     "ElementalProtection": "Elemental Protection",
     "Expand": "Totem Radius",
     "Finesse": "Finesse",
     "FireFocus": "Pyromancer",
+    "FriendsForever": "Veterinarian",
+    "Friendship": "Shepherd",
     "FrostFocus": "Cryomancer",
+    "Gambler": "Assassin",
     "HealingFocus": "Healer",
     "Knockback": "Knockback",
     "LightningFocus": "Electromancer",
@@ -387,6 +412,7 @@ EFFECT_NAMES = {
     "PoisonFocus": "Venomancer",
     "PotionMaster": "Potion Maker",
     "Power": "Impact",
+    "Precision": "Precision",
     "ProjectileProtection": "Projectile Protection",
     "Prospector": "Prospector",
     "Protection": "Protection",
@@ -395,12 +421,14 @@ EFFECT_NAMES = {
     "Reeling": "Momentum",
     "Regeneration": "Regeneration",
     "Resilience": "Resilience",
+    "Saboteur": "Tainted",
     "ShadowWalk": "Stealth",
     "Sharpness": "Sharpness",
     "Sidestep": "Evasion",
     "Sniper": "Sniper",
     "SoulFocus": "Soulmancer",
     "SoulSiphon": "Reaper",
+    "SpeedBoost": "Speed",
     "Supercharge": "Sharpshooter",
     "SweepingEdge": "Brawler",
     "SwiftSneak": "Prowler",
@@ -411,25 +439,27 @@ EFFECT_NAMES = {
 }
 # What the game probably calls these: the meaning and the one strength seen fit, but the names don't match and no
 # Unique ties them, so it's shown as a maybe and no tier is filled in from it.
-EFFECT_GUESSES = {
-    "ArrowBurst": "Bowyer",
-    "BeastBoss": "Pack Leader",
-    "FriendsForever": "Veterinarian",
-}
+EFFECT_GUESSES: dict[str, str] = {}
 # Enchantments as real saves store them: enchantment -> strength at each tier seen. The effect is
 # SW.Enchantment.<name>, named like its book (BOOK_IDS), and a tier's template is SW.Enchantment.<name>.<tier>. The
 # strength isn't the number the game shows (Ancient Alchemy I is 0.5 and gives 30 souls), so a tier can't be
-# worked out: each one has to be seen.
+# worked out: each one has to be seen. ENCHANTMENT_TEMPLATES holds a template a save spells differently from its
+# effect: Springload is SW.Enchantment.SpringLoaded, from the template SW.Enchantment.Springloaded.III.
+ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
+    "Arcane": {"III": 9},
     "Blowback": {"III": 0.5},
     "Borealis": {"III": 0.287547},
     "ExpandedQuiver": {"III": 4},
+    "FireAspect": {"III": 1},
     "GravityPulse": {"III": 0},
     "Piercing": {"I": 1, "III": 5},
     "PotionBarrier": {"III": 6},
     "Radiance": {"I": 0.3, "III": 0.5},
     "SoulInfusedPotion": {"I": 0.5, "II": 0.6, "III": 0.85},
+    "SpringLoaded": {"III": 6},
     "Swirling": {"III": 1},
+    "Unstoppable": {"III": 0.3},
 }
 # Enchantment points a save has shown for an enchantment on a Unique item (EnchantmentPointsInvested), to check
 # MetaBot's cost table against.
@@ -444,13 +474,17 @@ SEEN_ENCHANT_POINTS = {("Unique", "I"): 3, ("Unique", "II"): 8, ("Unique", "III"
 # thirty-one more, which showed nine new ones and the same effect for every Unique both lists hold. Both lists were
 # made by versions that couldn't write this kind of batch, so every one of them is the game's. A list made with
 # 1.10.0 or later can hold the editor's own (/issues/22 does: items its sender had made Unique), so from such a list
-# only an effect that version didn't have counts: the Humbler Heartstring's.
+# only an effect that version didn't have counts: the Humbler Heartstring's from /issues/22, and twenty-eight from
+# /issues/23, which leaves one Unique nobody has sent (the Packleader Paws). Two of those are saved with a template
+# spelled SW.Effecttemplate, small t: Protection's Unique tier, on the Monster Masher and the Humbler Antenna.
 UNIQUE_EFFECTS = {
+    "Battlestaff_Unique1": ("Effect.ElementalHit", 1, "EffectTemplate.ElementalHit.Unique"),  # Elemental Staff
     "Bow_Unique1": ("Effect.EagleEye", 0.25, "EffectTemplate.EagleEye.Unique"),  # Ranger's Promise
     "CaveCrawlerChest_Unique": ("Effect.Sidestep", 0.2, "EffectTemplate.Sidestep.Unique"),  # Twisted Warden Vest
     "CaveCrawlerLeggings_Unique": ("Effect.ShadowWalk", 0.45, "EffectTemplate.ShadowWalk.Unique"),  # Twisted Warden Tights
     "Claws_Unique1": ("Enchantment.ClawingShadow.Unique", 0.08, "Enchantment.ClawingShadow.Unique"),  # Sculker Claws
     "Cleaver_Unique1": ("Effect.AnimaConduit", 0.07, "EffectTemplate.AnimaConduit.Unique"),  # Cacaphonous Cleaver
+    "Crossbow_Unique1": ("Effect.Chains", 0.3, "EffectTemplate.Chains.Unique"),  # The Shackler
     "CurvedGreatsword_Unique1": ("Effect.SoulCurse", 1, "EffectTemplate.SoulCurse"),  # Lullaby Blade
     "CurvedLongsword_Unique1": ("Effect.Duelist", 0.4, "EffectTemplate.Duelist.Unique"),  # Pride of the Plains
     "Dagger_Unique1": ("Effect.SoulFocus", 0.2, "EffectTemplate.SoulFocus.Unique"),  # Sculker's Bane
@@ -458,7 +492,9 @@ UNIQUE_EFFECTS = {
     "DiscipleBoots_Unique": ("Effect.RapidStrike", 0.3, "EffectTemplate.RapidStrike.Unique"),  # Sage Wraps
     "DiscipleChest_Unique": ("Effect.Committed", 0.4, "EffectTemplate.Committed.Unique"),  # Sage Tunic
     "DiscipleHelmet_Unique": ("Effect.ProjectileProtection", -0.25, "EffectTemplate.ProjectileProtection.Unique"),  # Sage Headband
+    "DiscipleLeggings_Unique": ("Effect.RollCooldown", 0.4, "EffectTemplate.Acrobat.Unique"),  # Sage Belt
     "DualCrossbow_Unique1": ("Enchantment.Dynamo", 0.5, "Enchantment.Dynamo.Unique"),  # Double Crossers
+    "EvocationBoots_Unique": ("Effect.SoulMax", 1.5, "EffectTemplate.BagOfSouls.Unique"),  # Alchemist Loafers
     "EvocationChest_Unique": ("Effect.Vestige", 0.25, "EffectTemplate.Vestige.Unique"),  # Alchemist Overcoat
     "EvocationLeggings_Unique": ("Effect.ArtifactHealing", 0.06, "EffectTemplate.ArtifactHealing.Unique"),  # Alchemist Trousers
     "FrostRimeBoots_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Rimefrost Plodders
@@ -466,52 +502,75 @@ UNIQUE_EFFECTS = {
     "FrostRimeLeggings_Unique": ("Effect.SweepingEdge", 0.5, "EffectTemplate.SweepingEdge.Unique"),  # Rimefrost Longjohns
     "Gauntlet_Unique1": ("Enchantment.MaulerDive", 1, "Enchantment.MaulerDive"),  # Prime Enchanter's Gauntlets
     "GiantClub_Unique1": ("Enchantment.FireAspect", 1, "Enchantment.FlameBelch.Unique"),  # Redstone Wrecker
+    "GiantMallet_Unique1": ("Effect.Protection", -0.25, "Effecttemplate.Protection.Unique"),  # Monster Masher
+    "Glaive_Unique1": ("Effect.Vanguard", 0.6, "EffectTemplate.Vanguard.Unique"),  # Golden Glaive
     "GreatAxe_Unique1": ("Effect.StatusOnHit.Strength", 0.06, "EffectTemplate.StrenghteningStrike.Unique"),  # Awesomeaxe
     "Greatbow_Unique1": ("Enchantment.Piercing", 10, "Enchantment.Piercing.Unique"),  # Humbler Heartstring
     "Greatsword_Unique1": ("Enchantment.GravityPulse", 0, "Enchantment.GravityPulse.Unique"),  # The Darkshard
     "Hammer_Unique1": ("Effect.Opulence", 0.05, "EffectTemplate.Opulence.Unique"),  # Emerald Hammer
     "HeavyCrossbow_Unique1": ("Effect.PointBlank", 1, "EffectTemplate.PointBlank.Unique"),  # The Close Ranger
     "HewnBarkBoots_Unique": ("Effect.Reconstruction", -0.35, "EffectTemplate.Reconstruction.Unique"),  # Woodsprite Root Boots
+    "HewnBarkChest_Unique": ("Effect.HealthBoost", 1.3, "EffectTemplate.HealthBoost.Unique"),  # Woodsprite Barkpiece
+    "HewnBarkLeggings_Unique": ("Effect.Thorns", 1, "EffectTemplate.Thorns.Unique"),  # Woodsprite Trunks
     "HoneyChest_Unique": ("Effect.HealingFocus", 0.5, "EffectTemplate.HealingFocus.Unique"),  # Hivemind Thorax
     "HoneyHelmet_Unique": ("Effect.Vivify", 0.7, "EffectTemplate.Vivify.Unique"),  # Hivemind Hardhat
+    "HoneyLeggings_Unique": ("Effect.Resilience", -0.5, "EffectTemplate.Resilience.Unique"),  # Hivemind Trousers
     "Longbow_Unique1": ("Effect.Sniper", 1, "EffectTemplate.Sniper.Unique"),  # Creaking's Reach
     "Mace_Unique1": ("Effect.Finesse", 0.35, "EffectTemplate.Finesse.Unique"),  # Carapace Mace
     "MoonSword_Unique1": ("Effect.Reeling", 0.6, "EffectTemplate.Reeling.Unique"),  # Lunar Sickle
     "MushroomBoots_Unique": ("Effect.Friendship", -0.2, "EffectTemplate.Friendship.Unique"),  # Fly Agaric Galoshes
+    "MushroomChest_Unique": ("Effect.Regeneration", 0.15, "EffectTemplate.Regeneration.Unique"),  # Fly Agaric Coat
+    "MushroomLeggings_Unique": ("Effect.BeastBoss", 0.4, "EffectTemplate.BeastBoss.Unique"),  # Fly Agaric Trousers
     "MysticChest_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Oracle Mantle
     "MysticHelmet_Unique": ("Effect.LightningFocus", 0.25, "EffectTemplate.LightningFocus.Unique"),  # Oracle Crown
     "MysticLeggings_Unique": ("Effect.Cooldown", -0.3, "EffectTemplate.Cooldown.Unique"),  # Oracle Tights
+    "PhantomHelmet_Unique": ("Effect.SoulGatherMultiply", 0.6, "EffectTemplate.SoulSiphon.Unique"),  # Dreamruler Crown
     "PhantomLeggings_Unique": ("Effect.SwiftSneak", 0.4, "EffectTemplate.SwiftSneak.Unique"),  # Dreamruler Pyjamas
     "Pickaxe_Unique1": ("Effect.EmeraldsIncrease", 0.2, "EffectTemplate.Prospector.Unique"),  # The Prospector's Pick
     "Pike_Unique1": ("Effect.LightningFocus", 0.25, "EffectTemplate.LightningFocus.Unique"),  # Stormcaller
     "Powerbow_Unique1": ("Effect.Power", 0.3, "EffectTemplate.Power.Unique"),  # Paragon
     "RapidCrossbow_Unique1": ("Effect.Hairtrigger", 0.4, "EffectTemplate.Hairtrigger.Unique"),  # The Cross Pollinator
     "Rapier_Unique1": ("Effect.RapidStrike", 0.3, "EffectTemplate.RapidStrike.Unique"),  # The Thousand Cuts
+    "RealmreacherBoots_Unique": ("Effect.AmmoCapacity", 1.45, "EffectTemplate.AmmoCapacity.Unique"),  # Sharpshooter Spurs
     "RealmreacherChest_Unique": ("Effect.Power", 0.3, "EffectTemplate.Power.Unique"),  # Sharpshooter Duster
     "RedstoneBoots_Unique": ("Effect.MasterStrike", 0.45, "EffectTemplate.MasterStrike.Unique"),  # Monstrosity Stompers
     "RedstoneChest_Unique": ("Effect.ArtifactHealing", 0.06, "EffectTemplate.ArtifactHealing.Unique"),  # Monstrosity Armor
     "RedstoneLeggings_Unique": ("Effect.ElementalProtection", -0.25, "EffectTemplate.ElementalProtection.Unique"),  # Monstrosity Greaves
+    "Sabre_Unique1": ("Effect.RollCooldown", 0.4, "EffectTemplate.Acrobat.Unique"),  # Rascal's Razor
+    "ScampHelmet_Unique": ("Effect.Gambler", 0.25, "EffectTemplate.Gambler.Unique"),  # Scoundrel Cowl
     "ScampLeggings_Unique": ("Effect.Hairtrigger", 0.4, "EffectTemplate.Hairtrigger.Unique"),  # Scoundrel Chaps
     "ScatterCrossbow_Unique1": ("Effect.MultiShot", 0.6, "EffectTemplate.MultiShot.Unique"),  # Harp Crossbow
     "ScavengerBoots_Unique": ("Effect.Opportunist", 0.5, "EffectTemplate.Opportunist.Unique"),  # Monarch Talons
+    "ScavengerChest_Unique": ("Effect.Resilience", -0.5, "EffectTemplate.Resilience.Unique"),  # Monarch Mantle
     "ScavengerHelmet_Unique": ("Effect.Looting", 0.8, "EffectTemplate.Looting.Unique"),  # Monarch Crown
+    "ScavengerLeggings_Unique": ("Effect.SoulMax", 1.5, "EffectTemplate.BagOfSouls.Unique"),  # Monarch Sash
+    "Scythe_Unique1": ("Effect.SoulGatherMultiply", 0.6, "EffectTemplate.SoulSiphon.Unique"),  # Soul Reaper
     "ShortSpear_Unique1": ("Enchantment.PhantomLance", 1, "Enchantment.PhantomLance"),  # Spectral Spear
     "Shortbow_Unique1": ("Effect.Sidestep", 0.2, "EffectTemplate.Sidestep.Unique"),  # Shooting Star
     "Shovel_Unique1": ("Enchantment.Shockwave", 1, "Enchantment.Shockwave.Unique"),  # Diamond Shovel
     "Sickles_Unique1": ("Effect.HealingFocus", 0.5, "EffectTemplate.HealingFocus.Unique"),  # Sift Sickles
     "StalwartBoots_Unique": ("Effect.Sidestep", 0.2, "EffectTemplate.Sidestep.Unique"),  # Humbler Tarsi
     "StalwartChest_Unique": ("Effect.Constitution", 0.4, "EffectTemplate.Constitution.Unique"),  # Humbler Carapace
+    "StalwartHelmet_Unique": ("Effect.Protection", -0.25, "Effecttemplate.Protection.Unique"),  # Humbler Antenna
     "StalwartLeggings_Unique": ("Effect.SweepingEdge", 0.5, "EffectTemplate.SweepingEdge.Unique"),  # Humbler Greaves
     "Sword_Unique1": ("Effect.FireFocus", 0.2, "EffectTemplate.FireFocus.Unique"),  # The Burning Blade
     "TimewornBoots_Unique": ("Effect.EagleEye", 0.25, "EffectTemplate.EagleEye.Unique"),  # Soul Corruptor Sandals
     "TimewornChest_Unique": ("Effect.Expand", 0.55, "EffectTemplate.Expand.Unique"),  # Soul Corruptor Duster
+    "TimewornHelmet_Unique": ("Effect.Supercharge", 0.6, "EffectTemplate.Supercharge.Unique"),  # Soul Corruptor Mask
+    "TimewornLeggings_Unique": ("Effect.MasterMarksman", 0.45, "EffectTemplate.MasterMarksman.Unique"),  # Soul Corruptor Sash
     "Trickbow_Unique1": ("Effect.Jumpshot", 0.06, "EffectTemplate.Jumpshot.Unique"),  # Phantom Wing
+    "UndauntedHelmet_Unique": ("Effect.Knockback", 0.4, "EffectTemplate.Knockback.Unique"),  # Dauntless Horns
+    "UndauntedLeggings_Unique": ("Effect.Vanguard", 0.6, "EffectTemplate.Vanguard.Unique"),  # Dauntless Greaves
     "VoyagerBoots_Unique": ("Effect.Desperation", 0.25, "EffectTemplate.Desperation.Unique"),  # Rover Sabatons
     "VoyagerChest_Unique": ("Effect.Deflect", 0.25, "EffectTemplate.Deflect.Unique"),  # Rover Pauldrons
+    "VoyagerHelmet_Unique": ("Effect.Precision", 0.25, "EffectTemplate.Precision.Unique"),  # Rover Visor
     "VoyagerLeggings_Unique": ("Effect.Reeling", 0.6, "EffectTemplate.Reeling.Unique"),  # Rover Gaiters
     "WarHammer_Unique1": ("Effect.ExplosiveStrike", 1, "EffectTemplate.ExplosiveStrike.Unique"),  # Heartbreaker
     "WellspringChest_Unique": ("Effect.Vestige", 0.25, "EffectTemplate.Vestige.Unique"),  # Mad Sifter Vest
     "WellspringHelmet_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Mad Sifter Mask
+    "WellspringLeggings_Unique": ("Effect.StatusBuff", 1.2, "EffectTemplate.StatusBuff.Unique"),  # Mad Sifter Slacks
+    "WolfclutchChest_Unique": ("Effect.BeastBoss", 0.4, "EffectTemplate.BeastBoss.Unique"),  # Packleader Hide
+    "WolfclutchLeggings_Unique": ("Effect.FriendsForever", -0.2, "EffectTemplate.FriendsForever.Unique"),  # Packleader Fur Chaps
 }
 TIERS = ("I", "II", "III")
 POOLS = re.compile(r"All gear|Any (?:weapon|armor|artifact)|[A-Z][a-z]+ gear|Fixed only")  # where an effect rolls
@@ -691,9 +750,9 @@ def own_effects(items: dict[str, dict]) -> None:
         other = by_words.setdefault(words, item)
         if other["unique_own"] != own:
             raise SystemExit(f"{item['unique']} and {other['unique']} are described the same ({words!r}) but saved differently")
-        # A gear effect's number is the one in the description: 0.2 for 20%, -0.3 for "30% less".
+        # A gear effect's number is the one in the description: 0.2 for 20%, -0.3 for "30% less", 1.5 for "50% more".
         numbers = re.findall(r"(\d+(?:\.\d+)?)%", words)
-        if own["effect"].startswith("SW.Effect.") and len(numbers) == 1 and abs(abs(own["strength"]) * 100 - float(numbers[0])) > 1e-6:
+        if own["effect"].startswith("SW.Effect.") and len(numbers) == 1 and not strength_like(own["strength"], float(numbers[0])):
             print(f"warning: {item['unique']} is saved with {own['strength']}, and described as {words!r}")
     for item in uniques:
         twin = by_words.get(item.get("unique_effect", ""))
@@ -708,6 +767,7 @@ def pascal(name: str) -> str:
 def entry(name: str, kind: str, item_id: str, unique_suffix: str = "", **extra: str) -> dict:
     if name in KNOWN_IDS:
         item_id = PREFIX + KNOWN_IDS[name]
+    item_id = EXACT_IDS.get(name, item_id)
     made = {"name": name, "kind": kind, "id": item_id, "confirmed": item_id in CONFIRMED_IDS, **{k: v for k, v in extra.items() if v}}
     if unique_suffix and item_id + unique_suffix in UNIQUE_IDS:
         made["unique_id"] = item_id + unique_suffix
@@ -775,6 +835,7 @@ def main() -> None:
     enchantment_tiers = [
         {
             "effect": f"SW.Enchantment.{enchantment}",
+            **({"template": f"SW.Enchantment.{ENCHANTMENT_TEMPLATES[enchantment]}"} if enchantment in ENCHANTMENT_TEMPLATES else {}),
             "name": names_by_book.get(enchantment, spaced(enchantment)),
             **({} if enchantment in names_by_book else {"name_from_id": True}),
             "tiers": [{"tier": tier, "strength": seen[tier], "seen": True} for tier in TIERS if tier in seen],

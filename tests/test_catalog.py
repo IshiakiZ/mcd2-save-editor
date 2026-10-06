@@ -79,10 +79,18 @@ class RealItemListTests(unittest.TestCase):
         for name, tag in (("Golem Kit", "IronGolem"), ("Prickle's Mark", "Prickle"), ("Wobblestone", "Wobble"), ("Tasty Bone", "Wolf")):
             self.assertEqual((ids[name].id, ids[name].confirmed), (f"SW.Item.Talisman.{tag}", True))
             self.assertEqual(list(ids[name].levels), [{"tags": [f"SW.Talisman.{tag}.Level.{level}"]} for level in (1, 2, 3)])
-        # The talismans nobody has found yet are the only ones the editor can't give their effect.
-        self.assertEqual(sorted(item.name for item in self.items if item.kind == "Talisman" and not item.levels),
-                         ["Medallion of Momentum", "Ocelot's Paw", "Wonderful Wheat"])
-        self.assertFalse([item.name for item in self.items if item.kind == "Talisman" and not item.levels and item.confirmed])
+        # The last three came in one list (issue 23). The Ocelot's Paw by its number, the Medallion of Momentum as the
+        # one talisman about moving fast, and the Wonderful Wheat as the companion talisman left over: a llama's.
+        paw, medallion, wheat = ids["Ocelot's Paw"], ids["Medallion of Momentum"], ids["Wonderful Wheat"]
+        self.assertEqual((paw.id, [level["intensity"] for level in paw.levels]), ("SW.Item.Talisman.Plummeting", [1.1, 1.2, 1.35]))
+        self.assertIn("35% more damage", paw.effect)
+        self.assertEqual((medallion.id, [level["intensity"] for level in medallion.levels]), ("SW.Item.Talisman.SpeedIncrement", [1, 2, 3]))
+        # The game spells this one ID with a small "sw", and the editor keeps it as saved.
+        self.assertEqual((wheat.id, list(wheat.levels)), ("sw.Item.Talisman.Llama", [{"tags": [f"SW.Talisman.Llama.Level.{level}"]} for level in (1, 2, 3)]))
+        self.assertEqual((heroes.display_name("sw.Item.Talisman.Llama"), heroes.tag_kind("sw.Item.Talisman.Llama")), ("Wonderful Wheat", "Talisman"))
+        # So every talisman comes with what it does, and every item's ID has been seen in a real save.
+        self.assertFalse([item.name for item in self.items if item.kind == "Talisman" and not item.levels])
+        self.assertFalse([item.name for item in self.items if not item.confirmed])
 
     def test_every_unique_seen_follows_the_pattern_the_guesses_use(self):
         # CatalogItem.tag_at guesses an unseen Unique's ID this way, so a Unique that breaks it should be noticed.
@@ -134,7 +142,7 @@ class RealItemListTests(unittest.TestCase):
         names = heroes.enchantments()
         for choice in book.enchantments:
             self.assertTrue(choice.seen and choice.is_enchantment, choice.title)  # an enchantment's number can't be worked out
-            self.assertEqual(choice.template, f"{choice.effect}.{choice.tier}")
+            self.assertEqual(choice.template.lower(), f"{choice.effect}.{choice.tier}".lower())
             if choice.name in names:
                 self.assertEqual(choice.slots, names[choice.name].slots)
             else:  # in a save, but nobody knows what the game calls it: it goes by its ID, and on whatever takes one
@@ -145,6 +153,9 @@ class RealItemListTests(unittest.TestCase):
         # 45 and 60 souls are 0.5, 0.6 and 0.85, while Barrier Brew's 6 seconds and Swirling's 100% are 6 and 1.
         self.assertTrue({("Ancient Alchemy III", 0.85), ("Barrier Brew III", 6), ("Swirling III", 1), ("Blowback III", 0.5)} <= saved_enchantments)
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.PotionBarrier"), "Barrier Brew")
+        # A save spells Springload's template with a small l, unlike its effect: written as saved.
+        springload = next(choice for choice in book.enchantments if choice.title == "Springload III")
+        self.assertEqual((springload.effect, springload.template, springload.strength), ("SW.Enchantment.SpringLoaded", "SW.Enchantment.Springloaded.III", 6))
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.Radiance"), "Healing Smite")  # the book the save calls Radiance
         # MetaBot's table says Critical Edge III is 30% and the game's wording for it says 40%. A save settled it: 0.3
         # (the 40% is the tier a Unique carries). Recovery has the same clash, and no save has shown its tier III:
@@ -173,14 +184,15 @@ class RealItemListTests(unittest.TestCase):
         plan = presets.plan(kit, hero, build_catalog([hero]), power=30, rarity="Unique")
         made = {addition.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects]) for addition in plan.add}
         # Each gets the highest tier of its effect that a save has shown.
-        # The Humbler Heartstring comes with Piercing of its own (ten enemies), so the kit doesn't enchant it with
-        # Piercing as well; Chain Reaction, the guide's first choice for it, hasn't been seen saved yet.
+        # The Humbler Heartstring comes with Piercing of its own (ten enemies), so the kit doesn't spend its
+        # enchantment on Piercing as well; Chain Reaction, the guide's first choice for it, hasn't been seen saved yet.
         self.assertEqual(made["Humbler Heartstring"], (None, ["Marksman III"]))
         heartstring = hero.item(hero.add_item("SW.Item.Greatbow", build_catalog([hero])[0].template, rarity="Unique", power=30))
         self.assertEqual(heartstring.effect_lines(), ["Its own: Piercing"])
+        # You can still do it by hand: the game lets an item be enchanted with what it has built in.
         piercing = next(choice for choice in heroes.effect_choices([])[1] if choice.title == "Piercing III")
-        with self.assertRaisesRegex(ValueError, "The Humbler Heartstring comes with Piercing of its own already."):
-            hero.set_enchantment(heartstring.index, piercing)
+        hero.set_enchantment(heartstring.index, piercing)
+        self.assertEqual(hero.item(heartstring.index).effect_lines(), ["Its own: Piercing", "Enchanted: Piercing III, 15 enchantment points"])
         self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge III"]))
         self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
         self.assertEqual(made["Sharpshooter Duster"], (None, ["Projectile Protection III"]))  # Critical Quiver hasn't been seen saved yet
@@ -189,12 +201,12 @@ class RealItemListTests(unittest.TestCase):
     def test_uniques_come_with_the_effect_saves_show(self):
         uniques = [item for item in self.items if item.unique]
         owned = [item for item in uniques if item.unique_own is not None]
-        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 66)
-        self.assertGreaterEqual(len(owned), 86)
+        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 93)
+        self.assertGreaterEqual(len(owned), 115)
         for item in owned:
             own = item.unique_own
             self.assertRegex(own.effect, r"^SW\.(Effect|Enchantment)\.[A-Za-z.]+$", item.unique)
-            self.assertRegex(own.template, r"^SW\.(EffectTemplate|Enchantment)\.[A-Za-z.]+$", item.unique)
+            self.assertRegex(own.template, r"^SW\.(Effect[Tt]emplate|Enchantment)\.[A-Za-z.]+$", item.unique)
             self.assertIsInstance(own.strength, (int, float))
             if own.seen:  # seen on this very Unique, so its ID has been seen too
                 self.assertTrue(item.unique_id and not own.like, item.unique)
@@ -220,8 +232,13 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(own["Lullaby Blade"], ("SW.Effect.SoulCurse", 1, "SW.EffectTemplate.SoulCurse"))
         # Three Uniques that say the same thing, each seen: saved alike.
         self.assertEqual({own[name] for name in ("Rimefrost Plodders", "Oracle Mantle", "Mad Sifter Mask")}, {("SW.Effect.Saboteur", 1, "SW.EffectTemplate.Saboteur.Unique")})
-        # Nothing is worked out for a Unique that says something no seen Unique says.
-        self.assertIsNone(next(item for item in uniques if item.unique == "The Shackler").unique_own)
+        # Nothing is worked out for a Unique that says something no seen Unique says: one is left.
+        self.assertEqual([item.unique for item in uniques if item.unique_own is None], ["Packleader Paws"])
+        # Two are saved with a template the game spells with a small t. Written as saved.
+        self.assertEqual({own[name] for name in ("Humbler Antenna", "Monster Masher")}, {("SW.Effect.Protection", -0.25, "SW.Effecttemplate.Protection.Unique")})
+        # "50% more" can be saved as 1.5: the way round follows the effect's rolled tiers (Spiritual I is 1.25).
+        self.assertEqual(own["Alchemist Loafers"], ("SW.Effect.SoulMax", 1.5, "SW.EffectTemplate.BagOfSouls.Unique"))
+        self.assertEqual(own["The Shackler"], ("SW.Effect.Chains", 0.3, "SW.EffectTemplate.Chains.Unique"))
         # The Humbler Heartstring's is Piercing itself, at a tier the Enchantsmith doesn't sell: ten enemies.
         self.assertEqual(own["Humbler Heartstring"], ("SW.Enchantment.Piercing", 10, "SW.Enchantment.Piercing.Unique"))
 
@@ -266,6 +283,19 @@ class RealItemListTests(unittest.TestCase):
             hero.set_effects(index, [])
             hero.set_enchantment(index, None)
             self.assertEqual(hero.item(index).data["Effects"], game[tag][:1])
+
+    def test_the_wonderful_wheat_is_added_under_the_id_the_game_writes(self):
+        hero = Hero(hero_save())
+        hero.document["CharacterSaveV1"]["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", seed=61))
+        entry = next(entry for entry in build_catalog([hero]) if entry.name == "Wonderful Wheat")
+        self.assertEqual((entry.tag, entry.kind, entry.confirmed_at(), entry.no_effect), ("sw.Item.Talisman.Llama", "Talisman", True, False))
+        wheat = hero.item(hero.add_item(entry.tag, entry.template))
+        self.assertEqual((wheat.tag, wheat.name, wheat.is_talisman, wheat.data["Effects"]), ("sw.Item.Talisman.Llama", "Wonderful Wheat", True, []))
+        self.assertEqual([level["LevelTags"] for level in wheat.progression["ItemLevels"]], [[f"SW.Talisman.Llama.Level.{level}"] for level in (1, 2, 3)])
+        # One the game gave is recognised the same way, and isn't reported as an ID the editor doesn't know.
+        self.assertIn("sw.Item.Talisman.Llama", hero.seen_item_types() | {wheat.tag})
+        with self.assertRaisesRegex(ValueError, "isn't an item ID"):
+            hero.add_item("Sw.Item.Talisman.Llama", entry.template)  # only the two spellings saves have shown
 
     def test_a_companions_talisman_is_added_the_way_the_game_saves_one(self):
         # What the game saved for a Tasty Bone it handed over (the developer's own save, 2026-10-05).

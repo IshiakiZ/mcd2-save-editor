@@ -35,33 +35,62 @@
   {
    "effect": "SW.Effect.ArrowBurst",
    "template": "SW.EffectTemplate.ArrowBurst",
-   "name": "Arrow Burst",
-   "name_from_id": true,
-   "maybe": "Bowyer",
+   "name": "Bowyer",
+   "category": "Utility",
+   "rolls_on": "Ranger gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/bowyer",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.2,
-     "seen": true
+     "shown": "20%",
+     "seen": true,
+     "text": "Grants a 20% chance to gain an additional arrow when ammo is regained."
+    },
+    {
+     "tier": "II",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Grants a 25% chance to gain an additional arrow when ammo is regained."
     },
     {
      "tier": "III",
      "strength": 0.3,
-     "seen": true
+     "shown": "30%",
+     "seen": true,
+     "text": "Grants a 30% chance to gain an additional arrow when ammo is regained."
     }
    ]
   },
   {
    "effect": "SW.Effect.BeastBoss",
    "template": "SW.EffectTemplate.BeastBoss",
-   "name": "Beast Boss",
-   "name_from_id": true,
-   "maybe": "Pack Leader",
+   "name": "Pack Leader",
+   "category": "Attack",
+   "rolls_on": "Summoner gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/pack-leader",
    "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Companions deal 20% more damage."
+    },
     {
      "tier": "II",
      "strength": 0.25,
-     "seen": true
+     "shown": "25%",
+     "seen": true,
+     "text": "Companions deal 25% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": false,
+     "text": "Companions deal 30% more damage."
     }
    ]
   },
@@ -275,6 +304,36 @@
    ]
   },
   {
+   "effect": "SW.Effect.Duelist",
+   "template": "SW.EffectTemplate.Duelist",
+   "name": "Duelist",
+   "category": "Attack",
+   "rolls_on": "Fighter gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/duelist",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Melee attacks deal 20% more damage to primary targets."
+    },
+    {
+     "tier": "II",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Melee attacks deal 25% more damage to primary targets."
+    },
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.EagleEye",
    "template": "SW.EffectTemplate.EagleEye",
    "name": "Aim",
@@ -463,19 +522,62 @@
   {
    "effect": "SW.Effect.FriendsForever",
    "template": "SW.EffectTemplate.FriendsForever",
-   "name": "Friends Forever",
-   "name_from_id": true,
-   "maybe": "Veterinarian",
+   "name": "Veterinarian",
+   "category": "Utility",
+   "rolls_on": "Summoner gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/veterinarian",
    "tiers": [
     {
      "tier": "I",
      "strength": -0.05,
-     "seen": true
+     "shown": "5%",
+     "seen": true,
+     "text": "Defeated companions come back 5% faster."
     },
     {
      "tier": "II",
      "strength": -0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Defeated companions come back 10% faster."
+    },
+    {
+     "tier": "III",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Defeated companions come back 15% faster."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Friendship",
+   "template": "SW.EffectTemplate.Friendship",
+   "name": "Shepherd",
+   "category": "Defense",
+   "rolls_on": "Summoner gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/shepherd",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.05,
+     "shown": "5%",
+     "seen": false,
+     "text": "Companions take 5% less damage."
+    },
+    {
+     "tier": "II",
+     "strength": -0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Companions take 10% less damage."
+    },
+    {
+     "tier": "III",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Companions take 15% less damage."
     }
    ]
   },
@@ -513,23 +615,31 @@
   {
    "effect": "SW.Effect.Gambler",
    "template": "SW.EffectTemplate.Gambler",
-   "name": "Gambler",
-   "name_from_id": true,
+   "name": "Assassin",
+   "category": "Utility",
+   "rolls_on": "Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/assassin",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Grants a 10% chance to stay in Shadowcloaking when attacking."
     },
     {
      "tier": "II",
      "strength": 0.15,
-     "seen": true
+     "shown": "15%",
+     "seen": true,
+     "text": "Grants a 15% chance to stay in Shadowcloaking when attacking."
     },
     {
      "tier": "III",
      "strength": 0.2,
-     "seen": true
+     "shown": "20%",
+     "seen": true,
+     "text": "Grants a 20% chance to stay in Shadowcloaking when attacking."
     }
    ]
   },
@@ -940,12 +1050,30 @@
    "effect": "SW.Effect.Precision",
    "template": "SW.EffectTemplate.Precision",
    "name": "Precision",
-   "name_from_id": true,
+   "category": "Attack",
+   "rolls_on": "Fighter gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/precision",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Increases chance of critical hits with melee attacks by 10%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Increases chance of critical hits with melee attacks by 15%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Increases chance of critical hits with melee attacks by 20%."
     }
    ]
   },
@@ -1063,6 +1191,12 @@
      "shown": "20%",
      "seen": true,
      "text": "Reduces ranged ammo cooldown time by 20%."
+    },
+    {
+     "tier": "III",
+     "strength": -0.25,
+     "shown": "25%",
+     "seen": true
     }
    ]
   },
@@ -1147,7 +1281,7 @@
      "tier": "II",
      "strength": -0.25,
      "shown": "25%",
-     "seen": false,
+     "seen": true,
      "text": "Recover from negative statuses 25% faster."
     },
     {
@@ -1191,6 +1325,37 @@
    ]
   },
   {
+   "effect": "SW.Effect.Saboteur",
+   "template": "SW.EffectTemplate.Saboteur",
+   "name": "Tainted",
+   "category": "Utility",
+   "rolls_on": "Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/tainted",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.4,
+     "shown": "40%",
+     "seen": false,
+     "text": "Increases duration of negative statuses on enemies by 40%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.6,
+     "shown": "60%",
+     "seen": true,
+     "text": "Increases duration of negative statuses on enemies by 60%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.8,
+     "shown": "80%",
+     "seen": true,
+     "text": "Increases duration of negative statuses on enemies by 80%."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.ShadowWalk",
    "template": "SW.EffectTemplate.ShadowWalk",
    "name": "Stealth",
@@ -1211,6 +1376,12 @@
      "shown": "25%",
      "seen": true,
      "text": "Shadowcloaking lasts 25% longer."
+    },
+    {
+     "tier": "III",
+     "strength": 0.35,
+     "shown": "35%",
+     "seen": true
     }
    ]
   },
@@ -1397,6 +1568,37 @@
      "shown": "35%",
      "seen": true,
      "text": "Increases Soul capacity by 35%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.SpeedBoost",
+   "template": "SW.EffectTemplate.SpeedBoost",
+   "name": "Speed",
+   "category": "Utility",
+   "rolls_on": "Ranger gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/speed",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.05,
+     "shown": "5%",
+     "seen": false,
+     "text": "Increases movement speed by 5%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Increases movement speed by 10%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Increases movement speed by 15%."
     }
    ]
   },
@@ -1620,6 +1822,18 @@
  ],
  "enchantments": [
   {
+   "effect": "SW.Enchantment.Arcane",
+   "name": "Arcane",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 9,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.Blowback",
    "name": "Blowback",
    "name_from_id": true,
@@ -1650,6 +1864,17 @@
     {
      "tier": "III",
      "strength": 4,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.FireAspect",
+   "name": "Fire Aspect",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 1,
      "seen": true
     }
    ]
@@ -1730,12 +1955,36 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.SpringLoaded",
+   "template": "SW.Enchantment.Springloaded",
+   "name": "Springload",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 6,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.Swirling",
    "name": "Swirling",
    "tiers": [
     {
      "tier": "III",
      "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.Unstoppable",
+   "name": "Unstoppable",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.3,
      "seen": true
     }
    ]
