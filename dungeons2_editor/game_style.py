@@ -417,7 +417,7 @@ def _settings(fonts: GameFonts, row_height: int, item_row_height: int) -> dict:
         },
         "Stat.TEntry": field(FIELD, TEXT, EDGE, ACCENT),
         "Chip.Toolbutton": {
-            "configure": {**_flat(BG), "foreground": MUTED, "font": fonts.heading, "padding": (8, 4), "anchor": "center"},
+            "configure": {**_flat(BG), "foreground": MUTED, "font": fonts.heading, "padding": (6, 4), "anchor": "center"},
             "map": {
                 "background": [("selected", "#1b4b5c"), ("active", "#123d4c")],
                 "lightcolor": [("selected", "#1b4b5c"), ("active", "#123d4c")],

@@ -75,9 +75,9 @@ NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
 # An item ID. The game writes one with a small "sw" (sw.Item.Talisman.Llama, the Wonderful Wheat), so both count.
 _ITEM_TAG = re.compile(r"(?:SW|sw)\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
 _UNIQUE_SUFFIX = re.compile(r"_Unique\d*$")  # on a Unique's own ID: SW.Item.Sword_Unique1, SW.Item.MysticHelmet_Unique
-NO_RARITY = "None"  # what a talisman has: SW.Rarity.None
-# A talisman has no power either. This is what the game saves in its place.
-_TALISMAN_POWER = {
+NO_RARITY = "None"  # what a talisman or an enchantment book has: SW.Rarity.None
+# Neither has a power. This is what the game saves in its place, for the one and for the other.
+_NO_POWER = {
     "PlayerLevel": 1, "AreaThreatLevel": 1, "RecommendedThreatLevel": 1, "ThreatSliderOffset": 0,
     "ItemPowerMin": 1, "ItemPowerMax": 11, "RNGRoll": 0, "ItemPower": -1, "ItemPowerOriginal": 0,
 }
@@ -104,8 +104,11 @@ VENDORS = {
     "Blacksmith": "SW.UI.Onboarding.Panel.Blacksmith.Overview",
     "Enchantsmith": "SW.UI.Onboarding.Panel.Enchantsmith.Overview",
 }
-BOOK_KIND = "Enchantment Book"  # SW.Item.EnchantmentBook.<Name>; only offered to a hero that has one to copy
+# SW.Item.EnchantmentBook.<Name>. The Enchantsmith works from the books in the inventory: the game's own script
+# names say so (GetAllOwnedEnchantmentBooks hands back inventory entries), and the books stay there after use.
+BOOK_KIND = "Enchantment Book"
 _BOOK_GROUP = "EnchantmentBook"
+ONE_OF_EACH = "A hero has one of each enchantment book"
 # How a hero is saved, as (HardFormat, SoftVersion) from the save's SerializeMeta, for the game versions the
 # editor has been checked against. A game update that changes the format is expected to change one of them.
 TESTED_FORMATS = {("FCharacterSaveV1", 5)}
@@ -414,6 +417,27 @@ def _enchantment_info(tag: str) -> Enchantment | None:
         return None
     book = _game_items_by_id().get(f"{ITEM_PREFIX}{_BOOK_GROUP}.{tag[len(ENCHANTMENT_PREFIX):]}")
     return enchantments().get(book.name) if book is not None and not book.name_from_id else None
+
+
+def book_enchantment(tag: str) -> Enchantment | None:
+    """The enchantment a book is for: SW.Item.EnchantmentBook.PotionSharing is the book of Buddy Brew. None for
+    anything else, and for a book the item list hasn't named."""
+    known = game_item(tag)
+    if known is None or known.kind != BOOK_KIND or known.name_from_id:
+        return None
+    return enchantments().get(known.name)
+
+
+def book_text(tag: str) -> str:
+    """What an enchantment book is for, in a sentence or two, for its card."""
+    found = book_enchantment(tag)
+    if found is None:
+        return "An enchantment book. The editor doesn't know what the game calls its enchantment yet."
+    what = found.what or found.tier3
+    text = f"The book of an enchantment for {_slot_words(found.slots)}." if found.slots else "An enchantment book."
+    if what:
+        text += f" {what.rstrip('.')}" + (f": {found.levels} at tiers I, II and III." if found.levels else ".")
+    return text
 
 
 def effect_choices(heroes: Iterable["Hero"] = ()) -> tuple[list[EffectChoice], list[EffectChoice]]:
@@ -873,6 +897,17 @@ class Item:
         return self.kind == "Talisman"
 
     @property
+    def is_book(self) -> bool:
+        """An enchantment book: the Enchantsmith can put its enchantment on gear while it's in the inventory."""
+        return self.kind == BOOK_KIND
+
+    @property
+    def ungraded(self) -> bool:
+        """A talisman or an enchantment book: neither has a rarity or a power (the game saves SW.Rarity.None
+        and power -1 for both)."""
+        return self.is_talisman or self.is_book
+
+    @property
     def rarity(self) -> str:
         tag = str(self.data.get("RarityTag", ""))
         return tag[len(RARITY_PREFIX):] if tag.startswith(RARITY_PREFIX) else tag
@@ -1188,6 +1223,8 @@ class Hero:
         taking an item's Unique rarity away gives it back its base item's ID.
         A ``tag`` that's given is otherwise kept exactly. A talisman has no rarity
         or power to change, and an item changed into one is laid out as one. An
+        enchantment book has nothing to change at all, and nothing is changed into
+        one: a book is added (``add_item``) or deleted. An
         item that becomes another item is marked as new, the way the game marks
         one you haven't looked at: until the game has shown it to you, nothing
         says the game knows its ID (see ``item_types_from_the_game``).
@@ -1197,10 +1234,20 @@ class Hero:
             if (rarity is not None and rarity != item.rarity) or (power is not None and power != item.power):
                 raise ValueError(f"The {item.name} is a talisman: it has no rarity or power, and levels up from the XP you earn.")
             rarity = power = None  # what it has already
+        if item.is_book:
+            if tag is not None and tag.strip() != item.tag:
+                raise ValueError(f"The {item.name} book can't be changed into another item. Delete it, and add the one you want.")
+            if (rarity is not None and rarity != item.rarity) or (power is not None and power != item.power):
+                raise ValueError(f"The {item.name} is an enchantment book: it has no rarity or power.")
+            if count is not None and count != item.count:
+                raise ValueError(f"{ONE_OF_EACH}: the count stays as it is.")
+            return
         if tag is not None:
             tag = tag.strip()
             if tag != item.tag:
                 _check_addable_tag(tag)
+                if tag_kind(tag) == BOOK_KIND:
+                    raise ValueError(f"An item can't be changed into an enchantment book. Add the {display_name(tag)} book with Add items.")
                 if item.equipped_slot:
                     raise ValueError(f"Unequip the {item.name} before changing what it is.")
                 if item.stock_slot:
@@ -1471,7 +1518,10 @@ class Hero:
 
     def duplicate_item(self, index: int) -> int:
         """Add an unequipped copy of an item to the inventory. Returns the copy's index."""
-        clone = copy.deepcopy(self._gear(index).entry)
+        item = self._gear(index)
+        if item.is_book:
+            raise ValueError(f"{ONE_OF_EACH}, and this one has the {item.name} book.")
+        clone = copy.deepcopy(item.entry)
         self._make_new(clone)
         return self._add_entry(clone)
 
@@ -1490,13 +1540,19 @@ class Hero:
 
         ``rarity`` or ``power`` of None keeps the template's. With ``slot`` the item is equipped there.
         At Unique rarity the item gets its Unique's own ID, when that ID is known to be real. A talisman
-        has no rarity or power, so those are left out for one, and it gets its effect instead.
+        has no rarity or power, so those are left out for one, and it gets its effect instead. Nor has an
+        enchantment book, which is laid out the way the game saves one: a hero has one of each.
         """
         tag = tag.strip()
         _check_addable_tag(tag)
-        talisman = tag_kind(tag) == "Talisman"
-        if talisman:
+        talisman, book = tag_kind(tag) == "Talisman", tag_kind(tag) == BOOK_KIND
+        if talisman or book:
             rarity = power = None
+        if book:
+            if self.has_book(tag):
+                raise ValueError(f"This hero already has the {display_name(tag)} book.")
+            if count != 1:
+                raise ValueError(f"{ONE_OF_EACH}, so the count is 1.")
         if rarity == "Unique":
             tag = unique_tag(tag, self.item_types_from_the_game()) or tag
         if rarity is not None and rarity not in RARITIES:
@@ -1533,6 +1589,8 @@ class Hero:
                     values[key] = int(power)
         if talisman:
             self._as_talisman(data, own_levels or self._talisman_levels(tag))
+        if book:
+            self._as_book(data)
         entry["StackCount"] = int(count)
         self._make_new(entry)
         index = self._add_entry(entry)
@@ -1555,7 +1613,39 @@ class Hero:
         progression.update(CurrentLevel=0, CurrentXP=0, ItemLevels=copy.deepcopy(levels))
         values = (data.get("GeneratorData") or {}).get("PowerGeneratorValues")
         if isinstance(values, dict):
-            values.update({key: value for key, value in _TALISMAN_POWER.items() if key in values})
+            values.update({key: value for key, value in _NO_POWER.items() if key in values})
+
+    @staticmethod
+    def _as_book(data: dict) -> None:
+        """Lay a new enchantment book out the way the game saves one it has just handed over. Seven of them in a
+        real save were alike in everything but the ID, the seed and the time: no rarity, no power, no effects,
+        no levels, and no mark but the one for an item you haven't looked at (``_make_new`` puts that on)."""
+        data["RarityTag"] = RARITY_PREFIX + NO_RARITY
+        data["Effects"] = []
+        progression = data.setdefault("ItemProgression", {})
+        progression.update(CurrentLevel=0, CurrentXP=0, ItemLevels=[])
+        values = (data.get("GeneratorData") or {}).get("PowerGeneratorValues")
+        if isinstance(values, dict):
+            values.update({key: value for key, value in _NO_POWER.items() if key in values})
+        if isinstance(data.get("DynamicPropertyTags"), list):
+            data["DynamicPropertyTags"] = []
+
+    def books(self) -> list[Item]:
+        """The enchantment books in the inventory."""
+        return [item for item in self.items() if item.is_book and not item.stock_slot]
+
+    def has_book(self, tag: str) -> bool:
+        return any(item.tag == tag for item in self.books())
+
+    def missing_books(self, catalog: list["CatalogItem"]) -> list["CatalogItem"]:
+        """The enchantment books in ``catalog`` that this hero doesn't have, leaving out any whose ID is a guess."""
+        have = {item.tag for item in self.books()}
+        return [entry for entry in catalog if entry.kind == BOOK_KIND and entry.confirmed and entry.tag not in have]
+
+    def add_books(self, catalog: list["CatalogItem"]) -> list[int]:
+        """Add every enchantment book this hero doesn't have yet (``missing_books``). Returns the new entries'
+        indexes."""
+        return [self.add_item(entry.tag, entry.template) for entry in self.missing_books(catalog)]
 
     def _talisman_levels(self, tag: str) -> list:
         """What a talisman does at each level: from one the game gave this hero, else from the item list.
@@ -1799,8 +1889,9 @@ def gear_power(hero: Hero, slots: list[GearSlot]) -> tuple[int | None, dict[str,
 
 def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     """Items that can be added: every item in the game's item list, plus any other item ID
-    the game has saved for these heroes. Cosmetics, quest items and currencies are left out,
-    and so is an enchantment book unless a hero has that book to copy.
+    the game has saved for these heroes. Cosmetics, quest items and currencies are left out.
+    An enchantment book needs no copy of itself to be laid out like: ``Hero.add_item`` lays one
+    out the way the game does, whatever it borrows the layout from.
 
     IDs the game vouches for in these saves (``Hero.item_types_from_the_game``) are confirmed;
     the game list's other IDs are best guesses from the items' names (see
@@ -1832,8 +1923,6 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     for game_item in game_items():
         if game_item.id in catalog or item_group(game_item.id) in NOT_ADDABLE_GROUPS or template(game_item.id) is None:
             continue
-        if game_item.kind == BOOK_KIND and game_item.id not in by_tag:
-            continue
         catalog[game_item.id] = CatalogItem(
             game_item.id,
             template(game_item.id),
@@ -1848,8 +1937,6 @@ def build_catalog(heroes: list[Hero]) -> list[CatalogItem]:
     for tag in seen:
         if tag in catalog or is_unique_version(tag) or item_group(tag) in NOT_ADDABLE_GROUPS or template(tag) is None:
             continue
-        if item_group(tag) == _BOOK_GROUP and tag not in by_tag:
-            continue  # a book in the collections, but none in the inventory to lay a new one out like
         catalog[tag] = CatalogItem(tag, template(tag), no_effect=no_effect(tag))
     return sorted(catalog.values(), key=lambda entry: (entry.kind, entry.name.lower()))
 
@@ -1878,7 +1965,7 @@ def describe_changes(before: dict, after: dict) -> list[str]:
     for key, item in old_items.items():
         other = new_items.get(key)
         if other is None:
-            lines.append(f"Removed {item.name}")
+            lines.append(f"Removed {_listed(item)}")
             continue
         parts = []
         if other.tag != item.tag:
@@ -1907,9 +1994,14 @@ def describe_changes(before: dict, after: dict) -> list[str]:
     for key, item in new_items.items():
         if key not in old_items:
             equipped = f", {item.where[0].lower() + item.where[1:]}" if item.equipped_slot else ""
-            grade = "" if item.is_talisman else f" ({item.rarity}, power {format_amount(item.power)})"
-            lines.append(f"Added {item.name}{grade}{equipped}")
+            grade = "" if item.ungraded else f" ({item.rarity}, power {format_amount(item.power)})"
+            lines.append(f"Added {_listed(item)}{grade}{equipped}")
     return lines
+
+
+def _listed(item: Item) -> str:
+    """An item's name in the list of changes. A book goes by its enchantment's name, so the list says it's the book."""
+    return f"{item.name} (enchantment book)" if item.is_book else item.name
 
 
 def items_by_identity(hero: Hero) -> dict[tuple, Item]:

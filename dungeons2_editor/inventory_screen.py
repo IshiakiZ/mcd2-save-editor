@@ -19,6 +19,7 @@ from . import game_style as gs
 from .game_art import EMPTY_TILE, RARITY_TILE, Art, icon_for, mix, tile_fill
 from .game_style import GameFonts
 from .hero import (
+    BOOK_KIND,
     ITEM_SORTS,
     MAX_ITEM_POWER,
     MAX_STACK,
@@ -31,6 +32,7 @@ from .hero import (
     Hero,
     Item,
     attribute_label,
+    book_text,
     format_amount,
     game_item,
     gear_power,
@@ -41,7 +43,7 @@ from .hero import (
     sort_items,
     use_local_names,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, effects_action, number_text, power_text, talisman_hint, vendors_text
+from .hero_editing import SAVE_REMINDER, HeroEditing, book_hint, effects_action, number_text, power_text, talisman_hint, vendors_text
 from .icons import IconLibrary
 from .item_picker import slot_open
 from .layout import fit_to_contents
@@ -86,15 +88,24 @@ FILTERS = (
     ("Armor", "ARMOR"),
     ("Artifact", "ARTIFACTS"),
     ("Talisman", "TALISMANS"),
+    (BOOK_KIND, "BOOKS"),
     ("Merchant", "MERCHANT"),
 )
-KIND_NAMES = {"Melee": "Melee weapon", "Ranged": "Ranged weapon", "Armor": "Armor", "Artifact": "Artifact", "Talisman": "Talisman"}
+KIND_NAMES = {
+    "Melee": "Melee weapon", "Ranged": "Ranged weapon", "Armor": "Armor", "Artifact": "Artifact", "Talisman": "Talisman",
+    BOOK_KIND: "Enchantment book",
+}
+DARK_TILES = ("Talisman", BOOK_KIND)  # kinds shown on a dark tile, so their own picture is drawn light
+BOOK_INK = "#b9a3e8"  # a book's picture on its card
 ENCHANTABLE = ("Melee", "Ranged", "Armor")  # artifacts and talismans can't be enchanted
 EFFECTS_SHOWN = 4  # lines of effects on an item's card; any more are counted
 
 
 def describe(item: Item, known: GameItem | None) -> str:
-    """What the item does, for its card: a Unique's effect, a talisman's, or what the item's Unique is."""
+    """What the item does, for its card: a Unique's effect, a talisman's, a book's enchantment, or what the
+    item's Unique is."""
+    if item.is_book:
+        return book_text(item.tag)
     if known is None:
         return ""
     if item.kind == "Talisman" and known.effect:
@@ -275,7 +286,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         ttk.Label(xp, text="XP", style="Caption.TLabel", image=self.art.icon("xp", "#a6e05a", 1), compound="left").pack(side="left")
         self.xp_entry = ttk.Entry(xp, textvariable=self._fixed_vars["XP"], style="Stat.TEntry", font=self.fonts.body, width=9)
         self.xp_entry.pack(side="left", padx=(6, 0))
-        self._bind_stat(self.level_entry, "Level", "Your hero's level. In testing, level 10 stuck but level 100 was put back to 1.")
+        self._bind_stat(self.level_entry, "Level", "Your hero's level, up to 100. A hero set to 100 has kept it in the game.")
         self._bind_stat(self.xp_entry, "XP", "Experience towards the next level.")
 
         power = ttk.Frame(header, style="Game.TFrame")
@@ -304,7 +315,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         buttons.grid(row=0, column=3, sticky="ne")
         ttk.Button(buttons, text="STATS & TOWN", command=self.show_stats).pack(side="left")
         ttk.Button(buttons, text="PRESETS…", command=self.open_presets).pack(side="left", padx=(8, 0))
-        ttk.Button(buttons, text="+ ADD ITEMS…", style="Accent.TButton", command=self.open_add_items).pack(side="left", padx=(8, 0))
+        ttk.Button(buttons, text="+ ADD ITEMS…", style="Accent.TButton", command=self.add_items).pack(side="left", padx=(8, 0))
 
     def make_currency_strip(self, parent: tk.Misc) -> ttk.Frame:
         """The currencies (echo shards, emeralds, enchantment points), to put in the window's top bar."""
@@ -358,7 +369,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         panel = ttk.Frame(self.body, style="Game.TFrame", padding=(8, 6, 8, 14))
         panel.grid(row=0, column=1, sticky="nsew")
         panel.columnconfigure(0, weight=1)
-        panel.rowconfigure(2, weight=1)
+        panel.rowconfigure(3, weight=1)
         top = ttk.Frame(panel, style="Game.TFrame")
         top.grid(row=0, column=0, columnspan=2, sticky="ew")
         ttk.Label(top, text="INVENTORY", style="Caption.TLabel").pack(side="left")
@@ -373,10 +384,24 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.pictures_button = ttk.Button(top, text="GET PICTURES…", command=self.get_pictures)
         self._resort(draw=False)
 
-        chips = ttk.Frame(panel, style="Game.TFrame")
-        chips.grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 6))
-        for key, text in FILTERS:
-            ttk.Radiobutton(chips, text=text, value=key, variable=self.filter_var, style="Chip.Toolbutton", command=self._draw_inventory).pack(side="left", padx=(0, 4))
+        # The tabs take the panel's width as it comes and go onto a second row when one won't hold them, so they
+        # don't decide how wide the window has to be (a display that's scaled up hasn't room for them all in a row).
+        self.chips = ttk.Frame(panel, style="Game.TFrame", width=1, height=1)
+        self.chips.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(6, 6))
+        self.chip_buttons = [
+            ttk.Radiobutton(self.chips, text=text, value=key, variable=self.filter_var, style="Chip.Toolbutton", command=self._draw_inventory)
+            for key, text in FILTERS
+        ]
+        self.chips.bind("<Configure>", lambda event: self._flow_chips(event.width))
+        self._flow_chips(100_000)  # one row, until the panel has a width
+        # Under the tabs on the Books tab, while the hero is without some of the books.
+        self.books_bar = ttk.Frame(panel, style="Game.TFrame")
+        self.books_bar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        self.books_button = ttk.Button(self.books_bar, text="ADD EVERY BOOK", style="Accent.TButton", command=self.add_every_book)
+        self.books_button.pack(side="left")
+        self.books_text = tk.StringVar()
+        ttk.Label(self.books_bar, textvariable=self.books_text, style="Message.TLabel").pack(side="left", padx=(10, 0))
+        self.books_bar.grid_remove()
 
         cell = self.tile + self.art.px(18)
         self.inventory_canvas = tk.Canvas(
@@ -385,8 +410,8 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         )
         scroll = ttk.Scrollbar(panel, orient="vertical", command=self.inventory_canvas.yview)
         self.inventory_canvas.configure(yscrollcommand=scroll.set)
-        self.inventory_canvas.grid(row=2, column=0, sticky="nsew")
-        scroll.grid(row=2, column=1, sticky="ns")
+        self.inventory_canvas.grid(row=3, column=0, sticky="nsew")
+        scroll.grid(row=3, column=1, sticky="ns")
         canvas = self.inventory_canvas
         canvas.bind("<Configure>", self._on_inventory_resize)
         canvas.bind("<Button-1>", self._on_inventory_click)
@@ -397,6 +422,22 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         canvas.bind("<Motion>", lambda event: self._hover(canvas, [tile for _box, tile, _index in self._item_hits], event), add="+")
         canvas.bind("<Leave>", lambda _event: self._hover(canvas, [], None), add="+")
         _Tip(canvas, self._inventory_tip, self.fonts.small)
+
+    def _flow_chips(self, width: int) -> None:
+        """Lay the inventory's tabs out left to right, on as many rows as ``width`` takes."""
+        if width <= 1:
+            return  # not laid out yet
+        gap = self.art.px(3)
+        height = max(chip.winfo_reqheight() for chip in self.chip_buttons)
+        x = y = 0
+        for chip in self.chip_buttons:
+            need = chip.winfo_reqwidth()
+            if x and x + need > width:
+                x, y = 0, y + height + gap
+            chip.place(x=x, y=y)
+            x += need + gap
+        if int(self.chips.cget("height")) != y + height:
+            self.chips.configure(height=y + height)
 
     def _build_card(self) -> None:
         width = self.art.px(CARD_WIDTH)
@@ -685,11 +726,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         canvas.create_image(x, y, image=self.art.tile(fill, size), anchor="nw")
         picture = self.icons.item_art((item.name, item.tag), size - self.art.px(16))
         if picture is None:
-            shade = mix(fill, "#ffffff", 0.35) if item.kind == "Talisman" else mix(fill, "#000000", 0.5)
+            shade = mix(fill, "#ffffff", 0.35) if item.kind in DARK_TILES else mix(fill, "#000000", 0.5)
             picture = self.art.icon(icon_for(item.kind, item.piece), shade, 3)
         canvas.create_image(x + size // 2, y + size // 2, image=picture)
         inset = max(4, self.art.px(4)) + self.art.px(3)
-        if item.power is not None and not item.is_talisman:
+        if item.power is not None and not item.ungraded:
             self._shadow_text(canvas, x + size - inset, y + size - inset + 2, number_text(item.power), "se")
         if item.count > 1:
             self._shadow_text(canvas, x + inset, y + inset - 1, f"×{item.count}", "nw")
@@ -773,7 +814,14 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         rows = -(-len(items) // columns)
         canvas.configure(scrollregion=(0, 0, width, max(pad * 2 + rows * cell_height, 1)))
         key = self.filter_var.get()
-        self.count_text.set(f"{len(items)} {'IN STOCK' if key == 'Merchant' else 'ITEM' if len(items) == 1 else 'ITEMS'}")
+        things = ("BOOK", "BOOKS") if key == BOOK_KIND else ("ITEM", "ITEMS")
+        self.count_text.set(f"{len(items)} {'IN STOCK' if key == 'Merchant' else things[len(items) != 1]}")
+        missing = self.books_to_add() if key == BOOK_KIND else 0
+        if missing:
+            self.books_text.set(f"{missing} missing")
+            self.books_bar.grid()
+        else:
+            self.books_bar.grid_remove()
         if self.icons.has_pictures() or not edition.ONLINE:  # the edition that never goes online has nothing to get
             self.pictures_button.pack_forget()
         elif not self.pictures_button.winfo_manager():
@@ -786,6 +834,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             return "The Village Merchant has nothing in stock."
         if key == "All":
             return "Your inventory is empty. Press + ADD ITEMS to put something in it."
+        if key == BOOK_KIND:
+            return (
+                "No enchantment books in your inventory. ADD EVERY BOOK gives your hero all the ones the editor knows, "
+                "and + ADD ITEMS adds them one at a time."
+            )
         return f"No {dict(FILTERS)[key].lower()} in your inventory. + ADD ITEMS adds some."
 
     def _on_inventory_resize(self, event: tk.Event) -> None:
@@ -899,6 +952,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.card_mode = "item"
         self._show_item(index)
         self._mark_selection()
+
+    def add_items(self) -> None:
+        """+ ADD ITEMS: the list starts on the kind of item the inventory is showing."""
+        key = self.filter_var.get()
+        self.open_add_items(kind=key if key in KIND_NAMES else None)
 
     def _add_to_picked_slot(self) -> None:
         slot = self.picked_slot
@@ -1030,13 +1088,13 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             details.append(f"item level {item.level}")
         picture = self.icons.item_art((item.name, item.tag), self.art.px(72))
         if picture is None:
-            color = gs.SOFT if item.kind == "Talisman" else RARITY_TILE.get(item.rarity, gs.HEADING)
+            color = BOOK_INK if item.is_book else gs.SOFT if item.kind in DARK_TILES else RARITY_TILE.get(item.rarity, gs.HEADING)
             picture = self.art.icon(icon_for(item.kind, item.piece), color, 5)
         banner = "EQUIPPED" if item.equipped_slot else "MERCHANT STOCK" if item.stock_slot else "INVENTORY"
-        talisman = item.is_talisman  # no rarity or power to show or change
+        plain = item.ungraded  # a talisman or an enchantment book: no rarity or power to show or change
         self._card_head(
             banner, item.name.upper(), " · ".join(details), picture, describe(item, known),
-            "" if talisman else number_text(item.power), None if talisman else item.rarity,
+            "" if plain else number_text(item.power), None if plain else item.rarity,
         )
         self.rarity_var.set(item.rarity)
         self.power_var.set(power_text(item))
@@ -1074,10 +1132,13 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         for widget in (self.power_entry, self.count_entry, *self.rarity_buttons, self.equip_button, self.change_button, self.copy_button,
                        self.delete_button, self.picture_button):
             widget.state(["!disabled"])
-        if talisman:
+        if plain:
             for widget in (self.power_entry, *self.rarity_buttons):
                 widget.state(["disabled"])
-            self.power_hint.set(talisman_hint(item))
+            self.power_hint.set(book_hint() if item.is_book else talisman_hint(item))
+        if item.is_book:  # one of each, and it stays the book it is
+            for widget in (self.count_entry, self.copy_button, self.change_button):
+                widget.state(["disabled"])
         # Only items the game's list doesn't name can be named here (and renamed, if you named them).
         self.name_button.state(["!disabled"] if not name_is_known(item.tag) or local_name(item.tag) else ["disabled"])
         self.equip_button.configure(text="UNEQUIP" if item.equipped_slot else "EQUIP")
@@ -1227,7 +1288,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             return None
         item = self.hero.equipped(slot.tag)
         if item is not None:
-            return f"{item.name}\nTalisman" if item.is_talisman else f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
+            return f"{item.name}\n{KIND_NAMES[item.kind]}" if item.ungraded else f"{item.name}\n{item.rarity} · power {number_text(item.power)}"
         if not slot_open(slot, self._hero_level()):
             return f"{slot.label}: opens at level {slot.level}"
         return f"{slot.label}: empty. Double-click to put an item here."
@@ -1237,6 +1298,6 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         if index is None or self.hero is None:
             return None
         item = self.hero.item(index)
-        if item.is_talisman:
-            return f"{item.name}\nTalisman"
+        if item.ungraded:
+            return f"{item.name}\n{KIND_NAMES[item.kind]}"
         return f"{item.name}\n{item.rarity} {(item.piece or KIND_NAMES.get(item.kind, item.kind)).lower()} · power {number_text(item.power)}"

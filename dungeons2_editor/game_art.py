@@ -14,6 +14,7 @@ import tkinter as tk
 # drops look grey and Rare ones green; Uniques are orange, so Special is the blue).
 RARITY_TILE = {"Common": "#a8917c", "Rare": "#5ec85a", "Special": "#2394ec", "Unique": "#ec7330"}
 TALISMAN_TILE = "#17191c"  # the game shows talismans on dark tiles
+BOOK_TILE = "#2c1d47"  # the editor's own choice for enchantment books: the purple of enchantment points, darkened
 EMPTY_TILE = "#0b2531"
 UNKNOWN_TILE = "#7d8a90"
 
@@ -187,6 +188,20 @@ ICONS: dict[str, tuple[str, ...]] = {
         "....oooo....",
         "............",
     ),
+    "book": (
+        "..oooooooo..",
+        ".o-#######o.",
+        ".o-#######o.",
+        ".o-###+###o.",
+        ".o-##+#+##o.",
+        ".o-###+###o.",
+        ".o-#######o.",
+        ".o-#######o.",
+        ".o--------o.",
+        ".o++++++++o.",
+        "..oooooooo..",
+        "............",
+    ),
     "lock": (
         "....oooo....",
         "...o----o...",
@@ -256,6 +271,7 @@ KIND_ICONS = {
     "Boots": "boots",
     "Artifact": "artifact",
     "Talisman": "talisman",
+    "Enchantment Book": "book",
 }
 
 
@@ -274,6 +290,8 @@ def tile_fill(rarity: str, kind: str = "") -> str:
     """The colour of a tile for an item of this rarity and kind."""
     if kind == "Talisman":
         return TALISMAN_TILE
+    if kind == "Enchantment Book":
+        return BOOK_TILE
     return RARITY_TILE.get(rarity, UNKNOWN_TILE)
 
 

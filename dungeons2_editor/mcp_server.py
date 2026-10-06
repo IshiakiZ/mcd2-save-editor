@@ -26,6 +26,7 @@ from typing import Any, BinaryIO, Callable
 from . import __version__, merge, presets, recommend, saves, wgs
 from .hero import (
     ATTRIBUTE_LABELS,
+    BOOK_KIND,
     MAX_ITEM_POWER,
     MAX_STACK,
     NO_OWN_EFFECT,
@@ -38,6 +39,7 @@ from .hero import (
     GearSlot,
     Hero,
     Item,
+    book_text,
     build_catalog,
     describe_changes,
     effect_book,
@@ -60,13 +62,17 @@ NOT_WRITTEN = "Nothing is written to the game until save_changes."
 
 INSTRUCTIONS = (
     "Edits Minecraft Dungeons II heroes saved on this PC (the Xbox app / PC Game Pass or the Steam version). Start with "
-    "list_heroes and get_hero. set_stats, add_item, change_item, equip_item, unequip_item, copy_item, delete_item "
-    "and apply_preset collect changes in a draft, like unsaved changes in the editor window: nothing reaches the "
-    "game until save_changes, which needs Minecraft Dungeons II to be closed and backs up the whole save folder "
-    "first. Show the user preview_changes and get their OK before save_changes. Stay near the hero's level and "
-    "gear power: in testing, the game put level 100 back to 1 and removed items at power 135. Items with "
+    "list_heroes and get_hero. set_stats, add_item, add_enchantment_books, change_item, equip_item, unequip_item, "
+    "copy_item, delete_item and apply_preset collect changes in a draft, like unsaved changes in the editor window: "
+    "nothing reaches the game until save_changes, which needs Minecraft Dungeons II to be closed and backs up the whole "
+    "save folder first. Show the user preview_changes and get their OK before save_changes. Stay near the gear power "
+    "the game gives at the hero's level: a hero set to level 100 has kept it, but in an earlier test the game removed "
+    "items at power 135 (most had best-guess IDs). Items with "
     "confirmed: false have a best-guess save ID, and the game may remove them. Talismans have no rarity or power, "
-    "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
+    "and one with effect_known: false can only be added without its effect. Enchantment books (kind Enchantment Book "
+    "in find_items) have none either, and a hero has one of each: add_item adds one, add_enchantment_books every one "
+    "that's missing, saved the way the game saves a book. The Enchantsmith works from the books in the inventory, but "
+    "nobody has tried one the editor made there yet: say so, and ask the user how it went. Online heroes are stored on the "
     "game's servers, so they can't be changed. set_item_effects gives a weapon, armor piece or artifact its "
     "effects and a weapon or armor piece its enchantment, from list_effects: the editor writes them exactly as a "
     "real save holds them, so it only has the ones it has seen so far. With best_for (a goal: Damage, Survival, "
@@ -491,10 +497,24 @@ class EditorServer:
                 entry.tag_at(rarity), template, rarity=rarity, power=power, count=count, slot=slot, check_level=not args.get("ignore_slot_levels")
             )
             item = hero.item(index)
-            text = f"Added the {item.name}" + ("" if item.is_talisman else f" ({item.rarity}, power {format_amount(item.power)})")
+            text = f"Added the {item.name}" + (" book" if item.is_book else "" if item.ungraded else f" ({item.rarity}, power {format_amount(item.power)})")
             if slot is not None:
                 text += f" and equipped it ({slot.label.lower()})"
             return text + ".", {"item": _item_info(item, _refs(hero), {entry.tag: entry})}
+
+        return self._edit(args["hero"], change)
+
+    def add_enchantment_books(self, args: dict) -> dict:
+        def change(hero: Hero, profile: saves.SaveProfile, container: saves.Container) -> tuple[str, dict]:
+            added = [hero.item(index) for index in hero.add_books(self._catalog(hero, profile, container.name))]
+            if not added:
+                raise ToolError("This hero has every enchantment book the editor knows.")
+            books = "book" if len(added) == 1 else "books"
+            refs = _refs(hero)
+            return f"Added {len(added)} enchantment {books}: {', '.join(item.name for item in added)}.", {
+                "items": [_item_info(item, refs, {}) for item in added],
+                "untried": "Each is saved the way the game saves a book, but nobody has tried one the editor made at the Enchantsmith yet.",
+            }
 
         return self._edit(args["hero"], change)
 
@@ -521,7 +541,7 @@ class EditorServer:
             before = hero.item(index).name
             hero.update_item(index, **changes)
             item = hero.item(index)
-            text = f"Changed the {before}: now the {item.name}" + ("." if item.is_talisman else f", {item.rarity}, power {format_amount(item.power)}.")
+            text = f"Changed the {before}: now the {item.name}" + ("." if item.ungraded else f", {item.rarity}, power {format_amount(item.power)}.")
             return text, {"item": _item_info(item, _refs(hero), {})}
 
         return self._edit(args["hero"], change)
@@ -726,12 +746,15 @@ class EditorServer:
             Tool("get_hero", "Show a hero", "A hero's stats (with the game's caps), the gear in each of the 12 slots, the inventory and the Village "
                  "Merchant's stock. Each item has a ref to use in the other tools. Shows unsaved changes too.",
                  {"hero": HERO}, self.get_hero, ("hero",), read_only=True),
-            Tool("find_items", "Find items", "Search every weapon, armor piece, artifact and talisman in the game by name (Uniques included). "
+            Tool("find_items", "Find items", "Search every weapon, armor piece, artifact, talisman and enchantment book the editor knows "
+                 "by name (Uniques included). "
                  "confirmed: false means the save ID is a best guess; unique_confirmed says whether the Unique's own ID has "
                  "been seen (unique_by_pattern: it hasn't, but it follows the pattern every seen one does, and can be added). "
-                 "effect_known: false marks a talisman the editor can only add without its effect.",
+                 "effect_known: false marks a talisman the editor can only add without its effect. A book's enchantment says "
+                 "what its enchantment does and what it goes on.",
                  {"query": _string("Part of a name, e.g. 'mystic' or 'Oracle Crown'."),
-                  "kind": _string("Melee, Ranged, Armor, Artifact or Talisman.", enum=["Melee", "Ranged", "Armor", "Artifact", "Talisman"]),
+                  "kind": _string("Melee, Ranged, Armor, Artifact, Talisman or Enchantment Book.",
+                                  enum=["Melee", "Ranged", "Armor", "Artifact", "Talisman", BOOK_KIND]),
                   "confirmed_only": _flag("Only items known to work: the save ID has been seen in a real save, and for a talisman its effect too."),
                   "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 25}},
                  self.find_items, read_only=True),
@@ -741,7 +764,7 @@ class EditorServer:
                  "in real saves so far, and anything on an item in these saves.",
                  {"query": _string("Part of a name, e.g. 'critical' or 'smite'.")}, self.list_effects, read_only=True),
             Tool("set_stats", "Set stats", "Change stats: Emeralds, Echo shards (SpringStone), Enchantment points, Level, XP and the town upgrade "
-                 "levels. Stops at the game's caps unless ignore_caps. Change Level in small steps.",
+                 "levels. Stops at the game's caps unless ignore_caps.",
                  {"hero": HERO, "stats": {"type": "object", "description": "Stat name to value, e.g. {\"Emeralds\": 9999, \"Level\": 12}.",
                                           "additionalProperties": {"type": "number"}},
                   "ignore_caps": _flag("Go past the game's caps (anything above them is lost in the game).")},
@@ -754,8 +777,12 @@ class EditorServer:
                   "count": COUNT, "equip": {"type": ["boolean", "string"], "description": "true to equip it in the first free slot, or a slot name."},
                   "allow_unconfirmed": UNCONFIRMED, "ignore_slot_levels": LOCKED},
                  self.add_item, ("hero", "item")),
+            Tool("add_enchantment_books", "Add every enchantment book", "Give a hero every enchantment book the editor knows that it's "
+                 "without (add_item adds a single one), each saved the way the game saves a book. With a book in the "
+                 "inventory the Enchantsmith can put its enchantment on gear; nobody has tried one the editor made there yet.",
+                 {"hero": HERO}, self.add_enchantment_books, ("hero",)),
             Tool("change_item", "Change an item", "Change an item's rarity, power or count, or turn it into another item (not while equipped). "
-                 "A talisman has no rarity or power to change.",
+                 "A talisman has no rarity or power to change, and an enchantment book can't be changed at all: delete it, or add another.",
                  {"hero": HERO, "item": ITEM, "rarity": RARITY, "power": POWER, "count": COUNT,
                   "change_into": _string("Another item's name or save ID."), "allow_unconfirmed": UNCONFIRMED},
                  self.change_item, ("hero", "item")),
@@ -882,8 +909,11 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         "count": item.count,
         "where": item.where,
     }
-    if item.is_talisman:  # it has neither: the game saves SW.Rarity.None and power -1
+    if item.ungraded:  # a talisman or a book has neither: the game saves SW.Rarity.None and power -1
         del info["rarity"], info["power"]
+    if item.is_book:
+        info["enchantment"] = book_text(item.tag)
+    if item.is_talisman:
         info["talisman_level"] = item.level + 1 if isinstance(item.level, int) else item.level
         info["xp"] = item.xp
         if item.next_level_xp is not None and item.level == 0:
@@ -1005,6 +1035,8 @@ def _catalog_info(entry: CatalogItem) -> dict:
     known = game_item(entry.tag)
     if known is not None and known.effect:
         info["effect_at_level_3"] = known.effect
+    if entry.kind == BOOK_KIND:
+        info["enchantment"] = book_text(entry.tag)
     return info
 
 

@@ -22,10 +22,11 @@ from .hero import (
     GearSlot,
     Hero,
     attribute_label,
+    book_text,
     slots_for,
     sort_items,
 )
-from .hero_editing import SAVE_REMINDER, HeroEditing, effects_action, number_text, power_text, talisman_hint, vendors_text
+from .hero_editing import SAVE_REMINDER, HeroEditing, book_hint, effects_action, number_text, power_text, talisman_hint, vendors_text
 from .icons import IconLibrary
 from .item_picker import slot_open
 
@@ -138,7 +139,7 @@ class HeroTab(HeroEditing, ttk.Frame):
         for column, text in _HEADINGS.items():
             self.tree.heading(column, text=text, command=lambda column=column: self._sort_by_heading(column))
         self.tree.column("#0", width=200, stretch=True)
-        widths = {"kind": 80, "rarity": 72, "power": 64, "level": 54, "xp": 64, "enchants": 72, "where": 180}
+        widths = {"kind": 116, "rarity": 72, "power": 64, "level": 54, "xp": 64, "enchants": 72, "where": 180}
         for column, width in widths.items():
             self.tree.column(column, width=width, stretch=column == "where", anchor="e" if column in _NUMBER_COLUMNS else "w")
         scroll = ttk.Scrollbar(inventory, orient="vertical", command=self.tree.yview)
@@ -347,7 +348,7 @@ class HeroTab(HeroEditing, ttk.Frame):
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name),
-                values=(item.kind, "" if item.is_talisman else item.rarity, power, item.level, number_text(item.xp), len(item.effects), item.where),
+                values=(item.kind, "" if item.ungraded else item.rarity, power, item.level, number_text(item.xp), len(item.effects), item.where),
                 tags=("locked",) if item.is_cosmetic else (),
             )
             self._index_by_iid[iid] = item.index
@@ -375,7 +376,7 @@ class HeroTab(HeroEditing, ttk.Frame):
             for slot in self._slots():
                 item = worn.get(slot.tag)
                 if item is not None:
-                    values = (item.name, "" if item.is_talisman else f"{item.rarity}, power {number_text(item.power)}")
+                    values = (item.name, "" if item.ungraded else f"{item.rarity}, power {number_text(item.power)}")
                     image = self.icons.item_image(item.tag, item.rarity, ROW_ICON_SIZE, item.name)
                 else:
                     values = ("empty" if slot_open(slot, level) else f"opens at level {slot.level}", "")
@@ -471,7 +472,8 @@ class HeroTab(HeroEditing, ttk.Frame):
             return
         item = self.hero.item(index)
         self.item_title_var.set(item.name)
-        subtitle = ("Talisman" if item.is_talisman else f"{item.rarity} {item.kind.lower()}") + f"  ·  {item.where}"
+        grade = "Talisman" if item.is_talisman else "Enchantment book" if item.is_book else f"{item.rarity} {item.kind.lower()}"
+        subtitle = f"{grade}  ·  {item.where}" + (f"\n{book_text(item.tag)}" if item.is_book else "")
         effects = item.effect_lines()
         if effects:
             subtitle += "\nEffects: " + "  ·  ".join(line.rstrip(".") for line in effects)
@@ -505,6 +507,11 @@ class HeroTab(HeroEditing, ttk.Frame):
             pressing = (item.equipped_slot or item.stock_slot) and item.progression.get("ItemLevels")
             if not self.item_message_var.get() and not pressing:
                 self._say_item(talisman_hint(item))
+        if item.is_book:  # no rarity or power either, one of each, and it stays the book it is
+            for widget in (self.power_entry, self.count_entry, self.type_box, self.change_button, self.copy_button, *self.rarity_buttons):
+                widget.state(["disabled"])
+            if not self.item_message_var.get():
+                self._say_item(book_hint())
         if item.equipped_slot:
             self.change_button.state(["disabled"])
             self.delete_button.state(["disabled"])

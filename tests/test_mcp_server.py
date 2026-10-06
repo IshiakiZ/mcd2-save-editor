@@ -13,7 +13,10 @@ from dungeons2_editor import saves
 from dungeons2_editor.hero import Hero
 from dungeons2_editor.mcp_server import PROTOCOL_VERSIONS, EditorServer, serve_streams
 
-from .helpers import SETTINGS_TEXT, enchanted, enchantment_effect, hero_item, hero_save, make_profile, rolled, rolled_effect, shift_encode, talisman_item
+from .helpers import (
+    SETTINGS_TEXT, book_item, enchanted, enchantment_effect, hero_item, hero_save, make_profile, rolled, rolled_effect, shift_encode,
+    talisman_item,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 HERO = "Character00000000-0000-1000-8000-000000000002"
@@ -84,6 +87,7 @@ class ProtocolTests(ServerTestCase):
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
             "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
+            "add_enchantment_books",
         })
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
@@ -335,6 +339,43 @@ class EditingTests(ServerTestCase):
         done = self.call("ready_talisman", hero="00000000", item=self.ref_of("Sigil of Beeswax"))
         self.assertIn("XP is 18,479, one short of level 2", done["done"])
         self.assertEqual((done["item"]["xp"], done["unsaved_changes"]), (18479, ["Sigil of Beeswax: XP 90 → 18,479"]))
+
+    def test_enchantment_books(self):
+        found = self.call("find_items", kind="Enchantment Book")
+        self.assertEqual((found["matches"], {item["kind"] for item in found["items"]}, {item["confirmed"] for item in found["items"]}),
+                         (9, {"Enchantment Book"}, {True}))
+        ricochet = next(item for item in found["items"] if item["name"] == "Ricochet")
+        self.assertEqual(ricochet["enchantment"], "The book of an enchantment for ranged weapons. Projectiles bounce: 1 / 2 / 3 bounces at tiers I, II and III.")
+        # One book: no rarity or power, whatever is asked for.
+        done = self.call("add_item", hero="00000000", item="Somersault", rarity="Unique", power=50)
+        self.assertEqual(done["done"], "Added the Somersault book.")
+        self.assertEqual(
+            {key: done["item"].get(key) for key in ("name", "id", "kind", "rarity", "power", "count", "where")},
+            {"name": "Somersault", "id": "SW.Item.EnchantmentBook.MultiRoll", "kind": "Enchantment Book", "rarity": None, "power": None,
+             "count": 1, "where": "Inventory"},
+        )
+        self.assertIn("for armor. Extra rolls", done["item"]["enchantment"])
+        self.assertEqual(done["unsaved_changes"], ["Added Somersault (enchantment book)"])
+        self.assertIn("already has the Somersault book", self.call("add_item", hero="00000000", item="Somersault"))
+        self.assertIn("so the count is 1", self.call("add_item", hero="00000000", item="Piercing", count=2))
+        book = self.ref_of("Somersault")
+        self.assertIn("it has no rarity or power", self.call("change_item", hero="00000000", item=book, power=9))
+        self.assertIn("can't be changed into another item", self.call("change_item", hero="00000000", item=book, change_into="Axe"))
+        self.assertIn("can't be changed into an enchantment book", self.call("change_item", hero="00000000", item=self.ref_of("Longbow"), change_into="Piercing"))
+        self.assertIn("one of each enchantment book", self.call("copy_item", hero="00000000", item=book))
+        # Every book the hero is without, in one go.
+        done = self.call("add_enchantment_books", hero="00000000")
+        self.assertTrue(done["done"].startswith("Added 8 enchantment books: Ancient Alchemy, Buddy Brew, "), done["done"])
+        self.assertEqual((len(done["items"]), {item["kind"] for item in done["items"]}), (8, {"Enchantment Book"}))
+        self.assertIn("nobody has tried one the editor made at the Enchantsmith yet", done["untried"])
+        self.assertEqual(len([line for line in done["unsaved_changes"] if line.endswith("(enchantment book)")]), 9)
+        self.assertIn("has every enchantment book the editor knows", self.call("add_enchantment_books", hero="00000000"))
+        self.assertEqual(self.call("delete_item", hero="00000000", item=book)["done"], "Deleted the Somersault.")
+        self.running.return_value = []
+        self.call("save_changes", hero="00000000")
+        saved = self.saved_hero().books()
+        self.assertEqual(len(saved), 8)
+        self.assertEqual(saved[0].entry, book_item(saved[0].tag, seed=saved[0].data["GeneratorData"]["GenesisRandomSeed"], picked_up=saved[0].picked_up))
 
     def test_a_talisman_is_put_at_a_level(self):
         self.assertIn("only talismans do", self.call("set_talisman_level", hero="00000000", item=self.ref_of("Sword"), level=2))

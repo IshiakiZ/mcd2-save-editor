@@ -37,6 +37,9 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Talisman levels:** an item's card shows a talisman's level, and **Level up** raises it a level, saved exactly
   as the game saves a level-up. (A companion's talisman levels up another way, so it gets **Ready to level up**:
   one XP short, and the game does the rest the next time you earn XP with it on.)
+- **Enchantment books:** the **Books** tab shows the books your hero carries. **Add every book** gives it all 23
+  the editor knows in one go, **Add items** adds them one at a time, and Delete takes one away. Each is saved exactly
+  as the game saves a book it hands you. See [what's known about them](#what-it-cant-do).
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. A Unique comes with
@@ -187,8 +190,8 @@ the exact setup for your PC, with Copy buttons. In short:
 - **Claude Code:** `claude mcp add mcd2-save-editor -- "C:\path\to\MCD2SaveEditor\MCD2SaveEditor.exe" mcp`
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
-set stats, add, change, equip, copy and delete items, give an item effects and an enchantment, set a talisman's
-level, and apply presets. Its changes collect in a draft, like unsaved
+set stats, add, change, equip, copy and delete items, add enchantment books, give an item effects and an
+enchantment, set a talisman's level, and apply presets. Its changes collect in a draft, like unsaved
 changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
 and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
 game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
@@ -234,6 +237,21 @@ your sign-in, account or device data.
   follows the same pattern, but no save with a level-3 talisman has been seen yet. A companion's talisman (the Tasty
   Bone and the like) levels up by tags, which hasn't been seen either: for those, **Ready to level up** puts it one
   XP short of the next level (18,480 XP for level 2), and the next XP you earn with it equipped does the rest.
+- **Enchantment books: saved like the game's, not yet tried at the Enchantsmith.** The developer's own save shows
+  how the game saves a book it has just handed over: seven of them, alike in everything but the ID. A book the editor
+  adds comes out as that very entry, key for key, whatever item it borrows the layout from. A book has no rarity or
+  power, and a hero has one of each, so there's nothing on one to change: you add it or delete it. The game's own
+  script names say the Enchantsmith works from the books in your inventory (its `GetAllOwnedEnchantmentBooks` hands
+  back inventory entries), and a book stays there after you've used it. But nobody has taken a book the editor made
+  to the Enchantsmith yet, so check that its enchantment is offered there, and
+  [say how it went](https://github.com/IshiakiZ/mcd2-save-editor/discussions). When the game hands you a book it
+  also files it in its collections and counts it towards an achievement; the editor leaves both alone, as it does
+  for every item, so a book added here is in neither. The editor knows 23 of the game's 32 books by their save ID
+  (MetaBot lists 34 enchantments, two of them built into Uniques). The nine it can't add yet are Bottomless Brew,
+  Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
+  Tumbleshot: nobody has sent the ID the game saves them under. A book in your own saves that the list doesn't name
+  is offered under a name made from its ID, and **Name it…** with **Share item IDs…** teaches the editor what the
+  game calls it.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
   files, so the editor learns how each one is saved from real saves: 60 gear effects and 18 enchantments so far
   (Ancient Alchemy at every tier; Healing Smite and Piercing at tiers I and III; Ender Quiver at II and III;

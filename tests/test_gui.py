@@ -14,7 +14,7 @@ from unittest import mock
 
 from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs
 from dungeons2_editor.effects_dialog import EffectsDialog
-from dungeons2_editor.hero import Hero, effect_choices, use_local_names
+from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
 from dungeons2_editor.restore_dialog import RestoreDialog
 
@@ -513,6 +513,73 @@ class HeroTabTests(WindowTestCase):
         self.assertIn("Added Hunter's Hatchet (Unique, power 40)", summary)
         axe = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Axe_Unique1")  # the Unique's own ID
         self.assertEqual((axe.name, axe.rarity, axe.power, axe.count, axe.where), ("Hunter's Hatchet", "Unique", 40, 2, "Inventory"))
+
+    def test_an_enchantment_book_in_the_list(self):
+        entry = next(entry for entry in self.tab._catalog() if entry.tag == "SW.Item.EnchantmentBook.Piercing")
+        self.tab.hero.add_item(entry.tag, entry.template)
+        self.tab._fill_items()
+        self.select_item("Piercing")
+        values = self.tab.tree.item(self.tab.tree.selection()[0], "values")
+        self.assertEqual(tuple(values[:3]), ("Enchantment Book", "", ""))  # kind, and no rarity or power
+        self.assertEqual(
+            self.tab.item_subtitle_var.get(),
+            "Enchantment book  ·  Inventory\nThe book of an enchantment for ranged weapons. Projectiles pierce enemies: "
+            "1 / 3 / 5 enemies at tiers I, II and III.",
+        )
+        tab = self.tab
+        for widget in (tab.power_entry, tab.count_entry, tab.type_box, tab.change_button, tab.copy_button, tab.equip_button,
+                       tab.effects_button, *tab.rarity_buttons):
+            self.assertTrue(widget.instate(["disabled"]), widget)
+        self.assertTrue(tab.delete_button.instate(["!disabled"]))
+        self.assertIn("An enchantment book has no rarity or power. A hero has one of each enchantment book", tab.item_message_var.get())
+        self.assertFalse(tab.has_pending_input())
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            tab.delete_button.invoke()
+        self.assertNotIn("Piercing", self.rows())
+
+    def test_a_book_by_its_id_and_every_book_at_once(self):
+        # Advanced mode takes an ID typed by hand: a book's is laid out as a book, whatever the boxes say.
+        self.tab.open_add_items()
+        self.root.update()
+        picker = next(w for w in self.tab.winfo_children() if isinstance(w, ItemPicker))
+        self.assertFalse(picker.books_button.winfo_manager())  # the list is on all kinds
+        picker.rarity_var.set("Unique")
+        picker.count_var.set("4")
+        picker.raw_var.set("SW.Item.EnchantmentBook.NotInTheList")
+        picker._use_raw()
+        self.assertIn("Added the SW.Item.EnchantmentBook.NotInTheList book", picker.message_var.get())
+        made = next(item for item in self.tab.hero.items() if item.tag == "SW.Item.EnchantmentBook.NotInTheList")
+        self.assertEqual((made.rarity, made.power, made.count, made.name), ("None", -1, 1, "Not In The List"))
+        picker._use_raw()
+        self.assertIn("already has the Not In The List book", picker.message_var.get())
+        picker.kind_var.set(BOOK_KIND)
+        picker._fill()
+        self.root.update()
+        self.assertTrue(picker.books_button.winfo_manager())
+        picker.books_button.invoke()
+        self.assertEqual(picker.message_var.get(), "Added 9 enchantment books, saved the way the game saves one. Add more, or close this window.")
+        self.assertFalse(picker.books_button.winfo_manager())
+        self.assertEqual({picker.tree.item(row, "values")[1] for row in picker.tree.get_children()}, {"You have it"})
+        self.assertTrue(picker.confirm_button.instate(["disabled"]))
+        picker.destroy()
+        self.assertEqual(len(self.tab.hero.books()), 10)
+        self.assertIn("Added 9 enchantment books, saved the way the game saves one. Nobody has tried a book made by the editor", self.tab.item_message_var.get())
+        summary = self.save()
+        self.assertIn("Added Somersault (enchantment book)", summary)
+        self.assertEqual(len(self.saved_hero().books()), 10)
+
+    def test_an_item_is_not_changed_into_a_book(self):
+        picker = ItemPicker(self.tab, self.tab._catalog(), self.tab.icons, mode="choose", advanced=True)
+        self.root.update()
+        names = [picker.tree.item(row, "text").strip() for row in picker.tree.get_children()]
+        self.assertIn("Longbow", names)
+        self.assertFalse({"Piercing", "Somersault", "Shockwave"} & set(names))
+        picker.destroy()
+        self.select_item("Longbow")
+        self.tab.type_var.set("SW.Item.EnchantmentBook.Piercing")
+        self.tab._apply_type()
+        self.assertIn("can't be changed into an enchantment book. Add the Piercing book with Add items", self.tab.item_message_var.get())
+        self.assertIn("Longbow", self.rows())
 
     def open_picker_on(self, name):
         self.tab.open_add_items()
@@ -1296,6 +1363,106 @@ class SimpleModeTests(WindowTestCase):
         with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
             self.app._save_shortcut()
         self.assertEqual(self.saved_hero().attribute("Emeralds"), 123)
+
+    def test_enchantment_books_have_a_tab_of_their_own(self):
+        button, bar = self.screen.books_button, self.screen.books_bar
+        self.assertFalse(bar.winfo_manager())  # only on the Books tab
+        self.show(BOOK_KIND)
+        self.assertEqual((self.shown(), self.screen.count_text.get()), ([], "0 BOOKS"))
+        self.assertIn("No enchantment books in your inventory. ADD EVERY BOOK gives your hero all the ones the editor knows", self.screen._nothing_here())
+        self.assertTrue(bar.winfo_manager())
+        self.assertEqual(self.screen.books_text.get(), "9 missing")
+        button.invoke()
+        self.assertEqual((len(self.shown()), self.screen.count_text.get()), (9, "9 BOOKS"))
+        self.assertFalse(bar.winfo_manager())  # none left to add
+        self.assertIn(
+            "Added 9 enchantment books, saved the way the game saves one. Nobody has tried a book made by the editor at the "
+            "Enchantsmith yet, so check that it's offered there.",
+            self.screen.item_message_var.get(),
+        )
+        self.assertEqual(self.app.changes_var.get(), "18 unsaved changes")  # each book, and its line in the loot you've discovered
+        # A book's card: what its enchantment does, and nothing to set but whether it's there.
+        screen = self.screen
+        screen.pick_item(self.index_of("SW.Item.EnchantmentBook.MultiRoll"))
+        self.assertEqual((screen.card_name_var.get(), screen.card_kind_var.get(), screen.card_power_var.get()), ("SOMERSAULT", "Enchantment book", ""))
+        self.assertEqual(screen.card_text_var.get(), "The book of an enchantment for armor. Extra rolls: +1 / +2 / +3 rolls at tiers I, II and III.")
+        self.assertFalse(screen.badge.winfo_manager())  # no rarity to show
+        for widget in (screen.power_entry, screen.count_entry, screen.copy_button, screen.change_button, screen.equip_button, *screen.rarity_buttons):
+            self.assertTrue(widget.instate(["disabled"]), widget)
+        self.assertTrue(screen.delete_button.instate(["!disabled"]))
+        self.assertFalse(screen.enchant_box.winfo_manager())  # a book has no effects of its own
+        self.assertEqual(
+            screen.power_hint.get(),
+            "An enchantment book has no rarity or power. A hero has one of each enchantment book, and the Enchantsmith works "
+            "from the ones in your inventory.",
+        )
+        self.assertFalse(screen.has_pending_input())
+        box, _tile, _index = next(hit for hit in screen._item_hits if hit[2] == screen.selected)
+        tip = screen._inventory_tip(mock.Mock(x=box[0] + 2, y=box[1] + 2))
+        self.assertEqual(tip, "Somersault\nEnchantment book")
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            screen.delete_button.invoke()
+        self.assertEqual((len(self.shown()), screen.count_text.get()), (8, "8 BOOKS"))
+        self.assertEqual((bool(bar.winfo_manager()), self.screen.books_text.get()), (True, "1 missing"))
+        self.show("All")
+        self.assertFalse(bar.winfo_manager())
+        self.assertEqual(len([name for name in self.shown() if name in ("Piercing", "Ricochet", "Shockwave")]), 3)  # books are items too
+        summary = self.save()
+        self.assertIn("Added Ricochet (enchantment book)", summary)
+        self.assertNotIn("Somersault", summary)  # added and deleted again
+        saved = self.saved_hero().books()
+        self.assertEqual((len(saved), {item.rarity for item in saved}, {item.power for item in saved}, {item.count for item in saved}), (8, {"None"}, {-1}, {1}))
+
+    def test_add_items_starts_on_the_kind_being_shown(self):
+        self.show(BOOK_KIND)
+        self.screen.add_items()
+        self.root.update()
+        picker = next(w for w in self.screen.winfo_children() if isinstance(w, ItemPicker))
+        self.assertEqual(picker.kind_var.get(), BOOK_KIND)
+        rows = picker.tree.get_children()
+        self.assertEqual(len(rows), 9)
+        self.assertEqual({picker.tree.item(row, "values") for row in rows}, {("Enchantment Book", "Confirmed")})
+        first = rows[0]
+        self.assertEqual((picker.tree.selection(), picker.tree.item(first, "text").strip()), ((first,), "Ancient Alchemy"))
+        # Rarity, power and count are for gear.
+        self.assertTrue(all(widget.instate(["disabled"]) for widget in picker.grade_inputs))
+        self.assertEqual(
+            picker.unique_text.get(),
+            "An enchantment book has no rarity or power. A hero has one of each enchantment book. The book of an enchantment "
+            "for armor. Potions grant souls: 30 / 45 / 60 souls at tiers I, II and III.",
+        )
+        self.assertEqual((picker.slot_note.get(), picker.equip_check.instate(["disabled"])), ("", True))
+        self.assertTrue(picker.books_button.winfo_manager())
+        picker.count_var.set("5")  # left over from a stack of something else
+        picker.rarity_var.set("Unique")
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            picker._confirm()
+        ask.assert_not_called()
+        self.assertEqual(picker.message_var.get(), "Added the Ancient Alchemy book. Add more, or close this window.")
+        self.assertEqual(picker.tree.item(first, "values")[1], "You have it")
+        self.assertTrue(picker.confirm_button.instate(["disabled"]))  # one of each
+        picker.tree.selection_set(rows[1])
+        self.root.update()
+        self.assertTrue(picker.confirm_button.instate(["!disabled"]))
+        made = next(item for item in self.screen.hero.books())
+        self.assertEqual((made.name, made.rarity, made.power, made.count), ("Ancient Alchemy", "None", -1, 1))
+        self.assertIn("Added the Ancient Alchemy book, saved the way the game saves one. Nobody has tried", self.screen.item_message_var.get())
+        # Back on gear, the boxes work again and there's nothing about books.
+        picker.kind_var.set("Melee")
+        picker._fill()
+        self.root.update()
+        self.assertTrue(all(widget.instate(["!disabled"]) for widget in picker.grade_inputs))
+        self.assertFalse(picker.books_button.winfo_manager())
+        self.assertTrue(picker.confirm_button.instate(["!disabled"]))
+        picker.destroy()
+        # From any other tab the list starts where it always did, or on that tab's kind.
+        for shown, kind in (("All", "All kinds"), ("Merchant", "All kinds"), ("Artifact", "Artifact")):
+            self.show(shown)
+            self.screen.add_items()
+            self.root.update()
+            picker = next(w for w in self.screen.winfo_children() if isinstance(w, ItemPicker))
+            self.assertEqual(picker.kind_var.get(), kind)
+            picker.destroy()
 
     def test_put_an_item_in_an_empty_slot(self):
         self.screen.pick_slot("SW.ItemSlot.Equipment.Armor.Helmet")

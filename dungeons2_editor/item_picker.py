@@ -7,7 +7,7 @@ from tkinter import messagebox, ttk
 from typing import Callable
 
 from . import document as doc
-from .hero import MAX_ITEM_POWER, MAX_STACK, NO_OWN_EFFECT, RARITIES, CatalogItem, GearSlot, slots_for
+from .hero import BOOK_KIND, MAX_ITEM_POWER, MAX_STACK, NO_OWN_EFFECT, ONE_OF_EACH, RARITIES, CatalogItem, GearSlot, book_text, slots_for, tag_kind
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -15,6 +15,7 @@ from .layout import fit_to_contents, text_width
 LIST_ICON_SIZE = 24
 PREVIEW_SIZE = 80
 ALL = "All kinds"
+HAVE = "You have it"  # a book already in the inventory: a hero has one of each
 SIZE = (880, 600)
 
 
@@ -44,6 +45,10 @@ class ItemPicker(tk.Toplevel):
     reject); the dialog stays open so several items can be added. ``equipped()`` says what's in
     each slot now (slot tag -> item name). In "choose" mode the dialog closes and leaves the
     picked item ID in ``result``.
+
+    ``kind`` is the kind the list starts on. ``have()`` gives the IDs of the enchantment books in the
+    inventory (a hero has one of each, so those can't be added again), and ``on_add_books()`` adds every
+    book that's missing and returns what it did, or None.
     """
 
     def __init__(
@@ -60,6 +65,9 @@ class ItemPicker(tk.Toplevel):
         hero_level: int | None = None,
         on_add: Callable[[str, str, int, int, GearSlot | None], None] | None = None,
         for_slot: GearSlot | None = None,
+        kind: str | None = None,
+        have: Callable[[], set[str]] | None = None,
+        on_add_books: Callable[[], str | None] | None = None,
     ):
         super().__init__(parent)
         self.catalog = catalog
@@ -71,6 +79,9 @@ class ItemPicker(tk.Toplevel):
         self.hero_level = hero_level
         self.on_add = on_add
         self.for_slot = for_slot  # only items for this slot, equipped there
+        self.start_kind = kind
+        self.have = have or (lambda: set())
+        self.on_add_books = on_add_books
         self.result: str | None = None
         self._by_iid: dict[str, CatalogItem] = {}
         self._slot_by_choice: dict[str, GearSlot] = {}
@@ -113,6 +124,8 @@ class ItemPicker(tk.Toplevel):
         if self.for_slot is not None:
             self.kind_var.set(self.for_slot.kind)
             kind_box.state(["disabled"])
+        elif self.start_kind in kinds:
+            self.kind_var.set(self.start_kind)
         kind_box.bind("<<ComboboxSelected>>", lambda _event: self._fill())
         self.confirmed_only = tk.BooleanVar(value=False)
         ttk.Checkbutton(top, text="Only confirmed", variable=self.confirmed_only, command=self._fill).pack(side="left", padx=(12, 0))
@@ -126,7 +139,7 @@ class ItemPicker(tk.Toplevel):
         self.tree.heading("kind", text="Kind")
         self.tree.heading("status", text="Status")
         self.tree.column("#0", width=260, stretch=True)
-        self.tree.column("kind", width=90, stretch=False)
+        self.tree.column("kind", width=120, stretch=False)
         self.tree.column("status", width=100, stretch=False)
         self.tree.tag_configure("unconfirmed", foreground=ttk.Style(self).lookup("Muted.TLabel", "foreground"))
         scroll = ttk.Scrollbar(listing, orient="vertical", command=self.tree.yview)
@@ -165,8 +178,9 @@ class ItemPicker(tk.Toplevel):
             ttk.Label(panel, text="Rarity").pack(anchor="w", pady=(10, 2))
             rarities = ttk.Frame(panel)
             rarities.pack(anchor="w")
+            self.grade_inputs: list[ttk.Widget] = []  # rarity and power: a book has neither
             for position, rarity in enumerate(RARITIES):
-                ttk.Radiobutton(
+                button = ttk.Radiobutton(
                     rarities,
                     text=rarity,
                     value=rarity,
@@ -174,7 +188,9 @@ class ItemPicker(tk.Toplevel):
                     image=self.icons.rarity_badge(rarity, 16),
                     compound="left",
                     command=self._show_selected,
-                ).grid(row=position // 2, column=position % 2, sticky="w", padx=(0, 18))
+                )
+                button.grid(row=position // 2, column=position % 2, sticky="w", padx=(0, 18))
+                self.grade_inputs.append(button)
             self.unique_label = ttk.Label(panel, textvariable=self.unique_text, style="Muted.TLabel", wraplength=wrap, justify="left")
             self.unique_label.pack(anchor="w")
             # Shown under it for a Unique whose own effect the editor hasn't seen: what the line above describes
@@ -183,9 +199,12 @@ class ItemPicker(tk.Toplevel):
             numbers = ttk.Frame(panel)
             numbers.pack(anchor="w", pady=(10, 0))
             ttk.Label(numbers, text="Power").grid(row=0, column=0, sticky="w", padx=(0, 8))
-            ttk.Spinbox(numbers, textvariable=self.power_var, from_=0, to=MAX_ITEM_POWER, increment=1, width=9).grid(row=0, column=1, pady=2)
+            power_box = ttk.Spinbox(numbers, textvariable=self.power_var, from_=0, to=MAX_ITEM_POWER, increment=1, width=9)
+            power_box.grid(row=0, column=1, pady=2)
             ttk.Label(numbers, text="How many").grid(row=1, column=0, sticky="w", padx=(0, 8))
-            ttk.Spinbox(numbers, textvariable=self.count_var, from_=1, to=MAX_STACK, increment=1, width=9).grid(row=1, column=1, pady=2)
+            count_box = ttk.Spinbox(numbers, textvariable=self.count_var, from_=1, to=MAX_STACK, increment=1, width=9)
+            count_box.grid(row=1, column=1, pady=2)
+            self.grade_inputs += [power_box, count_box]
             ttk.Label(
                 panel, text=f"Your strongest item has power {best_power}. Much higher may be removed by the game.", style="Muted.TLabel", wraplength=wrap
             ).pack(anchor="w", pady=(2, 0))
@@ -231,15 +250,20 @@ class ItemPicker(tk.Toplevel):
         bottom = ttk.Frame(frame)
         bottom.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         ttk.Button(bottom, text="Close" if self.mode == "add" else "Cancel", command=self.destroy).pack(side="right")
+        # Shown while the list is on enchantment books and some are missing.
+        self.books_button = ttk.Button(bottom, text="Add every book", command=self._add_books)
 
     def _fill(self) -> None:
         query = self.search_var.get().strip().lower()
         kind = self.kind_var.get()
         self.tree.delete(*self.tree.get_children())
         self._by_iid.clear()
+        have = self.have()
         for item in self.catalog:
             if kind != ALL and item.kind != kind:
                 continue
+            if self.mode == "choose" and item.kind == BOOK_KIND:
+                continue  # an item can't be changed into a book
             if self.for_slot is not None and not slots_for(item.kind, item.piece, [self.for_slot]):
                 continue
             sure = item.confirmed_at()
@@ -253,10 +277,11 @@ class ItemPicker(tk.Toplevel):
                 "end",
                 text=" " + item.name,
                 image=self.icons.item_image(item.tag, "", LIST_ICON_SIZE, item.name),
-                values=(item.kind, "Confirmed" if sure else "Unconfirmed"),
+                values=(item.kind, HAVE if item.tag in have else "Confirmed" if sure else "Unconfirmed"),
                 tags=() if sure else ("unconfirmed",),
             )
             self._by_iid[iid] = item
+        self._show_books_button()
         if not self._by_iid:
             self.name_var.set("Nothing matches. Try another search." if self.catalog else "No items found in your saves yet.")
             self._show_selected()
@@ -276,6 +301,7 @@ class ItemPicker(tk.Toplevel):
             for var in (self.kind_text, self.status_text, self.unique_text):
                 var.set("")
             self._show_unique_note(False)
+            self._show_grade(None)
             self._show_slot()
             return
         rarity = self._rarity()
@@ -306,12 +332,48 @@ class ItemPicker(tk.Toplevel):
             self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).{effect}{like}")
         elif item.unique and self.mode == "add":
             self.unique_text.set(f"Pick Unique to get the {item.unique}.")
+        elif item.kind == BOOK_KIND:
+            self.unique_text.set(f"An enchantment book has no rarity or power. {ONE_OF_EACH}. {book_text(item.tag)}")
         else:
             self.unique_text.set("")
         self._show_unique_note(bare)
+        self._show_grade(item)
         self._show_slot()
         if self.winfo_ismapped():
             fit_to_contents(self)  # longer text can need more room
+
+    def _show_grade(self, item: CatalogItem | None) -> None:
+        """Rarity, power and count are for gear: a book has none of them, and one the hero has can't be added again."""
+        if self.mode != "add":
+            return
+        book = item is not None and item.kind == BOOK_KIND
+        for widget in self.grade_inputs:
+            widget.state(["disabled"] if book else ["!disabled"])
+        self.confirm_button.state(["disabled"] if book and item.tag in self.have() else ["!disabled"])
+
+    def _show_books_button(self) -> None:
+        """Add every book is there while the list is on enchantment books and the hero is without some."""
+        have = self.have()
+        missing = [item for item in self.catalog if item.kind == BOOK_KIND and item.confirmed and item.tag not in have]
+        if self.mode == "add" and self.on_add_books is not None and self.kind_var.get() == BOOK_KIND and missing:
+            self.books_button.pack(side="left")
+        else:
+            self.books_button.pack_forget()
+
+    def _add_books(self) -> None:
+        done = self.on_add_books()
+        if done:
+            self._say(f"{done} Add more, or close this window.")
+        self._mark_owned()
+
+    def _mark_owned(self) -> None:
+        """Say which of the listed books the hero has now."""
+        have = self.have()
+        for iid, item in self._by_iid.items():
+            if item.tag in have:
+                self.tree.set(iid, "status", HAVE)
+        self._show_grade(self.selected_item())
+        self._show_books_button()
 
     def _show_unique_note(self, shown: bool) -> None:
         """Say, in a warning's colour, that the Unique picked is added without its own effect; or stop saying it."""
@@ -349,7 +411,9 @@ class ItemPicker(tk.Toplevel):
         if not slots:
             self.equip_check.state(["disabled"])
             self.slot_box.state(["disabled"])
-            self.slot_note.set("The editor doesn't know which slot this goes in." if self.selected_item() and self.slots else "")
+            item = self.selected_item()
+            worn = item is not None and item.kind != BOOK_KIND  # a book stays in the inventory
+            self.slot_note.set("The editor doesn't know which slot this goes in." if worn and self.slots else "")
         else:
             self.equip_check.state(["!disabled"])
             self.slot_box.state(["!disabled"] if self.equip_var.get() else ["disabled"])
@@ -436,13 +500,16 @@ class ItemPicker(tk.Toplevel):
             self.result = tag
             self.destroy()
             return
+        book = tag_kind(tag) == BOOK_KIND
         try:
             power = doc.parse_input(self.power_var.get(), 0)
-            count = doc.parse_input(self.count_var.get(), 0)
+            count = 1 if book else doc.parse_input(self.count_var.get(), 0)  # one of each book
             self.on_add(tag, self.rarity_var.get(), power, count, slot)
         except ValueError as exc:
             self._say(str(exc), error=True)
             return
         equipped = f" and equipped it ({slot.label.lower()})" if slot is not None else ""
-        self._say(f"Added {name}{equipped}. Add more, or close this window.")
+        self._say(f"Added {'the ' + name + ' book' if book else name}{equipped}. Add more, or close this window.")
         self._show_slot()  # what's in the slots has changed
+        if book:
+            self._mark_owned()

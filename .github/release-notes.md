@@ -1,3 +1,26 @@
+## What's new in 1.14.0
+
+- **Enchantment books.** The inventory has a **Books** tab, and **Add every book** on it gives your hero all 23
+  books the editor knows in one go. **Add items** lists them too, one at a time (it starts on the kind of item the
+  inventory is showing), and Delete on a book's card takes one away. Asked for by
+  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl) in
+  [discussion 27](https://github.com/IshiakiZ/mcd2-save-editor/discussions/27).
+- **Saved exactly like the game's.** The developer's own save shows how the game saves a book it hands over: seven
+  of them, alike in everything but the ID. A book the editor adds is that very entry, key for key, whatever item it
+  borrows the layout from. A book has no rarity or power and a hero has one of each, so the editor adds or deletes
+  one and changes nothing on it. Its card says what its enchantment does and what it goes on.
+- **Not yet tried at the Enchantsmith.** The game's own script names say the Enchantsmith works from the books in
+  your inventory, but nobody has taken one the editor made there yet. Check that the enchantment is offered, and
+  [say how it went](https://github.com/IshiakiZ/mcd2-save-editor/discussions). The editor leaves the game's
+  collections and achievements alone, as it does for every item, so a book added here is in neither.
+- Nine of the game's 32 books can't be added yet, because nobody has sent the ID the game saves them under:
+  Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul
+  Blast and Tumbleshot. If you have one, **Share item IDs…** sends it.
+- The AI server has `add_enchantment_books`, and its `find_items` lists books.
+- **The inventory's tabs wrap** onto another row when there isn't room for them side by side. On a 1080p display
+  scaled up to 200% the last ones used to be cut off.
+- The editor's own notes about level 100 now say what 1.13.0's README said: a hero set to 100 has kept it.
+
 ## What's new in 1.13.0
 
 - **Level up a talisman.** A talisman's card has **Level up** now: it raises the talisman a level, saved exactly as

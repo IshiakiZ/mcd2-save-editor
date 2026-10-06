@@ -86,6 +86,13 @@ def talisman_item(tag, effect, strengths=(1.2, 1.25, 1.35), level=0, xp=0, **mor
     return entry
 
 
+def book_item(tag, **more):
+    """An enchantment book shaped like one the game handed over: no rarity, no power, no effects and no levels."""
+    entry = hero_item(tag, power=-1, rarity="None", **more)
+    entry["ItemData"]["GeneratorData"]["PowerGeneratorValues"].update(ItemPowerMax=11, RNGRoll=0, ItemPowerOriginal=0)
+    return entry
+
+
 def rolled_effect(name, strength, tier="I", template=None):
     """One of the effects the game rolls on a weapon, armor piece or artifact, as a real save holds it."""
     return {

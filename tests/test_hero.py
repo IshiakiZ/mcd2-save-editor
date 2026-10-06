@@ -2,13 +2,14 @@ import copy
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from dungeons2_editor import hero as heroes
 from dungeons2_editor import my_items
 from dungeons2_editor.hero import Hero
 
-from .helpers import enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect, talisman_item
+from .helpers import book_item, enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect, talisman_item
 
 # What the game saved, key for key, for a Special Bow it dropped and for a Unique helmet enchanted at the Enchantsmith
 # (the developer's own save, 2026-10-05). The editor has to write the same.
@@ -22,6 +23,16 @@ GAME_HELMET_EFFECTS = (
     '[{"TypeTag": "SW.Item.Effect.Enchantment", "EffectsInThisBatch": [{"TypeTag": "SW.Enchantment.SoulInfusedPotion", '
     '"Intensity": 0.6, "Quality": 0, "EnchantmentPointsInvested": 8, "GeneratorData": {"GeneratorParentTemplate": '
     '"SW.Enchantment.SoulInfusedPotion.II", "Locked": false}}]}]'
+)
+# The whole entry the game saved for an enchantment book it had just handed over (the Dynamo book, the developer's
+# own save, 2026-10-06). Six more books in that save are alike in everything but the ID, the seed and the time.
+GAME_BOOK = (
+    '{"ItemData": {"TypeTag": "SW.Item.EnchantmentBook.Dynamo", "RarityTag": "SW.Rarity.None", "Effects": [], '
+    '"ItemProgression": {"CurrentLevel": 0, "CurrentXP": 0, "ItemLevels": []}, "GeneratorData": {"GenesisRandomSeed": 347223084, '
+    '"PowerGeneratorValues": {"PlayerLevel": 1, "AreaThreatLevel": 1, "RecommendedThreatLevel": 1, "ThreatSliderOffset": 0, '
+    '"ItemPowerMin": 1, "ItemPowerMax": 11, "RNGRoll": 0, "ItemPower": -1, "ItemPowerOriginal": 0}}, '
+    '"DynamicPropertyTags": ["SW.Item.Property.Dynamic.Unseen"], "TargetSlotOverride": "None", "PickupTimestamp": 1791317983, '
+    '"EffectRerolls": 0}, "StackCount": 1, "EquippedSlot": "None", "MerchantItemSold": false, "MerchantDiscount": 0}'
 )
 UNSEEN = "SW.Item.Property.Dynamic.Unseen"
 
@@ -650,23 +661,121 @@ class HeroTests(unittest.TestCase):
         item = self.hero.item(index)
         self.assertEqual((item.is_talisman, item.rarity, item.power), (False, "Rare", 12))
 
-    def test_enchantment_books_are_only_offered_when_the_hero_has_one(self):
-        book = "SW.Item.EnchantmentBook.MultiRoll"
-        self.assertNotIn(book, {entry.tag for entry in heroes.build_catalog([self.hero])})
-        self.document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item(book, seed=78))
-        entry = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == book)
-        self.assertEqual((entry.name, entry.kind, entry.template["ItemData"]["TypeTag"]), ("Somersault", heroes.BOOK_KIND, book))
-
-    def test_books_in_the_collections_are_not_on_offer_without_one_to_copy(self):
-        # The game files every book you've found in its collections. That used to put each of them in Add items,
-        # nameless ones included, to be laid out like whatever gear came to hand.
-        listed, unlisted = "SW.Item.EnchantmentBook.Shockwave", "SW.Item.EnchantmentBook.NotInTheList"
-        self.body["CollectionsStats"]["CollectedEnchantmentBooksOffensive"] = [listed, unlisted]
-        self.assertTrue({listed, unlisted} <= set(self.hero.item_types_from_the_game()))
-        self.assertFalse({listed, unlisted} & {entry.tag for entry in heroes.build_catalog([self.hero])})
-        self.body["Inventory"]["Entries"].append(hero_item(unlisted, seed=79, unseen=False))
+    def test_every_enchantment_book_is_offered(self):
+        # A hero without a single book is offered every book in the item list: a new one is laid out the way the
+        # game saves a book, whatever the layout is borrowed from.
+        catalog = heroes.build_catalog([self.hero])
+        books = {entry.tag: entry for entry in catalog if entry.kind == heroes.BOOK_KIND}
+        listed = [item for item in heroes.game_items() if item.kind == heroes.BOOK_KIND]
+        self.assertEqual((len(books), len(listed)), (9, 9))  # the pinned list's nine
+        entry = books["SW.Item.EnchantmentBook.MultiRoll"]
+        self.assertEqual((entry.name, entry.confirmed, entry.no_effect, entry.piece, entry.unique), ("Somersault", True, False, None, None))
+        self.assertNotEqual(entry.template["ItemData"]["TypeTag"], entry.tag)  # no book of its own to copy
+        # A book the game filed in its collections is one the game knows, named or not: it's offered as well.
+        unlisted = "SW.Item.EnchantmentBook.NotInTheList"
+        self.body["CollectionsStats"]["CollectedEnchantmentBooksOffensive"] = ["SW.Item.EnchantmentBook.Shockwave", unlisted]
         entry = next(entry for entry in heroes.build_catalog([self.hero]) if entry.tag == unlisted)
-        self.assertEqual((entry.name, entry.template["ItemData"]["TypeTag"]), ("Not In The List", unlisted))
+        self.assertEqual((entry.name, entry.kind, entry.confirmed), ("Not In The List", heroes.BOOK_KIND, True))
+        # What a book is for, as its card says it.
+        self.assertEqual(heroes.book_enchantment("SW.Item.EnchantmentBook.MultiRoll").name, "Somersault")
+        self.assertEqual(heroes.book_text("SW.Item.EnchantmentBook.Ricochet"),
+                         "The book of an enchantment for ranged weapons. Projectiles bounce: 1 / 2 / 3 bounces at tiers I, II and III.")
+        self.assertEqual(heroes.book_text(unlisted), "An enchantment book. The editor doesn't know what the game calls its enchantment yet.")
+        self.assertIsNone(heroes.book_enchantment("SW.Item.Sword"))
+
+    def test_a_book_is_added_the_way_the_game_saves_one(self):
+        theirs = json.loads(GAME_BOOK)
+        book = theirs["ItemData"]["TypeTag"]
+        self.hero.set_attributes({"Level": 40})  # a book is saved with level 1 whatever the hero's level
+        records = copy.deepcopy((self.body["CollectionsStats"], self.body.get("Achievements")))
+        # Laid out like a Rare Longbow, like a talisman at level 2 and like an enchanted Unique with an effect of its
+        # own: what comes out is the game's entry each time, but for the seed and the time.
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", level=1, xp=20000, seed=61, unseen=False))
+        helmet = hero_item("SW.Item.MysticHelmet_Unique", power=44, rarity="Unique", seed=62, unseen=False)
+        helmet["ItemData"]["Effects"] = [rolled(rolled_effect("Luck", 0.1)), enchanted(enchantment_effect("SoulInfusedPotion", 0.6, "II", 8))]
+        helmet["ItemData"]["EffectRerolls"] = 3
+        self.body["Inventory"]["Entries"].append(helmet)
+        for like in ("SW.Item.Longbow", "SW.Item.Talisman.HealthBoost", "SW.Item.MysticHelmet_Unique"):
+            with self.subTest(like):
+                index = self.hero.add_item(book, self.entry(like), rarity="Unique", power=99)  # neither means anything for a book
+                made = self.hero.item(index)
+                wanted = copy.deepcopy(theirs)
+                wanted["ItemData"]["GeneratorData"]["GenesisRandomSeed"] = made.data["GeneratorData"]["GenesisRandomSeed"]
+                wanted["ItemData"]["PickupTimestamp"] = made.picked_up
+                self.assertEqual(made.entry, wanted)
+                self.assertEqual(json.dumps(made.entry), json.dumps(wanted))  # in the game's order of keys, too
+                self.assertNotEqual(made.data["GeneratorData"]["GenesisRandomSeed"], self.entry(like)["ItemData"]["GeneratorData"]["GenesisRandomSeed"])
+                self.assertEqual(
+                    (made.name, made.kind, made.is_book, made.ungraded, made.is_talisman, made.rarity, made.power, made.count, made.where),
+                    ("Dynamo", heroes.BOOK_KIND, True, True, False, "None", -1, 1, "Inventory"),
+                )
+                self.assertEqual((made.can_have_effects, made.can_be_enchanted, made.effect_lines()), (False, False, []))
+                self.hero.remove_item(index)
+        self.assertEqual(self.entry("SW.Item.MysticHelmet_Unique"), helmet)  # what it was laid out like is as it was
+        self.assertIn(book, self.body["LootProgression"]["DiscoveredLoot"])
+        # The game's own records of what you've found are the game's to write: the editor leaves them alone.
+        self.assertEqual((self.body["CollectionsStats"], self.body.get("Achievements")), records)
+        # A book the editor made vouches for nothing until the game has shown it to you, like any item it makes.
+        index = self.hero.add_item(book, self.entry("SW.Item.Longbow"))
+        self.assertNotIn(book, self.hero.item_types_from_the_game())
+        self.hero.item(index).data["DynamicPropertyTags"].clear()
+        self.assertEqual(self.hero.item_types_from_the_game()[book], "kept")
+        self.assertEqual(book_item(book, seed=347223084, picked_up=1791317983), theirs)  # the tests' own book is the game's
+
+    def test_a_hero_has_one_of_each_book(self):
+        book = "SW.Item.EnchantmentBook.MultiRoll"
+        before = copy.deepcopy(self.document)
+        sword = self.entry("SW.Item.Sword")
+        with self.assertRaisesRegex(ValueError, "one of each enchantment book, so the count is 1"):
+            self.hero.add_item(book, sword, count=2)
+        index = self.hero.add_item(book, sword)
+        self.assertEqual(heroes.describe_changes(before, self.document), ["Added Somersault (enchantment book)"])  # no rarity or power to tell
+        self.assertEqual(([item.name for item in self.hero.books()], self.hero.has_book(book), self.hero.has_book("SW.Item.EnchantmentBook.Piercing")),
+                         (["Somersault"], True, False))
+        with self.assertRaisesRegex(ValueError, "already has the Somersault book"):
+            self.hero.add_item(book, sword)
+        with self.assertRaisesRegex(ValueError, "one of each enchantment book, and this one has the Somersault book"):
+            self.hero.duplicate_item(index)
+        saved = copy.deepcopy(self.hero.item(index).entry)
+        for change, why in (
+            ({"rarity": "Rare"}, "it has no rarity or power"),
+            ({"power": 5}, "it has no rarity or power"),
+            ({"count": 3}, "the count stays as it is"),
+            ({"tag": "SW.Item.Axe"}, "The Somersault book can't be changed into another item. Delete it, and add the one you want."),
+            ({"tag": "SW.Item.EnchantmentBook.Piercing"}, "can't be changed into another item"),
+        ):
+            with self.subTest(change), self.assertRaisesRegex(ValueError, why):
+                self.hero.update_item(index, **change)
+        self.hero.update_item(index, rarity="None", power=-1, count=1, tag=book)  # what it has already: nothing to do
+        self.assertEqual(self.hero.item(index).entry, saved)
+        # Nor does an item of yours become a book: a book is added.
+        with self.assertRaisesRegex(ValueError, "can't be changed into an enchantment book. Add the Piercing book with Add items"):
+            self.hero.update_item(self.item_index("SW.Item.Longbow"), tag="SW.Item.EnchantmentBook.Piercing")
+        self.assertEqual(self.hero.item(self.item_index("SW.Item.Longbow")).name, "Longbow")
+        # A book in the Village Merchant's stock, should the game ever put one there, isn't yours yet.
+        self.body["Inventory"]["Entries"].append(book_item("SW.Item.EnchantmentBook.Piercing", slot="SW.ItemSlot.Inventory.VillageMerchant.Tier0", seed=80))
+        self.assertFalse(self.hero.has_book("SW.Item.EnchantmentBook.Piercing"))
+        with_it = copy.deepcopy(self.document)
+        self.hero.remove_item(index)
+        self.assertEqual(heroes.describe_changes(with_it, self.document), ["Removed Somersault (enchantment book)"])
+        self.assertEqual(self.hero.books(), [])
+
+    def test_every_book_a_hero_is_without_is_added_at_once(self):
+        self.body["Inventory"]["Entries"].append(book_item("SW.Item.EnchantmentBook.Piercing", seed=81, unseen=False))
+        catalog = heroes.build_catalog([self.hero])
+        missing = self.hero.missing_books(catalog)
+        self.assertEqual(len(missing), 8)  # nine in the list, and the hero has Piercing
+        self.assertNotIn("Piercing", [entry.name for entry in missing])
+        # A book whose ID is only a guess isn't part of the lot: Add items adds one of those, and asks first.
+        guessed = [replace(entry, confirmed=False) if entry.name == "Shockwave" else entry for entry in catalog]
+        self.assertEqual(len(self.hero.missing_books(guessed)), 7)
+        count = len(self.hero.items())
+        added = self.hero.add_books(guessed)
+        self.assertEqual((len(added), len(self.hero.items()), len(self.hero.books())), (7, count + 7, 8))
+        self.assertEqual({self.hero.item(index).data["RarityTag"] for index in added}, {"SW.Rarity.None"})
+        self.assertEqual(len({self.hero.item(index).data["GeneratorData"]["GenesisRandomSeed"] for index in added}), 7)  # each its own
+        self.assertEqual(self.hero.add_books(guessed), [])
+        self.assertEqual(len(self.hero.add_books(catalog)), 1)  # Shockwave, now that its ID isn't in doubt
 
     def test_the_game_item_list(self):
         items = heroes.game_items()

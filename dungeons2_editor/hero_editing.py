@@ -14,8 +14,8 @@ from typing import Any
 from . import document as doc
 from .effects_dialog import EffectsDialog
 from .hero import (
-    MAX_STAT, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, effect_book, effect_choices, format_amount,
-    game_item, gear_slots, is_unique_version, slots_for, talisman_levels, template_for, the, vendors_text,
+    MAX_STAT, ONE_OF_EACH, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, effect_book, effect_choices,
+    format_amount, game_item, gear_slots, is_unique_version, slots_for, talisman_levels, template_for, the, vendors_text,
 )
 from .item_picker import ItemPicker, slot_choice, slot_open
 from .presets_dialog import PresetsDialog
@@ -28,8 +28,17 @@ def number_text(value: Any) -> str:
 
 
 def power_text(item: Item) -> str:
-    """What an item's power box shows: nothing for a talisman, which has no power."""
-    return "" if item.is_talisman else number_text(item.power)
+    """What an item's power box shows: nothing for a talisman or an enchantment book, which have no power."""
+    return "" if item.ungraded else number_text(item.power)
+
+
+# Said wherever the editor adds a book, until somebody has tried one in the game.
+BOOK_CAUTION = "Nobody has tried a book made by the editor at the Enchantsmith yet, so check that it's offered there."
+
+
+def book_hint() -> str:
+    """What to say about an enchantment book where other items show their rarity and power."""
+    return f"An enchantment book has no rarity or power. {ONE_OF_EACH}, and the Enchantsmith works from the ones in your inventory."
 
 
 def talisman_hint(item: Item) -> str:
@@ -54,7 +63,10 @@ def effects_action(item: Item) -> tuple[str, bool]:
     return "Change effects…", usable
 
 
-__all__ = ["HeroEditing", "SAVE_REMINDER", "effects_action", "number_text", "power_text", "talisman_hint", "vendors_text"]
+__all__ = [
+    "BOOK_CAUTION", "HeroEditing", "SAVE_REMINDER", "book_hint", "effects_action", "number_text", "power_text", "talisman_hint",
+    "vendors_text",
+]
 
 
 class HeroEditing:
@@ -109,7 +121,7 @@ class HeroEditing:
         var.set(number_text(self.hero.attribute(name)))
         message = f"{attribute_label(name)} is now {format_amount(value)}. {SAVE_REMINDER}"
         if name == "Level":
-            message += " In testing, level 10 stuck but level 100 was put back to 1, so change it in small steps."
+            message += " A hero set to level 100 has kept it in the game."
         if value > STAT_CAPS.get(name, MAX_STAT):
             message = f"{attribute_label(name)} is now {format_amount(value)}, above the game's cap of {format_amount(STAT_CAPS[name])}, so the game may lower it."
         self._say_stats(message)
@@ -187,8 +199,33 @@ class HeroEditing:
 
     # ----------------------------------------------------------------- actions
 
-    def open_add_items(self, for_slot: GearSlot | None = None) -> None:
-        """Add items; with ``for_slot``, only items for that slot, equipped there."""
+    def books_to_add(self) -> int:
+        """How many enchantment books the editor knows that this hero is without."""
+        return len(self.hero.missing_books(self._catalog())) if self.hero is not None else 0
+
+    def add_every_book(self) -> str | None:
+        """Give the hero every enchantment book the editor knows that it's without. Says what it did, and
+        returns that; None when it did nothing."""
+        if self.hero is None or not self.commit_pending():
+            return None
+        try:
+            added = self.hero.add_books(self._catalog())
+        except ValueError as exc:
+            self._say_item(str(exc), error=True)
+            return None
+        if not added:
+            self._say_item("Your hero has every enchantment book the editor knows.")
+            return None
+        self._fill_items()
+        books = "book" if len(added) == 1 else "books"
+        done = f"Added {len(added)} enchantment {books}, saved the way the game saves one."
+        self._say_item(f"{done} {BOOK_CAUTION} {SAVE_REMINDER}")
+        self.on_change()
+        return done
+
+    def open_add_items(self, for_slot: GearSlot | None = None, kind: str | None = None) -> None:
+        """Add items; with ``for_slot``, only items for that slot, equipped there. ``kind`` is the kind of
+        item the list starts on."""
         if self.hero is None:
             return
         catalog = self._catalog()
@@ -201,8 +238,12 @@ class HeroEditing:
                 tag, template, rarity=rarity, power=power, count=count, slot=slot, check_level=not self.advanced
             )
             self._fill_items()
-            note = self.hero.item(self.selected).own_effect_note  # a Unique comes without the effect of its own
-            self._say_item(f"Added. {note + ' ' if note else ''}{SAVE_REMINDER}")
+            added = self.hero.item(self.selected)
+            note = added.own_effect_note  # a Unique comes without the effect of its own
+            if added.is_book:
+                self._say_item(f"Added the {added.name} book, saved the way the game saves one. {BOOK_CAUTION} {SAVE_REMINDER}")
+            else:
+                self._say_item(f"Added. {note + ' ' if note else ''}{SAVE_REMINDER}")
             self.on_change()
 
         ItemPicker(
@@ -217,6 +258,9 @@ class HeroEditing:
             hero_level=self._hero_level(),
             on_add=add,
             for_slot=for_slot,
+            kind=kind,
+            have=lambda: {item.tag for item in self.hero.books()} if self.hero is not None else set(),
+            on_add_books=self.add_every_book,
         )
 
     def equip_item(self) -> None:
@@ -306,6 +350,8 @@ class HeroEditing:
             return
         index = self._shown
         item = self.hero.item(index)
+        if item.is_book:
+            return  # nothing on a book to change
         if item.is_talisman:
             if item.can_be_leveled:
                 self._level_up_talisman(index)
