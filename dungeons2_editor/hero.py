@@ -84,13 +84,15 @@ _TALISMAN_POWER = {
 _UPGRADABLE = "SW.Item.Effect.Upgradable"  # a talisman's own effect, which grows with its level
 _REROLLABLE = "SW.Item.Effect.Rerollable"  # the effects the game rolls on a weapon, armor piece or artifact
 _ENCHANTMENT = "SW.Item.Effect.Enchantment"  # the enchantment the Enchantsmith put on it
+_STATIC = "SW.Item.Effect.Static"  # the effect a Unique comes with: one effect, saved ahead of the rolled ones
 EFFECT_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what the game rolls effects on
 ENCHANTABLE_KINDS = ("Melee", "Ranged", "Armor")  # what the Enchantsmith enchants
 TIERS = ("I", "II", "III")
-# A Unique comes with an effect of its own, the one its card describes. No real save holding one has reached the
-# editor, so it can't write it, and a Unique it makes is without it (a player checked in the game: issue 19).
-# The editor says this wherever it makes a Unique.
-NO_OWN_EFFECT = "A Unique the editor makes comes without its own effect: the editor hasn't seen how the game saves that one yet."
+# A Unique comes with an effect of its own, the one its card describes. The editor writes it exactly as a real
+# save holds it (issue 20 showed 51 of them), so it can only give a Unique the one it has seen. For a Unique whose
+# own effect it hasn't seen, it says this wherever it makes one (a player checked in the game: without it, the
+# Unique is one in name only, issue 19).
+NO_OWN_EFFECT = "The editor adds this Unique without its own effect: it hasn't seen how the game saves that one yet."
 MAX_ITEM_XP = 10_000_000
 # The town's three vendors, and the hint the game files in a hero's save the first time you open each one's
 # window (CollectionsStats.ShownHints). The game's script cache spells all three; two have been seen in a save.
@@ -182,6 +184,20 @@ class GameItem:
     name_from_id: bool = False  # the name is made from the ID; what the game calls it isn't known yet
     unique_id: str | None = None  # the Unique's own save ID, once it has been seen in a real save
     levels: tuple = ()  # a talisman's effect at each of its levels, once seen in a real save
+    unique_own: "OwnEffect | None" = None  # the effect its Unique comes with, as a real save holds it
+
+
+@dataclass(frozen=True)
+class OwnEffect:
+    """The effect a Unique comes with, as a real save holds it: the one effect in a batch of the kind
+    SW.Item.Effect.Static. Its numbers follow no rule the editor can rely on (some are enchantments under
+    another name), so each is taken from a save."""
+
+    effect: str  # SW.Effect.Sidestep
+    strength: Any  # the save's Intensity
+    template: str  # SW.EffectTemplate.Sidestep.Unique
+    seen: bool = True  # seen on this very Unique; if not, it's the one seen on a Unique that does the same thing
+    like: str = ""  # that other Unique's name
 
 
 @dataclass(frozen=True)
@@ -266,11 +282,21 @@ def game_items() -> tuple[GameItem, ...]:
         GameItem(
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
             e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")), e.get("unique_id"),
-            tuple(e.get("levels") or ()),
+            tuple(e.get("levels") or ()), _own_effect_in(e.get("unique_own")),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")
     )
+
+
+def _own_effect_in(listed: Any) -> OwnEffect | None:
+    """An item list entry's ``unique_own``, when it's all there."""
+    if not isinstance(listed, dict):
+        return None
+    effect, template, strength = listed.get("effect"), listed.get("template"), listed.get("strength")
+    if not isinstance(effect, str) or not isinstance(template, str) or not _is_number(strength):
+        return None
+    return OwnEffect(effect, strength, template, bool(listed.get("seen", True)), str(listed.get("like") or ""))
 
 
 @lru_cache(maxsize=1)
@@ -450,6 +476,38 @@ def game_item(tag: str) -> GameItem | None:
 def is_unique_version(tag: str) -> bool:
     """Whether the ID is a Unique's own (SW.Item.Sword_Unique1), not a base item's."""
     return _known(tag)[1]
+
+
+def the(name: str, start: bool = False) -> str:
+    """'the Sword', and 'The Burning Blade' as it is: a name that brings its own article doesn't get a second.
+    With ``start`` it begins a sentence."""
+    if name.startswith("The "):
+        return name
+    return f"{'The' if start else 'the'} {name}"
+
+
+def own_effect(tag: str) -> OwnEffect | None:
+    """The effect the Unique with this ID comes with, when the editor's list has how a save holds it. None for
+    any other ID, and for a Unique whose own effect hasn't been seen."""
+    known, unique = _known(tag)
+    return known.unique_own if known is not None and unique else None
+
+
+def _own_batch(own: OwnEffect) -> dict:
+    """A Unique's own effect the way a save holds it: a batch of its own kind with the one effect, in the game's
+    order of keys."""
+    return {
+        "TypeTag": _STATIC,
+        "EffectsInThisBatch": [
+            {
+                "TypeTag": own.effect,
+                "Intensity": own.strength,
+                "Quality": 0,
+                "EnchantmentPointsInvested": 0,
+                "GeneratorData": {"GeneratorParentTemplate": own.template, "Locked": False},
+            }
+        ],
+    }
 
 
 def base_tag(tag: str) -> str:
@@ -658,6 +716,11 @@ class Effect:
         return self.group == _ENCHANTMENT
 
     @property
+    def is_own(self) -> bool:
+        """The effect a Unique comes with."""
+        return self.group == _STATIC
+
+    @property
     def tier(self) -> str:
         """I, II or III for a rolled effect or an enchantment; a talisman's effect follows its level instead."""
         return _tier_of(self.template) if self.group in (_REROLLABLE, _ENCHANTMENT) else ""
@@ -669,10 +732,23 @@ class Effect:
         known = _named(self.tag, self.template) if self.group in (_REROLLABLE, _ENCHANTMENT) else None
         if known is not None:
             return known.name
+        if self.is_own:
+            return self._own_name()
         book = _enchantment_info(self.tag) if self.is_enchantment else None
         # A rolled effect is named after its template, as the game names it: Acrobat, not Roll Cooldown.
         named = _base_of(self.template) if self.is_rolled and self.template else self.tag
         return book.name if book is not None else words(named.rsplit(".", 1)[-1])
+
+    def _own_name(self) -> str:
+        """A Unique's own effect by the name the game gives the same effect when it rolls it ('Evasion' for
+        SW.Effect.Sidestep, from the template SW.EffectTemplate.Sidestep.Unique), else by its ID."""
+        base = self.template.rsplit(".", 1)[0] if self.template.endswith(".Unique") else self.template
+        tag = self.tag.rsplit(".", 1)[0] if self.tag.endswith(".Unique") else self.tag
+        if tag.startswith(ENCHANTMENT_PREFIX):
+            book = _enchantment_info(tag)
+            return book.name if book is not None else words(tag.rsplit(".", 1)[-1])
+        rolled = next((choice for choice in effect_book().effects if choice.effect == tag and _base_of(choice.template) == base), None)
+        return rolled.name if rolled is not None else words((base or tag).rsplit(".", 1)[-1])
 
     @property
     def title(self) -> str:
@@ -696,6 +772,8 @@ class Effect:
     def text(self) -> str:
         """'Health Boost 1.2' or 'Critical Edge II 20%', with its quality and enchantment points when it has
         any. An enchantment's strength isn't a number the game shows, so it's left out."""
+        if self.is_own:  # what it does, with its number, is the Unique's own description
+            return f"Its own: {self.name}"
         known = _named(self.tag, self.template) if self.tier else None
         if known is not None and known.template == self.template and known.strength == self.strength and known.shown:
             number = known.shown
@@ -818,24 +896,23 @@ class Item:
         return [effect for effect in self.effects if not effect.is_rolled and not effect.is_enchantment]
 
     @property
-    def own_effect_missing(self) -> bool | None:
-        """For a Unique: whether it's without the effect of its own, the one its card describes. True when
-        nothing saved on it could be that effect, which is how the editor makes one (see NO_OWN_EFFECT). None
-        when that can't be told: it has effects, but only of the kind the editor writes too. False when it has
-        one saved some other way, and for anything that isn't a Unique."""
-        if not is_unique_version(self.tag) or self.own_effects:
-            return False
-        return None if self.rolled_effects else True
+    def own_effect_missing(self) -> bool:
+        """Whether this is a Unique without the effect of its own, the one its card describes. The game gives
+        every Unique one, saved apart from the effects it rolls; a Unique made by a version of the editor that
+        couldn't write it, or one whose own effect the editor hasn't seen, is without."""
+        return is_unique_version(self.tag) and not self.own_effects
+
+    @property
+    def can_get_own_effect(self) -> bool:
+        """Whether the editor can give this Unique the effect of its own that it's missing."""
+        return self.own_effect_missing and own_effect(self.tag) is not None
 
     @property
     def own_effect_note(self) -> str:
-        """What to say about a Unique that is, or may be, without its own effect; nothing for any other item."""
-        missing = self.own_effect_missing
-        if missing:
-            return "Without its own effect: the editor can't add that one yet."
-        if missing is None:
-            return "If the editor made this Unique, it's without its own effect."
-        return ""
+        """What to say about a Unique that is without its own effect; nothing for any other item."""
+        if not self.own_effect_missing:
+            return ""
+        return "Without its own effect." if self.can_get_own_effect else "Without its own effect: the editor can't add that one yet."
 
     @property
     def can_have_effects(self) -> bool:
@@ -1077,6 +1154,8 @@ class Hero:
             if levels is not None:
                 self._as_talisman(item.data, levels)
                 rarity = power = None
+            else:
+                self._set_own_effect(item.data)  # a Unique's own effect goes with what the item is
         if rarity is not None and rarity != item.rarity:
             item.data["RarityTag"] = RARITY_PREFIX + rarity
         if power is not None and power != item.power:
@@ -1094,6 +1173,38 @@ class Hero:
         marks = data.get("DynamicPropertyTags")
         if isinstance(marks, list) and UNSEEN_TAG not in marks:
             marks.append(UNSEEN_TAG)
+
+    @staticmethod
+    def _set_own_effect(data: dict) -> bool:
+        """Make an item's own effect the one that goes with its ID: a Unique gets the effect it comes with, when
+        the editor's list has it, ahead of its other effects, where the game puts it; anything else has none.
+        Whether that changed anything."""
+        batches = data.get("Effects")
+        if not isinstance(batches, list):
+            return False
+        own = own_effect(str(data.get("TypeTag", "")))
+        wanted = [_own_batch(own)] if own is not None else []
+        current = [batch for batch in batches if isinstance(batch, dict) and batch.get("TypeTag") == _STATIC]
+        if current == wanted:
+            return False
+        batches[:] = wanted + [batch for batch in batches if not (isinstance(batch, dict) and batch.get("TypeTag") == _STATIC)]
+        return True
+
+    def give_own_effect(self, index: int) -> None:
+        """Give a Unique that's without it the effect it comes with in the game, saved the way the game saves
+        it. For one the editor made before it could write that effect."""
+        item, _batches = self._effects_item(index)
+        if not is_unique_version(item.tag):
+            raise ValueError(f"{the(item.name, start=True)} isn't a Unique: only a Unique comes with an effect of its own.")
+        if not item.own_effect_missing:
+            raise ValueError(f"{the(item.name, start=True)} has its own effect already.")
+        if own_effect(item.tag) is None:
+            raise ValueError(f"The editor hasn't seen how the game saves {the(item.name)}'s own effect yet, so it can't add it.")
+        most = effect_book().max_effects
+        if len(item.rolled_effects) + 1 > most:
+            raise ValueError(f"The game caps an item at {most} effects, and {the(item.name)} has {len(item.rolled_effects)}. Take one off first.")
+        self._set_own_effect(item.data)
+        self._mark_unseen(item.data)
 
     def _effects_item(self, index: int) -> tuple[Item, list]:
         """An item whose effects can be changed, and its list of effect batches."""
@@ -1300,6 +1411,7 @@ class Hero:
             data["RarityTag"] = RARITY_PREFIX + rarity
         if "Effects" in data:
             data["Effects"] = []
+            self._set_own_effect(data)  # a Unique comes with an effect of its own
         if "EffectRerolls" in data:
             data["EffectRerolls"] = 0
         progression = data.get("ItemProgression")
@@ -1508,6 +1620,14 @@ class CatalogItem:
     def name_at(self, rarity: str | None) -> str:
         return self.unique if rarity == "Unique" and self.unique else self.name
 
+    def own_effect_at(self, rarity: str | None) -> OwnEffect | None:
+        """The effect of its own it's added with at this rarity: a Unique's, when the editor has seen it."""
+        return own_effect(self.tag_at(rarity)) if rarity == "Unique" and self.unique else None
+
+    def bare_unique_at(self, rarity: str | None) -> bool:
+        """Whether it's added as a Unique without the effect that makes it one."""
+        return rarity == "Unique" and bool(self.unique) and self.own_effect_at(rarity) is None
+
 
 def gear_slots(heroes: list[Hero]) -> list[GearSlot]:
     """GEAR_SLOTS, unless these heroes' saves show other names for the slots: real saves win.
@@ -1664,6 +1784,8 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         was, now = item.enchantment, other.enchantment
         if (was.title if was else None) != (now.title if now else None):
             parts.append(f"enchanted with {now.title}" if now else "enchantment taken off")
+        if other.tag == item.tag and item.own_effect_missing and not other.own_effect_missing:
+            parts.append("given its own effect")
         if other.is_talisman and other.xp != item.xp:
             parts.append(f"XP {format_amount(item.xp)} → {format_amount(other.xp)}")
         if other.equipped_slot != item.equipped_slot:

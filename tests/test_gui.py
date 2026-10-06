@@ -587,35 +587,61 @@ class HeroTabTests(WindowTestCase):
         picker._show_selected()
         self.assertEqual(picker.name_var.get(), "Emerald Hammer")
         self.assertIn("Unique Battle Hammer", picker.unique_text.get())
-        # What the Unique does is the game's doing: one the editor adds comes without it, and the window says so.
-        self.assertIn("). In the game: ", picker.unique_text.get())
+        # It comes with the effect of its own, which the editor has seen saved: nothing to warn about.
         note = picker.unique_note_label
-        self.assertTrue(note.winfo_manager())
-        self.assertEqual(str(note.cget("text")), "A Unique the editor makes comes without its own effect: the editor hasn't seen how the game saves that one yet.")
-        picker.rarity_var.set("Special")
-        picker._show_selected()
-        self.assertFalse(note.winfo_manager())  # only a Unique has one to be without
-        picker.rarity_var.set("Unique")
-        picker._show_selected()
-        self.assertTrue(note.winfo_manager())
+        self.assertTrue(picker.unique_text.get().endswith("(a Unique Battle Hammer). Grants a 5% chance of higher rarity loot drops."))
+        self.assertFalse(note.winfo_manager())
         self.assertIn("SW.Item.Hammer_Unique1", picker.kind_text.get())
         # The Emerald Hammer's own ID hasn't been seen, but it follows the pattern every seen one does: no question asked.
         self.assertTrue(picker.status_text.get().startswith("By its pattern"))
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             picker._confirm()
         ask.assert_not_called()
-        self.assertIn("Added. Without its own effect: the editor can't add that one yet. ", self.tab.item_message_var.get())
+        self.assertIn("Added. Press Save", self.tab.item_message_var.get())
         picker.destroy()
         self.assertIn("Added Emerald Hammer (Unique", self.save())
         hammer = next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Hammer_Unique1")
         self.assertEqual((hammer.rarity, hammer.name), ("Unique", "Emerald Hammer"))
+        self.assertEqual([(effect.is_own, effect.tag, effect.strength) for effect in hammer.effects], [(True, "SW.Effect.Opulence", 0.05)])
+
+    def test_add_items_says_which_uniques_come_without_their_own_effect(self):
+        # The Ranger's Promise: no save has shown the effect it comes with, so the editor can't add it.
+        picker, _row = self.open_picker_on("Bow")
+        note = picker.unique_note_label
+        self.assertFalse(note.winfo_manager())  # at Common rarity it's a Bow
+        picker.rarity_var.set("Unique")
+        picker._show_selected()
+        self.assertEqual(picker.name_var.get(), "Ranger's Promise")
+        self.assertIn("). In the game: Increases chance of critical hits from ranged attacks by 25%.", picker.unique_text.get())
+        self.assertTrue(note.winfo_manager())
+        self.assertEqual(str(note.cget("text")), "The editor adds this Unique without its own effect: it hasn't seen how the game saves that one yet.")
+        picker.rarity_var.set("Special")
+        picker._show_selected()
+        self.assertFalse(note.winfo_manager())  # only a Unique has one to be without
+        picker.rarity_var.set("Unique")
+        picker._show_selected()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            picker._confirm()
+        self.assertIn("Added. Without its own effect: the editor can't add that one yet. ", self.tab.item_message_var.get())
+        picker.destroy()
+        # The Slaymore's hasn't been seen either, but the Humbler Greaves do the same thing and theirs has.
+        picker, _row = self.open_picker_on("Claymore")
+        picker.rarity_var.set("Unique")
+        picker._show_selected()
+        self.assertTrue(picker.unique_text.get().endswith(
+            "Melee attacks deal 50% more damage to secondary targets. That effect is saved the way the game saves it for the "
+            "Humbler Greaves, which does the same."
+        ))
+        self.assertFalse(picker.unique_note_label.winfo_manager())
+        picker.destroy()
 
     def test_making_an_item_unique_renames_it_only_when_the_uniques_id_is_known(self):
         self.select_item("Sword")
         self.tab._apply_item(rarity="Unique")
         self.assertIn("The Burning Blade", self.rows())  # SW.Item.Sword_Unique1 has been seen in real saves
-        self.assertIn("It's The Burning Blade now (without its own effect, which the editor can't add yet).", self.tab.item_message_var.get())
-        self.assertIn("\nWithout its own effect: the editor can't add that one yet.", self.tab.item_subtitle_var.get())
+        self.assertIn("It's The Burning Blade now. ", self.tab.item_message_var.get())
+        self.assertIn("\nEffects: Its own: Fire Focus", self.tab.item_subtitle_var.get())  # it came with the effect of its own
+        self.assertNotIn("Without its own effect", self.tab.item_subtitle_var.get())
         self.select_item("Mystic Circlet")
         self.tab._apply_item(rarity="Unique")
         self.assertNotIn("Oracle Crown", self.rows())  # its own ID hasn't: guessing wrong would cost the item
@@ -1026,29 +1052,43 @@ class SimpleModeTests(WindowTestCase):
         self.screen.pick_item(self.index_of("SW.Item.Longbow"))  # other items get their rarity and power back
         self.assertTrue(self.screen.power_entry.instate(["!disabled"]))
 
-    def test_a_unique_says_when_its_without_its_own_effect(self):
+    def test_a_unique_comes_with_its_own_effect_and_an_older_one_can_be_given_it(self):
         entry = next(entry for entry in self.screen._catalog() if entry.tag == "SW.Item.Sword")
-        blade = self.screen.hero.add_item("SW.Item.Sword_Unique1", entry.template, rarity="Unique")  # as the editor makes one
+        button = self.screen.effects_button
+        blade = self.screen.hero.add_item("SW.Item.Sword_Unique1", entry.template, rarity="Unique")
         self.screen.refresh()
         self.screen.pick_item(blade)
-        self.assertEqual(self.screen.enchant_title.get(), "NO EFFECTS")
+        self.assertEqual((self.screen.enchant_title.get(), self.screen.enchant_text.get()), ("EFFECTS", "Its own: Fire Focus"))
+        self.assertEqual(self.screen.card_text_var.get(), "Fire attacks deal 20% more damage.")
+        self.assertEqual(str(button.cget("text")), "CHANGE EFFECTS…")
+        # One made by a version that couldn't write that effect: the card says so, and the button puts it right.
+        self.screen.hero.item(blade).data["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II"))]
+        self.screen.refresh()
+        self.screen.pick_item(blade)
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Without its own effect.", "Critical Edge II 20%"])
+        self.assertEqual(self.screen.card_text_var.get(), "In the game: Fire attacks deal 20% more damage.")
+        self.assertEqual((str(button.cget("text")), button.instate(["!disabled"])), ("ADD ITS OWN EFFECT", True))
+        button.invoke()
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Its own: Fire Focus", "Critical Edge II 20%"])
+        self.assertIn("The Burning Blade has its own effect now, saved the way the game saves it.", self.screen.item_message_var.get())
+        self.assertEqual(str(button.cget("text")), "CHANGE EFFECTS…")
+        self.assertEqual(self.screen.hero.item(blade).data["Effects"][0]["TypeTag"], "SW.Item.Effect.Static")
+        # With nothing on it at all, the card says what the button does.
+        self.screen.hero.item(blade).data["Effects"] = []
+        self.screen.refresh()
+        self.screen.pick_item(blade)
+        self.assertEqual((self.screen.enchant_title.get(), self.screen.enchant_text.get()),
+                         ("NO EFFECTS", "Without its own effect. The button adds it, saved the way the game saves it."))
+        # A Unique whose own effect the editor hasn't seen: it says so, and the button changes the other effects.
+        promise = self.screen.hero.add_item("SW.Item.Bow_Unique1", entry.template, rarity="Unique")
+        self.screen.refresh()
+        self.screen.pick_item(promise)
         self.assertEqual(
             self.screen.enchant_text.get(),
             "Without its own effect: the editor can't add that one yet. Give it any other you like, and an enchantment.",
         )
         self.assertTrue(self.screen.card_text_var.get().startswith("In the game: "))
-        # With effects of the kind the editor writes too, nobody can tell whose they are.
-        self.screen.hero.item(blade).data["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II"))]
-        self.screen.refresh()
-        self.screen.pick_item(blade)
-        self.assertEqual(self.screen.enchant_title.get(), "EFFECTS")
-        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["If the editor made this Unique, it's without its own effect.", "Critical Edge II 20%"])
-        # One saved some other way is the game's own: nothing to add.
-        self.screen.hero.item(blade).data["Effects"].append({"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]})
-        self.screen.refresh()
-        self.screen.pick_item(blade)
-        self.assertNotIn("its own effect", self.screen.enchant_text.get())
-        self.assertFalse(self.screen.card_text_var.get().startswith("In the game: "))
+        self.assertEqual(str(button.cget("text")), "CHANGE EFFECTS…")
         # An item that isn't a Unique never gets the note.
         self.screen.pick_item(self.index_of("SW.Item.Sword"))
         self.assertIn("The game rolls a Rare item one effect and a Special item two.", self.screen.enchant_text.get())
@@ -1295,7 +1335,10 @@ class SimpleModeTests(WindowTestCase):
         text = dialog.text.get("1.0", "end")
         self.assertIn("Unique gear at power 40, equipped:", text)
         self.assertIn("\tMelee weapon\tPride of the Plains\n", text)
-        self.assertIn("A Unique the editor makes comes without its own effect: the editor hasn't seen how the game saves that one yet.", text)
+        # Most of the kit's Uniques come with the effect of their own; the editor names the ones that can't yet.
+        self.assertIn("A Unique's own effect comes on top, as the game saves it.", text)
+        self.assertIn("of these Uniques", text)
+        self.assertIn("own effect (", text)
         # This hero is level 1, and artifact slots 2 and 3 open at levels 5 and 10.
         self.assertIn("\tArtifacts\tWarrior Drums, Death Cap Mushroom (inventory), Grindstone (inventory)\n", text)
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:

@@ -33,6 +33,64 @@
  ],
  "effects": [
   {
+   "effect": "SW.Effect.ArrowBurst",
+   "template": "SW.EffectTemplate.ArrowBurst",
+   "name": "Arrow Burst",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.BeastBoss",
+   "template": "SW.EffectTemplate.BeastBoss",
+   "name": "Beast Boss",
+   "name_from_id": true,
+   "maybe": "Pack Leader",
+   "tiers": [
+    {
+     "tier": "II",
+     "strength": 0.25,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Committed",
+   "template": "SW.EffectTemplate.Committed",
+   "name": "Bounty Hunter",
+   "category": "Attack",
+   "rolls_on": "Fighter gear, Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/bounty-hunter",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Deal 20% more damage to wounded enemies."
+    },
+    {
+     "tier": "II",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Deal 25% more damage to wounded enemies."
+    },
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": true,
+     "text": "Deal 30% more damage to wounded enemies."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.Cooldown",
    "template": "SW.EffectTemplate.Cooldown",
    "name": "Cooldown",
@@ -113,7 +171,7 @@
      "tier": "III",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance of critical hits by 15%."
     }
    ]
@@ -121,26 +179,212 @@
   {
    "effect": "SW.Effect.Desperation",
    "template": "SW.EffectTemplate.Desperation",
-   "name": "Desperation",
-   "name_from_id": true,
+   "name": "Persistence",
+   "category": "Attack",
+   "rolls_on": "Any weapon",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/persistence",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Increases damage dealt by 10% of player's total missing health."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Increases damage dealt by 15% of player's total missing health."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Increases damage dealt by 20% of player's total missing health."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.ElementalProtection",
+   "template": "SW.EffectTemplate.ElementalProtection",
+   "name": "Elemental Protection",
+   "category": "Defense",
+   "rolls_on": "Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/elemental-protection",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Reduces damage taken from elemental attacks by 10%."
+    },
+    {
+     "tier": "II",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Reduces damage taken from elemental attacks by 15%."
+    },
+    {
+     "tier": "III",
+     "strength": -0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Reduces damage taken from elemental attacks by 20%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.EmeraldsIncrease",
+   "template": "SW.EffectTemplate.Prospector",
+   "name": "Prospector",
+   "category": "Utility",
+   "rolls_on": "All gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/prospector",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.05,
+     "shown": "5%",
+     "seen": false,
+     "text": "Grants a 5% chance to receive additional emeralds."
+    },
+    {
+     "tier": "II",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Grants a 10% chance to receive additional emeralds."
+    },
+    {
+     "tier": "III",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Grants a 15% chance to receive additional emeralds."
     }
    ]
   },
   {
    "effect": "SW.Effect.Expand",
    "template": "SW.EffectTemplate.Expand",
-   "name": "Expand",
-   "name_from_id": true,
-   "maybe": "Totem Radius",
+   "name": "Totem Radius",
+   "category": "Utility",
+   "rolls_on": "Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/totem-radius",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Increases the area of all positive status effects by 20%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": false,
+     "text": "Increases the area of all positive status effects by 30%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.4,
+     "shown": "40%",
+     "seen": false,
+     "text": "Increases the area of all positive status effects by 40%."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Finesse",
+   "template": "SW.EffectTemplate.Finesse",
+   "name": "Finesse",
+   "category": "Attack",
+   "rolls_on": "Fighter gear, Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/finesse",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Increases attack damage by 15% when jumping or rolling."
+    },
+    {
+     "tier": "II",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Increases attack damage by 25% when jumping or rolling."
+    },
+    {
+     "tier": "III",
+     "strength": 0.35,
+     "shown": "35%",
+     "seen": true,
+     "text": "Increases attack damage by 35% when jumping or rolling."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.FireFocus",
+   "template": "SW.EffectTemplate.FireFocus",
+   "name": "Pyromancer",
+   "category": "Attack",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/pyromancer",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Fire attacks deal 10% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Fire attacks deal 15% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Fire attacks deal 20% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.FrostFocus",
+   "template": "SW.EffectTemplate.FrostFocus",
+   "name": "Frost Focus",
+   "name_from_id": true,
+   "maybe": "Cryomancer",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Gambler",
+   "template": "SW.EffectTemplate.Gambler",
+   "name": "Gambler",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "II",
+     "strength": 0.15,
      "seen": true
     }
    ]
@@ -148,14 +392,31 @@
   {
    "effect": "SW.Effect.HealingFocus",
    "template": "SW.EffectTemplate.HealingFocus",
-   "name": "Healing Focus",
-   "name_from_id": true,
-   "maybe": "Healer",
+   "name": "Healer",
+   "category": "Defense",
+   "rolls_on": "Summoner gear, Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/healer",
    "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Increases healing given to yourself and allies by 25%."
+    },
     {
      "tier": "II",
      "strength": 0.35,
-     "seen": true
+     "shown": "35%",
+     "seen": true,
+     "text": "Increases healing given to yourself and allies by 35%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": false,
+     "text": "Increases healing given to yourself and allies by 50%."
     }
    ]
   },
@@ -178,14 +439,14 @@
      "tier": "II",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Attacks do 20% more knockback."
     },
     {
      "tier": "III",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Attacks do 30% more knockback."
     }
    ]
@@ -193,19 +454,31 @@
   {
    "effect": "SW.Effect.LightningFocus",
    "template": "SW.EffectTemplate.LightningFocus",
-   "name": "Lightning Focus",
-   "name_from_id": true,
-   "maybe": "Electromancer",
+   "name": "Electromancer",
+   "category": "Attack",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/electromancer",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Lightning attacks deal 10% more damage."
     },
     {
      "tier": "II",
      "strength": 0.15,
-     "seen": true
+     "shown": "15%",
+     "seen": true,
+     "text": "Lightning attacks deal 15% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Lightning attacks deal 20% more damage."
     }
    ]
   },
@@ -235,7 +508,7 @@
      "tier": "III",
      "strength": 0.6,
      "shown": "60%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 60% chance to get additional loot drops."
     }
    ]
@@ -259,14 +532,14 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 15% chance to drop duplicate variations of items."
     },
     {
      "tier": "III",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 20% chance to drop duplicate variations of items."
     }
    ]
@@ -290,7 +563,7 @@
      "tier": "II",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Critical hits with ranged weapons deal 20% more damage."
     },
     {
@@ -299,6 +572,113 @@
      "shown": "25%",
      "seen": false,
      "text": "Critical hits with ranged weapons deal 25% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.MasterStrike",
+   "template": "SW.EffectTemplate.MasterStrike",
+   "name": "Strength",
+   "category": "Attack",
+   "rolls_on": "Fighter gear, Trickster gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/strength",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": false,
+     "text": "Critical hits with melee weapons deal 15% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Critical hits with melee weapons deal 20% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": true,
+     "text": "Critical hits with melee weapons deal 25% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Opportunist",
+   "template": "SW.EffectTemplate.Opportunist",
+   "name": "Bully",
+   "category": "Attack",
+   "rolls_on": "Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/bully",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": false,
+     "text": "Deal 25% more damage to enemies affected by a negative status."
+    },
+    {
+     "tier": "II",
+     "strength": 0.35,
+     "shown": "35%",
+     "seen": true,
+     "text": "Deal 35% more damage to enemies affected by a negative status."
+    },
+    {
+     "tier": "III",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": false,
+     "text": "Deal 50% more damage to enemies affected by a negative status."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Opulence",
+   "template": "SW.EffectTemplate.Opulence",
+   "name": "Raider",
+   "category": "Utility",
+   "rolls_on": "All gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/raider",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.01,
+     "shown": "1%",
+     "seen": true,
+     "text": "Grants a 1% chance of higher rarity loot drops."
+    },
+    {
+     "tier": "II",
+     "strength": 0.02,
+     "shown": "2%",
+     "seen": true,
+     "text": "Grants a 2% chance of higher rarity loot drops."
+    },
+    {
+     "tier": "III",
+     "strength": 0.03,
+     "shown": "3%",
+     "seen": true,
+     "text": "Grants a 3% chance of higher rarity loot drops."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.PotionCooldown",
+   "template": "SW.EffectTemplate.PotionMaster",
+   "name": "Potion Master",
+   "name_from_id": true,
+   "maybe": "Potion Maker",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": -0.2,
+     "seen": true
     }
    ]
   },
@@ -321,15 +701,77 @@
      "tier": "II",
      "strength": -0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Take 15% less damage from ranged attacks."
     },
     {
      "tier": "III",
      "strength": -0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Take 20% less damage from ranged attacks."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Protection",
+   "template": "SW.EffectTemplate.Protection",
+   "name": "Protection",
+   "category": "Defense",
+   "rolls_on": "Fighter gear, Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/protection",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Take 10% less damage."
+    },
+    {
+     "tier": "II",
+     "strength": -0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Take 15% less damage."
+    },
+    {
+     "tier": "III",
+     "strength": -0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Take 20% less damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Regeneration",
+   "template": "SW.EffectTemplate.Regeneration",
+   "name": "Regeneration",
+   "category": "Defense",
+   "rolls_on": "Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/regeneration",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.05,
+     "shown": "5%",
+     "seen": false,
+     "text": "Restores health by 5% per second after 5 seconds out of combat."
+    },
+    {
+     "tier": "II",
+     "strength": 0.075,
+     "shown": "7.5%",
+     "seen": true,
+     "text": "Restores health by 7.5% per second after 5 seconds out of combat."
+    },
+    {
+     "tier": "III",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": true,
+     "text": "Restores health by 10% per second after 5 seconds out of combat."
     }
    ]
   },
@@ -365,6 +807,68 @@
    ]
   },
   {
+   "effect": "SW.Effect.SoulFocus",
+   "template": "SW.EffectTemplate.SoulFocus",
+   "name": "Soulmancer",
+   "category": "Attack",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/soulmancer",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.1,
+     "shown": "10%",
+     "seen": false,
+     "text": "Soul attacks deal 10% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Soul attacks deal 15% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Soul attacks deal 20% more damage."
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.SoulGatherMultiply",
+   "template": "SW.EffectTemplate.SoulSiphon",
+   "name": "Reaper",
+   "category": "Utility",
+   "rolls_on": "Mage gear, Summoner gear, Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/reaper",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.25,
+     "shown": "25%",
+     "seen": false,
+     "text": "Increases souls gained by 25%."
+    },
+    {
+     "tier": "II",
+     "strength": 0.35,
+     "shown": "35%",
+     "seen": true,
+     "text": "Increases souls gained by 35%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.45,
+     "shown": "45%",
+     "seen": true,
+     "text": "Increases souls gained by 45%."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.SoulMax",
    "template": "SW.EffectTemplate.BagOfSouls",
    "name": "Spiritual",
@@ -396,6 +900,37 @@
    ]
   },
   {
+   "effect": "SW.Effect.SweepingEdge",
+   "template": "SW.EffectTemplate.SweepingEdge",
+   "name": "Brawler",
+   "category": "Attack",
+   "rolls_on": "Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/brawler",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Melee attacks deal 20% more damage to secondary targets."
+    },
+    {
+     "tier": "II",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": true,
+     "text": "Melee attacks deal 30% more damage to secondary targets."
+    },
+    {
+     "tier": "III",
+     "strength": 0.4,
+     "shown": "40%",
+     "seen": false,
+     "text": "Melee attacks deal 40% more damage to secondary targets."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.SwiftSneak",
    "template": "SW.EffectTemplate.SwiftSneak",
    "name": "Swift Sneak",
@@ -406,6 +941,42 @@
      "tier": "I",
      "strength": 0.15,
      "seen": true
+    },
+    {
+     "tier": "II",
+     "strength": 0.2,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Effect.Thorns",
+   "template": "SW.EffectTemplate.Thorns",
+   "name": "Prickly",
+   "category": "Attack",
+   "rolls_on": "Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/prickly",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": false,
+     "text": "Deals 50% of received damage back to the attacker."
+    },
+    {
+     "tier": "II",
+     "strength": 0.65,
+     "shown": "65%",
+     "seen": true,
+     "text": "Deals 65% of received damage back to the attacker."
+    },
+    {
+     "tier": "III",
+     "strength": 0.8,
+     "shown": "80%",
+     "seen": false,
+     "text": "Deals 80% of received damage back to the attacker."
     }
    ]
   },
@@ -443,32 +1014,79 @@
   {
    "effect": "SW.Effect.Vestige",
    "template": "SW.EffectTemplate.Vestige",
-   "name": "Vestige",
-   "name_from_id": true,
+   "name": "Sorcerer",
+   "category": "Attack",
+   "rolls_on": "Any artifact, Mage gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/sorcerer",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.1,
-     "seen": true
+     "shown": "10%",
+     "seen": true,
+     "text": "Artifact attacks deal 10% more damage."
+    },
+    {
+     "tier": "II",
+     "strength": 0.15,
+     "shown": "15%",
+     "seen": true,
+     "text": "Artifact attacks deal 15% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.2,
+     "shown": "20%",
+     "seen": false,
+     "text": "Artifact attacks deal 20% more damage."
     }
    ]
   },
   {
    "effect": "SW.Effect.Vivify",
    "template": "SW.EffectTemplate.Vivify",
-   "name": "Vivify",
-   "name_from_id": true,
-   "maybe": "Ally",
+   "name": "Ally",
+   "category": "Utility",
+   "rolls_on": "Summoner gear, Support gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/ally",
    "tiers": [
     {
      "tier": "I",
      "strength": 0.15,
-     "seen": true
+     "shown": "15%",
+     "seen": true,
+     "text": "Positive statuses you apply to yourself and allies last 15% longer."
+    },
+    {
+     "tier": "II",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": false,
+     "text": "Positive statuses you apply to yourself and allies last 30% longer."
+    },
+    {
+     "tier": "III",
+     "strength": 0.5,
+     "shown": "50%",
+     "seen": true,
+     "text": "Positive statuses you apply to yourself and allies last 50% longer."
     }
    ]
   }
  ],
  "enchantments": [
+  {
+   "effect": "SW.Enchantment.Blowback",
+   "name": "Blowback",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.5,
+     "seen": true
+    }
+   ]
+  },
   {
    "effect": "SW.Enchantment.Piercing",
    "name": "Piercing",
@@ -476,6 +1094,17 @@
     {
      "tier": "I",
      "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.PotionBarrier",
+   "name": "Barrier Brew",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 6,
      "seen": true
     }
    ]
@@ -503,6 +1132,22 @@
     {
      "tier": "II",
      "strength": 0.6,
+     "seen": true
+    },
+    {
+     "tier": "III",
+     "strength": 0.85,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.Swirling",
+   "name": "Swirling",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 1,
      "seen": true
     }
    ]

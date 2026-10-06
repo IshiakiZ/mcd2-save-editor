@@ -217,10 +217,10 @@
    ],
    "category": "Attack",
    "triggers": "Final combo hit",
-   "book": "Unique items only",
+   "book": "Built into Uniques",
    "tier3": "Wave deals 90% of weapon damage and deals additional soul damage for a short time.",
    "what": "Wave with 90% weapon damage plus soul damage",
-   "levels": "Unique-only (Spectral Spear)"
+   "levels": "Built into a Unique (Spectral Spear)"
   },
   {
    "name": "Lightning Surge",
@@ -277,10 +277,10 @@
    ],
    "category": "Attack",
    "triggers": "Jump attack",
-   "book": "Unique items only",
+   "book": "Built into Uniques",
    "tier3": "Jump attacks create waves of lightning and ice that damages enemies.",
    "what": "Jump attacks create lightning and ice waves",
-   "levels": "Unique-only (Prime Enchanter's Gauntlets)"
+   "levels": "Built into a Unique (Prime Enchanter's Gauntlets)"
   },
   {
    "name": "Ricochet",

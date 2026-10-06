@@ -15,7 +15,7 @@ from . import document as doc
 from .effects_dialog import EffectsDialog
 from .hero import (
     MAX_STAT, STAT_CAPS, GearSlot, Hero, Item, attribute_label, build_catalog, effect_book, effect_choices, format_amount,
-    game_item, gear_slots, is_unique_version, slots_for, talisman_levels, template_for, vendors_text,
+    game_item, gear_slots, is_unique_version, slots_for, talisman_levels, template_for, the, vendors_text,
 )
 from .item_picker import ItemPicker, slot_choice, slot_open
 from .presets_dialog import PresetsDialog
@@ -46,6 +46,8 @@ def effects_action(item: Item) -> tuple[str, bool]:
     that gets it ready to level up: a talisman's effect follows its level."""
     if item.is_talisman:
         return "Ready to level up", item.next_level_xp is not None
+    if item.can_get_own_effect and not item.stock_slot:
+        return "Add its own effect", True  # a Unique from before the editor could write that one
     usable = (item.can_have_effects or item.can_be_enchanted) and not item.stock_slot
     return "Change effects…", usable
 
@@ -137,7 +139,7 @@ class HeroEditing:
         if known is None or not known.unique:
             return ""
         if is_unique_version(item.tag):
-            without = " (without its own effect, which the editor can't add yet)" if item.own_effect_missing is not False else ""
+            without = " (without its own effect, which the editor can't add yet)" if item.own_effect_missing else ""
             return f"It's {'' if item.name.startswith('The ') else 'the '}{item.name} now{without}. "
         return (
             f"It's a Unique-rarity {item.name}, not the {known.unique}: the editor hasn't seen that Unique's own ID in a "
@@ -305,6 +307,9 @@ class HeroEditing:
         if item.is_talisman:
             self._ready_talisman(index)
             return
+        if item.can_get_own_effect:
+            self._give_own_effect(index)
+            return
         gear, enchantments = effect_choices(self._heroes())
         dialog = EffectsDialog(
             self, item, gear, enchantments, most=effect_book().max_effects, enchantsmith_opened=self.hero.vendors_opened()["Enchantsmith"]
@@ -340,6 +345,18 @@ class HeroEditing:
             f"XP set to {format_amount(xp)}, one short of level {item.level + 2}: the next XP you earn in the game with it "
             f"equipped levels it up. {SAVE_REMINDER}"
         )
+        self.on_change()
+
+    def _give_own_effect(self, index: int) -> None:
+        """Give a Unique the effect it comes with in the game, which an older version of the editor left off."""
+        item = self.hero.item(index)
+        try:
+            self.hero.give_own_effect(index)
+        except ValueError as exc:
+            self._say_item(str(exc), error=True)
+            return
+        self._fill_items()
+        self._say_item(f"{the(item.name, start=True)} has its own effect now, saved the way the game saves it. {SAVE_REMINDER}")
         self.on_change()
 
     def change_item(self) -> None:

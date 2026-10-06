@@ -1,3 +1,32 @@
+## What's new in 1.10.0
+
+- **Uniques come with their own effect.** In the game a Unique has an effect of its own, the one its card describes.
+  [darklynkttv](https://github.com/darklynkttv) sent a list from a first playthrough with sixty Uniques the game
+  made ([issue 20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)), and it shows how the game saves that
+  effect: on the item, apart from the effects it rolls and ahead of them. The editor now writes it exactly that way
+  for 73 of the 116 Uniques: the 51 on the list, and 22 that the game's files describe in the very same words as one
+  of those. Rebuilt with the editor, all sixty Uniques on the list came out the same as the game's own, key for
+  key. The Prime Enchanter's Gauntlets get their waves of lightning and ice
+  ([issue 19](https://github.com/IshiakiZ/mcd2-save-editor/issues/19)).
+- **A Unique you made before can be given its effect.** Pick it and press **Add its own effect** on its card. Kits
+  and Add items give it from the start.
+- **43 Uniques are still added without theirs.** A Unique's own effect follows no rule the editor could work the
+  others out from (a few are enchantments under another name, with numbers of their own), so it only writes the
+  ones it has seen. Add items says which those are before you add one, kits name them in their preview, and the
+  card says so. **Share item IDs** lists the own effect of any Unique of yours that the editor hasn't seen it on.
+- **37 gear effects, up from 18,** and more tiers of the ones it had: Bounty Hunter, Brawler, Bully, Finesse,
+  Persistence, Protection, Pyromancer, Raider, Reaper, Regeneration, Soulmancer, Strength, Prickly and others, most
+  under the name the game gives them. Kits put on the highest tier a save has shown.
+- **Six enchantments, up from three:** Swirling, Barrier Brew and one the save calls Blowback, each at tier III, and
+  Ancient Alchemy at all three tiers.
+- **20 of the 24 talismans come with their effect.** The Lucky Clover has its real ID and effect, and the Golem Kit
+  and the Wobblestone, two companion talismans, are added the way the game saves them.
+- **101 of the 116 Uniques have their own ID confirmed** (six more), and 177 of the 180 items.
+- For AI assistants (MCP): `add_unique_effect` gives a Unique that's without it the effect of its own, and an
+  item's effects say which one is the Unique's own.
+- Thanks to [dtreddy30-source](https://github.com/dtreddy30-source) for checking in the game that Uniques from the
+  editor were missing their effect, which is what this fixes.
+
 ## What's new in 1.9.1
 
 - **The editor says when a Unique comes without its own effect.** In the game a Unique has an effect of its own, the

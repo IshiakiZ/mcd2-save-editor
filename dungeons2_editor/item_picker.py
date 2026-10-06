@@ -177,7 +177,8 @@ class ItemPicker(tk.Toplevel):
                 ).grid(row=position // 2, column=position % 2, sticky="w", padx=(0, 18))
             self.unique_label = ttk.Label(panel, textvariable=self.unique_text, style="Muted.TLabel", wraplength=wrap, justify="left")
             self.unique_label.pack(anchor="w")
-            # Shown under it while Unique is picked: what the line above describes isn't on a Unique added here.
+            # Shown under it for a Unique whose own effect the editor hasn't seen: what the line above describes
+            # isn't on the one added here.
             self.unique_note_label = ttk.Label(panel, text=NO_OWN_EFFECT, style="Warn.TLabel", wraplength=wrap, justify="left")
             numbers = ttk.Frame(panel)
             numbers.pack(anchor="w", pady=(10, 0))
@@ -297,20 +298,23 @@ class ItemPicker(tk.Toplevel):
         else:
             self.status_text.set("Unconfirmed: " + doubt[0].lower() + doubt[1:])
             self.status_label.configure(style="Warn.TLabel")
+        bare = as_unique and item.bare_unique_at(rarity)  # added without the effect that makes it that Unique
         if as_unique:
-            effect = f" In the game: {item.unique_effect}" if item.unique_effect else ""
-            self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).{effect}")
+            own = item.own_effect_at(rarity)
+            effect = f" {'In the game: ' if bare else ''}{item.unique_effect}" if item.unique_effect else ""
+            like = f" That effect is saved the way the game saves it for the {own.like}, which does the same." if own is not None and own.like else ""
+            self.unique_text.set(f"At Unique rarity this is the {item.unique} (a Unique {item.name}).{effect}{like}")
         elif item.unique and self.mode == "add":
             self.unique_text.set(f"Pick Unique to get the {item.unique}.")
         else:
             self.unique_text.set("")
-        self._show_unique_note(as_unique)
+        self._show_unique_note(bare)
         self._show_slot()
         if self.winfo_ismapped():
             fit_to_contents(self)  # longer text can need more room
 
     def _show_unique_note(self, shown: bool) -> None:
-        """Say, in a warning's colour, that the Unique picked comes without its own effect; or stop saying it."""
+        """Say, in a warning's colour, that the Unique picked is added without its own effect; or stop saying it."""
         if self.mode != "add":
             return
         if shown:

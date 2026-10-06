@@ -30,8 +30,9 @@ the full save for people who want it.
   level up** puts it one XP short, so the game levels it up the next time you earn XP with it on.
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
-  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. For now a Unique comes
-  [without its own effect](#what-it-cant-do). Items show their in-game names.
+  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. A Unique comes with
+  the effect of its own, saved the way the game saves it, for 73 of the 116 so far
+  ([the rest](#what-it-cant-do) say so). Items show their in-game names.
 - **Presets:**
   - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
   - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
@@ -187,7 +188,7 @@ your sign-in, account or device data.
 - **Some added items may not work yet.** A save stores each item under an internal name, which often isn't the
   name you see: the Riftslasher is `SW.Item.CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst
   Lens is `SW.Item.Talisman.RangedBuff`. The game's list of those names is in its encrypted content files, and the
-  editor doesn't break that encryption, so it knows the names players have reported from their saves (176 of the 180
+  editor doesn't break that encryption, so it knows the names players have reported from their saves (177 of the 180
   items so far) and works the rest out from the in-game name. (The equipment slots are different: the game's
   readable script cache names all 12, so equipping is exact.) In testing, the game removed items whose name was a
   wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
@@ -200,40 +201,46 @@ your sign-in, account or device data.
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs and the effects saved with your items (see below), nothing else from your save.
 - **Most Uniques go by a pattern.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
-  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Ninety-five of the 116 have been
+  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Of the 116, 101 have been
   seen in real saves, and every one is its base item's ID with `_Unique1` (weapons) or `_Unique` (armor) on the end.
   So the editor adds the other Uniques under the ID that pattern gives, and says so when it does. If one were wrong,
   the game would drop that item and keep the rest. Making an item you already own Unique is stricter: it only turns
   into its Unique when that ID has been seen; otherwise it keeps its name and just gets Unique rarity, because a
   wrong ID would cost you the item.
-- **Seven talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
+- **Four talismans can't be given their effect yet.** A talisman has no rarity or power. A save holds what it does
   at each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and
-  1.35, and for a companion's talisman like the Tasty Bone, a tag at each level. The editor knows this for 17 of
+  1.35, and for a companion's talisman like the Tasty Bone, a tag at each level. The editor knows this for 20 of
   the 24 talismans, from what players have shared, and for any talisman one of your heroes has found, and adds
-  those the way the game saves them. The other seven are **Unconfirmed**: the editor can only add one without its
-  effect, so it may do nothing in the game, and it asks first. Four of them haven't been seen in a save at all
-  (Lucky Clover, Medallion of Momentum, Ocelot's Paw and Wonderful Wheat), and three are companion talismans
-  (Golem Kit, Prickle's Mark and Wobblestone) reported before the report listed a level's tags. **Share item IDs…**
-  lists what your own talismans do, so the editor can learn them for everyone. Talismans added by versions before
-  1.7.1 have no effect saved either; the editor points them out, and you can delete them and add them again.
+  those the way the game saves them. The other four are **Unconfirmed**: the editor can only add one without its
+  effect, so it may do nothing in the game, and it asks first. Three of them haven't been seen in a save at all
+  (Medallion of Momentum, Ocelot's Paw and Wonderful Wheat), and Prickle's Mark, a companion's talisman, was
+  reported before the report listed a level's tags. **Share item IDs…** lists what your own talismans do, so the
+  editor can learn them for everyone. Talismans added by versions before 1.7.1 have no effect saved either; the
+  editor points them out, and you can delete them and add them again.
 - **A talisman's level is the game's to change.** The editor sets the XP a talisman has earned and leaves the
   levelling up to the game: **Ready to level up** puts it one XP short of the next level (18,480 XP for level 2
   and 73,920 more for level 3), and the next XP you earn with it equipped does the rest.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 18 gear effects and 3 enchantments so far
-  (Healing Smite, Piercing and Ancient Alchemy, not yet at every tier), plus whatever is on your own items. For
-  eleven of the effects the game's own numbers are published (MetaBot's table), so the editor also offers the tiers
-  nobody has sent yet; it marks those as not seen and asks before adding one. An enchantment's saved strength isn't
+  files, so the editor learns how each one is saved from real saves: 37 gear effects and 6 enchantments so far
+  (Ancient Alchemy at every tier; Healing Smite, Piercing, Swirling, Barrier Brew and one the save calls Blowback at
+  one tier each), plus whatever is on your own items. For 31 of the effects the editor knows what the game calls
+  them and the game's own numbers are published (MetaBot's table), so it also offers the tiers nobody has sent yet;
+  it marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
   game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
-- **A Unique the editor makes comes without its own effect.** In the game a Unique has an effect of its own, the
-  one its card describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on
-  the item, and no save holding a real one has reached the editor yet, so it can't write it: a Unique you add, or
-  make from another item, is that Unique in name, look, rarity and power only. The editor says so when you add one,
-  and on its card. One real Unique would fix this for all of them: if the game itself has given you one (a drop, a
-  reward or a purchase), **Share item IDs…** lists what it holds.
+- **A Unique's own effect: 73 of the 116 so far.** In the game a Unique has an effect of its own, the one its card
+  describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on the item, apart
+  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 51 Uniques a player's
+  list showed it on, and for 22 more that the game's files describe in the very same words as one of those (the
+  Slaymore and the Humbler Greaves both deal 50% more damage to secondary targets, and wherever two such Uniques
+  have both been seen, they are saved alike). Rebuilt with the editor, all 60 Uniques on that list came out the
+  same as the game's own, key for key. These effects follow no rule the editor could work the others out from (a
+  few are enchantments under another name), so the other 43 Uniques are added without theirs: the editor says so
+  before you add one, and on its card. A Unique made by an older version is without its own effect too; its card
+  has a button, **Add its own effect**. **Share item IDs…** lists the own effect of any Unique of yours that the
+  editor hasn't seen it on.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
@@ -261,10 +268,11 @@ the data.
 
 - **Heroes** (`Character<id>`) are plain, compact JSON. Stats are in `Ability.Attributes`, items in
   `Inventory.Entries`.
-- An item's effects are saved in batches, one for each kind: the ones the game rolled for it
-  (`SW.Item.Effect.Rerollable`), its enchantment (`SW.Item.Effect.Enchantment`) and a talisman's own
-  (`SW.Item.Effect.Upgradable`). Each effect holds what it is (`SW.Effect.CriticalEdge`), its strength, and the
-  template it was made from, which says the tier (`SW.EffectTemplate.CriticalEdge.II`).
+- An item's effects are saved in batches, one for each kind, in this order: the one a Unique comes with
+  (`SW.Item.Effect.Static`), the ones the game rolled for it (`SW.Item.Effect.Rerollable`) and its enchantment
+  (`SW.Item.Effect.Enchantment`); a talisman has its own instead (`SW.Item.Effect.Upgradable`). Each effect holds
+  what it is (`SW.Effect.CriticalEdge`), its strength, and the template it was made from, which says the tier
+  (`SW.EffectTemplate.CriticalEdge.II`, or `SW.EffectTemplate.Duelist.Unique` for the Pride of the Plains' own).
 - **Settings** (`GlobalSaveDataDefault`) are JSON with every byte stored minus one (`{"blobs"` becomes `z!aknar!`).
 - The editor writes both formats byte-for-byte the way the game does, so an unedited save comes out identical.
 - Saves are written the way the game writes them: the new data gets a new file name, the revision goes up
@@ -341,6 +349,11 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [#12](https://github.com/IshiakiZ/mcd2-save-editor/issues/12)) and
   [mauricioggizi](https://github.com/mauricioggizi) ([#17](https://github.com/IshiakiZ/mcd2-save-editor/issues/17))
   collected from real saves, and what most talismans do comes from their saves too.
+- What a Unique's own effect is, half of the gear effects and most enchantment tiers come from the list
+  [darklynkttv](https://github.com/darklynkttv) sent from a first playthrough
+  ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)): sixty Uniques the game made.
+  [dtreddy30-source](https://github.com/dtreddy30-source) found that Uniques from the editor were missing it
+  ([#19](https://github.com/IshiakiZ/mcd2-save-editor/issues/19)).
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

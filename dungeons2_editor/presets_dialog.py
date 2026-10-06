@@ -9,7 +9,7 @@ from typing import Callable
 
 from . import document as doc
 from . import presets
-from .hero import MAX_ITEM_POWER, NO_OWN_EFFECT, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount, vendors_text
+from .hero import MAX_ITEM_POWER, RARITIES, CatalogItem, Enchantment, GearSlot, Hero, attribute_label, format_amount, vendors_text
 from .icons import IconLibrary
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -267,7 +267,8 @@ class PresetsDialog(tk.Toplevel):
                 "end",
                 "Gear the kit adds gets the effects the game would roll for it: one on a Rare or Unique item, two on a Special "
                 "one. MetaBot's guides name no gear effects, so these are the editor's own picks, from the ones the game rolls "
-                "on that kind of gear and the editor has seen saved. Change effects… on an item's card changes them.\n",
+                "on that kind of gear and the editor has seen saved. Change effects… on an item's card changes them. A "
+                "Unique's own effect comes on top, as the game saves it.\n",
                 "muted",
             )
             for name, titles in rolled:
@@ -365,8 +366,13 @@ class PresetsDialog(tk.Toplevel):
                 f"{bare} of these talismans {'is' if bare == 1 else 'are'} added without {'its' if bare == 1 else 'their'} effect, "
                 "which the editor hasn't seen in a real save yet, and may do nothing in the game."
             )
-        if any(addition.rarity == "Unique" and addition.found.unique for addition in plan.add):
-            notes.append(NO_OWN_EFFECT + " It's the Unique in name, look, rarity and power.")
+        bare_uniques = [addition.name for addition in plan.add if addition.found.bare_unique_at(addition.rarity)]
+        if bare_uniques:
+            notes.append(
+                f"{len(bare_uniques)} of these Uniques {'is' if len(bare_uniques) == 1 else 'are'} added without "
+                f"{'its' if len(bare_uniques) == 1 else 'their'} own effect ({', '.join(bare_uniques)}): the editor hasn't seen "
+                "how the game saves it yet. The other Uniques come with theirs."
+            )
         patterned = sum(addition.found.by_pattern_at(addition.rarity) for addition in plan.add)
         if patterned:
             notes.append(

@@ -51,6 +51,7 @@ from .hero import (
     items_by_identity,
     slots_for,
     template_for,
+    the,
 )
 
 SERVER_NAME = "mcd2-save-editor"
@@ -68,8 +69,10 @@ INSTRUCTIONS = (
     "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
     "game's servers, so they can't be changed. set_item_effects gives a weapon, armor piece or artifact its "
     "effects and a weapon or armor piece its enchantment, from list_effects: the editor writes them exactly as a "
-    "real save holds them, so it only has the ones it has seen so far. ready_talisman puts a talisman one XP "
-    "short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
+    "real save holds them, so it only has the ones it has seen so far. A Unique comes with an effect of its own "
+    "(unique_effect): the editor adds it with the Unique where it has seen how the game saves it, and "
+    "add_unique_effect gives it to a Unique that's without it (unique_effect_note says when one is). ready_talisman "
+    "puts a talisman one XP short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
     "apply_preset add enchantments once the Enchantsmith is one of them."
 )
 
@@ -550,6 +553,15 @@ class EditorServer:
 
         return self._edit(args["hero"], change)
 
+    def add_unique_effect(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            index = _index_of(hero, args["item"])
+            item = hero.item(index)
+            hero.give_own_effect(index)
+            return f"{the(item.name, start=True)} has its own effect now, saved the way the game saves it.", {"item": _item_info(hero.item(index), _refs(hero), {})}
+
+        return self._edit(args["hero"], change)
+
     def ready_talisman(self, args: dict) -> dict:
         def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
             index = _index_of(hero, args["item"])
@@ -710,9 +722,9 @@ class EditorServer:
                   "ignore_caps": _flag("Go past the game's caps (anything above them is lost in the game).")},
                  self.set_stats, ("hero", "stats")),
             Tool("add_item", "Add an item", "Add any item from find_items to the inventory, optionally equipped. A Unique's own name (e.g. Oracle "
-                 "Crown), or its base item at Unique rarity, adds the Unique, which has a save ID of its own. It comes without "
-                 "the Unique's own effect (unique_effect says what that does in the game): the editor can't write that one yet, "
-                 "so tell the user. Power defaults to the hero's strongest item.",
+                 "Crown), or its base item at Unique rarity, adds the Unique, which has a save ID of its own, with the effect "
+                 "it comes with in the game (unique_effect). Where the editor hasn't seen how the game saves that effect, the "
+                 "item says so in unique_effect_note: tell the user. Power defaults to the hero's strongest item.",
                  {"hero": HERO, "item": _string("The item's name or save ID from find_items."), "rarity": RARITY, "power": POWER,
                   "count": COUNT, "equip": {"type": ["boolean", "string"], "description": "true to equip it in the first free slot, or a slot name."},
                   "allow_unconfirmed": UNCONFIRMED, "ignore_slot_levels": LOCKED},
@@ -731,6 +743,10 @@ class EditorServer:
                   "enchantment": _string("An enchantment from list_effects, with a tier if you like (\"Healing Smite I\"), or \"none\" to take it off."),
                   "allow_unseen": _flag("Allow a tier no save has shown yet (seen: false). If the game doesn't know it as written, it may drop the effect or the item.")},
                  self.set_item_effects, ("hero", "item")),
+            Tool("add_unique_effect", "Give a Unique its own effect", "Give a Unique that's without it (unique_effect_note) the effect it comes with "
+                 "in the game, saved the way the game saves it. For a Unique an older version of the editor made. It can't be done "
+                 "for a Unique whose own effect the editor hasn't seen in a save.",
+                 {"hero": HERO, "item": ITEM}, self.add_unique_effect, ("hero", "item")),
             Tool("ready_talisman", "Ready a talisman to level up", "Put a talisman one XP short of its next level: the game levels it up the next time it "
                  "earns XP while equipped. A talisman's effect follows its level, which only the game changes.",
                  {"hero": HERO, "item": ITEM}, self.ready_talisman, ("hero", "item")),
@@ -885,6 +901,8 @@ def _effect_info(effect: Effect) -> dict:
         info["tier"] = effect.tier
     if effect.is_enchantment:
         info["enchantment"] = True
+    if effect.is_own:
+        info["unique_own"] = True  # the effect a Unique comes with; set_item_effects leaves it alone
     if effect.quality:
         info["quality"] = effect.quality
     if effect.points:
@@ -924,7 +942,8 @@ def _catalog_info(entry: CatalogItem) -> dict:
             info["unique_by_pattern"] = True
     if entry.unique_effect:
         info["unique_effect"] = entry.unique_effect
-        info["unique_effect_note"] = NO_OWN_EFFECT
+        if entry.bare_unique_at("Unique"):
+            info["unique_effect_note"] = NO_OWN_EFFECT
     known = game_item(entry.tag)
     if known is not None and known.effect:
         info["effect_at_level_3"] = known.effect

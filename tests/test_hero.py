@@ -713,7 +713,16 @@ class HeroTests(unittest.TestCase):
 
 
 class UniqueOwnEffectTests(unittest.TestCase):
-    """A Unique comes with an effect of its own. The editor can't write it yet, so it says when one is without it."""
+    """A Unique comes with an effect of its own, saved apart from the ones the game rolls. The editor writes the
+    ones it has seen in a real save, and says when a Unique is without its own."""
+
+    BLADE = {  # The Burning Blade's, as a real save holds it (issue 20)
+        "TypeTag": "SW.Item.Effect.Static",
+        "EffectsInThisBatch": [{
+            "TypeTag": "SW.Effect.FireFocus", "Intensity": 0.2, "Quality": 0, "EnchantmentPointsInvested": 0,
+            "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.FireFocus.Unique", "Locked": False},
+        }],
+    }
 
     def unique(self, *batches, tag="SW.Item.Sword_Unique1", rarity="Unique"):
         save = hero_save()
@@ -722,36 +731,132 @@ class UniqueOwnEffectTests(unittest.TestCase):
         save["CharacterSaveV1"]["Inventory"]["Entries"] = [entry]
         return Hero(save).item(0)
 
-    def test_a_unique_with_nothing_saved_that_could_be_it_is_without_it(self):
-        for batches in ((), (enchanted(enchantment_effect("Radiance", 0.3)),)):  # as the editor makes one, enchanted or not
-            item = self.unique(*batches)
-            self.assertIs(item.own_effect_missing, True)
-            self.assertEqual(item.own_effect_note, "Without its own effect: the editor can't add that one yet.")
+    def hero_and_sword(self):
+        hero = Hero(hero_save())
+        return hero, next(item for item in hero.items() if item.tag == "SW.Item.Sword")
 
-    def test_rolled_effects_leave_it_open(self):
-        item = self.unique(rolled(rolled_effect("CriticalEdge", 0.2, "II")))  # the editor writes these, and so does the game
-        self.assertIsNone(item.own_effect_missing)
-        self.assertEqual(item.own_effect_note, "If the editor made this Unique, it's without its own effect.")
+    def test_the_list_knows_what_a_unique_comes_with(self):
+        blade = heroes.own_effect("SW.Item.Sword_Unique1")
+        self.assertEqual((blade.effect, blade.strength, blade.template, blade.seen), ("SW.Effect.FireFocus", 0.2, "SW.EffectTemplate.FireFocus.Unique", True))
+        # Under an ID nobody has seen yet, the Unique is still the one the pattern says, and its effect was seen.
+        self.assertEqual(heroes.own_effect("SW.Item.MysticHelmet_Unique").template, "SW.EffectTemplate.LightningFocus.Unique")
+        # The Slaymore's hasn't been seen: it's the one saved for the Humbler Greaves, which do the same thing.
+        slaymore = heroes.own_effect("SW.Item.Claymore_Unique1")
+        self.assertEqual((slaymore.seen, slaymore.like, slaymore.effect), (False, "Humbler Greaves", "SW.Effect.SweepingEdge"))
+        for tag in ("SW.Item.Sword", "SW.Item.Bow_Unique1", "SW.Item.Talisman.HealthBoost", "SW.Item.Nonsense_Unique1"):
+            self.assertIsNone(heroes.own_effect(tag), tag)  # not a Unique, or one whose own effect hasn't been seen
 
-    def test_an_effect_saved_another_way_is_the_games(self):
+    def test_a_unique_is_added_with_its_own_effect(self):
+        hero, sword = self.hero_and_sword()
+        blade = hero.item(hero.add_item("SW.Item.Sword", sword.entry, rarity="Unique"))
+        self.assertEqual((blade.tag, blade.data["Effects"]), ("SW.Item.Sword_Unique1", [self.BLADE]))
+        self.assertEqual(json.dumps(blade.data["Effects"]), json.dumps([self.BLADE]))  # in the game's order of keys
+        self.assertFalse(blade.own_effect_missing or blade.own_effect_note)
+        self.assertEqual(blade.effect_lines(), ["Its own: Fire Focus"])
+        self.assertEqual([(effect.is_own, effect.is_rolled, effect.tier) for effect in blade.effects], [(True, False, "")])
+        # Any other rarity is the plain Sword, with nothing of its own; so is a Unique the editor hasn't seen one for.
+        self.assertEqual(hero.item(hero.add_item("SW.Item.Sword", sword.entry, rarity="Special")).data["Effects"], [])
+        promise = hero.item(hero.add_item("SW.Item.Bow_Unique1", sword.entry, rarity="Unique"))  # the Ranger's Promise
+        self.assertEqual((promise.data["Effects"], promise.own_effect_missing, promise.can_get_own_effect), ([], True, False))
+        self.assertEqual(promise.own_effect_note, "Without its own effect: the editor can't add that one yet.")
+
+    def test_its_own_effect_goes_with_what_the_item_is(self):
+        hero, worn = self.hero_and_sword()
+        sword = hero.item(hero.add_item("SW.Item.Sword", worn.entry))  # one in the backpack: what's equipped can't change into another item
+        sword.data["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.2, "II")), enchanted(enchantment_effect("Radiance", 0.3))]
+        kept = copy.deepcopy(sword.data["Effects"])
+        hero.update_item(sword.index, rarity="Unique")  # The Burning Blade's ID has been seen, so the Sword becomes it
+        blade = hero.item(sword.index)
+        self.assertEqual((blade.tag, blade.data["Effects"]), ("SW.Item.Sword_Unique1", [self.BLADE] + kept))  # its own comes first
+        hero.update_item(sword.index, tag="SW.Item.Claymore_Unique1")  # changed into another Unique: the Slaymore
+        slaymore = hero.item(sword.index)
+        self.assertEqual((slaymore.tag, slaymore.data["Effects"][0]["EffectsInThisBatch"][0]["TypeTag"], slaymore.data["Effects"][1:]),
+                         ("SW.Item.Claymore_Unique1", "SW.Effect.SweepingEdge", kept))
+        hero.update_item(sword.index, rarity="Rare")  # no longer a Unique: nothing of its own is left on it
+        self.assertEqual((hero.item(sword.index).tag, hero.item(sword.index).data["Effects"]), ("SW.Item.Claymore", kept))
+        hero.update_item(sword.index, tag="SW.Item.Bow_Unique1", rarity="Unique")  # a Unique the editor hasn't seen one for
+        self.assertEqual(hero.item(sword.index).data["Effects"], kept)
+        self.assertTrue(hero.item(sword.index).own_effect_missing)
+
+    def test_changing_the_other_effects_leaves_its_own_alone(self):
+        hero, sword = self.hero_and_sword()
+        index = hero.add_item("SW.Item.Sword", sword.entry, rarity="Unique")
+        gear, enchantments = heroes.effect_choices([])
+        edge = next(choice for choice in gear if choice.title == "Critical Edge II")
+        smite = next(choice for choice in enchantments if choice.title == "Healing Smite I")
+        hero.set_enchantment(index, smite)
+        hero.set_effects(index, [edge])
+        kinds = [batch["TypeTag"].rsplit(".", 1)[1] for batch in hero.item(index).data["Effects"]]
+        self.assertEqual(kinds, ["Static", "Rerollable", "Enchantment"])  # the order a real save keeps them in
+        self.assertEqual(hero.item(index).data["Effects"][0], self.BLADE)
+        self.assertEqual(hero.item(index).effect_lines(), ["Its own: Fire Focus", "Critical Edge II 20%", "Enchanted: Healing Smite I, 3 enchantment points"])
+        # Its own counts towards the four the game allows, so three more is the most.
+        three = [choice for choice in gear if choice.tier == "I"][:3]
+        hero.set_effects(index, three)
+        with self.assertRaisesRegex(ValueError, "caps an item at 4 effects, and the The Burning Blade has 1 of its own"):
+            hero.set_effects(index, [choice for choice in gear if choice.tier == "I"][:4])
+        hero.set_effects(index, [])
+        hero.set_enchantment(index, None)
+        self.assertEqual(hero.item(index).data["Effects"], [self.BLADE])
+        # A copy is the same Unique, effect and all.
+        self.assertEqual(hero.item(hero.duplicate_item(index)).data["Effects"], [self.BLADE])
+
+    def test_a_unique_without_its_own_effect_can_be_given_it(self):
+        # As an older version of the editor made one: no effects, or only the ones it could write then.
+        for batches in ((), (rolled(rolled_effect("CriticalEdge", 0.2, "II")), enchanted(enchantment_effect("Radiance", 0.3)))):
+            save = hero_save()
+            entry = hero_item("SW.Item.Sword_Unique1", rarity="Unique", unseen=False)
+            entry["ItemData"]["Effects"] = list(batches)
+            save["CharacterSaveV1"]["Inventory"]["Entries"] = [entry]
+            hero = Hero(save)
+            item = hero.item(0)
+            self.assertEqual((item.own_effect_missing, item.can_get_own_effect, item.own_effect_note), (True, True, "Without its own effect."))
+            before = copy.deepcopy(save)
+            hero.give_own_effect(0)
+            self.assertEqual(hero.item(0).data["Effects"], [self.BLADE] + list(batches))
+            self.assertFalse(hero.item(0).own_effect_missing)
+            self.assertIn(heroes.UNSEEN_TAG, hero.item(0).data["DynamicPropertyTags"])  # the editor's doing until the game shows it
+            self.assertEqual(heroes.describe_changes(before, save), ["The Burning Blade: given its own effect"])
+            with self.assertRaisesRegex(ValueError, "has its own effect already"):
+                hero.give_own_effect(0)
+
+    def test_what_cant_be_given_one_says_why(self):
+        hero, sword = self.hero_and_sword()
+        self.assertEqual((heroes.the("Sword"), heroes.the("Sword", start=True), heroes.the("The Burning Blade")), ("the Sword", "The Sword", "The Burning Blade"))
+        with self.assertRaisesRegex(ValueError, "The Sword isn't a Unique"):
+            hero.give_own_effect(sword.index)
+        promise = hero.add_item("SW.Item.Bow_Unique1", sword.entry, rarity="Unique")
+        with self.assertRaisesRegex(ValueError, "hasn't seen how the game saves the Ranger's Promise's own effect yet"):
+            hero.give_own_effect(promise)
+        # With four effects on it already, its own would be a fifth.
+        blade = hero.add_item("SW.Item.Sword", sword.entry, rarity="Unique")
+        hero.item(blade).data["Effects"] = [rolled(*[rolled_effect(f"Effect{number}", number) for number in range(1, 5)])]
+        with self.assertRaisesRegex(ValueError, "caps an item at 4 effects, and The Burning Blade has 4. Take one off first."):
+            hero.give_own_effect(blade)
+
+    def test_an_effect_saved_some_other_way_counts_as_its_own(self):
         item = self.unique({"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]})
-        self.assertIs(item.own_effect_missing, False)
-        self.assertEqual(item.own_effect_note, "")
+        self.assertFalse(item.own_effect_missing or item.own_effect_note)  # the editor leaves what it doesn't know alone
 
     def test_only_a_unique_has_one(self):
         for tag, rarity in (("SW.Item.Sword", "Common"), ("SW.Item.MysticHelmet", "Unique"), ("SW.Item.Talisman.HealthBoost", "Common")):
             item = self.unique(tag=tag, rarity=rarity)  # a base item at Unique rarity isn't its Unique
-            self.assertIs(item.own_effect_missing, False, tag)
-            self.assertEqual(item.own_effect_note, "", tag)
+            self.assertFalse(item.own_effect_missing or item.can_get_own_effect or item.own_effect_note, tag)
 
-    def test_adding_one_and_making_one_both_say_so(self):
-        hero = Hero(hero_save())
-        template = next(item.entry for item in hero.items() if item.tag == "SW.Item.Sword")
-        added = hero.item(hero.add_item("SW.Item.Sword_Unique1", template, rarity="Unique"))
-        self.assertIs(added.own_effect_missing, True)
-        index = next(item.index for item in hero.items() if item.tag == "SW.Item.Sword")
-        hero.update_item(index, rarity="Unique")  # The Burning Blade's ID has been seen, so the Sword becomes it
-        self.assertEqual((hero.item(index).tag, hero.item(index).own_effect_missing), ("SW.Item.Sword_Unique1", True))
+    def test_an_enchantment_under_another_name_is_written_as_saved(self):
+        # The Prime Enchanter's Gauntlets' waves of lightning and ice, the effect issue 19 asked for: an enchantment
+        # with no tier on its template, which no pattern would have given.
+        hero, sword = self.hero_and_sword()
+        gauntlets = hero.item(hero.add_item("SW.Item.Gauntlet_Unique1", sword.entry, rarity="Unique"))
+        self.assertEqual(gauntlets.data["Effects"], [{
+            "TypeTag": "SW.Item.Effect.Static",
+            "EffectsInThisBatch": [{
+                "TypeTag": "SW.Enchantment.MaulerDive", "Intensity": 1, "Quality": 0, "EnchantmentPointsInvested": 0,
+                "GeneratorData": {"GeneratorParentTemplate": "SW.Enchantment.MaulerDive", "Locked": False},
+            }],
+        }])
+        self.assertEqual(gauntlets.effect_lines(), ["Its own: Mauler Dive"])
+        self.assertIsNone(gauntlets.enchantment)  # it isn't the Enchantsmith's: the item can still be enchanted
 
 
 class LocalNameTests(unittest.TestCase):

@@ -13,7 +13,7 @@ from dungeons2_editor import saves
 from dungeons2_editor.hero import Hero
 from dungeons2_editor.mcp_server import PROTOCOL_VERSIONS, EditorServer, serve_streams
 
-from .helpers import SETTINGS_TEXT, enchanted, enchantment_effect, hero_save, make_profile, rolled, rolled_effect, shift_encode, talisman_item
+from .helpers import SETTINGS_TEXT, enchanted, enchantment_effect, hero_item, hero_save, make_profile, rolled, rolled_effect, shift_encode, talisman_item
 
 ROOT = Path(__file__).resolve().parent.parent
 HERO = "Character00000000-0000-1000-8000-000000000002"
@@ -83,7 +83,7 @@ class ProtocolTests(ServerTestCase):
         self.assertEqual(set(tools), {
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
-            "list_effects", "set_item_effects", "ready_talisman",
+            "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman",
         })
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
@@ -185,13 +185,20 @@ class EditingTests(ServerTestCase):
         gear = {slot["slot"]: slot["item"] for slot in self.call("get_hero", hero="00000000")["gear"]}
         # A Unique has a save ID of its own; this one has been seen in a real save.
         self.assertEqual((gear["Leggings"]["name"], gear["Leggings"]["id"]), ("Oracle Tights", "SW.Item.MysticLeggings_Unique"))
-        self.assertTrue(gear["Leggings"]["unique_effect"])
-        # What the Unique does in the game isn't on one the editor adds, and the assistant is told so.
-        self.assertEqual(gear["Leggings"]["unique_effect_note"], "Without its own effect: the editor can't add that one yet.")
+        # It comes with the effect of its own, saved the way the game saves it, so there's nothing to warn about.
+        self.assertEqual(gear["Leggings"]["unique_effect"], "Reduces artifact cooldown time by 30%.")
+        self.assertEqual([(effect["name"], effect["strength"]) for effect in gear["Leggings"]["effects"]], [("Cooldown", -0.3)])
+        self.assertNotIn("unique_effect_note", gear["Leggings"])
         # The Oracle Crown's hasn't, but it follows the pattern every seen one does, so it can be added too.
         found = self.call("find_items", query="Mystic Circlet")["items"][0]
         self.assertEqual((found["unique"], found["unique_confirmed"], found["unique_by_pattern"]), ("Oracle Crown", False, True))
-        self.assertIn("comes without its own effect", found["unique_effect_note"])
+        self.assertNotIn("unique_effect_note", found)
+        # The Ranger's Promise is one whose own effect the editor hasn't seen: the assistant is told before and after.
+        bow = next(item for item in self.call("find_items", query="Bow")["items"] if item["name"] == "Bow")
+        self.assertEqual(bow["unique_effect_note"], "The editor adds this Unique without its own effect: it hasn't seen how the game saves that one yet.")
+        promise = self.call("add_item", hero="00000000", item="Ranger's Promise", allow_unconfirmed=True)["item"]
+        self.assertEqual(promise["unique_effect_note"], "Without its own effect: the editor can't add that one yet.")
+        self.assertIn("hasn't seen how the game saves the Ranger's Promise's own effect yet", self.call("add_unique_effect", hero="00000000", item=promise["ref"]))
         crown = self.call("add_item", hero="00000000", item="Mystic Circlet", rarity="Unique")["item"]
         self.assertEqual((crown["name"], crown["id"], crown["unique_effect"]), ("Oracle Crown", "SW.Item.MysticHelmet_Unique", "Lightning attacks deal 25% more damage."))
         self.assertEqual(self.call("add_item", hero="00000000", item="Longbow")["item"]["power"], 3)  # power defaults to the best item's
@@ -292,6 +299,20 @@ class EditingTests(ServerTestCase):
         self.call("set_item_effects", hero="00000000", item=sword, effects=["Looter"])
         self.call("save_changes", hero="00000000")
         self.assertEqual(next(item for item in self.saved_hero().items() if item.tag == "SW.Item.Sword").effect_lines(), ["Looter I 20%"])
+
+    def test_a_unique_from_an_older_version_is_given_its_own_effect(self):
+        self.assertIn("isn't a Unique", self.call("add_unique_effect", hero="00000000", item=self.ref_of("Sword")))
+        document = json.loads(json.dumps(hero_save()))
+        document["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.Sword_Unique1", rarity="Unique", seed=61, unseen=False))
+        self.profile = make_profile(self.dir / "saves4", {HERO: json.dumps(document, separators=(",", ":")).encode()})
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        blade = next(item for item in self.call("get_hero", hero="00000000")["inventory"] if item["name"] == "The Burning Blade")
+        self.assertEqual(blade["unique_effect_note"], "Without its own effect.")
+        done = self.call("add_unique_effect", hero="00000000", item=blade["ref"])
+        self.assertEqual(done["done"], "The Burning Blade has its own effect now, saved the way the game saves it.")
+        self.assertEqual((done["item"]["effects"][0]["name"], "unique_effect_note" in done["item"]), ("Fire Focus", False))
+        self.assertEqual(done["unsaved_changes"], ["The Burning Blade: given its own effect"])
+        self.assertIn("has its own effect already", self.call("add_unique_effect", hero="00000000", item=blade["ref"]))
 
     def test_a_talisman_is_made_ready_to_level_up(self):
         self.assertIn("only talismans do", self.call("ready_talisman", hero="00000000", item=self.ref_of("Sword")))

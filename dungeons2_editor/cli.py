@@ -138,6 +138,8 @@ def cmd_items(args: argparse.Namespace) -> int:
         f"{len({choice.effect for choice in book.effects})} gear effects ({len(book.effects)} tiers) and "
         f"{len({choice.effect for choice in book.enchantments})} enchantments ({len(book.enchantments)} tiers) that can be put on an item."
     )
+    uniques = [item for item in items if item.unique]
+    print(f"{sum(item.unique_own is not None for item in uniques)} of {len(uniques)} Uniques come with the effect of their own.")
     return 0 if items and enchantments() and book.effects and book.enchantments else 1
 
 

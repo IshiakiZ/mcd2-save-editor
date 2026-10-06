@@ -94,11 +94,13 @@ class EffectsDialog(tk.Toplevel):
             "effect or an enchantment exactly as a real save holds it, so it offers the ones it has seen so far. Share "
             "item IDs sends it the ones on your gear, which is how the lists grow."
         )
-        if item.rarity == "Unique":
-            intro += (
-                " In the game a Unique also comes with an effect of its own. The editor hasn't seen one saved yet, so "
-                "a Unique it added may be missing that one."
+        if item.own_effect_missing:
+            intro += " In the game a Unique also comes with an effect of its own, and this one is without it" + (
+                ": close this window and press Add its own effect." if item.can_get_own_effect
+                else ". The editor hasn't seen how the game saves that one yet."
             )
+        elif self.own:
+            intro += " A Unique's own effect stays as it is: it's what makes it that Unique."
         ttk.Label(frame, text=intro, style="Muted.TLabel", wraplength=text_width(self, 118), justify="left").grid(
             row=0, column=0, columnspan=2, sticky="w", pady=(0, 10)
         )
