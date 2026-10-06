@@ -1,3 +1,33 @@
+## What's new in 1.11.0
+
+- **Best for: the editor's picks of effects for an item.** In the effects window (Change effects…), choose what you
+  want from the item: damage, survival, mobility, loot, artifacts and souls, or companions. The editor puts the best
+  effects for it on, ahead of what the item has, and says what it did.
+  - **A pick is always an effect the game can roll on that very item.** The game rolls an item's effects from the
+    pool of its slot and from one pool for each archetype it carries, so a Sword (Fighter gear) gets Sharpness,
+    Duelist, Swiftness and Critical Hit for damage, the Humbler Heartstring gets Impact, Ranger and Sharpshooter,
+    and a Tank's chestplate is told that the game rolls no mobility effect on it, and which gear it does roll them
+    on. Each item's archetypes and each effect's pools come from MetaBot's tables, and players' lists bear them
+    out: 338 of the 342 effects the game rolled on those items are in the pool this predicts, and the other four
+    are on items their owner had changed with the editor.
+  - **Which of them is best is the editor's own judgement,** not a measurement: bonuses that always apply come
+    first, then critical hits and charged shots, then the ones that need the right enemy or moment. Each pick is
+    at the best tier a real save has shown.
+  - An effect that boosts one element's attacks (Pyromancer and the like) is only picked when your hero has an
+    artifact of that element equipped. No effect on gear gives XP: the window points to The Eye of Experience.
+  - Picking an effect by hand, the window now says when the game wouldn't roll it on that item. You can still add it.
+- **Kits follow the same rule.** A kit no longer gives an item an effect the game doesn't roll on it: The Close
+  Ranger, which is Fighter and Tank gear, got Marksman (a Ranger's and Trickster's effect) and now gets Critical
+  Edge.
+- **Checked in the game: a Unique from the editor has its own effect working.** The Prime Enchanter's Gauntlets,
+  added with the editor, came with their effect in play. Theirs is one of the odd ones (an enchantment saved
+  under another name), so it was the one to try.
+- **Flatpak Steam:** the editor already looked in Flatpak Steam's folder for your saves; it now looks under each
+  of the names Flatpak gives that folder.
+- **Three more Uniques' own effects count as seen:** the Alchemist Top Hat, the Woodsprite Crown and the Dreamruler
+  Cover. The editor had worked each out from a Unique described in the same words, and a player's list holds all
+  three exactly as it wrote them: 96 of the 115 are now from saves.
+
 ## What's new in 1.10.2
 
 - **115 of the 116 Uniques come with their own effect** (85 in 1.10.1).

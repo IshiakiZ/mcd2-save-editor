@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Callable
 
-from . import __version__, merge, presets, saves, wgs
+from . import __version__, merge, presets, recommend, saves, wgs
 from .hero import (
     ATTRIBUTE_LABELS,
     MAX_ITEM_POWER,
@@ -69,7 +69,9 @@ INSTRUCTIONS = (
     "and one with effect_known: false can only be added without its effect. Online heroes are stored on the "
     "game's servers, so they can't be changed. set_item_effects gives a weapon, armor piece or artifact its "
     "effects and a weapon or armor piece its enchantment, from list_effects: the editor writes them exactly as a "
-    "real save holds them, so it only has the ones it has seen so far. A Unique comes with an effect of its own "
+    "real save holds them, so it only has the ones it has seen so far. With best_for (a goal: Damage, Survival, "
+    "Mobility, Loot, Artifacts and souls, Companions) it picks the effects itself, out of the ones the game can roll "
+    "on that item; that choice is the editor's judgement, so say so if asked. A Unique comes with an effect of its own "
     "(unique_effect): the editor adds it with the Unique where it has seen how the game saves it, and "
     "add_unique_effect gives it to a Unique that's without it (unique_effect_note says when one is). ready_talisman "
     "puts a talisman one XP short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
@@ -533,8 +535,12 @@ class EditorServer:
                 wanted = args["effects"]
                 if not isinstance(wanted, list) or not all(isinstance(name, str) for name in wanted):
                     raise ToolError("effects is a list of names from list_effects, e.g. [\"Critical Edge II\", \"Looter\"]. An empty list removes them.")
+                if args.get("best_for") is not None:
+                    raise ToolError("Give effects or best_for, not both: best_for chooses the effects itself.")
                 hero.set_effects(index, [_effect_choice(name, gear, allow) for name in wanted])
                 did.append("effects: " + (", ".join(effect.title for effect in hero.item(index).rolled_effects) or "none"))
+            if args.get("best_for") is not None:
+                did.append(_best_for(hero, index, str(args["best_for"]), gear))
             if args.get("enchantment") is not None:
                 wanted = str(args["enchantment"]).strip()
                 if wanted.lower() in ("", "none", "remove"):
@@ -544,7 +550,10 @@ class EditorServer:
                     hero.set_enchantment(index, _effect_choice(wanted, enchantments, allow))
                     did.append(f"enchanted with {hero.item(index).enchantment.title}")
             if not did:
-                raise ToolError("Say what to set: effects (a list of names from list_effects) or enchantment (a name, or \"none\").")
+                raise ToolError(
+                    "Say what to set: effects (a list of names from list_effects), best_for (a goal, for the editor's own picks) "
+                    "or enchantment (a name, or \"none\")."
+                )
             item = hero.item(index)
             more = {"item": _item_info(item, _refs(hero), {})}
             if hero.item(index).enchantment is not None and not hero.vendors_opened()["Enchantsmith"]:
@@ -736,8 +745,13 @@ class EditorServer:
                  self.change_item, ("hero", "item")),
             Tool("set_item_effects", "Set an item's effects", "Give a weapon, armor piece or artifact its effects (in place of the ones the game "
                  "rolled), and a weapon or armor piece its enchantment, from list_effects. Leave either out to keep what the item "
-                 "has. A name without a tier gets the highest tier a save has shown.",
+                 "has. A name without a tier gets the highest tier a save has shown. Or give best_for and the editor picks: "
+                 "the best effects for that goal out of the ones the game can roll on this very item (it rolls from the pool of "
+                 "the item's slot and of each archetype the item carries), ahead of the effects it has. Which is best is the "
+                 "editor's judgement, not a measurement.",
                  {"hero": HERO, "item": ITEM,
+                  "best_for": {"type": "string", "enum": [goal.name for goal in recommend.GOALS if goal.order],
+                               "description": "A goal, instead of effects. The answer says what was picked, kept and taken off."},
                   "effects": {"type": "array", "items": {"type": "string"},
                               "description": "Names from list_effects, with a tier if you like: [\"Critical Edge II\", \"Looter\"]. At most 4; [] removes them."},
                   "enchantment": _string("An enchantment from list_effects, with a tier if you like (\"Healing Smite I\"), or \"none\" to take it off."),
@@ -871,6 +885,29 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
     if entry is not None and not entry.confirmed:
         info["confirmed"] = False
     return info
+
+
+def _best_for(hero: Hero, index: int, name: str, gear: list[EffectChoice]) -> str:
+    """Put the editor's picks for a goal on an item, ahead of the effects it has, and say what was done: what
+    "Best for" does in the effects window."""
+    goal = next((found for found in recommend.GOALS if found.name.lower() == name.strip().lower()), None)
+    if goal is None:
+        raise ToolError(f"best_for is one of: {', '.join(found.name for found in recommend.GOALS if found.order)}.")
+    item = hero.item(index)
+    if not item.can_have_effects:
+        raise ToolError(f"{the(item.name, start=True)} can't have effects: the game rolls them on weapons, armor and artifacts.")
+    elements = hero.elements_in_play() | ({item.element} if item.element else set())
+    room = max(effect_book().max_effects - len(item.own_effects), 0)
+    picked = recommend.best(goal, item.kind, item.archetypes, gear, room, elements)
+    if not picked:
+        raise ToolError(recommend.nothing(goal, item.name, item.kind, item.archetypes, gear))
+    had = [effect.as_choice() for effect in item.rolled_effects]
+    wanted = recommend.keep(picked, had, room)
+    hero.set_effects(index, wanted)
+    on_it = {choice.effect for choice in wanted}
+    return recommend.explain(
+        goal, item.name, item.kind, item.archetypes, picked, kept=wanted[len(picked):], dropped=[choice for choice in had if choice.effect not in on_it]
+    )
 
 
 def _effect_choice(wanted: str, choices: list[EffectChoice], allow_unseen: bool) -> EffectChoice:

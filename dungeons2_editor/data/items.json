@@ -2,7 +2,10 @@
  "sources": [
   "https://metabot.gg/en/minecraft-dungeons-2/uniques",
   "https://metabot.gg/en/minecraft-dungeons-2/artifacts",
-  "https://metabot.gg/en/minecraft-dungeons-2/talismans"
+  "https://metabot.gg/en/minecraft-dungeons-2/talismans",
+  "https://metabot.gg/en/minecraft-dungeons-2/weapons",
+  "https://metabot.gg/en/minecraft-dungeons-2/armor",
+  "https://metabot.gg/en/minecraft-dungeons-2/builds"
  ],
  "items": [
   {
@@ -21,7 +24,13 @@
     "template": "SW.EffectTemplate.Cooldown.Unique",
     "seen": false,
     "like": "Oracle Tights"
-   }
+   },
+   "tags": [
+    "Support"
+   ],
+   "unique_tags": [
+    "Support"
+   ]
   },
   {
    "name": "Beekeeper Leggings",
@@ -38,7 +47,13 @@
     "strength": -0.5,
     "template": "SW.EffectTemplate.Resilience.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support"
+   ],
+   "unique_tags": [
+    "Support"
+   ]
   },
   {
    "name": "Beekeeper Suit",
@@ -55,7 +70,13 @@
     "strength": 0.5,
     "template": "SW.EffectTemplate.HealingFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support"
+   ],
+   "unique_tags": [
+    "Support"
+   ]
   },
   {
    "name": "Beekeeper Veil",
@@ -72,7 +93,13 @@
     "strength": 0.7,
     "template": "SW.EffectTemplate.Vivify.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support"
+   ],
+   "unique_tags": [
+    "Support"
+   ]
   },
   {
    "name": "Bounty Hunter Boots",
@@ -90,7 +117,13 @@
     "template": "SW.EffectTemplate.BagOfSouls.Unique",
     "seen": false,
     "like": "Alchemist Loafers"
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Bounty Hunter Chestplate",
@@ -108,7 +141,13 @@
     "template": "SW.EffectTemplate.ProjectileProtection.Unique",
     "seen": false,
     "like": "Sage Headband"
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Bounty Hunter Helmet",
@@ -125,7 +164,13 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Knockback.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Bounty Hunter Shinguards",
@@ -142,7 +187,13 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.Vanguard.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Disciple Leggings",
@@ -159,7 +210,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Acrobat.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Disciple mask",
@@ -176,7 +235,15 @@
     "strength": -0.25,
     "template": "SW.EffectTemplate.ProjectileProtection.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Disciple Robe",
@@ -193,7 +260,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Committed.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Disciple Wraps",
@@ -210,7 +285,15 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.RapidStrike.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Mushroom Boots",
@@ -227,7 +310,15 @@
     "strength": -0.2,
     "template": "SW.EffectTemplate.Friendship.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Mushroom Cap",
@@ -245,7 +336,15 @@
     "template": "SW.EffectTemplate.PoisonFocus.Unique",
     "seen": false,
     "like": "Venomous Fangs"
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Mushroom Leggings",
@@ -262,7 +361,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.BeastBoss.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Mushroom Robe",
@@ -279,7 +386,15 @@
     "strength": 0.15,
     "template": "SW.EffectTemplate.Regeneration.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Mystic Boots",
@@ -297,7 +412,13 @@
     "template": "SW.EffectTemplate.Opulence.Unique",
     "seen": false,
     "like": "Emerald Hammer"
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Mystic Circlet",
@@ -314,7 +435,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.LightningFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Mystic Leggings",
@@ -331,7 +458,13 @@
     "strength": -0.3,
     "template": "SW.EffectTemplate.Cooldown.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Mystic Robe",
@@ -348,7 +481,13 @@
     "strength": 1,
     "template": "SW.EffectTemplate.Saboteur.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Nomad Boots",
@@ -365,7 +504,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Desperation.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Nomad Chestplate",
@@ -382,7 +527,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Deflect.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Nomad Hood",
@@ -399,7 +550,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Precision.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Nomad Leggings",
@@ -416,7 +573,13 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.Reeling.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Phantom Boots",
@@ -434,7 +597,15 @@
     "template": "SW.EffectTemplate.Finesse.Unique",
     "seen": false,
     "like": "Carapace Mace"
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Phantom Chestplate",
@@ -450,9 +621,16 @@
     "effect": "SW.Effect.Duelist",
     "strength": 0.4,
     "template": "SW.EffectTemplate.Duelist.Unique",
-    "seen": false,
-    "like": "Pride of the Plains"
-   }
+    "seen": true
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Phantom Helmet",
@@ -469,7 +647,15 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.SoulSiphon.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Phantom Pants",
@@ -486,7 +672,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.SwiftSneak.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Protector Boots",
@@ -503,7 +697,13 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.Sidestep.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Protector Chestplate",
@@ -520,7 +720,13 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Constitution.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Protector Helmet",
@@ -537,7 +743,13 @@
     "strength": -0.25,
     "template": "SW.Effecttemplate.Protection.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Protector Shinguards",
@@ -554,7 +766,13 @@
     "strength": 0.5,
     "template": "SW.EffectTemplate.SweepingEdge.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Ranger Boots",
@@ -571,7 +789,13 @@
     "strength": 1.45,
     "template": "SW.EffectTemplate.AmmoCapacity.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Ranger"
+   ]
   },
   {
    "name": "Ranger Cap",
@@ -589,7 +813,13 @@
     "template": "SW.EffectTemplate.MultiShot.Unique",
     "seen": false,
     "like": "Harp Crossbow"
-   }
+   },
+   "tags": [
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Ranger"
+   ]
   },
   {
    "name": "Ranger Jacket",
@@ -606,7 +836,13 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.Power.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Ranger"
+   ]
   },
   {
    "name": "Ranger Leggings",
@@ -624,7 +860,13 @@
     "template": "SW.EffectTemplate.Reconstruction.Unique",
     "seen": false,
     "like": "Woodsprite Root Boots"
-   }
+   },
+   "tags": [
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Ranger"
+   ]
   },
   {
    "name": "Realmreacher Boots",
@@ -641,7 +883,15 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.EagleEye.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Ranger"
+   ]
   },
   {
    "name": "Realmreacher Hat",
@@ -658,7 +908,15 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.Supercharge.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Ranger"
+   ]
   },
   {
    "name": "Realmreacher Leggings",
@@ -675,7 +933,15 @@
     "strength": 0.45,
     "template": "SW.EffectTemplate.MasterMarksman.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Ranger"
+   ]
   },
   {
    "name": "Realmreacher Robe",
@@ -692,7 +958,15 @@
     "strength": 0.55,
     "template": "SW.EffectTemplate.Expand.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Ranger"
+   ]
   },
   {
    "name": "Redstone Boots",
@@ -709,7 +983,15 @@
     "strength": 0.45,
     "template": "SW.EffectTemplate.MasterStrike.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Redstone Chestplate",
@@ -726,7 +1008,15 @@
     "strength": 0.06,
     "template": "SW.EffectTemplate.ArtifactHealing.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Redstone Helmet",
@@ -744,7 +1034,15 @@
     "template": "SW.EffectTemplate.FireFocus.Unique",
     "seen": false,
     "like": "The Burning Blade"
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Redstone Shinguards",
@@ -761,7 +1059,15 @@
     "strength": -0.25,
     "template": "SW.EffectTemplate.ElementalProtection.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Scamp Hood",
@@ -778,7 +1084,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Gambler.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Scamp Jacket",
@@ -796,7 +1108,13 @@
     "template": "SW.EffectTemplate.PointBlank.Unique",
     "seen": false,
     "like": "The Close Ranger"
-   }
+   },
+   "tags": [
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Scamp Leggings",
@@ -813,7 +1131,13 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Hairtrigger.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Scamp Sneakers",
@@ -831,7 +1155,13 @@
     "template": "SW.EffectTemplate.SwiftSneak.Unique",
     "seen": false,
     "like": "Dreamruler Pyjamas"
-   }
+   },
+   "tags": [
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Sculk Digger Boots",
@@ -849,7 +1179,15 @@
     "template": "SW.EffectTemplate.Precision.Unique",
     "seen": false,
     "like": "Rover Visor"
-   }
+   },
+   "tags": [
+    "Tank",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Tank",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculk Digger Hood",
@@ -867,7 +1205,15 @@
     "template": "SW.EffectTemplate.MasterStrike.Unique",
     "seen": false,
     "like": "Monstrosity Stompers"
-   }
+   },
+   "tags": [
+    "Tank",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Tank",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculk Digger Leggings",
@@ -884,7 +1230,15 @@
     "strength": 0.45,
     "template": "SW.EffectTemplate.ShadowWalk.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Tank",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculk Digger Robe",
@@ -901,7 +1255,15 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.Sidestep.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Tank",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculker Boots",
@@ -918,7 +1280,15 @@
     "strength": 0.5,
     "template": "SW.EffectTemplate.Opportunist.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculker Mask",
@@ -935,7 +1305,15 @@
     "strength": 0.8,
     "template": "SW.EffectTemplate.Looting.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculker Robe",
@@ -952,7 +1330,15 @@
     "strength": -0.5,
     "template": "SW.EffectTemplate.Resilience.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "Sculker Slacks",
@@ -969,7 +1355,15 @@
     "strength": 1.5,
     "template": "SW.EffectTemplate.BagOfSouls.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "Sifter Boots",
@@ -987,7 +1381,15 @@
     "template": "SW.EffectTemplate.Deflect.Unique",
     "seen": false,
     "like": "Rover Pauldrons"
-   }
+   },
+   "tags": [
+    "Mage",
+    "Support"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Sifter Hood",
@@ -1004,7 +1406,15 @@
     "strength": 1,
     "template": "SW.EffectTemplate.Saboteur.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Support"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Sifter Leggings",
@@ -1021,7 +1431,15 @@
     "strength": 1.2,
     "template": "SW.EffectTemplate.StatusBuff.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Support"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Sifter Robe",
@@ -1038,7 +1456,15 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Vestige.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Support"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Sorcerer Boots",
@@ -1055,7 +1481,13 @@
     "strength": 1.5,
     "template": "SW.EffectTemplate.BagOfSouls.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Sorcerer Hat",
@@ -1071,9 +1503,14 @@
     "effect": "SW.Effect.Expand",
     "strength": 0.55,
     "template": "SW.EffectTemplate.Expand.Unique",
-    "seen": false,
-    "like": "Soul Corruptor Duster"
-   }
+    "seen": true
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Sorcerer Leggings",
@@ -1090,7 +1527,13 @@
     "strength": 0.06,
     "template": "SW.EffectTemplate.ArtifactHealing.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Sorcerer Robe",
@@ -1107,7 +1550,13 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.Vestige.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Steel Wool Boots",
@@ -1124,7 +1573,15 @@
     "strength": 1,
     "template": "SW.EffectTemplate.Saboteur.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Steel Wool Cap",
@@ -1141,7 +1598,15 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.FrostFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Steel Wool Leggings",
@@ -1158,7 +1623,15 @@
     "strength": 0.5,
     "template": "SW.EffectTemplate.SweepingEdge.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Steel Wool Sweater",
@@ -1176,7 +1649,15 @@
     "template": "SW.EffectTemplate.ElementalProtection.Unique",
     "seen": false,
     "like": "Monstrosity Greaves"
-   }
+   },
+   "tags": [
+    "Mage",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Tank"
+   ]
   },
   {
    "name": "Treehugger Chestplate",
@@ -1193,7 +1674,15 @@
     "strength": 1.3,
     "template": "SW.EffectTemplate.HealthBoost.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Treehugger Clogs",
@@ -1210,7 +1699,15 @@
     "strength": -0.35,
     "template": "SW.EffectTemplate.Reconstruction.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Treehugger Leggings",
@@ -1227,7 +1724,15 @@
     "strength": 1,
     "template": "SW.EffectTemplate.Thorns.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Treehugger Mask",
@@ -1243,9 +1748,16 @@
     "effect": "SW.Effect.Friendship",
     "strength": -0.2,
     "template": "SW.EffectTemplate.Friendship.Unique",
-    "seen": false,
-    "like": "Fly Agaric Galoshes"
-   }
+    "seen": true
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Wolfpack Boots",
@@ -1256,7 +1768,13 @@
    "set": "Wolfpack",
    "unique": "Packleader Paws",
    "unique_effect": "Grants a 50% chance to gain an additional arrow when ammo is regained.",
-   "unique_id": "SW.Item.WolfclutchBoots_Unique"
+   "unique_id": "SW.Item.WolfclutchBoots_Unique",
+   "tags": [
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Summoner"
+   ]
   },
   {
    "name": "Wolfpack Hood",
@@ -1273,7 +1791,13 @@
     "template": "SW.EffectTemplate.Sniper.Unique",
     "seen": false,
     "like": "Creaking's Reach"
-   }
+   },
+   "tags": [
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Summoner"
+   ]
   },
   {
    "name": "Wolfpack Jacket",
@@ -1290,7 +1814,13 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.BeastBoss.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Summoner"
+   ]
   },
   {
    "name": "Wolfpack Leggings",
@@ -1307,97 +1837,157 @@
     "strength": -0.2,
     "template": "SW.EffectTemplate.FriendsForever.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Summoner"
+   ]
   },
   {
    "name": "Battle Banner",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.WarBanner",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter",
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Blaze Bangle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FireBracelet",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Fire",
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Blight Bangle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.PoisonBracelet",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Poison",
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Blizzard Bangle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FrostBracelet",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Frost",
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Cinder Scepter",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FlameSceptre",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Fire",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Conductive Quiver",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.LightningQuiver",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Lightning"
   },
   {
    "name": "Corrupted Beacon",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CorruptedBeacon",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Soul",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Corrupted Seeds",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CorruptedSeeds",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Poison",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Creeper Candle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CreeperCandle",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Death Cap Mushroom",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.DeathcapMushroom",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Echo Ocarina",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.CarapaceOcarina",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Electric Bangle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.ConductiveBracelet",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Lightning",
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Ender Fog",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.SmokeBomb",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Fighter's Flute",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FightersFife",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter",
+    "Summoner",
+    "Trickster"
+   ]
   },
   {
    "name": "Fighting Fungus",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.MaimingMushroom",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Firework Arrow",
@@ -1409,145 +1999,225 @@
    "name": "Flaming Quiver",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FlameQuiver",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Fire"
   },
   {
    "name": "Freezing Quiver",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.FrostQuiver",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Frost"
   },
   {
    "name": "Grindstone",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Grindstone",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Honey Dipper",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Honeypot",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Mage",
+    "Summoner"
+   ]
   },
   {
    "name": "Humbling Horn",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.RallyingHorn",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Summoner",
+    "Support",
+    "Tank"
+   ]
   },
   {
    "name": "Lightning Rod",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.LightningRod",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Lightning",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Picnic Basket",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.PicnicBlanket",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Support"
+   ]
   },
   {
    "name": "Pouch of Ember",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Satchel.Fire",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Fire",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Pouch of Frost",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Satchel.Freezing",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Frost",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Pouch of Poison",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Satchel.Poison",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Poison",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Pouch of Thunder",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Satchel.Conductive",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Lightning",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Powershaker",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.Powershaker",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Redstone Mine Launcher",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.RedstoneMines",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Soul Harvester",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.SoulHarvester",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Soul",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Tempo Truffle",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.HasteMushroom",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Totem of Casting",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfCasting",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Totem of Regeneration",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfRegeneration",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Totem of Shielding",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.TotemOfShielding",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Support",
+    "Tank"
+   ]
   },
   {
    "name": "Turtle Master's Mandolin",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.IronHideLute",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Venomous Quiver",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.PoisonQuiver",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Poison"
   },
   {
    "name": "Warding Chimes",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.WardingChimes",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Warrior Drums",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.WarriorsDrums",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Winter Staff",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.BlizzardStaff",
-   "confirmed": true
+   "confirmed": true,
+   "element": "Frost",
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Witch Brew",
    "kind": "Artifact",
    "id": "SW.Item.Artifact.WitchesBrew",
-   "confirmed": true
+   "confirmed": true,
+   "tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Axe",
@@ -1563,7 +2233,15 @@
     "template": "SW.EffectTemplate.Reconstruction.Unique",
     "seen": false,
     "like": "Woodsprite Root Boots"
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Summoner"
+   ]
   },
   {
    "name": "Battle Hammer",
@@ -1578,7 +2256,15 @@
     "strength": 0.05,
     "template": "SW.EffectTemplate.Opulence.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Support",
+    "Tank"
+   ]
   },
   {
    "name": "Battlestaff",
@@ -1593,7 +2279,13 @@
     "strength": 1,
     "template": "SW.EffectTemplate.ElementalHit.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Claymore",
@@ -1609,7 +2301,15 @@
     "template": "SW.EffectTemplate.SweepingEdge.Unique",
     "seen": false,
     "like": "Humbler Greaves"
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Tank"
+   ]
   },
   {
    "name": "Clobberer",
@@ -1624,7 +2324,13 @@
     "strength": 1,
     "template": "SW.Enchantment.FlameBelch.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Cookiecutter",
@@ -1639,7 +2345,15 @@
     "strength": 1,
     "template": "SW.EffectTemplate.SoulCurse",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Support"
+   ]
   },
   {
    "name": "Double Daggers",
@@ -1654,7 +2368,14 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.PoisonFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Support"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Double Sickles",
@@ -1669,7 +2390,15 @@
     "strength": 0.5,
     "template": "SW.EffectTemplate.HealingFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Trickster"
+   ]
   },
   {
    "name": "Gauntlets",
@@ -1684,7 +2413,13 @@
     "strength": 1,
     "template": "SW.Enchantment.MaulerDive",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Glaive",
@@ -1699,7 +2434,13 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.Vanguard.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Greataxe",
@@ -1714,7 +2455,15 @@
     "strength": 0.06,
     "template": "SW.EffectTemplate.StrenghteningStrike.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Support"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Support"
+   ]
   },
   {
    "name": "Greatsword",
@@ -1729,7 +2478,15 @@
     "strength": 0,
     "template": "SW.Enchantment.GravityPulse.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Tank"
+   ]
   },
   {
    "name": "Longsword",
@@ -1745,7 +2502,13 @@
     "template": "SW.EffectTemplate.FrostFocus.Unique",
     "seen": false,
     "like": "Rimefrost Icecap"
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Mace",
@@ -1760,7 +2523,15 @@
     "strength": 0.35,
     "template": "SW.EffectTemplate.Finesse.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Tank"
+   ]
   },
   {
    "name": "Meat Cleaver",
@@ -1775,7 +2546,15 @@
     "strength": 0.07,
     "template": "SW.EffectTemplate.AnimaConduit.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Mob Mallet",
@@ -1790,7 +2569,13 @@
     "strength": -0.25,
     "template": "SW.Effecttemplate.Protection.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Pickaxe",
@@ -1805,7 +2590,13 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.Prospector.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support"
+   ],
+   "unique_tags": [
+    "Support"
+   ]
   },
   {
    "name": "Pike",
@@ -1820,7 +2611,14 @@
     "strength": 0.25,
     "template": "SW.EffectTemplate.LightningFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Rapier",
@@ -1835,7 +2633,14 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.RapidStrike.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Riftslasher",
@@ -1850,7 +2655,13 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Duelist.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Sabre",
@@ -1865,7 +2676,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Acrobat.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Support"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Trickster"
+   ]
   },
   {
    "name": "Scythe",
@@ -1880,7 +2699,13 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.SoulSiphon.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Short Spear",
@@ -1895,7 +2720,15 @@
     "strength": 1,
     "template": "SW.Enchantment.PhantomLance",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Summoner"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Summoner"
+   ]
   },
   {
    "name": "Shovel",
@@ -1910,7 +2743,15 @@
     "strength": 1,
     "template": "SW.Enchantment.Shockwave.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Support",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Support",
+    "Tank"
+   ]
   },
   {
    "name": "Sword",
@@ -1925,7 +2766,13 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.FireFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Tidal Sickle",
@@ -1940,7 +2787,13 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.Reeling.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage"
+   ]
   },
   {
    "name": "Twilight Dagger",
@@ -1955,7 +2808,14 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.SoulFocus.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "War Hammer",
@@ -1970,7 +2830,13 @@
     "strength": 1,
     "template": "SW.EffectTemplate.ExplosiveStrike.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Tank"
+   ],
+   "unique_tags": [
+    "Tank"
+   ]
   },
   {
    "name": "Wolf Claws",
@@ -1985,7 +2851,15 @@
     "strength": 0.08,
     "template": "SW.Enchantment.ClawingShadow.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Trickster"
+   ]
   },
   {
    "name": "Bow",
@@ -2015,7 +2889,13 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.Chains.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter"
+   ],
+   "unique_tags": [
+    "Fighter"
+   ]
   },
   {
    "name": "Dual Crossbows",
@@ -2030,7 +2910,15 @@
     "strength": 0.5,
     "template": "SW.Enchantment.Dynamo.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Mage",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Mage",
+    "Trickster"
+   ]
   },
   {
    "name": "Greatbow",
@@ -2045,7 +2933,16 @@
     "strength": 10,
     "template": "SW.Enchantment.Piercing.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Ranger",
+    "Tank"
+   ]
   },
   {
    "name": "Heavy Crossbow",
@@ -2060,7 +2957,15 @@
     "strength": 1,
     "template": "SW.EffectTemplate.PointBlank.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Tank"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Tank"
+   ]
   },
   {
    "name": "Longbow",
@@ -2075,7 +2980,13 @@
     "strength": 1,
     "template": "SW.EffectTemplate.Sniper.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Ranger"
+   ]
   },
   {
    "name": "Powerbow",
@@ -2090,7 +3001,15 @@
     "strength": 0.3,
     "template": "SW.EffectTemplate.Power.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Fighter",
+    "Ranger"
+   ],
+   "unique_tags": [
+    "Fighter",
+    "Ranger"
+   ]
   },
   {
    "name": "Rapid Crossbow",
@@ -2105,7 +3024,15 @@
     "strength": 0.4,
     "template": "SW.EffectTemplate.Hairtrigger.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Scatter Crossbow",
@@ -2120,7 +3047,15 @@
     "strength": 0.6,
     "template": "SW.EffectTemplate.MultiShot.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Summoner",
+    "Support"
+   ],
+   "unique_tags": [
+    "Summoner",
+    "Support"
+   ]
   },
   {
    "name": "Shortbow",
@@ -2135,7 +3070,15 @@
     "strength": 0.2,
     "template": "SW.EffectTemplate.Sidestep.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Ranger",
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Ranger",
+    "Trickster"
+   ]
   },
   {
    "name": "Trickbow",
@@ -2150,7 +3093,13 @@
     "strength": 0.06,
     "template": "SW.EffectTemplate.Jumpshot.Unique",
     "seen": true
-   }
+   },
+   "tags": [
+    "Trickster"
+   ],
+   "unique_tags": [
+    "Trickster"
+   ]
   },
   {
    "name": "Amethyst Lens",

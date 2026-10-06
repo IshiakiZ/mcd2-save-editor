@@ -712,6 +712,52 @@ class HeroTests(unittest.TestCase):
         self.assertEqual(by("Highest level"), [poor, rich])
 
 
+class ArchetypeTests(unittest.TestCase):
+    """What decides the effects the game can roll on an item: its kind and its archetypes."""
+
+    def test_an_item_knows_its_archetypes_and_a_unique_its_own(self):
+        save = hero_save()
+        save["CharacterSaveV1"]["Inventory"]["Entries"] += [hero_item("SW.Item.Sword"), hero_item("SW.Item.Bow"), hero_item("SW.Item.NotInTheList")]
+        hero = Hero(save)
+        by_tag = {item.tag: item for item in hero.items()}
+        self.assertEqual(by_tag["SW.Item.Sword"].archetypes, ("Fighter",))
+        self.assertEqual(by_tag["SW.Item.Bow"].archetypes, ())  # the game gives the Bow none
+        self.assertEqual(by_tag["SW.Item.NotInTheList"].archetypes, ())
+        self.assertEqual(heroes.archetypes("SW.Item.Sword_Unique1"), ("Fighter",))
+        listed = next(item for item in heroes.game_items() if item.unique and item.tags != item.unique_tags and item.unique_tags)
+        self.assertEqual(heroes.archetypes(listed.id), listed.tags)
+        self.assertEqual(heroes.archetypes(listed.unique_id or listed.id + "_Unique1"), listed.unique_tags)
+
+    def test_an_effect_rolls_from_its_pools(self):
+        gear = {choice.name: choice for choice in heroes.effect_choices()[0]}
+        self.assertEqual(gear["Marksman"].pools, ("Ranger gear", "Trickster gear"))
+        self.assertTrue(gear["Marksman"].rolls_on_item("Armor", ("Mage", "Trickster")))
+        self.assertFalse(gear["Marksman"].rolls_on_item("Ranged", ("Fighter", "Tank")))
+        self.assertFalse(gear["Marksman"].rolls_on_item("Ranged"))
+        # A slot's pool goes by the kind of item, whatever its archetypes.
+        self.assertEqual([gear["Critical Hit"].rolls_on_item(kind) for kind in ("Melee", "Ranged", "Armor", "Artifact")], [True, True, False, False])
+        self.assertEqual([gear["Cooldown"].rolls_on_item(kind) for kind in ("Melee", "Armor", "Artifact")], [False, False, True])
+        self.assertTrue(gear["Cooldown"].rolls_on_item("Armor", ("Mage",)))
+        self.assertTrue(all(gear["Looter"].rolls_on_item(kind) for kind in ("Melee", "Ranged", "Armor", "Artifact")))
+        # Where an effect rolls isn't known: it isn't in any pool.
+        self.assertEqual((gear["Vestige"].pools, gear["Vestige"].rolls_on_item("Melee", ("Fighter",))), ((), False))
+
+    def test_the_elements_in_play_are_those_of_the_artifacts_equipped(self):
+        fire = next(item for item in heroes.game_items() if item.element == "Fire")
+        soul = next(item for item in heroes.game_items() if item.element == "Soul")
+        plain = next(item for item in heroes.game_items() if item.kind == "Artifact" and not item.element)
+        save = hero_save()
+        save["CharacterSaveV1"]["Inventory"]["Entries"] += [
+            hero_item(fire.id, equipped="SW.Inventory.Slot.Artifact.1"),
+            hero_item(soul.id),  # in the backpack: not in play
+            hero_item(plain.id, equipped="SW.Inventory.Slot.Artifact.2"),
+        ]
+        hero = Hero(save)
+        self.assertEqual(hero.elements_in_play(), {"Fire"})
+        self.assertEqual(next(item for item in hero.items() if item.tag == soul.id).element, "Soul")
+        self.assertEqual(heroes.element("SW.Item.NotInTheList"), "")
+
+
 class UniqueOwnEffectTests(unittest.TestCase):
     """A Unique comes with an effect of its own, saved apart from the ones the game rolls. The editor writes the
     ones it has seen in a real save, and says when a Unique is without its own."""

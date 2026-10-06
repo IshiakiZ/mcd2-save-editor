@@ -7,7 +7,7 @@ import json
 import unittest
 
 from dungeons2_editor import hero as heroes
-from dungeons2_editor import presets
+from dungeons2_editor import presets, recommend
 from dungeons2_editor.hero import Hero, build_catalog
 
 from . import PINNED_EFFECTS_FILE, PINNED_ITEMS_FILE, REAL_EFFECTS_FILE, REAL_ITEMS_FILE, use_effect_list, use_item_list
@@ -347,6 +347,95 @@ class RealItemListTests(unittest.TestCase):
         for book in books:
             self.assertIn(book.name, heroes.enchantments(), book.id)
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
+
+    def test_every_item_that_rolls_effects_has_its_archetypes(self):
+        gear = [item for item in self.items if item.kind in heroes.EFFECT_KINDS]
+        # MetaBot gives these no archetype: all they roll comes from their slot's pool.
+        self.assertEqual(
+            sorted(item.name for item in gear if not item.tags),
+            ["Bow", "Conductive Quiver", "Firework Arrow", "Flaming Quiver", "Freezing Quiver", "Venomous Quiver"],
+        )
+        self.assertEqual(sorted(item.unique for item in gear if item.unique and not item.unique_tags), ["Ranger's Promise"])
+        known = {"Fighter", "Mage", "Ranger", "Summoner", "Support", "Tank", "Trickster"}
+        for item in gear:
+            self.assertTrue(set(item.tags) | set(item.unique_tags) <= known, item.name)
+        # A Unique has archetypes of its own, and an artifact may have an element.
+        self.assertEqual(heroes.archetypes("SW.Item.Greatbow"), ("Fighter", "Ranger"))
+        self.assertEqual(heroes.archetypes("SW.Item.Greatbow_Unique1"), ("Fighter", "Ranger", "Tank"))
+        self.assertEqual(heroes.archetypes("SW.Item.NoSuchThing"), ())
+        elements = {item.name: item.element for item in self.items if item.element}
+        self.assertEqual(set(elements.values()), {"Fire", "Frost", "Lightning", "Poison", "Soul"})
+        self.assertEqual((elements["Blaze Bangle"], elements["Soul Harvester"]), ("Fire", "Soul"))
+        self.assertTrue(all(item.kind == "Artifact" for item in self.items if item.element))
+        bangle = next(item for item in self.items if item.name == "Blaze Bangle")
+        self.assertEqual((heroes.element(bangle.id), heroes.element("SW.Item.Sword")), ("Fire", ""))
+
+    def test_the_pools_fit_what_the_game_rolled_on_players_items(self):
+        # Items the game itself made, from players' lists, with the effects it rolled on them. Counted over all
+        # of those lists, 338 of 342 rolled effects are in the pools of the item they're on; the other four are
+        # on items in /issues/22, whose sender had changed items with the editor.
+        rolled = {
+            "SW.Item.Longbow_Unique1": [("SW.Effect.Knockback", "SW.EffectTemplate.Knockback.III"), ("SW.Effect.Opulence", "SW.EffectTemplate.Opulence.II")],  # Creaking's Reach, /issues/20
+            "SW.Item.MushroomBoots_Unique": [("SW.Effect.ElementalProtection", "SW.EffectTemplate.ElementalProtection.II"), ("SW.Effect.FrostFocus", "SW.EffectTemplate.FrostFocus.III")],  # Fly Agaric Galoshes, /issues/20
+            "SW.Item.HewnBarkChest_Unique": [("SW.Effect.Vivify", "SW.EffectTemplate.Vivify.II"), ("SW.Effect.Expand", "SW.EffectTemplate.Expand.II")],  # Woodsprite Barkpiece, /issues/23
+            "SW.Item.HewnBarkLeggings_Unique": [("SW.Effect.Saboteur", "SW.EffectTemplate.Saboteur.III"), ("SW.Effect.Vivify", "SW.EffectTemplate.Vivify.II")],  # Woodsprite Trunks, /issues/23
+            "SW.Item.HoneyLeggings_Unique": [("SW.Effect.HealingFocus", "SW.EffectTemplate.HealingFocus.III"), ("SW.Effect.Expand", "SW.EffectTemplate.Expand.II")],  # Hivemind Trousers, /issues/23
+            "SW.Item.Crossbow_Unique1": [("SW.Effect.Knockback", "SW.EffectTemplate.Knockback.II"), ("SW.Effect.Vanguard", "SW.EffectTemplate.Vanguard.II")],  # The Shackler, /issues/23
+            "SW.Item.GiantMallet_Unique1": [("SW.Effect.CriticalEdge", "SW.EffectTemplate.CriticalEdge.II"), ("SW.Effect.SweepingEdge", "SW.EffectTemplate.SweepingEdge.III")],  # Monster Masher, /issues/23
+            "SW.Item.Glaive_Unique1": [("SW.Effect.Knockback", "SW.EffectTemplate.Knockback.III"), ("SW.Effect.SweepingEdge", "SW.EffectTemplate.SweepingEdge.III")],  # Golden Glaive, /issues/23
+            "SW.Item.Sabre_Unique1": [("SW.Effect.Vanguard", "SW.EffectTemplate.Vanguard.II"), ("SW.Effect.Finesse", "SW.EffectTemplate.Finesse.II")],  # Rascal's Razor, /issues/23
+            "SW.Item.Greatbow_Unique1": [("SW.Effect.Sniper", "SW.EffectTemplate.Sniper.II"), ("SW.Effect.CriticalEdge", "SW.EffectTemplate.CriticalEdge.II")],  # Humbler Heartstring, /issues/23
+        }
+        for tag, effects in rolled.items():
+            kind, tags = heroes.tag_kind(tag), heroes.archetypes(tag)
+            self.assertTrue(tags, tag)
+            for effect, template in effects:
+                choice = heroes._named(effect, template)
+                self.assertIsNotNone(choice, (tag, effect))
+                self.assertTrue(choice.rolls_on_item(kind, tags), f"{choice.name} ({choice.rolls_on}) on {heroes.display_name(tag)} {tags}")
+        # And what the game wouldn't roll: a Fighter's effect on a bow that is only a Ranger's.
+        vanguard = next(choice for choice in heroes.effect_book().effects if choice.name == "Vanguard")
+        self.assertEqual((vanguard.pools, vanguard.rolls_on_item("Ranged", heroes.archetypes("SW.Item.Longbow_Unique1"))), (("Fighter gear",), False))
+        self.assertTrue(vanguard.rolls_on_item("Ranged", heroes.archetypes("SW.Item.Crossbow_Unique1")))
+
+    def test_every_goal_ranks_effects_the_list_knows(self):
+        book = heroes.effect_book()
+        names = {choice.name for choice in book.effects}
+        for goal in recommend.GOALS:
+            self.assertTrue(set(goal.order) <= names, f"{goal.name}: {sorted(set(goal.order) - names)}")
+        self.assertTrue(set(sum(recommend.ABOUT.values(), ())) | set(recommend.ELEMENT_EFFECTS.values()) <= names)
+        self.assertTrue(all(choice.pools for choice in book.effects))  # every effect in the list says where it rolls
+        gear = list(book.effects)
+
+        def picks(goal, tag, **more):
+            found = recommend.candidates(recommend.goal(goal), heroes.tag_kind(tag), heroes.archetypes(tag), gear, **more)
+            return [choice.title for choice in found[:4]]
+
+        self.assertEqual(picks("Damage", "SW.Item.Sword"), ["Sharpness III", "Duelist III", "Swiftness III", "Critical Hit III"])
+        self.assertEqual(picks("Damage", "SW.Item.Greatbow_Unique1"), ["Impact III", "Ranger I", "Sharpshooter III", "Critical Hit III"])
+        self.assertEqual(picks("Damage", "SW.Item.Bow"), ["Impact III", "Critical Hit III", "Critical Edge III", "Persistence III"])  # no archetype
+        self.assertEqual(picks("Loot", "SW.Item.Bow"), ["Looter III", "Raider III", "Luck III", "Prospector III"])
+        self.assertEqual(picks("Mobility", "SW.Item.Greatbow_Unique1"), ["Speed III"])
+        self.assertEqual(picks("Mobility", "SW.Item.Sword"), [])
+        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet"), ["Sorcerer II"])
+        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet", elements={"Soul"}), ["Sorcerer II", "Soulmancer III"])
+        self.assertEqual(picks("Artifacts and souls", "SW.Item.MysticHelmet"), ["Cooldown II", "Spiritual III", "Reaper III", "Sorcerer II"])
+        self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader II", "Shepherd II", "Veterinarian III"])
+        self.assertEqual(picks("XP", "SW.Item.Sword"), [])
+
+    def test_a_kit_only_gives_an_item_effects_the_game_rolls_on_it(self):
+        hero = Hero(hero_save())
+        catalog = build_catalog([hero])
+        given = {}
+        for preset in presets.PRESETS:
+            for rarity in ("Unique", "Special"):
+                for addition in presets.plan(preset, hero, catalog, power=30, rarity=rarity).add:
+                    kind, tags = addition.found.kind, heroes.archetypes(addition.tag)
+                    for choice in addition.effects:
+                        self.assertTrue(choice.rolls_on_item(kind, tags), f"{preset.title}: {choice.title} on {addition.name} {tags}")
+                    given[addition.name] = [choice.title for choice in addition.effects]
+        # Marksman rolls on Ranger and Trickster gear: the Humbler Heartstring is a Ranger's, The Close Ranger isn't.
+        self.assertEqual((given["Humbler Heartstring"], given["The Close Ranger"]), (["Marksman III"], ["Critical Edge III"]))
 
     def test_every_preset_item_is_in_the_list(self):
         catalog = build_catalog([Hero(hero_save())])

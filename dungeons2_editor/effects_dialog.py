@@ -11,13 +11,20 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox, ttk
+from typing import Iterable
 
+from . import recommend
 from .game_style import match_title_bar
-from .hero import TIERS, EffectChoice, Item, _base_of
+from .hero import TIERS, EffectChoice, Item, _base_of, the
 from .layout import fit_to_contents, text_width
 
 EFFECTS, ENCHANTMENTS = "Effects", "Enchantments"
 ROWS = 8  # choices in view before the list scrolls
+BEST_LINES = 4  # lines kept free for what "Best for" says it did
+BEST_HINT = (
+    "Pick what you want from this item, and the editor puts the best effects for it on, out of the ones the game "
+    "can roll on this very item. Which of those is best is the editor's own judgement: nobody has measured it."
+)
 NOT_SEEN = (
     "This tier hasn't been seen in a real save yet. Its number is from the game files' table, and the way the "
     "game saves it is worked out from the tiers that have been seen."
@@ -34,6 +41,9 @@ class EffectsDialog(tk.Toplevel):
 
     ``result`` stays None when the window is closed without applying. Apply leaves ``(effects, enchantment)``
     there: the effects the item should have, in order, and its enchantment or None.
+
+    ``elements`` are the elements of the artifacts the hero has equipped (Fire, Soul...): "Best for" only picks
+    an effect that boosts one element's attacks when that element is in play.
     """
 
     def __init__(
@@ -45,9 +55,11 @@ class EffectsDialog(tk.Toplevel):
         *,
         most: int = 4,
         enchantsmith_opened: bool = True,
+        elements: Iterable[str] = (),
     ):
         super().__init__(parent)
         self.item = item
+        self.elements = {element for element in (*elements, item.element) if element}
         self.own = item.own_effects
         self.most = max(most - len(self.own), 0)
         self.enchantsmith_opened = enchantsmith_opened
@@ -188,8 +200,26 @@ class EffectsDialog(tk.Toplevel):
         self.note = ttk.Label(right, textvariable=self.note_var, style="Muted.TLabel", wraplength=text_width(self, 62), justify="left")
         self.note.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 0))
 
+        # Across the bottom: the editor's own picks for a goal.
+        best = ttk.Frame(frame)
+        best.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        best.columnconfigure(2, weight=1)
+        ttk.Label(best, text="Best for", style="Heading.TLabel").grid(row=0, column=0, sticky="nw", padx=(0, 8))
+        self.goal_var = tk.StringVar()
+        self.goal_box = ttk.Combobox(best, textvariable=self.goal_var, state="readonly", width=20, values=[goal.name for goal in recommend.GOALS])
+        self.goal_box.grid(row=0, column=1, sticky="nw")
+        self.goal_box.bind("<<ComboboxSelected>>", lambda _event: self.best_for(self.goal_var.get()))
+        if not item.can_have_effects:
+            self.goal_box.state(["disabled"])
+        # The words get a box of their own, as tall as they will ever need, so the lists above don't jump about.
+        words = ttk.Frame(best, height=tkfont.nametofont("TkDefaultFont", root=self).metrics("linespace") * BEST_LINES)
+        words.grid(row=0, column=2, sticky="ew", padx=(12, 0))
+        words.pack_propagate(False)
+        self.best_var = tk.StringVar(value=BEST_HINT if item.can_have_effects else "")
+        ttk.Label(words, textvariable=self.best_var, style="Muted.TLabel", wraplength=text_width(self, 80), justify="left").pack(anchor="nw")
+
         bottom = ttk.Frame(frame)
-        bottom.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        bottom.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0))
         self.message_var = tk.StringVar()
         self.message = ttk.Label(bottom, textvariable=self.message_var, style="Muted.TLabel")
         self.message.pack(side="left")
@@ -313,6 +343,8 @@ class EffectsDialog(tk.Toplevel):
             parts.append("Copied from an item in your saves.")
         elif not choice.seen:
             parts.append(NOT_SEEN)
+        if kind == EFFECTS and choice.pools and not choice.rolls_on_item(self.item.kind, self.item.archetypes):
+            parts.append(f"In the game it rolls on {' and '.join(choice.pools).lower()}, which {the(self.item.name)} isn't.")
         replaced = self._replaces(choice)
         full = kind == EFFECTS and replaced is None and len(self.effects) >= self.most
         same = replaced is not None and replaced.template == choice.template
@@ -361,6 +393,34 @@ class EffectsDialog(tk.Toplevel):
                     self._show_choice()
                 return True
         return False
+
+    def best_for(self, name: str) -> bool:
+        """Put the best effects for a goal on the item, ahead of what it has: the editor's picks, out of the
+        effects the game can roll on this item. What was done, and why, goes under the lists. False when the goal
+        has nothing for this item, which is said there too."""
+        found = recommend.goal(name)
+        item = self.item
+        if found is None or not item.can_have_effects:
+            return False
+        self.goal_var.set(found.name)
+        gear = self.choices[EFFECTS]
+        wanted = recommend.candidates(found, item.kind, item.archetypes, gear, self.elements)
+        picked = wanted[: self.most]
+        if not picked:
+            self.best_var.set(recommend.nothing(found, item.name, item.kind, item.archetypes, gear))
+            return False
+        had = list(self.effects)
+        self.effects = recommend.keep(picked, had, self.most)
+        on_it = {choice.effect for choice in self.effects}
+        self.best_var.set(
+            recommend.explain(
+                found, item.name, item.kind, item.archetypes, picked,
+                kept=self.effects[len(picked):], dropped=[choice for choice in had if choice.effect not in on_it],
+            )
+        )
+        self._say("")
+        self._fill_current()
+        return True
 
     def _on_double_click(self, event: tk.Event) -> None:
         if self.listing.identify_row(event.y):

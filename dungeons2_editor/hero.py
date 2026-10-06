@@ -89,6 +89,8 @@ _STATIC = "SW.Item.Effect.Static"  # the effect a Unique comes with: one effect,
 EFFECT_KINDS = ("Melee", "Ranged", "Armor", "Artifact")  # what the game rolls effects on
 ENCHANTABLE_KINDS = ("Melee", "Ranged", "Armor")  # what the Enchantsmith enchants
 TIERS = ("I", "II", "III")
+# The pools the game rolls an item's effects from: its slot's, and one for each archetype it carries ("Ranger gear").
+ANY_WEAPON, ANY_ARTIFACT, ALL_GEAR = "Any weapon", "Any artifact", "All gear"
 # A Unique comes with an effect of its own, the one its card describes. The editor writes it exactly as a real
 # save holds it (issue 20 showed 51 of them), so it can only give a Unique the one it has seen. For a Unique whose
 # own effect it hasn't seen, it says this wherever it makes one (a player checked in the game: without it, the
@@ -186,6 +188,9 @@ class GameItem:
     unique_id: str | None = None  # the Unique's own save ID, once it has been seen in a real save
     levels: tuple = ()  # a talisman's effect at each of its levels, once seen in a real save
     unique_own: "OwnEffect | None" = None  # the effect its Unique comes with, as a real save holds it
+    tags: tuple[str, ...] = ()  # its archetypes (Fighter, Ranger...), which decide the effects the game rolls on it
+    unique_tags: tuple[str, ...] = ()  # its Unique's, which aren't always the same
+    element: str = ""  # an artifact's element, if it has one: Fire, Frost, Lightning, Poison or Soul
 
 
 @dataclass(frozen=True)
@@ -251,6 +256,23 @@ class EffectChoice:
             return True
         return kind in self.slots or (piece is not None and piece in self.slots)
 
+    @property
+    def pools(self) -> tuple[str, ...]:
+        """The pools the game rolls a gear effect from: 'Any weapon', 'All gear', 'Ranger gear'. None when that
+        isn't known."""
+        return tuple(pool.strip() for pool in self.rolls_on.split(",") if pool.strip())
+
+    def rolls_on_item(self, kind: str, tags: Iterable[str] = ()) -> bool:
+        """Whether the game can roll this effect on an item of this kind that carries these archetypes: an item
+        rolls from its slot's pool and from one pool per archetype. False when the effect's pools aren't known."""
+        pools = self.pools
+        return (
+            ALL_GEAR in pools
+            or (ANY_WEAPON in pools and kind in ("Melee", "Ranged"))
+            or (ANY_ARTIFACT in pools and kind == "Artifact")
+            or any(f"{tag} gear" in pools for tag in tags)
+        )
+
 
 @dataclass(frozen=True)
 class EffectBook:
@@ -284,10 +306,16 @@ def game_items() -> tuple[GameItem, ...]:
             e["name"], e["kind"], e["id"], bool(e.get("confirmed")), e.get("unique"), e.get("slot"),
             e.get("set"), e.get("unique_effect"), e.get("effect"), bool(e.get("name_from_id")), e.get("unique_id"),
             tuple(e.get("levels") or ()), _own_effect_in(e.get("unique_own")),
+            _words_in(e.get("tags")), _words_in(e.get("unique_tags")), str(e.get("element") or ""),
         )
         for e in _load(GAME_ITEMS_FILE, "items")
         if e.get("id") and e.get("kind")
     )
+
+
+def _words_in(listed: Any) -> tuple[str, ...]:
+    """A list of words from the item list, as a tuple; nothing for anything else."""
+    return tuple(word for word in listed if isinstance(word, str)) if isinstance(listed, list) else ()
 
 
 def _own_effect_in(listed: Any) -> OwnEffect | None:
@@ -478,6 +506,21 @@ def game_item(tag: str) -> GameItem | None:
 def is_unique_version(tag: str) -> bool:
     """Whether the ID is a Unique's own (SW.Item.Sword_Unique1), not a base item's."""
     return _known(tag)[1]
+
+
+def archetypes(tag: str) -> tuple[str, ...]:
+    """The archetypes the game tags an item with (Fighter, Ranger...), by its ID. A Unique has its own, which
+    aren't always its base item's. None for an item the list doesn't have, and for the few the game gives none."""
+    known, unique = _known(tag)
+    if known is None:
+        return ()
+    return known.unique_tags if unique else known.tags
+
+
+def element(tag: str) -> str:
+    """An artifact's element (Fire, Frost, Lightning, Poison or Soul), by its ID. '' for anything without one."""
+    known = _known(tag)[0]
+    return known.element if known is not None else ""
 
 
 def the(name: str, start: bool = False) -> str:
@@ -919,6 +962,16 @@ class Item:
     @property
     def can_have_effects(self) -> bool:
         return not self.is_cosmetic and self.kind in EFFECT_KINDS
+
+    @property
+    def archetypes(self) -> tuple[str, ...]:
+        """Its archetypes (Fighter, Ranger...): with its kind, they decide which effects the game rolls on it."""
+        return archetypes(self.tag)
+
+    @property
+    def element(self) -> str:
+        """An artifact's element, if it has one."""
+        return element(self.tag)
 
     @property
     def can_be_enchanted(self) -> bool:
@@ -1475,6 +1528,11 @@ class Hero:
         del self._entries()[index]
 
     # ---------------------------------------------------------- equipment
+
+    def elements_in_play(self) -> set[str]:
+        """The elements of the artifacts this hero has equipped (Fire, Soul...): the ones an effect that boosts
+        one element's attacks would do anything for."""
+        return {item.element for item in self.items() if item.equipped_slot and item.element}
 
     def equipped(self, slot_tag: str) -> Item | None:
         """The item in a gear slot, if any."""

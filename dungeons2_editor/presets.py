@@ -32,6 +32,7 @@ from .hero import (
     GearSlot,
     Hero,
     Item,
+    archetypes,
     attribute_label,
     effect_choices,
     enchantments,
@@ -616,13 +617,22 @@ def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known
     return None
 
 
-def pick_effects(names: tuple[str, ...], count: int, known: list[EffectChoice], own: str = "") -> list[EffectChoice]:
+def pick_effects(
+    names: tuple[str, ...], count: int, known: list[EffectChoice], own: str = "", kind: str = "", tags: tuple[str, ...] = ()
+) -> list[EffectChoice]:
     """The first ``count`` of ``names`` (gear effects, best first) that the editor can write, each at the
     highest tier a real save has shown. A kit leaves out the effect the item comes with (``own``): the game
-    can roll it as well, but nobody knows that the two add up."""
+    can roll it as well, but nobody knows that the two add up. Given the item's ``kind`` (and its archetypes,
+    ``tags``), it also leaves out an effect the game doesn't roll on such an item: Marksman rolls on Ranger and
+    Trickster gear, so a Heavy Crossbow, which is Fighter and Tank gear, gets the next on the list."""
     picked: list[EffectChoice] = []
     for name in names:
-        found = _best([choice for choice in known if choice.name == name and not choice.is_enchantment and choice.effect != own])
+        found = _best(
+            [
+                choice for choice in known
+                if choice.name == name and not choice.is_enchantment and choice.effect != own and (not kind or choice.rolls_on_item(kind, tags))
+            ]
+        )
         if found is not None and len(picked) < count and found.effect not in {choice.effect for choice in picked}:
             picked.append(found)
     return picked
@@ -675,7 +685,9 @@ def plan(
         own = comes_with.effect if comes_with is not None else ""
         if result.enchant:
             addition.enchantment = pick_enchantment(kit_item.enchants, found.kind, found.piece, known_enchantments, own)
-        addition.effects = pick_effects(kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects, own)
+        addition.effects = pick_effects(
+            kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects, own, found.kind, archetypes(addition.tag)
+        )
     for owned in result.have:
         item = hero.item(owned.index)
         if result.enchant and item.enchantment is None and item.can_be_enchanted:

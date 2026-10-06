@@ -312,7 +312,8 @@ class HeroEditing:
             return
         gear, enchantments = effect_choices(self._heroes())
         dialog = EffectsDialog(
-            self, item, gear, enchantments, most=effect_book().max_effects, enchantsmith_opened=self.hero.vendors_opened()["Enchantsmith"]
+            self, item, gear, enchantments, most=effect_book().max_effects, enchantsmith_opened=self.hero.vendors_opened()["Enchantsmith"],
+            elements=self.hero.elements_in_play(),
         )
         self.wait_window(dialog)
         if dialog.result is None:

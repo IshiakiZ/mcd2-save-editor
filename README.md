@@ -26,6 +26,11 @@ the full save for people who want it.
   item one and a Special item two, and never more than four), and a weapon or armor piece an enchantment. The editor
   writes them exactly as a real save holds them, so it offers the ones it has seen so far, plus anything on an item
   in your own saves, which it can copy to any other item. See [what it can't do yet](#what-it-cant-do).
+- **Best for:** in the effects window, pick what you want from the item (damage, survival, mobility, loot, artifacts
+  and souls, or companions) and the editor puts its picks on, out of the effects the game can roll on that very item.
+  A Sword is Fighter gear, so for damage it gets Sharpness, Duelist, Swiftness and Critical Hit; a Ranger's boots
+  get Speed for mobility, and a Tank's chestplate is told the game rolls no mobility effect on it. See
+  [how it picks](#what-it-cant-do).
 - **Talisman levels:** an item's card shows a talisman's level and how far it is from the next one, and **Ready to
   level up** puts it one XP short, so the game levels it up the next time you earn XP with it on.
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
@@ -228,14 +233,26 @@ your sign-in, account or device data.
   game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
+- **Best for is a recommendation, not a measurement.** Which effects an item can get is the game's rule: it
+  rolls them from the pool of the item's slot (any weapon, any artifact, all gear) and from one pool for each
+  archetype the item carries (a Greatbow is Fighter and Ranger gear). MetaBot lists every item's archetypes and
+  every effect's pools, and players' lists bear it out: of the 342 effects the game rolled on the items in them,
+  338 are in the pool this predicts, and the other four are on items their owner had changed with the editor.
+  Which of an item's effects serve a goal best is the editor's own judgement, from what the game says each effect
+  does: a bonus that always applies comes before one that needs a critical hit or a charged shot, and that before
+  one that needs the right enemy or moment. Nobody has measured one effect against another. A pick is at the best
+  tier a real save has shown, and an effect that boosts one element's attacks is only picked when your hero has an
+  artifact of that element equipped. No effect on gear gives XP: The Eye of Experience talisman does (Presets,
+  Most XP). You can still add any effect to any item by hand; the window says when the game wouldn't roll it there.
 - **A Unique's own effect: 115 of the 116.** In the game a Unique has an effect of its own, the one its card
   describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on the item, apart
-  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 93 Uniques that
-  players' lists showed it on, and for 22 more that the game's files describe in the very same words as one of
+  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 96 Uniques that
+  players' lists showed it on, and for 19 more that the game's files describe in the very same words as one of
   those (the Slaymore and the Humbler Greaves both deal 50% more damage to secondary targets, and wherever two
-  such Uniques have both been seen, they are saved alike: a later list held five Uniques the editor had worked
+  such Uniques have both been seen, they are saved alike: later lists held eight Uniques the editor had worked
   out that way, each saved exactly as it wrote them). Rebuilt with the editor, all 180 items on three players'
-  lists came out the same as the game's own, key for key. The editor works none of these out by rule (a few are
+  lists came out the same as the game's own, key for key. And it works in the game: the Prime Enchanter's
+  Gauntlets, added with the editor, came with their effect in play. The editor works none of these out by rule (a few are
   enchantments under another name, and the game spells two of them its own way), so the one Unique nobody has
   sent, the Packleader Paws, is added without its own effect: the editor says so before you add it, and on its
   card. A Unique made by an older version is without its own effect too; its card
@@ -331,6 +348,7 @@ The tests run on every push and pull request, on Windows and on Linux (`.github/
 | `dungeons2_editor/updater.py` | Finding a newer version on GitHub, and replacing the packaged editor with it |
 | `dungeons2_editor/edition.py` | Which edition this is: the one on GitHub, or the one for Nexus Mods that never goes online (`tools/make_edition.py` switches) |
 | `dungeons2_editor/effects_dialog.py` | The window that changes an item's effects and enchantment |
+| `dungeons2_editor/recommend.py` | "Best for": the editor's picks of effects for a goal, out of the ones the game can roll on an item |
 | `tools/` | The item catalog builder, and the release build's helpers and checks |
 
 ## Credits and disclaimer
@@ -370,6 +388,10 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   each enchantment does and costs from its
   [enchanting guide](https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide), and the XP a talisman
   level takes from its talismans page. How an effect or an enchantment is saved comes from real saves only.
+  Each item's archetypes, which decide the effects the game can roll on it, come from its
+  [weapons](https://metabot.gg/en/minecraft-dungeons-2/weapons), [armor](https://metabot.gg/en/minecraft-dungeons-2/armor)
+  and artifacts pages and the archetypes' pages under [builds](https://metabot.gg/en/minecraft-dungeons-2/builds),
+  and an artifact's element from the artifacts page.
   `tools/build_item_catalog.py` rebuilds the lists from those pages.
 - The best gear, the kits and the numbers in the presets come from MetaBot.GG's
   [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),

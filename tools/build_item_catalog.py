@@ -12,6 +12,13 @@ links are in each file this writes and in the README:
     effects       every gear effect and its strength at each tier, and on each effect's own
                   page (effects/acrobat) the game's wording for each tier
     guides/enchanting-guide   what each enchantment does at each level, and what a level costs
+    weapons, armor            the archetypes of every melee weapon and armor piece (Fighter, Ranger...)
+    builds/fighter and the other six archetypes' pages   the archetypes of every ranged weapon
+
+An item's archetypes decide which effects the game can roll on it: MetaBot's builds page says an item
+rolls from its slot's pool (any weapon, any artifact, all gear) and from one pool per archetype it
+carries, and the effects table says which pools each effect is in. The effects on the items in
+players' lists bear that out, so the editor's "Best for" picks only offer an item what it can roll.
 
 The game's own item IDs aren't published anywhere the editor can use, so each item's save ID
 comes from real saves where players have reported it, and is otherwise worked out from its
@@ -48,7 +55,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 BASE_URL = "https://metabot.gg/en/minecraft-dungeons-2/"
-PAGES = ("uniques", "artifacts", "talismans", "enchantments", "effects", "guides/enchanting-guide")
+PAGES = ("uniques", "artifacts", "talismans", "enchantments", "effects", "guides/enchanting-guide", "weapons", "armor")
+ARCHETYPES = ("Fighter", "Mage", "Ranger", "Summoner", "Support", "Tank", "Trickster")
+ELEMENTS = ("Fire", "Frost", "Lightning", "Poison", "Soul")  # an artifact has one of these at most
+BUILD_PAGES = {archetype: f"builds/{archetype.lower()}" for archetype in ARCHETYPES}
 HEADERS = {"User-Agent": "Dungeons2SaveEditor/1.2 (item catalog builder; +https://github.com/IshiakiZ/mcd2-save-editor)"}
 DATA = Path(__file__).resolve().parent.parent / "dungeons2_editor" / "data"
 PREFIX = "SW.Item."
@@ -474,9 +484,12 @@ SEEN_ENCHANT_POINTS = {("Unique", "I"): 3, ("Unique", "II"): 8, ("Unique", "III"
 # thirty-one more, which showed nine new ones and the same effect for every Unique both lists hold. Both lists were
 # made by versions that couldn't write this kind of batch, so every one of them is the game's. A list made with
 # 1.10.0 or later can hold the editor's own (/issues/22 does: items its sender had made Unique), so from such a list
-# only an effect that version didn't have counts: the Humbler Heartstring's from /issues/22, and twenty-eight from
+# only an effect that version didn't have counts: the Humbler Heartstring's from /issues/22, and twenty-seven from
 # /issues/23, which leaves one Unique nobody has sent (the Packleader Paws). Two of those are saved with a template
 # spelled SW.Effecttemplate, small t: Protection's Unique tier, on the Monster Masher and the Humbler Antenna.
+# /issues/23 also holds three Uniques whose ID its version (1.10.1) hadn't seen, so the editor can't have made them:
+# the Alchemist Top Hat, the Woodsprite Crown and the Dreamruler Cover, each with the very effect own_effects() had
+# given it from a Unique described in the same words. That rule has now been right every time a save could check it.
 UNIQUE_EFFECTS = {
     "Battlestaff_Unique1": ("Effect.ElementalHit", 1, "EffectTemplate.ElementalHit.Unique"),  # Elemental Staff
     "Bow_Unique1": ("Effect.EagleEye", 0.25, "EffectTemplate.EagleEye.Unique"),  # Ranger's Promise
@@ -496,6 +509,7 @@ UNIQUE_EFFECTS = {
     "DualCrossbow_Unique1": ("Enchantment.Dynamo", 0.5, "Enchantment.Dynamo.Unique"),  # Double Crossers
     "EvocationBoots_Unique": ("Effect.SoulMax", 1.5, "EffectTemplate.BagOfSouls.Unique"),  # Alchemist Loafers
     "EvocationChest_Unique": ("Effect.Vestige", 0.25, "EffectTemplate.Vestige.Unique"),  # Alchemist Overcoat
+    "EvocationHelmet_Unique": ("Effect.Expand", 0.55, "EffectTemplate.Expand.Unique"),  # Alchemist Top Hat
     "EvocationLeggings_Unique": ("Effect.ArtifactHealing", 0.06, "EffectTemplate.ArtifactHealing.Unique"),  # Alchemist Trousers
     "FrostRimeBoots_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Rimefrost Plodders
     "FrostRimeHelmet_Unique": ("Effect.FrostFocus", 0.3, "EffectTemplate.FrostFocus.Unique"),  # Rimefrost Icecap
@@ -511,6 +525,7 @@ UNIQUE_EFFECTS = {
     "HeavyCrossbow_Unique1": ("Effect.PointBlank", 1, "EffectTemplate.PointBlank.Unique"),  # The Close Ranger
     "HewnBarkBoots_Unique": ("Effect.Reconstruction", -0.35, "EffectTemplate.Reconstruction.Unique"),  # Woodsprite Root Boots
     "HewnBarkChest_Unique": ("Effect.HealthBoost", 1.3, "EffectTemplate.HealthBoost.Unique"),  # Woodsprite Barkpiece
+    "HewnBarkHelmet_Unique": ("Effect.Friendship", -0.2, "EffectTemplate.Friendship.Unique"),  # Woodsprite Crown
     "HewnBarkLeggings_Unique": ("Effect.Thorns", 1, "EffectTemplate.Thorns.Unique"),  # Woodsprite Trunks
     "HoneyChest_Unique": ("Effect.HealingFocus", 0.5, "EffectTemplate.HealingFocus.Unique"),  # Hivemind Thorax
     "HoneyHelmet_Unique": ("Effect.Vivify", 0.7, "EffectTemplate.Vivify.Unique"),  # Hivemind Hardhat
@@ -524,6 +539,7 @@ UNIQUE_EFFECTS = {
     "MysticChest_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Oracle Mantle
     "MysticHelmet_Unique": ("Effect.LightningFocus", 0.25, "EffectTemplate.LightningFocus.Unique"),  # Oracle Crown
     "MysticLeggings_Unique": ("Effect.Cooldown", -0.3, "EffectTemplate.Cooldown.Unique"),  # Oracle Tights
+    "PhantomChest_Unique": ("Effect.Duelist", 0.4, "EffectTemplate.Duelist.Unique"),  # Dreamruler Cover
     "PhantomHelmet_Unique": ("Effect.SoulGatherMultiply", 0.6, "EffectTemplate.SoulSiphon.Unique"),  # Dreamruler Crown
     "PhantomLeggings_Unique": ("Effect.SwiftSneak", 0.4, "EffectTemplate.SwiftSneak.Unique"),  # Dreamruler Pyjamas
     "Pickaxe_Unique1": ("Effect.EmeraldsIncrease", 0.2, "EffectTemplate.Prospector.Unique"),  # The Prospector's Pick
@@ -728,6 +744,47 @@ def gear_effects(table: list[dict[str, str]], wording: dict[str, dict[str, str]]
     return made
 
 
+def tagged(cell: str) -> list[str]:
+    """'RangerSummoner' -> ['Ranger', 'Summoner']: the archetypes in one of MetaBot's cells, in the editor's order."""
+    return [archetype for archetype in ARCHETYPES if archetype in cell]
+
+
+def archetypes(pages: dict[str, list], builds: dict[str, list], effects: list[dict[str, str]]) -> dict[str, list[str]]:
+    """Every weapon's, armor piece's and artifact's archetypes, by the item's name (a Unique has its own).
+
+    Three of MetaBot's tables give them outright. A ranged weapon's are only on the archetypes' own pages, which
+    list every item with that tag; those pages also repeat the melee weapons, the artifacts and each archetype's
+    pool of effects, so everything they repeat is checked against the tables it came from."""
+    found: dict[str, list[str]] = {}
+    for row in rows(pages["armor"], "ARMOR PIECE", "SLOT", "WEIGHT", "ARCHETYPE"):
+        found[row["ARMOR PIECE"]] = tagged(row["ARCHETYPE"])
+    for row in rows(pages["weapons"], "WEAPON", "WEIGHT", "ARCHETYPE"):
+        found[row["WEAPON"]] = tagged(row["ARCHETYPE"])
+    for row in rows(pages["artifacts"], "ARTIFACT", "TYPE"):
+        found[row["ARTIFACT"]] = tagged(row["ARCHETYPE"])
+    listed: dict[str, list[str]] = {}
+    ranged: dict[str, list[str]] = {}
+    for archetype, tables in builds.items():
+        for row in all_rows(tables, "WEAPON", "CLASS", "DPS"):
+            listed.setdefault(row["WEAPON"], []).append(archetype)
+        for row in all_rows(tables, "ARTIFACT", "COOLDOWN"):  # the Ranger page has no artifacts
+            listed.setdefault(row["ARTIFACT"], []).append(archetype)
+        for row in all_rows(tables, "WEAPON", "TYPE", "BURST DPS"):
+            ranged.setdefault(row["WEAPON"], []).append(archetype)
+        pool = sorted(row["EFFECT"] for row in rows(tables, "EFFECT", "CATEGORY", "I", "II", "III"))
+        table = sorted(row["EFFECT"] for row in effects if f"{archetype} gear" in row["ROLLS ON"])
+        if pool != table:
+            raise SystemExit(f"MetaBot's {archetype} page lists the effects {pool}, but its effects table puts {table} on {archetype} gear")
+    for name, tags in listed.items():
+        if found.get(name) != tags:
+            raise SystemExit(f"MetaBot's build pages tag the {name} {tags}, but its own table says {found.get(name)}")
+    for name, tags in ranged.items():
+        if name in found:
+            raise SystemExit(f"{name} is in MetaBot's tables as a ranged weapon and as something else")
+        found[name] = tags
+    return found
+
+
 def own_effects(items: dict[str, dict]) -> None:
     """Check the Uniques' own effects against MetaBot's words for them, and give a Unique nobody has seen the
     effect of one that does the same thing.
@@ -791,6 +848,10 @@ def main() -> None:
         texts[page] = fetch(page)
         pages[page] = tables_in(texts[page])
         time.sleep(1)  # be gentle
+    builds = {}
+    for archetype, page in BUILD_PAGES.items():
+        builds[archetype] = fetch_tables(page)
+        time.sleep(1)
 
     items: dict[str, dict] = {}
     for row in rows(pages["uniques"], "ITEM", "TYPE", "BASE ITEM", "EFFECT"):
@@ -805,13 +866,22 @@ def main() -> None:
             items[base] = entry(base, weapon, PREFIX + pascal(base), "_Unique1", unique=unique, unique_effect=effect)
     for row in rows(pages["artifacts"], "ARTIFACT", "TYPE"):
         name = row["ARTIFACT"]
-        items.setdefault(name, entry(name, "Artifact", f"{PREFIX}Artifact.{pascal(name)}"))
+        items.setdefault(name, entry(name, "Artifact", f"{PREFIX}Artifact.{pascal(name)}", element=row["ELEMENT"] if row["ELEMENT"] in ELEMENTS else ""))
     for row in rows(pages["talismans"], "TALISMAN", "EFFECT AT LEVEL 3"):
         name, effect = row["TALISMAN"], row["EFFECT AT LEVEL 3"]
         items.setdefault(name, entry(name, "Talisman", f"{PREFIX}Talisman.{pascal(name)}", effect="" if effect == "—" else effect))
     for extra in EXTRA:
         items.setdefault(extra["name"], entry(extra["name"], extra["kind"], extra["id"], slot=extra.get("slot", ""), name_from_id=True))
     own_effects(items)
+    tags = archetypes(pages, builds, rows(pages["effects"], "EFFECT", "CATEGORY", "ROLLS ON", "I", "II", "III"))
+    for item in items.values():
+        if item["kind"] not in ("Melee", "Ranged", "Armor", "Artifact"):
+            continue
+        for key, name in (("tags", item["name"]), ("unique_tags", item.get("unique"))):
+            if name and tags.get(name):
+                item[key] = tags[name]
+            elif name and name not in tags and item["kind"] != "Artifact":  # MetaBot gives a few artifacts no archetype
+                print(f"warning: MetaBot gives the {name} no archetype, so only the effects any {item['kind'].lower()} item rolls are known for it")
 
     guide = pages["guides/enchanting-guide"]
     by_level = {row["ENCHANTMENT"]: row for row in all_rows(guide, "ENCHANTMENT", "EFFECT", "I / II / III")}
@@ -882,7 +952,7 @@ def main() -> None:
         print(f"warning: {item_id} was seen in a save, but no item in the list has a Unique with that ID")
     sources = {page: BASE_URL + page for page in PAGES}
     DATA.mkdir(parents=True, exist_ok=True)
-    item_sources = [sources[page] for page in ("uniques", "artifacts", "talismans")]
+    item_sources = [sources[page] for page in ("uniques", "artifacts", "talismans", "weapons", "armor")] + [BASE_URL + "builds"]
     (DATA / "items.json").write_text(json.dumps({"sources": item_sources, "items": catalog}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     (DATA / "enchantments.json").write_text(
         json.dumps(

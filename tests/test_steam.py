@@ -1,5 +1,6 @@
 import copy
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -202,6 +203,13 @@ class SteamDiscoveryTests(unittest.TestCase):
         folder = self.proton_folder(self.home / ".local/share/Steam")
         self.assertEqual(steam.find_folders(), [folder.resolve()])
         self.assertEqual(saves.find_profiles(), [folder.resolve()])
+
+    def test_finds_flatpak_steam_under_its_other_names(self):
+        for name in ("data/Steam", ".steam/steam", ".steam/root"):
+            with self.subTest(name):
+                folder = self.proton_folder(self.home / ".var/app/com.valvesoftware.Steam" / name)
+                self.assertEqual(steam.find_folders(), [folder.resolve()])
+                shutil.rmtree(self.home / ".var")
 
     def test_finds_flatpak_steam(self):
         folder = self.proton_folder(self.home / ".var/app/com.valvesoftware.Steam/.local/share/Steam")

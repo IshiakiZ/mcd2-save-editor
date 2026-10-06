@@ -291,6 +291,18 @@ class EditingTests(ServerTestCase):
             self.assertIn(why, self.call("set_item_effects", hero="00000000", item=sword, **arguments))
         self.assertIn("Knockback III", json.dumps(self.call("preview_changes", hero="00000000")["unsaved_changes"]))
         # Leaving one out keeps it; an empty list and "none" take them off.
+        # best_for: the editor's own picks for a goal, out of what the game rolls on this item, ahead of what it has.
+        self.call("set_item_effects", hero="00000000", item=sword, effects=["Knockback I", "Looter I"])
+        best = self.call("set_item_effects", hero="00000000", item=sword, best_for="damage")
+        self.assertEqual([effect["name"] for effect in best["item"]["effects"] if not effect.get("enchantment")], ["Critical Hit", "Critical Edge", "Vanguard", "Knockback"])
+        self.assertIn(
+            "Best for damage on the Sword (Fighter gear): Critical Hit I, Critical Edge II and Vanguard I. Kept Knockback I. Took off Looter I.",
+            best["done"],
+        )
+        self.assertIn("The game rolls no effect for mobility on the Sword (Fighter gear)", self.call("set_item_effects", hero="00000000", item=sword, best_for="Mobility"))
+        self.assertIn("No effect on gear gives XP. The Eye of Experience talisman does", self.call("set_item_effects", hero="00000000", item=sword, best_for="XP"))
+        self.assertIn("best_for is one of: Damage, Survival, Mobility, Loot, Artifacts and souls, Companions.", self.call("set_item_effects", hero="00000000", item=sword, best_for="Fishing"))
+        self.assertIn("Give effects or best_for, not both", self.call("set_item_effects", hero="00000000", item=sword, effects=["Looter"], best_for="Loot"))
         cleared = self.call("set_item_effects", hero="00000000", item=sword, effects=[])
         self.assertEqual([effect["name"] for effect in cleared["item"]["effects"]], ["Healing Smite"])
         gone = self.call("set_item_effects", hero="00000000", item=sword, enchantment="none")

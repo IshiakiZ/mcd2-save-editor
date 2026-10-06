@@ -38,12 +38,17 @@ _HERO_PREFIX = "character"
 _PREFIX_USERS = Path("steamapps", "compatdata", STEAM_APP_ID, "pfx", "drive_c", "users")
 _LIBRARY_PATH = re.compile(r'"path"\s+"((?:[^"\\]|\\.)*)"')
 
-# Where Steam keeps its files on Linux: the normal install, the older symlink, Flatpak and Snap.
+# Where Steam keeps its files on Linux: the normal install, the older symlink, Flatpak (which has its own home
+# folder, with the same three names in it and a data folder besides) and Snap. Most of these are links to one
+# another on a given PC; find_folders counts a folder once however it was reached.
 _LINUX_STEAM_ROOTS = (
     ".local/share/Steam",
     ".steam/steam",
     ".steam/root",
     ".var/app/com.valvesoftware.Steam/.local/share/Steam",
+    ".var/app/com.valvesoftware.Steam/data/Steam",
+    ".var/app/com.valvesoftware.Steam/.steam/steam",
+    ".var/app/com.valvesoftware.Steam/.steam/root",
     "snap/steam/common/.local/share/Steam",
 )
 

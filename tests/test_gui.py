@@ -1716,14 +1716,77 @@ class EffectsWindowTests(WindowTestCase):
         self.assertEqual(self.listed(dialog), ["Ancient Alchemy"])  # the one enchantment known for armor
         self.assertEqual((dialog.tier_var.get(), str(dialog.add_button.cget("text"))), ("II", "On the item"))
 
+    def test_best_for_puts_the_editors_picks_on_the_item(self):
+        dialog = self.open("SW.Item.Bow")
+        self.assertEqual(list(dialog.goal_box.cget("values")), ["Damage", "Survival", "Mobility", "Loot", "Artifacts and souls", "Companions", "XP"])
+        self.assertIn("out of the ones the game can roll on this very item", dialog.best_var.get())
+        # The picks go first, each at the best tier a save has shown, and what the item had stays while it fits.
+        self.assertTrue(dialog.best_for("Loot"))
+        self.assertEqual([choice.title for choice in dialog.effects], ["Looter I", "Luck I", "Knockback I", "Critical Edge II"])
+        self.assertEqual((dialog.goal_var.get(), dialog.count_var.get()), ("Loot", "4 of 4 effects"))
+        self.assertTrue(
+            dialog.best_var.get().startswith(
+                "Best for loot on the Bow (a ranged weapon with no archetype): Looter I and Luck I. Kept Knockback I and "
+                "Critical Edge II. In the editor's order: more drops first"
+            ),
+            dialog.best_var.get(),
+        )
+        self.assertTrue(dialog.apply_button.instate(["!disabled"]))
+        # Another goal's picks go ahead of those. Critical Edge was on it already, and what no longer fits comes off.
+        self.assertTrue(dialog.best_for("Damage"))
+        self.assertEqual([choice.title for choice in dialog.effects], ["Critical Hit I", "Critical Edge II", "Looter I", "Luck I"])
+        self.assertIn("Critical Hit I and Critical Edge II. Kept Looter I and Luck I. Took off Knockback I.", dialog.best_var.get())
+        # What the game doesn't roll on this item isn't picked: the window says where it does roll it.
+        before = list(dialog.effects)
+        self.assertFalse(dialog.best_for("Mobility"))
+        self.assertEqual(
+            dialog.best_var.get(),
+            "The game rolls no effect for mobility on the Bow (a ranged weapon with no archetype). It rolls them on Trickster gear. "
+            "You can still add one from the list by hand.",
+        )
+        self.assertFalse(dialog.best_for("XP"))
+        self.assertIn("No effect on gear gives XP. The Eye of Experience talisman does", dialog.best_var.get())
+        self.assertFalse(dialog.best_for("Fishing"))
+        self.assertEqual(dialog.effects, before)
+        # One picked by hand that the game wouldn't roll here can still be added, and the window says which it is.
+        self.assertTrue(dialog.select("Vanguard"))
+        self.assertIn("In the game it rolls on fighter gear, which the Bow isn't.", dialog.note_var.get())
+        self.assertTrue(dialog.select("Looter"))
+        self.assertNotIn("In the game it rolls on", dialog.note_var.get())
+        # Choosing a goal in the list does the same as the call.
+        dialog.remove_all()
+        dialog.goal_box.set("Loot")
+        dialog.goal_box.event_generate("<<ComboboxSelected>>")
+        self.root.update()
+        self.assertEqual([choice.title for choice in dialog.effects], ["Looter I", "Luck I"])
+        dialog.apply()
+        self.assertEqual(([choice.title for choice in dialog.result[0]], dialog.result[1]), (["Looter I", "Luck I"], None))
+
+    def test_best_for_knows_the_item_and_leaves_its_own_effect_alone(self):
+        dialog = self.open("SW.Item.HoneyHelmet", elements={"Fire", ""})
+        self.assertEqual(dialog.elements, {"Fire"})  # the elements of the artifacts the hero has equipped
+        self.assertTrue(dialog.best_for("Loot"))
+        self.assertEqual(
+            self.on_item(dialog), [("Looter I", "Effect"), ("Luck I", "Effect"), ("Ancient Alchemy II", "Enchantment"), ("Burning", "Its own")]
+        )
+        self.assertEqual(dialog.count_var.get(), "2 of 3 effects")
+        self.assertIn("on the Beekeeper Veil (Support gear)", dialog.best_var.get())
+        self.assertFalse(dialog.best_for("Damage"))  # nothing in the list for damage rolls on Support gear
+        horn = self.open("SW.Item.Artifact.RallyingHorn")
+        self.assertTrue(horn.best_for("Artifacts and souls"))
+        self.assertEqual([choice.title for choice in horn.effects], ["Cooldown II", "Spiritual I"])
+        self.assertIn("(Summoner, Support and Tank gear)", horn.best_var.get())
+
     def test_the_buttons_keep_their_room(self):
         dialog = self.open("SW.Item.Bow")
         self.show_on_screen(dialog)
-        for button in (dialog.apply_button, dialog.add_button, dialog.remove_button):
+        for button in (dialog.apply_button, dialog.add_button, dialog.remove_button, dialog.goal_box):
             self.assert_in_view(button, dialog)
         dialog.select("Vanguard", "III")  # the longest note there is
+        dialog.best_for("Damage")  # and the most "Best for" has to say
         dialog.update()
-        self.assert_in_view(dialog.apply_button, dialog)
+        for button in (dialog.apply_button, dialog.add_button, dialog.goal_box):
+            self.assert_in_view(button, dialog)
 
 
 class EffectsWindowAt150Tests(EffectsWindowTests):
