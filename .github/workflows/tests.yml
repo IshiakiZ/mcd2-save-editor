@@ -30,18 +30,13 @@ jobs:
       - name: Run the tests
         if: runner.os == 'Windows'
         run: python -m unittest discover -s tests -t .
-      # Probes, while the window tests don't finish on a Mac: which kind of window is it that Tk never gets done with?
-      - name: Probe Tk on a Mac
+      # Probes, while the window tests don't finish on a Mac: what keeps Tk busy when it draws the editor's window?
+      - name: Probe the editor's window on a Mac
         if: runner.os == 'macOS'
         run: |
-          python -c "import tkinter; root = tkinter.Tk(); print('Tk', root.tk.call('info', 'patchlevel'), 'windowing system', root.tk.call('tk', 'windowingsystem'))"
-          echo "--- 1: a bare window"
-          python -X faulthandler -c "import faulthandler, tkinter; faulthandler.dump_traceback_later(40, exit=True); root = tkinter.Tk(); root.update(); print('ok')" || true
-          echo "--- 2: a hidden root with a second window full of ttk widgets"
-          python -X faulthandler -c "import faulthandler, tkinter; from tkinter import ttk; faulthandler.dump_traceback_later(40, exit=True); root = tkinter.Tk(); root.withdraw(); top = tkinter.Toplevel(root); ttk.Treeview(top).pack(); ttk.Combobox(top).pack(); ttk.Notebook(top).pack(); root.update(); print('ok')" || true
-          echo "--- 3: the editor in Simple mode"
-          python -X faulthandler -c "import faulthandler, unittest; faulthandler.dump_traceback_later(90, exit=True); unittest.main(module=None, argv=['unittest', '-v', 'tests.test_gui.EffectsWindowTests.test_an_effect_of_the_items_own_is_left_alone'])" || true
-          echo "--- 4: the editor in Advanced mode"
-          python -X faulthandler -c "import faulthandler, unittest; faulthandler.dump_traceback_later(90, exit=True); unittest.main(module=None, argv=['unittest', '-v', 'tests.test_gui.AdvancedSettingsTests.test_advanced_mode_keeps_the_windows_look'])" || true
-          echo "--- 5: everything that opens no window"
-          python -m unittest tests.test_steam tests.test_hero tests.test_recommend tests.test_catalog tests.test_saves 2>&1 | tail -4 || true
+          echo "--- Simple mode"
+          python -m tests.mac_probe || true
+          echo "--- Advanced mode"
+          python -m tests.mac_probe advanced || true
+          echo "--- the tests that open no window"
+          python -m unittest tests.test_steam tests.test_hero tests.test_recommend tests.test_catalog tests.test_saves 2>&1 | grep -E "^(FAIL|ERROR)|Error|Ran |^OK|FAILED|^    self\.|^[-+?] " | head -30 || true
