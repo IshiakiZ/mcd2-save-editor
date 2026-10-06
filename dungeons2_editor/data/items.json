@@ -1853,7 +1853,13 @@
    "confirmed": true,
    "unique": "Humbler Heartstring",
    "unique_effect": "Projectiles can pierce up to 10 enemies.",
-   "unique_id": "SW.Item.Greatbow_Unique1"
+   "unique_id": "SW.Item.Greatbow_Unique1",
+   "unique_own": {
+    "effect": "SW.Enchantment.Piercing",
+    "strength": 10,
+    "template": "SW.Enchantment.Piercing.Unique",
+    "seen": true
+   }
   },
   {
    "name": "Heavy Crossbow",

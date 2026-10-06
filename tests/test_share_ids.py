@@ -153,20 +153,20 @@ class ShareIdsTests(unittest.TestCase):
         held["CharacterSaveV1"]["Inventory"]["Entries"] += [
             # The Ranger's Promise: the editor has no effect of its own for it.
             gear("SW.Item.Bow_Unique1", static("Effect.Aim", 0.25, "EffectTemplate.Aim.Unique"), rarity="Unique", seed=74),
-            # The Slaymore: the editor has it from the Humbler Greaves, which do the same; this is the Slaymore's own word.
-            gear("SW.Item.Claymore_Unique1", static("Effect.SweepingEdge", 0.5, "EffectTemplate.SweepingEdge.Unique"), rarity="Unique", seed=75),
-            gear("SW.Item.Claymore_Unique1", static("Effect.SweepingEdge", 0.5, "EffectTemplate.SweepingEdge.Unique"), rarity="Unique", seed=76),  # once is enough
-            # A Burning Blade saved another way than the list has it.
+            gear("SW.Item.Bow_Unique1", static("Effect.Aim", 0.25, "EffectTemplate.Aim.Unique"), rarity="Unique", seed=75),  # once is enough
+            # The Slaymore: the editor has its effect from the Humbler Greaves, which do the same, and writes it on a
+            # Slaymore it makes. So finding exactly that on one proves nothing: it may be the editor's own work.
+            gear("SW.Item.Claymore_Unique1", static("Effect.SweepingEdge", 0.5, "EffectTemplate.SweepingEdge.Unique"), rarity="Unique", seed=76),
+            # A Burning Blade saved another way than the editor would save it: that can only be the game's.
             gear("SW.Item.Sword_Unique1", static("Effect.FireFocus", 0.3, "EffectTemplate.FireFocus.Unique"), rarity="Unique", seed=77),
         ]
         plain = Hero(held)
         listed = share_ids.gear_effects([plain])
-        self.assertEqual([tag for tag, _text in listed], ["SW.Item.Bow_Unique1", "SW.Item.Claymore_Unique1", "SW.Item.Sword_Unique1"])
+        self.assertEqual([tag for tag, _text in listed], ["SW.Item.Bow_Unique1", "SW.Item.Sword_Unique1"])
         self.assertTrue(listed[0][1].startswith('effects on a Unique one: [{"TypeTag":"SW.Item.Effect.Static","EffectsInThisBatch":[{"TypeTag":"SW.Effect.Aim","Intensity":0.25,'), listed[0][1])
-        self.assertIn('"Intensity":0.3,', listed[2][1])
+        self.assertIn('"Intensity":0.3,', listed[1][1])
         self.assertEqual(share_ids.finding_keys([plain]) - {tag for tag, _note in share_ids.unknown_ids([plain])}, {
-            "SW.Effect.Aim SW.EffectTemplate.Aim.Unique", "SW.Item.Bow_Unique1 own effects", "SW.Item.Claymore_Unique1 own effects",
-            "SW.Item.Sword_Unique1 own effects",
+            "SW.Effect.Aim SW.EffectTemplate.Aim.Unique", "SW.Item.Bow_Unique1 own effects", "SW.Item.Sword_Unique1 own effects",
         })
         # An effect that's locked is saved a way the editor never writes, so it's news, on a Unique or not.
         locked = rolled_effect("CriticalEdge", 0.2, "II")

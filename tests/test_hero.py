@@ -834,6 +834,26 @@ class UniqueOwnEffectTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "caps an item at 4 effects, and The Burning Blade has 4. Take one off first."):
             hero.give_own_effect(blade)
 
+    def test_an_item_isnt_given_the_effect_it_comes_with_a_second_time(self):
+        hero, sword = self.hero_and_sword()
+        crown = hero.add_item("SW.Item.MysticHelmet_Unique", sword.entry, rarity="Unique")  # the Oracle Crown: lightning damage
+        gear, _enchantments = heroes.effect_choices([])
+        lightning = next(choice for choice in gear if choice.effect == "SW.Effect.LightningFocus")
+        other = next(choice for choice in gear if choice.title == "Critical Edge II")
+        with self.assertRaisesRegex(ValueError, f"The Oracle Crown comes with {lightning.name} of its own already."):
+            hero.set_effects(crown, [other, lightning])
+        hero.set_effects(crown, [other])
+        self.assertEqual([effect.tag for effect in hero.item(crown).effects], ["SW.Effect.LightningFocus", "SW.Effect.CriticalEdge"])
+        # The same goes for an enchantment a Unique has built in, whatever tier the Enchantsmith's would be.
+        save = hero_save()
+        entry = hero_item("SW.Item.Greatbow_Unique1", rarity="Unique")
+        entry["ItemData"]["Effects"] = [{"TypeTag": "SW.Item.Effect.Static", "EffectsInThisBatch": [enchantment_effect("Radiance", 10)]}]
+        save["CharacterSaveV1"]["Inventory"]["Entries"] = [entry]
+        bow = Hero(save)
+        smite = next(choice for choice in heroes.effect_choices([])[1] if choice.title == "Healing Smite I")
+        with self.assertRaisesRegex(ValueError, "comes with Healing Smite of its own already."):
+            bow.set_enchantment(0, smite)
+
     def test_an_effect_saved_some_other_way_counts_as_its_own(self):
         item = self.unique({"TypeTag": "SW.Item.Effect.Fixed", "EffectsInThisBatch": [rolled_effect("Burning", 1, "Unique")]})
         self.assertFalse(item.own_effect_missing or item.own_effect_note)  # the editor leaves what it doesn't know alone

@@ -603,22 +603,24 @@ def _best(matches: list[EffectChoice]) -> EffectChoice | None:
     return max(usable, key=lambda choice: order.get(choice.tier, -1), default=None)
 
 
-def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice]) -> EffectChoice | None:
+def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice], own: str = "") -> EffectChoice | None:
     """The first of ``names`` (enchantments, best first) that the editor can write on an item of this kind, at
-    the highest tier a real save has shown. None when it can't write any of them yet."""
+    the highest tier a real save has shown. None when it can't write any of them yet. ``own`` is the effect the
+    item comes with, if it's a Unique: it isn't given that one a second time (the Humbler Heartstring comes
+    with Piercing)."""
     for name in names:
-        found = _best([choice for choice in known if choice.name == name and choice.is_enchantment and choice.fits(kind, piece)])
+        found = _best([choice for choice in known if choice.name == name and choice.is_enchantment and choice.fits(kind, piece) and choice.effect != own])
         if found is not None:
             return found
     return None
 
 
-def pick_effects(names: tuple[str, ...], count: int, known: list[EffectChoice]) -> list[EffectChoice]:
+def pick_effects(names: tuple[str, ...], count: int, known: list[EffectChoice], own: str = "") -> list[EffectChoice]:
     """The first ``count`` of ``names`` (gear effects, best first) that the editor can write, each at the
-    highest tier a real save has shown."""
+    highest tier a real save has shown, leaving out the effect the item comes with (``own``)."""
     picked: list[EffectChoice] = []
     for name in names:
-        found = _best([choice for choice in known if choice.name == name and not choice.is_enchantment])
+        found = _best([choice for choice in known if choice.name == name and not choice.is_enchantment and choice.effect != own])
         if found is not None and len(picked) < count and found.effect not in {choice.effect for choice in picked}:
             picked.append(found)
     return picked
@@ -667,13 +669,16 @@ def plan(
             result.unconfirmed.append((kit_item, found))
     for addition in result.add:
         kit_item, found = addition.kit, addition.found
+        comes_with = found.own_effect_at(addition.rarity)
+        own = comes_with.effect if comes_with is not None else ""
         if result.enchant:
-            addition.enchantment = pick_enchantment(kit_item.enchants, found.kind, found.piece, known_enchantments)
-        addition.effects = pick_effects(kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects)
+            addition.enchantment = pick_enchantment(kit_item.enchants, found.kind, found.piece, known_enchantments, own)
+        addition.effects = pick_effects(kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects, own)
     for owned in result.have:
         item = hero.item(owned.index)
         if result.enchant and item.enchantment is None and item.can_be_enchanted:
-            owned.enchantment = pick_enchantment(owned.kit.enchants, item.kind, item.piece, known_enchantments)
+            own = next((effect.tag for effect in item.own_effects), "")
+            owned.enchantment = pick_enchantment(owned.kit.enchants, item.kind, item.piece, known_enchantments, own)
     if equip:
         _choose_slots(preset, hero, result, slots, check_level)
     if preset.upgrade_gear:

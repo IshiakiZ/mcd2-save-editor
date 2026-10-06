@@ -498,7 +498,7 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Frost attacks deal 15% more damage."
     },
     {
@@ -924,7 +924,7 @@
      "tier": "II",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Ranged attacks deal 20% more damage."
     },
     {
@@ -1129,6 +1129,37 @@
    ]
   },
   {
+   "effect": "SW.Effect.Resilience",
+   "template": "SW.EffectTemplate.Resilience",
+   "name": "Resilience",
+   "category": "Defense",
+   "rolls_on": "Tank gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/resilience",
+   "tiers": [
+    {
+     "tier": "I",
+     "strength": -0.2,
+     "shown": "20%",
+     "seen": true,
+     "text": "Recover from negative statuses 20% faster."
+    },
+    {
+     "tier": "II",
+     "strength": -0.25,
+     "shown": "25%",
+     "seen": false,
+     "text": "Recover from negative statuses 25% faster."
+    },
+    {
+     "tier": "III",
+     "strength": -0.3,
+     "shown": "30%",
+     "seen": true,
+     "text": "Recover from negative statuses 30% faster."
+    }
+   ]
+  },
+  {
    "effect": "SW.Effect.RollCooldown",
    "template": "SW.EffectTemplate.Acrobat",
    "name": "Acrobat",
@@ -1178,7 +1209,7 @@
      "tier": "II",
      "strength": 0.25,
      "shown": "25%",
-     "seen": false,
+     "seen": true,
      "text": "Shadowcloaking lasts 25% longer."
     }
    ]
@@ -1372,14 +1403,31 @@
   {
    "effect": "SW.Effect.Supercharge",
    "template": "SW.EffectTemplate.Supercharge",
-   "name": "Supercharge",
-   "name_from_id": true,
-   "maybe": "Sharpshooter",
+   "name": "Sharpshooter",
+   "category": "Attack",
+   "rolls_on": "Ranger gear",
+   "page": "https://metabot.gg/en/minecraft-dungeons-2/effects/sharpshooter",
    "tiers": [
+    {
+     "tier": "I",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": true,
+     "text": "Charged ranged attacks deal 30% more damage."
+    },
     {
      "tier": "II",
      "strength": 0.35,
-     "seen": true
+     "shown": "35%",
+     "seen": true,
+     "text": "Charged ranged attacks deal 35% more damage."
+    },
+    {
+     "tier": "III",
+     "strength": 0.4,
+     "shown": "40%",
+     "seen": true,
+     "text": "Charged ranged attacks deal 40% more damage."
     }
    ]
   },

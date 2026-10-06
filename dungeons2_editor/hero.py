@@ -1233,6 +1233,9 @@ class Hero:
             raise ValueError("An enchantment isn't one of the effects the game rolls. Set it as the item's enchantment.")
         if len({choice.effect for choice in wanted}) != len(wanted):
             raise ValueError("An item can't have the same effect twice.")
+        mine = next((choice for choice in wanted if any(effect.tag == choice.effect for effect in item.own_effects)), None)
+        if mine is not None:
+            raise ValueError(f"{the(item.name, start=True)} comes with {mine.name} of its own already.")
         most = effect_book().max_effects
         own = len(item.own_effects)
         if len(wanted) + own > most:
@@ -1276,6 +1279,9 @@ class Hero:
             raise ValueError(f"The {item.name} can't be enchanted: enchantments go on weapons and armor.")
         if not choice.fits(item.kind, item.piece):
             raise ValueError(f"{choice.name} goes on {_slot_words(choice.slots)}, and the {item.name} isn't one.")
+        if any(effect.tag == choice.effect for effect in item.own_effects):
+            # Some Uniques come with an enchantment as the effect of their own. Nobody has seen an item hold one twice.
+            raise ValueError(f"{the(item.name, start=True)} comes with {choice.name} of its own already.")
         kept = batch.get("EffectsInThisBatch") if batch is not None else None
         if isinstance(kept, list) and len(kept) == 1 and _effect_key(kept[0]) == (choice.effect, choice.template):
             return  # it has this one already

@@ -31,7 +31,7 @@ the full save for people who want it.
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
   and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
   Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. A Unique comes with
-  the effect of its own, saved the way the game saves it, for 85 of the 116 so far
+  the effect of its own, saved the way the game saves it, for 86 of the 116 so far
   ([the rest](#what-it-cant-do) say so). Items show their in-game names.
 - **Presets:**
   - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
@@ -220,28 +220,30 @@ your sign-in, account or device data.
   levelling up to the game: **Ready to level up** puts it one XP short of the next level (18,480 XP for level 2
   and 73,920 more for level 3), and the next XP you earn with it equipped does the rest.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 53 gear effects and 9 enchantments so far
+  files, so the editor learns how each one is saved from real saves: 54 gear effects and 9 enchantments so far
   (Ancient Alchemy at every tier, Healing Smite and Piercing at tiers I and III, and Ender Quiver, Gravity Pulse,
   Swirling, Barrier Brew and two the save calls Blowback and Borealis at tier III), plus whatever is on your own
-  items. For 47 of the effects the editor knows what the game calls them and the game's own numbers are published
+  items. For 49 of the effects the editor knows what the game calls them and the game's own numbers are published
   (MetaBot's table), so it also offers the tiers nobody has sent yet; it marks those as not seen and asks before
   adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
   game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
-- **A Unique's own effect: 85 of the 116 so far.** In the game a Unique has an effect of its own, the one its card
+- **A Unique's own effect: 86 of the 116 so far.** In the game a Unique has an effect of its own, the one its card
   describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on the item, apart
-  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 65 Uniques two
+  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 66 Uniques two
   players' lists showed it on, and for 20 more that the game's files describe in the very same words as one of
   those (the Slaymore and the Humbler Greaves both deal 50% more damage to secondary targets, and wherever two
   such Uniques have both been seen, they are saved alike: the second list held five Uniques the editor had worked
   out that way, each saved exactly as it wrote them). Rebuilt with the editor, all 120 items on the two lists came
   out the same as the game's own, key for key. These effects follow no rule the editor could work the others out
-  from (a few are enchantments under another name), so the other 31 Uniques are added without theirs: the editor
+  from (a few are enchantments under another name), so the other 30 Uniques are added without theirs: the editor
   says so before you add one, and on its card. A Unique made by an older version is without its own effect too; its card
   has a button, **Add its own effect**. **Share item IDs…** lists the own effect of any Unique of yours that the
-  editor hasn't seen it on.
+  editor has none for, or would write differently. (One it writes the same way proves nothing, since the Unique
+  may be one you made with the editor.) An item is never given the effect it comes with a second time: the
+  Humbler Heartstring comes with Piercing, so it can't be enchanted with Piercing as well.
 - **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
   with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
   change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves

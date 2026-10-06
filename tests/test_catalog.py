@@ -173,7 +173,14 @@ class RealItemListTests(unittest.TestCase):
         plan = presets.plan(kit, hero, build_catalog([hero]), power=30, rarity="Unique")
         made = {addition.name: (addition.enchantment.title if addition.enchantment else None, [choice.title for choice in addition.effects]) for addition in plan.add}
         # Each gets the highest tier of its effect that a save has shown.
-        self.assertEqual(made["Humbler Heartstring"], ("Piercing III", ["Marksman III"]))
+        # The Humbler Heartstring comes with Piercing of its own (ten enemies), so the kit doesn't enchant it with
+        # Piercing as well; Chain Reaction, the guide's first choice for it, hasn't been seen saved yet.
+        self.assertEqual(made["Humbler Heartstring"], (None, ["Marksman III"]))
+        heartstring = hero.item(hero.add_item("SW.Item.Greatbow", build_catalog([hero])[0].template, rarity="Unique", power=30))
+        self.assertEqual(heartstring.effect_lines(), ["Its own: Piercing"])
+        piercing = next(choice for choice in heroes.effect_choices([])[1] if choice.title == "Piercing III")
+        with self.assertRaisesRegex(ValueError, "The Humbler Heartstring comes with Piercing of its own already."):
+            hero.set_enchantment(heartstring.index, piercing)
         self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge III"]))
         self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
         self.assertEqual(made["Sharpshooter Duster"], (None, ["Projectile Protection III"]))  # Critical Quiver hasn't been seen saved yet
@@ -182,8 +189,8 @@ class RealItemListTests(unittest.TestCase):
     def test_uniques_come_with_the_effect_saves_show(self):
         uniques = [item for item in self.items if item.unique]
         owned = [item for item in uniques if item.unique_own is not None]
-        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 65)
-        self.assertGreaterEqual(len(owned), 85)
+        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 66)
+        self.assertGreaterEqual(len(owned), 86)
         for item in owned:
             own = item.unique_own
             self.assertRegex(own.effect, r"^SW\.(Effect|Enchantment)\.[A-Za-z.]+$", item.unique)
@@ -214,7 +221,9 @@ class RealItemListTests(unittest.TestCase):
         # Three Uniques that say the same thing, each seen: saved alike.
         self.assertEqual({own[name] for name in ("Rimefrost Plodders", "Oracle Mantle", "Mad Sifter Mask")}, {("SW.Effect.Saboteur", 1, "SW.EffectTemplate.Saboteur.Unique")})
         # Nothing is worked out for a Unique that says something no seen Unique says.
-        self.assertIsNone(next(item for item in uniques if item.unique == "Humbler Heartstring").unique_own)
+        self.assertIsNone(next(item for item in uniques if item.unique == "The Shackler").unique_own)
+        # The Humbler Heartstring's is Piercing itself, at a tier the Enchantsmith doesn't sell: ten enemies.
+        self.assertEqual(own["Humbler Heartstring"], ("SW.Enchantment.Piercing", 10, "SW.Enchantment.Piercing.Unique"))
 
     def test_a_unique_is_made_the_way_the_game_saved_one(self):
         # Two of the sixty Uniques in issue 20, exactly as the game saved their effects: its own first, then what it

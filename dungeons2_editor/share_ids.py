@@ -142,12 +142,15 @@ def _known_pairs() -> set[tuple[str, str]]:
 
 def _own_is_news(item: Item) -> bool:
     """Whether an item holds an effect saved some way that would teach the editor something: a Unique's own
-    effect that the editor hasn't seen on that very Unique (or has, but not like this), a kind of batch it
-    doesn't know, or an effect that's locked, which the editor never writes."""
+    effect that isn't the one the editor would give that Unique (it has none for it, or a different one), a
+    kind of batch it doesn't know, or an effect that's locked, which the editor never writes.
+
+    A Unique's own effect that matches the editor's is never news, even where the editor only has it from
+    another Unique that does the same thing: the editor writes exactly that on a Unique it adds or makes, so
+    finding it in a save proves nothing (issue 22 listed several such, on items made Unique with the editor)."""
     saved = [(effect.tag, effect.strength, effect.template) for effect in item.effects if effect.is_own]
     known = own_effect(item.tag)
-    expected = [(known.effect, known.strength, known.template)] if known is not None and known.seen else None
-    if saved and saved != expected:
+    if saved and saved != ([(known.effect, known.strength, known.template)] if known is not None else None):
         return True
     return any(not effect.is_own for effect in item.own_effects) or any(effect.locked for effect in item.effects)
 

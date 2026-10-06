@@ -56,7 +56,8 @@ BOOK = "Enchantment Book"
 
 # IDs seen in real saves, without the SW.Item. in front: the developer's own, and the ones players sent in
 # https://github.com/IshiakiZ/mcd2-save-editor/issues/2, /issues/7, /issues/9, /issues/11, /issues/12, /issues/15,
-# /issues/17, /issues/20 and /issues/21. From /issues/11 on, a report only lists IDs the game itself vouches for.
+# /issues/17, /issues/20, /issues/21 and /issues/22. From /issues/11 on, a report only lists IDs the game itself
+# vouches for.
 CONFIRMED_IDS = {
     PREFIX + name
     for name in """
@@ -306,7 +307,7 @@ GEAR_EFFECTS = {
     "Finesse": ("Finesse", {"II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1}),
-    "FrostFocus": ("FrostFocus", {"I": 0.1, "III": 0.2}),
+    "FrostFocus": ("FrostFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Gambler": ("Gambler", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35}),
     "Knockback": ("Knockback", {"I": 0.15, "II": 0.2, "III": 0.3}),
@@ -320,7 +321,7 @@ GEAR_EFFECTS = {
     "Opulence": ("Opulence", {"I": 0.01, "II": 0.02, "III": 0.03}),
     "PoisonFocus": ("PoisonFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "PotionCooldown": ("PotionMaster", {"I": -0.05, "II": -0.1, "III": -0.2}),
-    "Power": ("Power", {"I": 0.1, "III": 0.3}),
+    "Power": ("Power", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Precision": ("Precision", {"I": 0.1}),
     "ProjectileProtection": ("ProjectileProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
@@ -328,15 +329,16 @@ GEAR_EFFECTS = {
     "Reconstruction": ("Reconstruction", {"II": -0.2}),
     "Reeling": ("Reeling", {"I": 0.2}),
     "Regeneration": ("Regeneration", {"I": 0.05, "II": 0.075, "III": 0.1}),
+    "Resilience": ("Resilience", {"I": -0.2, "III": -0.3}),
     "RollCooldown": ("Acrobat", {"I": 0.1, "II": 0.15}),
-    "ShadowWalk": ("ShadowWalk", {"I": 0.2}),
+    "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25}),
     "Sharpness": ("Sharpness", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Sidestep": ("Sidestep", {"I": 0.1, "III": 0.2}),
     "Sniper": ("Sniper", {"II": 0.5}),
     "SoulFocus": ("SoulFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "SoulGatherMultiply": ("SoulSiphon", {"II": 0.35, "III": 0.45}),
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
-    "Supercharge": ("Supercharge", {"II": 0.35}),
+    "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
     "SweepingEdge": ("SweepingEdge", {"II": 0.3}),
     "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2}),
     "Thorns": ("Thorns", {"II": 0.65}),
@@ -353,8 +355,9 @@ GEAR_EFFECTS = {
 # Unique's own effect under the same template the game rolls (UNIQUE_EFFECTS: the Sage Tunic carries Bounty
 # Hunter, saved as Committed.Unique). A name alone isn't enough: the effect a save calls Constitution is MetaBot's
 # Recovery, not its Constitution. Sharpness and Potion Maker are tied by a talisman instead (the Fist of Iron and
-# the Glowstone Flask are saved with the same effects). Reaper and Prickly are the only effects with the numbers
-# saves show for SoulSiphon (35% and 45%) and Thorns (65%).
+# the Glowstone Flask are saved with the same effects). Reaper, Prickly and Sharpshooter are the only effects with
+# the numbers saves show for SoulSiphon (35% and 45%), Thorns (65%) and Supercharge (30%, 35% and 40%), and
+# Resilience has its own name and all its numbers.
 EFFECT_NAMES = {
     "Acrobat": "Acrobat",
     "BagOfSouls": "Spiritual",
@@ -391,12 +394,14 @@ EFFECT_NAMES = {
     "Reconstruction": "Fletcher",
     "Reeling": "Momentum",
     "Regeneration": "Regeneration",
+    "Resilience": "Resilience",
     "ShadowWalk": "Stealth",
     "Sharpness": "Sharpness",
     "Sidestep": "Evasion",
     "Sniper": "Sniper",
     "SoulFocus": "Soulmancer",
     "SoulSiphon": "Reaper",
+    "Supercharge": "Sharpshooter",
     "SweepingEdge": "Brawler",
     "SwiftSneak": "Prowler",
     "Thorns": "Prickly",
@@ -410,7 +415,6 @@ EFFECT_GUESSES = {
     "ArrowBurst": "Bowyer",
     "BeastBoss": "Pack Leader",
     "FriendsForever": "Veterinarian",
-    "Supercharge": "Sharpshooter",
 }
 # Enchantments as real saves store them: enchantment -> strength at each tier seen. The effect is
 # SW.Enchantment.<name>, named like its book (BOOK_IDS), and a tier's template is SW.Enchantment.<name>.<tier>. The
@@ -437,7 +441,10 @@ SEEN_ENCHANT_POINTS = {("Unique", "I"): 3, ("Unique", "II"): 8, ("Unique", "III"
 # enchantments under another name, and their numbers follow no rule (the Sculker Claws' 15% chance is saved as
 # 0.08), and one has no tier on its template at all (the Lullaby Blade's SoulCurse), so every one is taken from a
 # save and none is worked out. From /issues/20, sixty Uniques the game made on a first playthrough, and /issues/21,
-# thirty-one more, which showed nine new ones and the same effect for every Unique both lists hold.
+# thirty-one more, which showed nine new ones and the same effect for every Unique both lists hold. Both lists were
+# made by versions that couldn't write this kind of batch, so every one of them is the game's. A list made with
+# 1.10.0 or later can hold the editor's own (/issues/22 does: items its sender had made Unique), so from such a list
+# only an effect that version didn't have counts: the Humbler Heartstring's.
 UNIQUE_EFFECTS = {
     "Bow_Unique1": ("Effect.EagleEye", 0.25, "EffectTemplate.EagleEye.Unique"),  # Ranger's Promise
     "CaveCrawlerChest_Unique": ("Effect.Sidestep", 0.2, "EffectTemplate.Sidestep.Unique"),  # Twisted Warden Vest
@@ -460,6 +467,7 @@ UNIQUE_EFFECTS = {
     "Gauntlet_Unique1": ("Enchantment.MaulerDive", 1, "Enchantment.MaulerDive"),  # Prime Enchanter's Gauntlets
     "GiantClub_Unique1": ("Enchantment.FireAspect", 1, "Enchantment.FlameBelch.Unique"),  # Redstone Wrecker
     "GreatAxe_Unique1": ("Effect.StatusOnHit.Strength", 0.06, "EffectTemplate.StrenghteningStrike.Unique"),  # Awesomeaxe
+    "Greatbow_Unique1": ("Enchantment.Piercing", 10, "Enchantment.Piercing.Unique"),  # Humbler Heartstring
     "Greatsword_Unique1": ("Enchantment.GravityPulse", 0, "Enchantment.GravityPulse.Unique"),  # The Darkshard
     "Hammer_Unique1": ("Effect.Opulence", 0.05, "EffectTemplate.Opulence.Unique"),  # Emerald Hammer
     "HeavyCrossbow_Unique1": ("Effect.PointBlank", 1, "EffectTemplate.PointBlank.Unique"),  # The Close Ranger

@@ -1,3 +1,17 @@
+## What's new in 1.10.2
+
+- **The Humbler Heartstring comes with its own effect:** its arrows pierce up to ten enemies. That's the Greatbow
+  kit's bow, and it makes 86 of the 116 Uniques. From [Blake5256](https://github.com/Blake5256)'s list
+  ([issue 22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22)).
+- **An item is never given the effect it already comes with.** The Heartstring's own effect is Piercing, so the
+  Greatbow kit no longer enchants it with Piercing as well, and Change effects won't either. Nobody has seen an item
+  hold the same effect twice.
+- **Share item IDs only lists a Unique's own effect when the editor wouldn't have written it.** Since 1.10.0 the
+  editor gives a Unique its own effect, so finding that same effect on a Unique in a save proves nothing: it may be
+  an item you made Unique with the editor. The list now shows a Unique's own effect only where the editor has none
+  for that Unique, or would write a different one.
+- **54 gear effects** (Resilience is new), with more tiers of Sharpshooter, Stealth, Impact and Cryomancer.
+
 ## What's new in 1.10.1
 
 - **85 of the 116 Uniques come with their own effect** (73 in 1.10.0). [Blake5256](https://github.com/Blake5256)'s
