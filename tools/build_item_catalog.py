@@ -283,11 +283,16 @@ BOOK_IDS = {
     "Thundering": "Thundering",
 }
 # Books in a save's collections that nobody has put a name to yet (/issues/28; GuardingStrike is in the developer's
-# own save as well). The game files a book there when it hands it over, so the IDs are the game's own, and the
-# editor lists each under a name made from its ID. MetaBot has nine enchantments without a book ID (Bottomless
-# Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
-# Tumbleshot); which of them these eight are is for someone who has the book to say, not for a guess.
-UNNAMED_BOOKS = ("Blowback", "Borealis", "BurstBowstring", "Channeling", "GuardingStrike", "LingeringPower", "ShadowStrike", "SoulAspect")
+# own save as well; MultiPotion is in the collections of /issues/17, /issues/20 and /issues/23). The game files a
+# book there when it hands it over, so the IDs are the game's own, and the editor lists each under a name made from
+# its ID. With these nine every book has an ID, and MetaBot has nine enchantments without one (Bottomless Brew,
+# Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
+# Tumbleshot); which is which is for someone who has the book to say, not for a guess. /issues/31 puts names to four
+# by elimination (Blowback as Crash Landing, Borealis as Ender Mines, Channeling as Thundering, SoulAspect as Soul
+# Blast; Borealis and SoulAspect as the two its sender couldn't work out). They aren't taken yet: Thundering is
+# what the book saved as Thundering goes by here, the name the same sender typed for it in /issues/2, and their hero
+# has both books, so one of the two names is wrong and nobody has said which.
+UNNAMED_BOOKS = ("Blowback", "Borealis", "BurstBowstring", "Channeling", "GuardingStrike", "LingeringPower", "MultiPotion", "ShadowStrike", "SoulAspect")
 # What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
 # effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
 # the effect's Intensity at each level. A talisman that isn't here can only be added without its effect, so the
@@ -479,6 +484,9 @@ EFFECT_GUESSES: dict[str, str] = {}
 # 1.9.x offered itself (Cooldown III, Vanguard III) and stay unseen. Its LingeringPower III is 0.5 where /issues/26
 # has 0.244871: the same tier with two numbers, so that one isn't fixed (the game's own data has a least and a most
 # for an enchantment's number). The first one seen stays here.
+# /issues/29 and /issues/30 were made with 1.14.1, which had no tier of Poison Fog to write, so the PoisonFog III
+# on their Venomous Fangs is the game's. /issues/31 doesn't say which version made it, and no version has offered
+# MultiRoll III (the 3 follows the 2 that /issues/26 has for tier II, and the game's "+1 / +2 / +3 rolls").
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -491,8 +499,9 @@ ENCHANTMENT_TIERS = {
     "GravityPulse": {"III": 0},
     "HealthSynergy": {"I": 0.15, "III": 0.35},
     "LingeringPower": {"III": 0.244871},
-    "MultiRoll": {"II": 2},
+    "MultiRoll": {"II": 2, "III": 3},
     "Piercing": {"I": 1, "III": 5},
+    "PoisonFog": {"III": 1},
     "PotionBarrier": {"III": 6},
     "Radiance": {"I": 0.3, "III": 0.5},
     "SoulFireAspect": {"III": 3},

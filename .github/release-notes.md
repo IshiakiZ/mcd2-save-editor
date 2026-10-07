@@ -1,3 +1,23 @@
+## What's new in 1.14.2
+
+- **Every enchantment book has its ID now: 32 of 32.** The last one, which a save calls Multi Potion, was in the
+  game's own collections on three lists players had already sent ([issue 17](https://github.com/IshiakiZ/mcd2-save-editor/issues/17), [issue 20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)
+  and [issue 23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)), and was overlooked when the other unnamed books went in. **Add every book** adds it
+  with the rest. Nine books still go by their save IDs, and the game's published list has nine enchantments that no
+  ID has been tied to, so the two most likely pair off; which goes with which is still for someone who has the book
+  to say.
+- **Poison Fog can be put on an item,** at tier III. [Armagedon13](https://github.com/Armagedon13)'s lists
+  ([issue 29](https://github.com/IshiakiZ/mcd2-save-editor/issues/29), [issue 30](https://github.com/IshiakiZ/mcd2-save-editor/issues/30)) have it on the Venomous Fangs, from a version of the editor that
+  had no tier of it to write, so it's the game's. That makes 21 enchantments.
+- **Somersault at tier III,** from [icicle1133](https://github.com/icicle1133)'s list ([issue 31](https://github.com/IshiakiZ/mcd2-save-editor/issues/31)).
+- **Book names from that list are held for now.** It puts names to four of the unnamed books, worked out by
+  elimination. One of them, Thundering for the book a save calls Channeling, is the name the editor already gives
+  another book (the one saved as Thundering), so one of the two is wrong. Both keep the names they have until
+  someone who has both books says which is which.
+- Not taken from these lists: 23 rolled tiers that equal what the editor already offers on the published table's
+  word. A version that offers a tier can write it, so a list made with it can't show the game did; they stay marked
+  as not seen.
+
 ## What's new in 1.14.1
 
 - **Eight more enchantment books: 31 of the game's 32.** A player's list

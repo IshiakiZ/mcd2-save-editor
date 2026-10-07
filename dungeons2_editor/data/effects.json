@@ -2021,6 +2021,11 @@
      "tier": "II",
      "strength": 2,
      "seen": true
+    },
+    {
+     "tier": "III",
+     "strength": 3,
+     "seen": true
     }
    ]
   },
@@ -2036,6 +2041,17 @@
     {
      "tier": "III",
      "strength": 5,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.PoisonFog",
+   "name": "Poison Fog",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 1,
      "seen": true
     }
    ]

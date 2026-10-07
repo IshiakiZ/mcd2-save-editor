@@ -52,11 +52,11 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual([ids[name].id for name in ("Picnic Basket", "Blizzard Bangle", "Tempo Truffle")],
                          ["SW.Item.Artifact.PicnicBlanket", "SW.Item.Artifact.FrostBracelet", "SW.Item.Artifact.HasteMushroom"])
         self.assertEqual((ids["Mob Mallet"].id, ids["Mob Mallet"].confirmed), ("SW.Item.GiantMallet", True))
-        # Every item goes by the game's name, but for eight books whose IDs a save's collections showed and nobody
+        # Every item goes by the game's name, but for nine books whose IDs players' collections showed and nobody
         # has put a name to: they go by their IDs.
         self.assertEqual(
             [item.name for item in self.items if item.name_from_id],
-            ["Blowback", "Borealis", "Burst Bowstring", "Channeling", "Guarding Strike", "Lingering Power", "Shadow Strike", "Soul Aspect"],
+            ["Blowback", "Borealis", "Burst Bowstring", "Channeling", "Guarding Strike", "Lingering Power", "Multi Potion", "Shadow Strike", "Soul Aspect"],
         )
         # A talisman is saved by what it does, and its effect can go by another name than its level templates.
         fist = ids["Fist of Iron"]
@@ -182,6 +182,11 @@ class RealItemListTests(unittest.TestCase):
         self.assertTrue({("Channeling III", 3), ("Soul Fire Aspect III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
         # The same tier of one enchantment has been saved with two numbers (0.244871 and 0.5): the first one seen stays.
         self.assertIn(("Lingering Power III", 0.244871), saved_enchantments)
+        # Poison Fog's first tier, from lists made with a version that had none of it to write (issues 29 and 30), and
+        # Somersault's third, which no version has offered (issue 31). Poison Fog goes on melee weapons, as its book says.
+        self.assertTrue({("Poison Fog III", 1), ("Somersault II", 2), ("Somersault III", 3)} <= saved_enchantments)
+        self.assertEqual(next(choice for choice in book.enchantments if choice.title == "Poison Fog III").slots, ("Melee",))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (21, 28))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -364,7 +369,12 @@ class RealItemListTests(unittest.TestCase):
 
     def test_books_are_named_after_enchantments(self):
         books = [item for item in self.items if item.kind == heroes.BOOK_KIND]
-        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (31, 8))
+        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (32, 9))
+        # That is every book there is: MetaBot's enchantments, less the two that are built into a Unique. And as
+        # many enchantments are without a book here as books are without a name.
+        bookless = set(heroes.enchantments()) - {book.name for book in books}
+        self.assertEqual(len(books), len(heroes.enchantments()) - 2)
+        self.assertEqual(len(bookless - {"Ichor Blast", "Primed Enchantment"}), 9)
         for book in books:
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
             if book.name_from_id:  # seen in a save's collections, but nobody has said what the game calls it
@@ -375,11 +385,11 @@ class RealItemListTests(unittest.TestCase):
             else:
                 self.assertIn(book.name, heroes.enchantments(), book.id)
         self.assertEqual(heroes.book_text("SW.Item.EnchantmentBook.GuardingStrike"), "An enchantment book. The editor doesn't know what the game calls its enchantment yet.")
-        # A hero with none of them is offered all thirty-one, and gets them in one go.
+        # A hero with none of them is offered all thirty-two, and gets them in one go.
         hero = Hero(hero_save())
         catalog = build_catalog([hero])
-        self.assertEqual(len(hero.missing_books(catalog)), 31)
-        self.assertEqual(len(hero.add_books(catalog)), 31)
+        self.assertEqual(len(hero.missing_books(catalog)), 32)
+        self.assertEqual(len(hero.add_books(catalog)), 32)
         self.assertEqual({item.rarity for item in hero.books()}, {"None"})
         # Two that players' saves and words tied to their names: they go on armor, as the game has them.
         named = {choice.effect: choice for choice in heroes.effect_choices()[1]}
