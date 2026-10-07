@@ -1,3 +1,4 @@
+import copy
 import json
 import unittest
 import urllib.parse
@@ -183,6 +184,76 @@ class ShareIdsTests(unittest.TestCase):
         edge = next(choice for choice in effect_choices([])[0] if choice.title == "Vanguard III")
         fresh.set_effects(index, [edge])
         self.assertEqual((share_ids.gear_effects([fresh]), share_ids.finding_keys([fresh])), ([], set()))
+
+    def test_an_item_the_game_marks_some_way_the_editor_hasnt_seen_is_shared_whole(self):
+        # However the game tags a Soul Storm piece, say: no save sent so far holds one, so the list has to show it.
+        save = hero_save()
+        plain = Hero(copy.deepcopy(save))
+        self.assertEqual(share_ids.marked_items([plain]), [])  # every item here is saved the way the editor knows
+        self.assertFalse([key for key in share_ids.finding_keys([plain]) if key.startswith(("mark ", "field "))])
+
+        marked = hero_item("SW.Item.Longbow", rarity="Special", seed=41, unseen=False)
+        marked["ItemData"]["DynamicPropertyTags"] = ["SW.Item.Property.Dynamic.SoulStorm"]
+        twin = hero_item("SW.Item.Sword", seed=42)  # the same mark again, on an item the game hasn't shown you yet
+        twin["ItemData"]["DynamicPropertyTags"].append("SW.Item.Property.Dynamic.SoulStorm")
+        odd = hero_item("SW.Item.Axe", seed=43, unseen=False)  # fields no entry the editor has seen was saved with
+        odd["SoulStormGear"] = True
+        odd["ItemData"]["GeneratorData"]["PowerGeneratorValues"]["StormTier"] = "SW.SoulStorm.Tier.Hard"
+        odd["ItemData"]["Owner"] = "Somebody's name, typed in"
+        cape = hero_item("SW.Item.Cosmetic.Cape.Other", seed=44, unseen=False)
+        cape["ItemData"]["DynamicPropertyTags"] = ["SW.Item.Property.Dynamic.Worn"]
+        save["CharacterSaveV1"]["Inventory"]["Entries"] += [marked, twin, odd, cape]
+        hero = Hero(save)
+        lines = share_ids.marked_items([hero])
+        # One line for each new thing, on the first item that shows it. Cosmetics are left out, as everywhere.
+        self.assertEqual([tag for tag, _text in lines], ["SW.Item.Longbow", "SW.Item.Axe"])
+
+        first = lines[0][1]
+        self.assertTrue(first.startswith("a Special one saved with something new to the editor (mark SW.Item.Property.Dynamic.SoulStorm), as saved: {"))
+        self.assertTrue(first.endswith("; what does the game show on this item that it doesn't on others?"))
+        whole = copy.deepcopy(marked)
+        del whole["ItemData"]["PickupTimestamp"], whole["ItemData"]["GeneratorData"]["GenesisRandomSeed"]
+        self.assertEqual(json.loads(first.split("as saved: ", 1)[1].rsplit(";", 1)[0]), whole)  # the whole item, less its pickup time and seed
+
+        second = lines[1][1]
+        self.assertIn("(field ItemData.GeneratorData.PowerGeneratorValues.StormTier, field ItemData.Owner, field SoulStormGear)", second)
+        saved = json.loads(second.split("as saved: ", 1)[1].rsplit(";", 1)[0])
+        # A yes or no and one of the game's own names are passed on; other text in a field the editor doesn't know isn't.
+        self.assertEqual((saved["SoulStormGear"], saved["ItemData"]["GeneratorData"]["PowerGeneratorValues"]["StormTier"], saved["ItemData"]["Owner"]),
+                         (True, "SW.SoulStorm.Tier.Hard", "(text)"))
+        report = share_ids.report_text([hero], "9.9.9")
+        self.assertNotIn("Somebody", report)
+        self.assertTrue(all(line.startswith("SW.Item.") for line in report.splitlines()))
+        self.assertEqual(report.count("SW.Item.Property.Dynamic.Worn"), 0)
+        # Each of them counts as news, so the Share item IDs button shows up for it.
+        self.assertTrue({
+            "mark SW.Item.Property.Dynamic.SoulStorm", "field SoulStormGear", "field ItemData.Owner",
+            "field ItemData.GeneratorData.PowerGeneratorValues.StormTier",
+        } <= share_ids.finding_keys([hero]))
+
+    def test_marked_items_stop_at_a_few_lines(self):
+        save = hero_save()
+        for number in range(share_ids.MAX_MARK_LINES + 3):
+            entry = hero_item("SW.Item.Sword", seed=60 + number, unseen=False)
+            entry["ItemData"]["DynamicPropertyTags"] = [f"SW.Item.Property.Dynamic.Mark{number}"]
+            save["CharacterSaveV1"]["Inventory"]["Entries"].append(entry)
+        hero = Hero(save)
+        self.assertEqual(len(share_ids.marked_items([hero])), share_ids.MAX_MARK_LINES)
+        self.assertEqual(len([key for key in share_ids.finding_keys([hero]) if key.startswith("mark ")]), share_ids.MAX_MARK_LINES + 3)
+
+    def test_the_fields_the_editor_knows_are_the_ones_a_real_entry_has(self):
+        # The list of known fields is what real saves hold, entry for entry; a talisman's levels and an
+        # enchanted Unique's effects are part of it.
+        save = hero_save()
+        sword = hero_item("SW.Item.Sword_Unique1", rarity="Unique", seed=52, unseen=False)
+        sword["ItemData"]["Effects"] = [rolled(rolled_effect("Sharpness", 0.1, "I")), enchanted(enchantment_effect("Piercing", 1, "I", 3))]
+        save["CharacterSaveV1"]["Inventory"]["Entries"] += [talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", seed=51), sword]
+        hero = Hero(save)
+        self.assertEqual([share_ids._unknown_fields(item.entry) for item in hero.items() if share_ids._unknown_fields(item.entry)], [])
+        entry = hero_item("SW.Item.Sword")
+        self.assertEqual(set(entry), share_ids.KNOWN_FIELDS[""])
+        self.assertEqual(set(entry["ItemData"]), share_ids.KNOWN_FIELDS["ItemData"])
+        self.assertEqual(set(entry["ItemData"]["GeneratorData"]["PowerGeneratorValues"]), share_ids.KNOWN_FIELDS["ItemData.GeneratorData.PowerGeneratorValues"])
 
     def test_report_holds_only_item_ids(self):
         report = share_ids.report_text([Hero(hero_save())], "9.9.9")

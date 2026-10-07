@@ -6,10 +6,10 @@ body:
     attributes:
       value: |
         Thanks for helping! The editor's **Share item IDs…** button (on its Help tab) fills this in for you.
-        An item ID looks like `SW.Item.MysticHelmet`. The button also adds the effects saved with your items:
-        what a talisman does (`HealthBoost 1.2 (HealthBoost.I) / ...`) and the effects on your gear. Those are
-        wanted too. Please don't paste anything else from your save: no character IDs, account names or backup
-        files.
+        An item ID looks like `SW.Item.MysticHelmet`. The button also adds what the game saved with your items:
+        what a talisman does (`HealthBoost 1.2 (HealthBoost.I) / ...`), the effects on your gear, and any item
+        the game marks some way the editor hasn't seen (a Soul Storm piece, say). Those are wanted too. Please
+        don't paste anything else from your save: no character IDs, account names or backup files.
   - type: textarea
     id: ids
     attributes:

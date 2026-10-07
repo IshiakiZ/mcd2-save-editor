@@ -1577,6 +1577,10 @@ class Hero:
             self._set_own_effect(data)  # a Unique comes with an effect of its own
         if "EffectRerolls" in data:
             data["EffectRerolls"] = 0
+        if isinstance(data.get("DynamicPropertyTags"), list):
+            # A new item has none of the marks of the item its layout came from: the game hands one over with
+            # the mark for an item you haven't looked at and no other, and _make_new puts that one on.
+            data["DynamicPropertyTags"] = []
         progression = data.get("ItemProgression")
         if isinstance(progression, dict):
             for key, fresh in (("CurrentLevel", 0), ("CurrentXP", 0), ("ItemLevels", [])):

@@ -11,6 +11,13 @@
 - Every shape in Liquid Glass is drawn by the editor itself, the first time you pick the look. No picture files
   were added, the download is no bigger, and the editor opens as quickly as before in the Original look.
 - New pictures in the README.
+- **A first step towards the Soulstorm Enhanced tag.** Nobody has shown the editor how the game saves it: no save
+  it has seen holds a piece with the tag. So **Share item IDs…** now also lists any item the game saved with a mark
+  or a field the editor has never met, as the save holds it. If you have a Soul Storm piece, that list is what
+  teaches the editor the tag. Until then, **Change effects…** can already give an item the extra effect such a
+  piece carries.
+- An item you add no longer takes on the marks of the item its layout was copied from: it gets the one for an item
+  you haven't looked at and no other, as the game hands one over.
 
 ## What's new in 1.14.2
 

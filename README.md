@@ -71,8 +71,8 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   **Paste picture**: the editor cuts the item out and keeps it on your PC.
 - **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
   The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it. When your saves hold
-  item IDs, effects or enchantments the editor's list doesn't have, a **Share item IDs** button with the count
-  appears at the top; nothing is sent unless you send it.
+  item IDs, effects or enchantments the editor's list doesn't have, or an item the game marks some way the editor
+  hasn't seen, a **Share item IDs** button with the count appears at the top; nothing is sent unless you send it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
@@ -220,7 +220,8 @@ your sign-in, account or device data.
   item the game has shown you. What the editor wrote doesn't count, or its own guesses would come back looking
   confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
-  GitHub issue with just those IDs and the effects saved with your items (see below), nothing else from your save.
+  GitHub issue with just those IDs and what the game saved with those items (their effects, and any mark or field
+  the editor has never seen on an item; see below), nothing else from your save.
 - **A Unique has an ID of its own.** The Burning Blade, the Unique Sword, is `SW.Item.Sword_Unique1`, and the
   Oracle Tights are `SW.Item.MysticLeggings_Unique`. All 116 have now been seen in real saves (the last one, the
   Packleader Muzzle, in a player's collections), and every one is its base item's ID with `_Unique1` (weapons) or
@@ -273,6 +274,15 @@ your sign-in, account or device data.
   two different numbers, and the editor writes the first it saw. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
+- **The Soulstorm Enhanced tag can't be put on an item yet.** Gear from Soul Storm reward chests carries one
+  effect more than its rarity usually gets, and that much the editor can already do: **Change effects…** lets you
+  give an item the extra one. The tag the game shows on such a piece is another matter. The game's readable script
+  files have a check for it (`IsSoulStormGearItem`) and nothing about where it's kept, and no save the editor has
+  seen holds a piece with it: the only mark on any item in them is the one for an item you haven't looked at. So
+  **Share item IDs…** now also lists any item saved with a mark or a field the editor has never met, whole, as the
+  save holds it (less its pickup time and random seed; a number, a yes or no or one of the game's own names is
+  passed on from a field it doesn't know, and any other text there is left out). A list from a save with a Soul
+  Storm piece will show how the tag is saved, and then the editor can write it.
 - **Best for is a recommendation, not a measurement.** Which effects an item can get is the game's rule: it
   rolls them from the pool of the item's slot (any weapon, any artifact, all gear) and from one pool for each
   archetype the item carries (a Greatbow is Fighter and Ranger gear). MetaBot lists every item's archetypes and

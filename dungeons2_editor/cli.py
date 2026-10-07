@@ -172,7 +172,7 @@ def cmd_ids(args: argparse.Namespace) -> int:
         print("Everything in your saves is already in the editor's list.")
         return 0
     print(report)
-    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs and talisman effects, nothing else).")
+    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs and what the game saved with those items, nothing else).")
     return 0
 
 

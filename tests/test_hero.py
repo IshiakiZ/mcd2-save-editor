@@ -139,6 +139,18 @@ class HeroTests(unittest.TestCase):
         self.assertEqual(original["ItemData"]["TargetSlotOverride"], "SW.ItemSlot.Inventory.VillageMerchant.Tier0")
         self.assertEqual(len(self.hero.items()), 6)
 
+    def test_a_new_item_takes_no_mark_from_the_item_its_layout_came_from(self):
+        # A mark the editor doesn't know (however the game tags a Soul Storm piece, say) stays on the item the
+        # game put it on, and on a copy made of that item. An item added new gets the mark for an item you
+        # haven't looked at and no other, the way the game hands one over.
+        marked = self.entry("SW.Item.CurvedGreatsword")
+        marked["ItemData"]["DynamicPropertyTags"] = ["SW.Item.Property.Dynamic.SoulStorm"]
+        added = self.hero.item(self.hero.add_item("SW.Item.Axe", marked))
+        self.assertEqual(added.data["DynamicPropertyTags"], [heroes.UNSEEN_TAG])
+        copied = self.hero.item(self.hero.duplicate_item(self.item_index("SW.Item.CurvedGreatsword")))
+        self.assertEqual(copied.data["DynamicPropertyTags"], ["SW.Item.Property.Dynamic.SoulStorm", heroes.UNSEEN_TAG])
+        self.assertEqual(marked["ItemData"]["DynamicPropertyTags"], ["SW.Item.Property.Dynamic.SoulStorm"])
+
     def test_cosmetics_cannot_be_copied_or_removed(self):
         cape = self.item_index("SW.Item.Cosmetic.Cape.Hero")
         with self.assertRaises(ValueError):

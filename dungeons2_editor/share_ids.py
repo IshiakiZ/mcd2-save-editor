@@ -1,15 +1,17 @@
 """Sharing item IDs: the IDs in your saves that the editor doesn't know yet, ready to post on GitHub.
 
-Only item IDs (like SW.Item.MysticHelmet) go into the report, and the effects the game saved with items: what
+Only item IDs (like SW.Item.MysticHelmet) go into the report, and what the game saved with those items: what
 a talisman does when the editor can't add it with its effect yet, and the effects and enchantments on weapons,
 armor and artifacts that the editor's list doesn't have, which it can't add until it has seen them. That
-includes the effect a Unique comes with, for each Unique the editor hasn't seen it on. Nothing else from the
-save.
+includes the effect a Unique comes with, for each Unique the editor hasn't seen it on. And an item saved with
+a mark or a field the editor has never met on one (however the game tags a Soul Storm piece, say) goes in as
+the save holds it. Nothing else from the save.
 """
 
 from __future__ import annotations
 
 import json
+import re
 import tkinter as tk
 import urllib.parse
 import webbrowser
@@ -27,6 +29,36 @@ ISSUE_TEMPLATE = "item-ids.yml"
 MAX_LINK = 6000  # characters; GitHub turns away a link much longer than this, so a longer list is pasted in instead
 PASTE_HERE = "(paste the list here: it's on your clipboard, so press Ctrl+V)"
 MAX_GEAR_LINES = 60  # lines of gear effects in one report, so it fits in a GitHub issue
+MAX_MARK_LINES = 8  # lines for items saved with a mark or a field the editor doesn't know: each holds a whole item
+
+# Every field the editor has seen an inventory entry saved with, by where it sits in the entry. They are the
+# same on every one of thousands of entries in real saves, so a field that isn't here is one the game writes
+# only for something the editor has never met. The same goes for a mark besides the one for an item you
+# haven't looked at.
+_EFFECT_FIELDS = {"TypeTag", "Intensity", "Quality", "EnchantmentPointsInvested", "GeneratorData"}
+_EFFECT_SOURCE_FIELDS = {"GeneratorParentTemplate", "Locked"}
+KNOWN_FIELDS = {
+    "": {"ItemData", "StackCount", "EquippedSlot", "MerchantItemSold", "MerchantDiscount"},
+    "ItemData": {
+        "TypeTag", "RarityTag", "Effects", "ItemProgression", "GeneratorData", "DynamicPropertyTags", "TargetSlotOverride", "PickupTimestamp",
+        "EffectRerolls",
+    },
+    "ItemData.Effects[]": {"TypeTag", "EffectsInThisBatch"},
+    "ItemData.Effects[].EffectsInThisBatch[]": _EFFECT_FIELDS,
+    "ItemData.Effects[].EffectsInThisBatch[].GeneratorData": _EFFECT_SOURCE_FIELDS,
+    "ItemData.GeneratorData": {"GenesisRandomSeed", "PowerGeneratorValues"},
+    "ItemData.GeneratorData.PowerGeneratorValues": {
+        "PlayerLevel", "AreaThreatLevel", "RecommendedThreatLevel", "ThreatSliderOffset", "ItemPowerMin", "ItemPowerMax", "RNGRoll", "ItemPower",
+        "ItemPowerOriginal",
+    },
+    "ItemData.ItemProgression": {"CurrentLevel", "CurrentXP", "ItemLevels"},
+    "ItemData.ItemProgression.ItemLevels[]": {"LevelEffects", "LevelTags"},
+    "ItemData.ItemProgression.ItemLevels[].LevelEffects[]": _EFFECT_FIELDS,
+    "ItemData.ItemProgression.ItemLevels[].LevelEffects[].GeneratorData": _EFFECT_SOURCE_FIELDS,
+}
+# What a whole item goes into the report without: neither says anything about how an item is saved.
+_LEFT_OUT = {("ItemData", "PickupTimestamp"), ("ItemData.GeneratorData", "GenesisRandomSeed")}
+_TAG_LIKE = re.compile(r"[A-Za-z0-9_.]{1,80}")  # the game's own names: SW.Item.Property.Dynamic.Unseen, ItemPower
 
 
 # How the game vouches for an ID (Hero.item_types_from_the_game), as the report puts it.
@@ -197,6 +229,112 @@ def gear_effects(heroes: list[Hero]) -> list[tuple[str, str]]:
     return [(item.tag, f"effects on a {item.rarity} one: {_compact(item.data.get('Effects'))}") for item in chosen]
 
 
+def _plain(value: object, depth: int = 0) -> object:
+    """What a field the editor doesn't know holds, as it may go into the report: a number, a yes or no, or one
+    of the game's own names goes in as it is. Any other text is left out, since the editor can't tell what it
+    is, and nothing but item data is ever meant to leave a save."""
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value if _TAG_LIKE.fullmatch(value) else "(text)"
+    if depth >= 3:
+        return "(more)"
+    if isinstance(value, list):
+        return [_plain(inner, depth + 1) for inner in value[:12]]
+    if isinstance(value, dict):
+        return {_plain(str(key)): _plain(inner, depth + 1) for key, inner in list(value.items())[:12]}
+    return "(other)"
+
+
+def _unknown_fields(value: object, where: str = "") -> dict[str, object]:
+    """{where it sits: what it holds} for each field of an inventory entry that the editor has never seen an
+    entry saved with."""
+    found: dict[str, object] = {}
+    if isinstance(value, dict):
+        known = KNOWN_FIELDS.get(where)
+        for key, inner in value.items():
+            inside = f"{where}.{key}" if where else str(key)
+            if known is not None and key not in known:
+                found[inside if _TAG_LIKE.fullmatch(str(key)) else f"{where}.(text)".lstrip(".")] = _plain(inner)
+            else:
+                found.update(_unknown_fields(inner, inside))
+    elif isinstance(value, list):
+        for inner in value:
+            found.update(_unknown_fields(inner, where + "[]"))
+    return found
+
+
+def _unknown_marks(item: Item) -> list[str]:
+    """The marks on an item besides the one for an item you haven't looked at, the only one the editor knows."""
+    marks = item.data.get("DynamicPropertyTags")
+    return [str(_plain(mark)) for mark in marks if mark != UNSEEN_TAG] if isinstance(marks, list) else []
+
+
+def _as_saved(item: Item) -> dict:
+    """An item's whole inventory entry as the save holds it, less when it was picked up and its random seed,
+    and with whatever sits in a field the editor doesn't know cut down to what may be shared (_plain)."""
+
+    def copy_of(value: object, where: str = "") -> object:
+        if isinstance(value, dict):
+            known = KNOWN_FIELDS.get(where)
+            return {
+                key: _plain(inner) if known is not None and key not in known else copy_of(inner, f"{where}.{key}" if where else str(key))
+                for key, inner in value.items()
+                if (where, key) not in _LEFT_OUT
+            }
+        if isinstance(value, list):
+            return [copy_of(inner, where + "[]") for inner in value]
+        return value
+
+    saved = copy_of(item.entry)
+    marks = item.data.get("DynamicPropertyTags")
+    if isinstance(marks, list) and isinstance(saved.get("ItemData"), dict):
+        saved["ItemData"]["DynamicPropertyTags"] = [_plain(mark) for mark in marks]
+    return saved
+
+
+def _marked_items(heroes: list[Hero]) -> list[tuple[Item, list[str]]]:
+    """(item, what's new on it) for each item in these saves that is saved with something the editor has never
+    seen on one: a mark, or a field. Cosmetics, quest items and currencies are left out, like everywhere here.
+
+    Whether the game has shown you the item doesn't matter for this. The editor never writes a mark or a field
+    it doesn't know (an item it adds gets neither, and a copy it makes only repeats the game's own), so however
+    one is saved is the game's way of saving it."""
+    found = []
+    for hero in heroes:
+        for item in hero.items():
+            if item.is_cosmetic or item_group(item.tag) in NOT_ADDABLE_GROUPS:
+                continue
+            news = [f"mark {mark}" for mark in _unknown_marks(item)] + [f"field {where}" for where in _unknown_fields(item.entry)]
+            if news:
+                found.append((item, news))
+    return found
+
+
+def marked_items(heroes: list[Hero]) -> list[tuple[str, str]]:
+    """(item ID, the whole item as saved) for items the game saved with a mark or a field the editor has never
+    seen on one. The mark for an item you haven't looked at is the only one any save sent so far holds, so
+    another one is how the editor learns it: what the game tags a Soul Storm piece with, for one. The line asks
+    what the game shows on the item, since a save only has the game's own name for the mark.
+
+    One line for each item that shows something the lines before it don't, up to MAX_MARK_LINES."""
+    covered: set[str] = set()
+    lines = []
+    for item, news in _marked_items(heroes):
+        if len(lines) >= MAX_MARK_LINES:
+            break
+        if set(news) <= covered:
+            continue
+        covered |= set(news)
+        what = "a talisman" if item.is_talisman else "an enchantment book" if item.is_book else f"a {item.rarity} one"
+        lines.append((
+            item.tag,
+            f"{what} saved with something new to the editor ({', '.join(news)}), as saved: {_compact(_as_saved(item))}; "
+            "what does the game show on this item that it doesn't on others?",
+        ))
+    return lines
+
+
 def finding_keys(heroes: list[Hero]) -> set[str]:
     """A key for each thing the report would tell. The editor remembers the ones you've been shown, so it can
     tell when your saves hold something that wasn't there before."""
@@ -205,11 +343,13 @@ def finding_keys(heroes: list[Hero]) -> set[str]:
         keys |= {f"{effect} {template}".strip() for effect, template in pairs}
         if own:
             keys.add(f"{item.tag} own effects")
+    for _item, news in _marked_items(heroes):
+        keys |= set(news)
     return keys
 
 
 def report_text(heroes: list[Hero], version: str) -> str:
-    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes) + gear_effects(heroes)]
+    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes) + gear_effects(heroes) + marked_items(heroes)]
     return "\n".join(lines)
 
 
@@ -234,10 +374,11 @@ class ShareIdsDialog(tk.Toplevel):
         wrap = text_width(self, 80)
         report = report_text(heroes, version)
         intro = (
-            "Your saves hold things the editor's list doesn't have yet: item IDs, what the game calls an item, or "
-            "effects and enchantments on your gear, which the editor can only add once it has seen them. Add what the game calls "
-            "an item after its dash if you know it, then open a GitHub issue (you need a free GitHub account) or copy "
-            "the list. Only item IDs and the effects saved with items are shared: nothing else from your saves."
+            "Your saves hold things the editor's list doesn't have yet: item IDs, what the game calls an item, "
+            "effects and enchantments on your gear, or an item the game marks some way the editor hasn't seen. It can only "
+            "write those once it has seen them. Add what the game calls an item after its dash if you know it, then open a "
+            "GitHub issue (you need a free GitHub account) or copy the list. Only item IDs and what the game saved with "
+            "those items are shared: nothing else from your saves."
             if report
             else "Everything in your saves is already in the editor's list. Thanks for checking!"
         )
