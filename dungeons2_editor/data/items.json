@@ -3800,6 +3800,13 @@
    "name_from_id": true
   },
   {
+   "name": "Multi Potion",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.MultiPotion",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Piercing",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Piercing",

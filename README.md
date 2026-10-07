@@ -249,20 +249,22 @@ your sign-in, account or device data.
   `GetAllOwnedEnchantmentBooks` hands back inventory entries), and a book stays there after you've used it. When
   the game hands you a book it also files it in its collections and counts it towards an achievement. The editor
   leaves both alone, as it does for every item, and the game didn't add the editor's books to either afterwards, so
-  a book added here counts for neither. The editor knows 31 of the game's 32 books by their save ID
-  (MetaBot lists 34 enchantments, two of them built into Uniques), and 23 of those by name as well. The other eight
-  came from a player's collections with their IDs alone, so they go by those: Blowback, Borealis, Burst Bowstring,
-  Channeling, Guarding Strike, Lingering Power, Shadow Strike and Soul Aspect. MetaBot's enchantments that no ID has
-  been tied to are Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak,
-  Shielding Smite, Soul Blast and Tumbleshot, so most likely eight of those nine are the eight above; which is
-  which is for someone who has the book to say, not for a guess. If you have one, pick it, press **Name it…**, and
-  **Share item IDs…** sends the name on.
+  a book added here counts for neither. The editor knows all 32 of the game's books by their save ID
+  (MetaBot lists 34 enchantments, two of them built into Uniques), and 23 of them by name as well. The other nine
+  came from players' collections with their IDs alone, so they go by those: Blowback, Borealis, Burst Bowstring,
+  Channeling, Guarding Strike, Lingering Power, Multi Potion, Shadow Strike and Soul Aspect. MetaBot's enchantments
+  that no ID has been tied to are Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier,
+  Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot: nine IDs without a name and nine names without an ID, so
+  they most likely pair off. Which goes with which is for someone who has the book to say, not for a guess. If you
+  have one, pick it, press **Name it…**, and **Share item IDs…** sends the name on. One name is in doubt: the
+  latest list calls the book saved as Channeling Thundering, the name the book saved as Thundering already has
+  here. Both keep the names they have until someone who has both books says which is which.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 60 gear effects and 20 enchantments so far
-  (Ancient Alchemy at every tier; Healing Smite, Piercing and Health Synergy at tiers I and III; Ender Quiver at II
-  and III; Somersault at II; and at tier III Chain Reaction, Thundering, Fire Aspect, Gravity Pulse, Springload,
-  Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and five the save calls Blowback, Borealis, Channeling,
-  Lingering Power and Soul Fire Aspect), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
+  files, so the editor learns how each one is saved from real saves: 60 gear effects and 21 enchantments so far
+  (Ancient Alchemy at every tier; Healing Smite, Piercing and Health Synergy at tiers I and III; Ender Quiver and
+  Somersault at II and III; and at tier III Chain Reaction, Thundering, Fire Aspect, Poison Fog, Gravity Pulse,
+  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and five the save calls Blowback, Borealis,
+  Channeling, Lingering Power and Soul Fire Aspect), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
   game's own numbers for them are published (MetaBot's table), so it also offers the tiers nobody has sent yet; it
   marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
