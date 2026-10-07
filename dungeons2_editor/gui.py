@@ -278,13 +278,16 @@ class EditorApp:
         icon_root: Path = DEFAULT_ICON_ROOT,
         settings_file: Path = SETTINGS_FILE,
         names_file: Path = NAMES_FILE,
+        look: str | None = None,
     ):
         self.root = root
         self.backup_root = Path(backup_root)
         self.icons = IconLibrary(icon_root)
         self.settings_file = Path(settings_file)
         self.settings = _load_settings(self.settings_file)
-        self.look = game_style.look_of(self.settings.get("look"))  # Simple mode's look: the original, or Liquid Glass
+        # Simple mode's look: the original, or Liquid Glass. ``look`` opens the window in one for this run, whatever
+        # the settings say, and leaves them alone (the command line's --look).
+        self.look = game_style.look_of(look if look is not None else self.settings.get("look"))
         self.names_file = Path(names_file)
         use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
@@ -1850,8 +1853,10 @@ def run(
     backup_root: Path = saves.DEFAULT_BACKUP_ROOT,
     icon_root: Path = DEFAULT_ICON_ROOT,
     close_after: float | None = None,
+    look: str | None = None,
 ) -> int:
-    """Open the editor window. ``close_after`` (seconds) closes it again, for checking a build starts."""
+    """Open the editor window. ``close_after`` (seconds) closes it again, for checking a build starts, and ``look``
+    opens Simple mode in that look for this run."""
     _enable_dpi_awareness()
     root = tk.Tk()
     failures: list[str] = []
@@ -1863,7 +1868,7 @@ def run(
 
     root.report_callback_exception = report
     try:
-        app = EditorApp(root, profile, backup_root, icon_root)
+        app = EditorApp(root, profile, backup_root, icon_root, look=look)
         if close_after is None and edition.ONLINE:  # a build check stays offline, and so does the offline edition
             app.check_for_updates()
             threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()

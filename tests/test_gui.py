@@ -1059,6 +1059,7 @@ class SimpleModeTests(WindowTestCase):
 
         # The original look to begin with: square tiles and panels, and bars from edge to edge, as it always was.
         self.assertEqual((app.look, style.theme_use(), screen.glass, app.art.rounded), ("classic", game_style.THEME, False, False))
+        self.assertNotIn(game_style.GLASS_THEME, style.theme_names())  # nothing of Liquid Glass is drawn until it's asked for
         self.assertEqual((room(top), room(screen.card_border), room(screen.well)), ([0], [1], [0]))
         self.assertEqual([app.look_menu.entrycget(index, "label") for index in range(2)], ["Original", "Liquid Glass"])
         self.assertEqual(app.app_menu.entrycget("Look", "menu"), str(app.look_menu))
@@ -1094,6 +1095,23 @@ class SimpleModeTests(WindowTestCase):
         app._on_advanced_toggled()
         self.assertEqual((style.theme_use(), room(top), room(screen.card_border), room(screen.well)), (game_style.THEME, [0], [1], [0]))
         self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["look"], "classic")
+
+    def test_a_look_can_be_asked_for_just_this_once(self):
+        # The command line's --look: the window opens in that look, and the settings keep what they said.
+        before = self.settings_file.read_text(encoding="utf-8")
+        with mock.patch.object(saves, "find_profiles", return_value=[]):
+            again = gui.EditorApp(tk.Toplevel(self.root), self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file, self.names_file, look="glass")
+        self.assertEqual((again.look, again.look_var.get(), again.art.rounded, again.inventory.glass), ("glass", "glass", True, True))
+        self.assertTrue(game_style.is_glass(again.root))
+        self.assertEqual(self.settings_file.read_text(encoding="utf-8"), before)
+        again.root.destroy()
+        # The pictures belong to the app's own window, so they outlive the window that first asked for the look.
+        self.assertTrue(hasattr(self.root, "_mcd2_looks"))
+        self.root.update()
+        with mock.patch.object(saves, "find_profiles", return_value=[]):
+            unknown = gui.EditorApp(tk.Toplevel(self.root), self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file, self.names_file, look="neon")
+        self.assertEqual(unknown.look, "classic")
+        unknown.root.destroy()
 
     def test_a_look_the_editor_doesnt_know_is_the_original(self):
         self.settings_file.write_text(json.dumps({"advanced": False, "look": "neon"}), encoding="utf-8")
@@ -2054,8 +2072,9 @@ class LiquidGlassTests(SimpleModeTests):
     """Simple mode in the Liquid Glass look: everything the original look does, it does the same."""
 
     look = "glass"
-    test_the_look_is_switched_from_the_menu_and_remembered = None  # these two start from a hero whose look is unset
+    test_the_look_is_switched_from_the_menu_and_remembered = None  # these three start from a hero whose look is unset
     test_a_look_the_editor_doesnt_know_is_the_original = None
+    test_a_look_can_be_asked_for_just_this_once = None
 
     def test_it_opens_in_the_look_that_was_chosen(self):
         self.assertEqual((self.app.look, self.app.look_var.get(), self.screen.glass, self.app.art.rounded), ("glass", "glass", True, True))

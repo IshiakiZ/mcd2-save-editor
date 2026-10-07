@@ -5,8 +5,8 @@ Windows look. Switching modes switches the theme, so the windows Simple mode ope
 look the same. There are two of them, one for each look. Original, the one the editor opens in, is flat and
 square, drawn by ttk itself. Liquid Glass, which Menu > Look switches to, has Apple's shapes (capsule buttons,
 rounded panels with a bright rim, one tinted button for the main action, bars that float): pictures the editor
-draws for itself when it starts (``glass.py``), fitted to each widget by ttk. The colours, the lettering and the
-item tiles' pictures are the game's in both.
+draws for itself the first time the look is asked for (``glass.py``), fitted to each widget by ttk. The colours,
+the lettering and the item tiles' pictures are the game's in both.
 """
 
 from __future__ import annotations
@@ -124,15 +124,24 @@ class GameFonts:
 
 
 def install(style: ttk.Style, fonts: GameFonts, row_height: int, item_row_height: int) -> None:
-    """Create Simple mode's two themes (once): the original look, and Liquid Glass, whose pictures are drawn
-    first and then the styles that use them."""
+    """Create the theme of Simple mode's original look (once), and keep what Liquid Glass's is made from. That
+    one's pictures take a moment to draw, longer the more a display is scaled up, so it is made when the look is
+    first asked for (``use``): a window that stays in the original look never waits for it."""
     if THEME not in style.theme_names():
         style.theme_create(THEME, parent="clam", settings=_classic_settings(fonts, row_height, item_row_height))
+    home = style.master.nametowidget(".")
+    if not hasattr(home, "_mcd2_glass"):
+        home._mcd2_glass = (fonts, row_height, item_row_height)
+
+
+def _install_glass(style: ttk.Style) -> None:
+    """Create Liquid Glass's theme (once): its pictures are drawn first, and then the styles that use them."""
     if GLASS_THEME in style.theme_names():
         return
-    root = style.master
+    root = style.master.nametowidget(".")  # the app's own window: it lives as long as the theme does
+    fonts, row_height, item_row_height = root._mcd2_glass
     looks = Looks(root, fonts)
-    root._mcd2_looks = looks  # Tk drops a picture nobody holds, and the window lives as long as the theme
+    root._mcd2_looks = looks  # Tk drops a picture nobody holds
     before = style.theme_use()
     style.theme_create(GLASS_THEME, parent="clam")
     style.theme_use(GLASS_THEME)  # an element is created in the theme in use
@@ -368,6 +377,8 @@ def look_of(value: object) -> str:
 def use(root: tk.Tk, simple: bool, light_theme: str, look: str = DEFAULT_LOOK) -> None:
     """Switch the whole app between Simple mode's theme, in the look asked for, and the normal (light) one."""
     style = ttk.Style(root)
+    if simple and look == "glass":
+        _install_glass(style)
     style.theme_use((GLASS_THEME if look == "glass" else THEME) if simple else light_theme)
     root.option_clear()
     if simple:

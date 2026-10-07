@@ -30,7 +30,15 @@ class PathTests(unittest.TestCase):
     def test_gui_close_after_is_passed_through(self):
         with mock.patch.object(gui, "run", return_value=0) as run:
             self.assertEqual(cli.main(["gui", "--close-after", "2.5"]), 0)
-        self.assertEqual(run.call_args.args[3], 2.5)
+        self.assertEqual((run.call_args.args[3], run.call_args.kwargs), (2.5, {"look": None}))
+
+    def test_gui_can_be_opened_in_a_look(self):
+        with mock.patch.object(gui, "run", return_value=0) as run:
+            self.assertEqual(cli.main(["gui", "--look", "glass", "--close-after", "1"]), 0)
+        self.assertEqual(run.call_args.kwargs, {"look": "glass"})
+        with mock.patch.object(gui, "run", return_value=0) as run, mock.patch("sys.stderr"), self.assertRaises(SystemExit):
+            cli.main(["gui", "--look", "neon"])
+        run.assert_not_called()
 
     def test_folder_options_work_before_or_after_the_command(self):
         from .helpers import SETTINGS_TEXT, make_profile, shift_encode

@@ -254,6 +254,10 @@ def main(argv: list[str] | None = None) -> int:
 
     gui_command = command("gui", "open the editor window (default)")
     gui_command.add_argument("--close-after", type=float, metavar="SECONDS", help="close the window again after this long (for testing a build)")
+    gui_command.add_argument(
+        "--look", choices=("classic", "glass"),
+        help="open Simple mode in this look this time: classic is Original, glass is Liquid Glass. What Menu > Look was last set to stays as it is",
+    )
     command("list", "list the save containers")
     export = command("export", "write a container's data to a JSON file")
     export.add_argument("container")
@@ -292,7 +296,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in (None, "gui"):
         from .gui import run
 
-        return run(args.profile, args.backups, args.icons, getattr(args, "close_after", None))
+        return run(args.profile, args.backups, args.icons, getattr(args, "close_after", None), look=getattr(args, "look", None))
     handler = {
         "list": cmd_list,
         "export": cmd_export,

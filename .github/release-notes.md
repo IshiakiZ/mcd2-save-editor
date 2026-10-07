@@ -8,9 +8,10 @@
   remembers your choice with its other settings, which an update doesn't touch.
 - The windows Simple mode opens (Add items, Presets, Change effects and the rest) follow the look you picked.
   Advanced mode keeps the Windows look.
-- Every shape in Liquid Glass is drawn by the editor when it starts. No picture files were added, and the download
-  is no bigger.
+- Every shape in Liquid Glass is drawn by the editor itself, the first time you pick the look. No picture files
+  were added, the download is no bigger, and the editor opens as quickly as before in the Original look.
 - New pictures in the README.
+
 ## What's new in 1.14.2
 
 - **Every enchantment book has its ID now: 32 of 32.** The last one, which a save calls Multi Potion, was in the

@@ -361,6 +361,7 @@ python -m dungeons2_editor items                                # every item the
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 python -m dungeons2_editor update                               # look for a newer version on GitHub and install it
+python -m dungeons2_editor gui --look glass                     # open the window in Liquid Glass this once (classic: Original)
 ```
 
 Add `--profile <folder>` to point at a save folder somewhere else (the Xbox folder with `containers.index`, or the
@@ -452,7 +453,7 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   Dungeons II's own inventory screen; the fonts are Windows' own and the icons are drawn by the editor.
 - The Liquid Glass look follows Apple's design of that name (capsule buttons, rounded panels with a bright rim, one
   tinted button for the main action, glass for the controls and not for the content). Every shape in it is drawn by
-  the editor when it starts (`dungeons2_editor/glass.py`); no picture files are involved.
+  the editor itself, the first time you pick the look (`dungeons2_editor/glass.py`); no picture files are involved.
 - The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky
   saves the same way.
 - Game facts come from community datamines by [MetaBot](https://metabot.gg/en/minecraft-dungeons-2) and

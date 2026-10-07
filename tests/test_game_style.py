@@ -167,14 +167,22 @@ class DrawingTests(unittest.TestCase):
         style = ttk.Style(self.root)
         light = style.theme_use()
         game_style.install(style, game_style.GameFonts(self.root), 24, 30)
+        # Only the original look is made to begin with: Liquid Glass's pictures wait until the look is asked for.
+        self.assertEqual((game_style.THEME in style.theme_names(), game_style.GLASS_THEME in style.theme_names()), (True, False))
+        self.assertFalse(hasattr(self.root, "_mcd2_looks"))
         self.assertEqual((game_style.DEFAULT_LOOK, list(game_style.LOOKS.items())), ("classic", [("classic", "Original"), ("glass", "Liquid Glass")]))
         self.assertEqual([game_style.look_of(value) for value in ("glass", "classic", "neon", None, 3)], ["glass", "classic", "classic", "classic", "classic"])
         game_style.use(self.root, simple=True, light_theme=light)  # the original look unless told otherwise
         self.assertEqual((style.theme_use(), game_style.is_active(self.root), game_style.is_glass(self.root)), (game_style.THEME, True, False))
         self.assertEqual(style.layout("TButton")[0][0], "Button.border")  # drawn by ttk, as it always was
         self.assertNotIn("glasscard", style.element_names())
+        self.assertNotIn(game_style.GLASS_THEME, style.theme_names())  # using the original look doesn't make the other
         game_style.use(self.root, simple=True, light_theme=light, look="glass")
         self.assertEqual((style.theme_use(), game_style.is_active(self.root), game_style.is_glass(self.root)), (game_style.GLASS_THEME, True, True))
+        drawn = self.root._mcd2_looks
+        game_style.use(self.root, simple=True, light_theme=light)
+        game_style.use(self.root, simple=True, light_theme=light, look="glass")
+        self.assertIs(self.root._mcd2_looks, drawn)  # drawn once, however often the look is switched
         self.assertEqual(style.layout("TButton")[0][0], "glassbtn")  # a picture the editor drew, fitted to the button
         self.assertIn("glasscard", style.element_names())
         # Every style the screens ask for by name is in both looks, on the same surfaces.

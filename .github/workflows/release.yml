@@ -51,12 +51,12 @@ jobs:
           python tools/make_version_info.py build/version-info.txt
           pyinstaller --noconfirm --onedir --windowed --noupx --name MCD2SaveEditor --icon assets/app.ico --version-file build/version-info.txt --add-data "assets/app.ico;assets" --add-data "dungeons2_editor/data;dungeons2_editor/data" mcd2_save_editor.py
 
-      - name: Check the .exe reads a save, opens its window and says which version it is
+      - name: Check the .exe reads a save, opens its window in both looks and says which version it is
         shell: pwsh
         run: |
           $exe = "dist/MCD2SaveEditor/MCD2SaveEditor.exe"
           $saves = python -c "import tempfile; from pathlib import Path; from tests.helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode; print(make_profile(Path(tempfile.mkdtemp()), {'Character00000000-0000-1000-8000-000000000002': hero_save_text().encode(), 'GlobalSaveDataDefault': shift_encode(SETTINGS_TEXT)}))"
-          foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4")) {
+          foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4", "gui --profile `"$saves`" --look glass --close-after 4")) {
             $run = Start-Process $exe -ArgumentList $arguments -Wait -PassThru
             if ($run.ExitCode -ne 0) { throw "MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
             Write-Output "OK: MCD2SaveEditor.exe $arguments"
@@ -94,7 +94,7 @@ jobs:
         run: |
           $exe = "dist-nexus/MCD2SaveEditor/MCD2SaveEditor.exe"
           $saves = python -c "import tempfile; from pathlib import Path; from tests.helpers import SETTINGS_TEXT, hero_save_text, make_profile, shift_encode; print(make_profile(Path(tempfile.mkdtemp()), {'Character00000000-0000-1000-8000-000000000002': hero_save_text().encode(), 'GlobalSaveDataDefault': shift_encode(SETTINGS_TEXT)}))"
-          foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4")) {
+          foreach ($arguments in @("verify --profile `"$saves`"", "items", "gui --profile `"$saves`" --close-after 4", "gui --profile `"$saves`" --look glass --close-after 4")) {
             $run = Start-Process $exe -ArgumentList $arguments -Wait -PassThru
             if ($run.ExitCode -ne 0) { throw "The Nexus edition's MCD2SaveEditor.exe $arguments exited with code $($run.ExitCode)" }
             Write-Output "OK: MCD2SaveEditor.exe $arguments"
