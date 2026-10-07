@@ -248,7 +248,9 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self._inventory_width = 0
         self._redraw_job: str | None = None
         self.tile = art.px(TILE)
+        self.glass = art.rounded  # the Liquid Glass look; False for the original one
         self._build(empty_title, empty_text)
+        self.apply_look(self.glass)
 
     # ------------------------------------------------------------------ layout
 
@@ -404,14 +406,19 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         self.books_bar.grid_remove()
 
         cell = self.tile + self.art.px(18)
+        # The inventory sits in a well: a rounded hollow in the surface, with its scroll bar inside it.
+        self.well = well = ttk.Frame(panel, style="WellPanel.TFrame")
+        well.grid(row=3, column=0, columnspan=2, sticky="nsew")
+        well.columnconfigure(0, weight=1)
+        well.rowconfigure(0, weight=1)
         self.inventory_canvas = tk.Canvas(
-            panel, width=4 * cell + self.art.px(24), height=self.art.px(200), background=gs.WELL, highlightthickness=0,
+            well, width=4 * cell + self.art.px(24), height=self.art.px(200), background=gs.WELL, highlightthickness=0,
             yscrollincrement=self.art.px(30),
         )
-        scroll = ttk.Scrollbar(panel, orient="vertical", command=self.inventory_canvas.yview)
+        scroll = ttk.Scrollbar(well, orient="vertical", style="Well.Vertical.TScrollbar", command=self.inventory_canvas.yview)
         self.inventory_canvas.configure(yscrollcommand=scroll.set)
-        self.inventory_canvas.grid(row=3, column=0, sticky="nsew")
-        scroll.grid(row=3, column=1, sticky="ns")
+        self.inventory_canvas.grid(row=0, column=0, sticky="nsew")
+        scroll.grid(row=0, column=1, sticky="ns")
         canvas = self.inventory_canvas
         canvas.bind("<Configure>", self._on_inventory_resize)
         canvas.bind("<Button-1>", self._on_inventory_click)
@@ -427,29 +434,44 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         """Lay the inventory's tabs out left to right, on as many rows as ``width`` takes."""
         if width <= 1:
             return  # not laid out yet
-        gap = self.art.px(3)
+        gap = 0 if self.glass else self.art.px(3)  # in Liquid Glass the tabs are pills side by side, like one control
         height = max(chip.winfo_reqheight() for chip in self.chip_buttons)
         x = y = 0
         for chip in self.chip_buttons:
             need = chip.winfo_reqwidth()
             if x and x + need > width:
-                x, y = 0, y + height + gap
+                x, y = 0, y + height + self.art.px(2)
             chip.place(x=x, y=y)
             x += need + gap
         if int(self.chips.cget("height")) != y + height:
             self.chips.configure(height=y + height)
 
+    def apply_look(self, glass: bool) -> None:
+        """Lay the screen out for a look. Liquid Glass has rounded panels, which need room for their corners and
+        their shadows, and rounded tiles; the original look has square panels edge to edge and bevelled tiles."""
+        self.glass = self.art.rounded = glass
+        pad = self.art.px(gs.CARD_PAD)
+        self.card_border.configure(padding=(pad, pad, pad, pad + self.art.px(gs.CARD_DROP)) if glass else 1)
+        self.card_outer.configure(padding=(10, 6, 22, 5 if glass else 14))  # the glass card's shadow is its bottom margin
+        self.well.configure(padding=self.art.px(gs.WELL_PAD) if glass else 0)
+        if self.chips.winfo_width() > 1:
+            self._flow_chips(self.chips.winfo_width())
+        self._fill_items()
+
     def _build_card(self) -> None:
         width = self.art.px(CARD_WIDTH)
         self._card_width = width
         wrap = width - 34
-        outer = ttk.Frame(self.body, style="Game.TFrame", padding=(10, 6, 22, 14))
+        self.card_outer = outer = ttk.Frame(self.body, style="Game.TFrame", padding=(10, 6, 22, 14))
         outer.grid(row=0, column=2, sticky="nsew")
-        border = ttk.Frame(outer, style="CardBorder.TFrame", padding=1)
+        # In Liquid Glass the card is a rounded panel with its title strip along the top: its contents start a
+        # little inside its edge, clear of the corners, and stop short of the bottom, where its shadow falls
+        # (``apply_look`` sets that room). In the original look it's a square panel with a hairline round it.
+        self.card_border = border = ttk.Frame(outer, style="CardPanel.TFrame")
         border.pack(fill="both", expand=True)
         self.card = ttk.Frame(border, style="Card.TFrame")
         self.card.pack(fill="both", expand=True)
-        self.banner = tk.Canvas(self.card, width=width, height=self.art.px(28), background=gs.CARD, highlightthickness=0)
+        self.banner = tk.Canvas(self.card, width=width, height=self.art.px(gs.BANNER_HEIGHT), background=gs.BANNER, highlightthickness=0)
         self.banner.pack(fill="x")
         # The card's contents scroll when the card is too short for them (a small screen, or a display Windows
         # scales up), and what's said about the last change stays in view below them.
@@ -461,7 +483,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             self.card, width=width, height=1, background=gs.CARD, highlightthickness=0, borderwidth=0, yscrollincrement=self.art.px(30)
         )
         self.card_view.pack(fill="both", expand=True)
-        self.card_scroll = ttk.Scrollbar(self.card, orient="vertical", command=self.card_view.yview)
+        self.card_scroll = ttk.Scrollbar(self.card, orient="vertical", style="Card.Vertical.TScrollbar", command=self.card_view.yview)
         self.card_view.configure(yscrollcommand=self.card_scroll.set)
         content = ttk.Frame(self.card_view, style="Card.TFrame", padding=(16, 12, 16, 14))
         self.card_content = content
@@ -543,7 +565,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         ttk.Label(self.enchant_box, textvariable=self.enchant_text, style="Box.TLabel", wraplength=wrap - diamond - 40, justify="left").grid(
             row=1, column=1, sticky="w"
         )
-        self.effects_button = ttk.Button(self.enchant_box, text="CHANGE EFFECTS…", style="Card.TButton", command=self.change_effects)
+        self.effects_button = ttk.Button(self.enchant_box, text="CHANGE EFFECTS…", style="Box.TButton", command=self.change_effects)
         self.effects_button.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 0))
 
         actions = ttk.Frame(self.item_box, style="Card.TFrame")
@@ -564,7 +586,7 @@ class InventoryScreen(HeroEditing, ttk.Frame):
 
         self.slot_box = ttk.Frame(content, style="Card.TFrame")
         self.slot_box.grid(row=3, column=0, sticky="ew", pady=(14, 0))
-        self.slot_add_button = ttk.Button(self.slot_box, text="PUT AN ITEM HERE…", style="Accent.TButton", command=self._add_to_picked_slot)
+        self.slot_add_button = ttk.Button(self.slot_box, text="PUT AN ITEM HERE…", style="CardAccent.TButton", command=self._add_to_picked_slot)
         self.slot_add_button.pack(anchor="w")
 
         self.stats_box = ttk.Frame(content, style="Card.TFrame")
@@ -874,7 +896,10 @@ class InventoryScreen(HeroEditing, ttk.Frame):
         elif self.card_mode == "slot" and self.picked_slot is not None:
             box = next((tile for tile, slot in self._gear_hits if slot.tag == self.picked_slot.tag), None)
             canvas = self.gear_canvas
-        if box is not None:
+        if box is not None and self.glass:
+            gap = self.art.px(3)
+            canvas.create_image(box[0] - gap, box[1] - gap, image=self.art.ring(self.tile, "#ffffff"), anchor="nw", tags="selection")
+        elif box is not None:
             x0, y0, x1, y1 = box
             canvas.create_rectangle(x0 - 3, y0 - 3, x1 + 2, y1 + 2, outline="#ffffff", width=2, tags="selection")
 
@@ -886,7 +911,11 @@ class InventoryScreen(HeroEditing, ttk.Frame):
             found = next((box for box in boxes if box[0] <= x <= box[2] and box[1] <= y <= box[3]), None)
         if found is not None:
             x0, y0, x1, y1 = found
-            canvas.create_rectangle(x0 - 2, y0 - 2, x1 + 1, y1 + 1, outline="#9fb6c0", width=1, tags="hover")
+            if self.glass:
+                gap = self.art.px(3)
+                canvas.create_image(x0 - gap, y0 - gap, image=self.art.ring(self.tile, "#bcd3dc", 1, 0.8), anchor="nw", tags="hover")
+            else:
+                canvas.create_rectangle(x0 - 2, y0 - 2, x1 + 1, y1 + 1, outline="#9fb6c0", width=1, tags="hover")
             canvas.tag_raise("selection")
         canvas.configure(cursor="hand2" if found is not None else "")
 

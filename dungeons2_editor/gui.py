@@ -125,7 +125,7 @@ SIMPLE_HELP_SECTIONS = [
     ),
     (
         "Advanced mode",
-        "Tick ADVANCED MODE in the top bar for the technical side: every item in a sortable list, every value in the "
+        "Turn on ADVANCED MODE in the top bar for the technical side: every item in a sortable list, every value in the "
         "save as a tree, the raw JSON, the settings save, item IDs (and typing any item ID), and stats past the "
         "game's caps.",
     ),
@@ -134,6 +134,13 @@ SIMPLE_HELP_SECTIONS = [
         "Connect an AI (in MENU, or the button above) shows how to let an AI assistant such as Claude use the editor "
         "over MCP. It can look at your heroes and change them for you, and its changes are only written when you "
         "agree, with the game closed and a backup made first.",
+    ),
+    (
+        "Two looks",
+        "This screen comes in two looks. Liquid Glass is the one it opens in: rounded panels and buttons of glass, with "
+        "bars that float clear of the window's edges. Original is the flat look the editor had before. MENU > Look "
+        "switches between them, there and then. The editor remembers which you picked, and an update doesn't change it. "
+        "Both show the same things in the same places; only the shapes differ.",
     ),
     (
         "Pictures",
@@ -277,6 +284,7 @@ class EditorApp:
         self.icons = IconLibrary(icon_root)
         self.settings_file = Path(settings_file)
         self.settings = _load_settings(self.settings_file)
+        self.look = game_style.look_of(self.settings.get("look"))  # Simple mode's look: Liquid Glass or the original
         self.names_file = Path(names_file)
         use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
@@ -356,7 +364,7 @@ class EditorApp:
         style.configure("Closed.TLabel", foreground="#1e7e34")
         style.configure("Link.TLabel", foreground="#0b6f80")
         self.game_fonts = GameFonts(self.root)
-        self.art = Art(self.root.winfo_fpixels("1i") / 96)
+        self.art = Art(self.root.winfo_fpixels("1i") / 96, rounded=self.look == "glass")
         row_height = int(base.metrics("linespace") * 1.55)
         game_style.install(style, self.game_fonts, row_height, max(30, int(base.metrics("linespace") * 1.9)))
 
@@ -476,8 +484,13 @@ class EditorApp:
         """Simple mode: the hero as the game's inventory screen shows it, between dark bars like the game's."""
         screen.columnconfigure(0, weight=1)
         screen.rowconfigure(1, weight=1)
-        bar = ttk.Frame(screen, style="Bar.TFrame", padding=(8, 0, 12, 0))
-        bar.grid(row=0, column=0, sticky="ew")
+        px = self.art.px
+        # In Liquid Glass the bars are dark glass, floating clear of the window's edges; in the original look they
+        # run from edge to edge. ``_apply_look`` gives them the room each look needs.
+        top = ttk.Frame(screen, style="Game.TFrame")
+        top.grid(row=0, column=0, sticky="ew")
+        bar = ttk.Frame(top, style="BarPanel.TFrame")
+        bar.pack(fill="x")
 
         menu_button = ttk.Menubutton(bar, text="MENU", image=self.art.icon("menu", game_style.SOFT, 1), compound="left", style="Bar.TMenubutton")
         menu_button.pack(side="left")
@@ -492,6 +505,11 @@ class EditorApp:
         menu.add_command(label="Restore a backup…", command=self._restore_dialog)
         menu.add_command(label="Open the backups folder", command=self._open_backups_folder)
         menu.add_separator()
+        self.look_var = tk.StringVar(value=self.look)
+        self.look_menu = tk.Menu(menu, tearoff=False)
+        for key, name in game_style.LOOKS.items():
+            self.look_menu.add_radiobutton(label=name, value=key, variable=self.look_var, command=self._on_look_changed)
+        menu.add_cascade(label="Look", menu=self.look_menu)
         menu.add_command(label="Get item pictures…", command=self._get_pictures)
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
@@ -514,15 +532,17 @@ class EditorApp:
         self.page_var = tk.StringVar(value="inventory")
         self._tab_lines: dict[str, ttk.Frame] = {}
         for column, (key, text) in enumerate((("inventory", "INVENTORY"), ("help", "HELP"))):
-            ttk.Radiobutton(tabs, text=text, value=key, variable=self.page_var, style="BarTab.Toolbutton", command=self._show_page).grid(row=0, column=column)
-            line = ttk.Frame(tabs, style="BarLine.TFrame", height=3)
+            ttk.Radiobutton(tabs, text=text, value=key, variable=self.page_var, style="BarTab.Toolbutton", command=self._show_page).grid(
+                row=0, column=column, padx=(0, px(2))
+            )
+            line = ttk.Frame(tabs, style="BarLine.TFrame", height=3)  # the game's orange line under the open tab
             line.grid(row=1, column=column, sticky="ew", padx=6)
             self._tab_lines[key] = line
 
         ttk.Checkbutton(bar, text="ADVANCED MODE", variable=self.advanced_var, command=self._on_advanced_toggled, style="Bar.TCheckbutton").pack(
             side="right", padx=(20, 0)
         )
-        self.update_button = ttk.Button(bar, style="Accent.TButton", command=self.update_app)  # shown once there's an update
+        self.update_button = ttk.Button(bar, style="BarAccent.TButton", command=self.update_app)  # shown once there's an update
         self.share_button = ttk.Button(bar, style="Bar.TButton", command=self._share_ids)  # shown when there's something new to share
 
         body = ttk.Frame(screen, style="Game.TFrame")
@@ -546,9 +566,12 @@ class EditorApp:
         self.inventory.make_currency_strip(bar).pack(side="right")
         self.simple_help = self._build_simple_help(body)
 
-        bottom = ttk.Frame(screen, style="Bar.TFrame", padding=(16, 8, 16, 8))
-        bottom.grid(row=2, column=0, sticky="ew")
+        under = ttk.Frame(screen, style="Game.TFrame")
+        under.grid(row=2, column=0, sticky="ew")
+        bottom = ttk.Frame(under, style="BarPanel.TFrame")
+        bottom.pack(fill="x")
         bottom.columnconfigure(2, weight=1)
+        self._bars = (top, bar, under, bottom)
         self.simple_game_label = ttk.Label(bottom, textvariable=self.game_var, style="BarMuted.TLabel")
         self.simple_game_label.grid(row=0, column=0, sticky="w")
         ttk.Label(bottom, textvariable=self.meta_var, style="BarMuted.TLabel").grid(row=0, column=1, sticky="w", padx=(18, 0))
@@ -556,9 +579,39 @@ class EditorApp:
         ttk.Label(bottom, textvariable=self.changes_var, style="BarChanges.TLabel").grid(row=0, column=3, sticky="e", padx=(0, 12))
         self.simple_discard_button = ttk.Button(bottom, text="DISCARD CHANGES", style="Bar.TButton", command=self.discard_changes)
         self.simple_discard_button.grid(row=0, column=4, padx=(0, 8))
-        self.simple_save_button = ttk.Button(bottom, text="SAVE TO GAME", style="Accent.TButton", command=self.save_to_game)
+        self.simple_save_button = ttk.Button(bottom, text="SAVE TO GAME", style="BarAccent.TButton", command=self.save_to_game)
         self.simple_save_button.grid(row=0, column=5)
+        self._apply_look()
         self._show_page()
+
+    def _apply_look(self) -> None:
+        """Lay Simple mode out for its look. Liquid Glass floats the bars clear of the window's edges, with room
+        for their rounded ends and their shadows; the original look runs them from edge to edge."""
+        px, glass = self.art.px, self.look == "glass"
+        top, bar, under, bottom = self._bars
+        drop = px(game_style.BAR_DROP)
+        top.configure(padding=(px(10), px(6), px(10), 0) if glass else 0)
+        bar.configure(padding=(px(12), px(2), px(14), px(2) + drop) if glass else (8, 0, 12, 0))
+        under.configure(padding=(px(10), 0, px(10), px(5)) if glass else 0)
+        bottom.configure(padding=(px(18), px(4), px(8), px(4) + drop) if glass else (16, 8, 16, 8))
+        for line in self._tab_lines.values():
+            line.configure(height=2 if glass else 3)
+            line.grid_configure(padx=px(14) if glass else 6)
+        self.inventory.apply_look(glass)
+
+    def _on_look_changed(self) -> None:
+        """Menu > Look: switch Simple mode between Liquid Glass and the original look, and remember which. The
+        choice is kept with the editor's other settings, which an update doesn't touch."""
+        look = game_style.look_of(self.look_var.get())
+        if look == self.look:
+            return
+        self.look = look
+        self.settings["look"] = look
+        _save_settings(self.settings_file, self.settings)
+        if not self.advanced_var.get():
+            game_style.use(self.root, simple=True, light_theme=self.light_theme, look=look)
+        self._apply_look()
+        self._fit_window()
 
     def _build_simple_help(self, parent: ttk.Frame) -> ttk.Frame:
         page = ttk.Frame(parent, style="Game.TFrame", padding=(28, 16, 20, 12))
@@ -839,7 +892,7 @@ class EditorApp:
     def _apply_mode(self) -> None:
         """Simple mode shows the game-style screen in the game's colours; Advanced mode, the technical one."""
         advanced = self.advanced_var.get()
-        game_style.use(self.root, simple=not advanced, light_theme=self.light_theme)
+        game_style.use(self.root, simple=not advanced, light_theme=self.light_theme, look=self.look)
         self.root.configure(background=self.light_background if advanced else game_style.BG)
         if advanced:
             self.simple_screen.grid_remove()

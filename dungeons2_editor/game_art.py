@@ -10,6 +10,8 @@ from __future__ import annotations
 import math
 import tkinter as tk
 
+from . import glass
+
 # Tile colours, sampled from the game's inventory screen (MetaBot's beginner's guide confirms Common
 # drops look grey and Rare ones green; Uniques are orange, so Special is the blue).
 RARITY_TILE = {"Common": "#a8917c", "Rare": "#5ec85a", "Special": "#2394ec", "Unique": "#ec7330"}
@@ -17,6 +19,7 @@ TALISMAN_TILE = "#17191c"  # the game shows talismans on dark tiles
 BOOK_TILE = "#2c1d47"  # the editor's own choice for enchantment books: the purple of enchantment points, darkened
 EMPTY_TILE = "#0b2531"
 UNKNOWN_TILE = "#7d8a90"
+TILE_RADIUS = 10  # a tile's rounded corners, in pixels at 100%
 
 # Patterns: "#" the colour, "+" lighter, "-" darker, "o" an outline, "." nothing. All the same size.
 ICONS: dict[str, tuple[str, ...]] = {
@@ -298,8 +301,9 @@ def tile_fill(rarity: str, kind: str = "") -> str:
 class Art:
     """Makes and keeps the editor's own pictures. ``scale`` is the screen's size factor (1 at 96 DPI)."""
 
-    def __init__(self, scale: float = 1.0):
+    def __init__(self, scale: float = 1.0, rounded: bool = True):
         self.scale = max(1.0, scale)
+        self.rounded = rounded  # Liquid Glass's tiles; the original look has square, bevelled ones
         self._cache: dict[tuple, tk.PhotoImage] = {}
 
     def px(self, size: float) -> int:
@@ -323,14 +327,36 @@ class Art:
         return self._cache[key]
 
     def tile(self, fill: str, size: int, empty: bool = False) -> tk.PhotoImage:
-        """A square gear tile: a bevelled frame around a body that glows in ``fill`` (darker at the edges).
-        An ``empty`` tile has a faint frame, for a gear slot with nothing in it."""
-        key = ("tile", fill, size, empty)
+        """A gear tile in ``fill``. In Liquid Glass it's a rounded square of glass lit from above, and an
+        ``empty`` one a socket set into the surface; in the original look, a square with a bevelled frame round a
+        body that glows in the middle, and a faint frame for an empty slot."""
+        key = ("tile", fill, size, empty, self.rounded)
         if key not in self._cache:
-            self._cache[key] = self._make_tile(fill, size, empty)
+            self._cache[key] = self._make_tile(fill, size, empty) if self.rounded else self._make_square_tile(fill, size, empty)
+        return self._cache[key]
+
+    def ring(self, size: int, color: str, thick: int = 2, alpha: float = 1.0) -> tk.PhotoImage:
+        """A rounded outline to go round a tile ``size`` pixels across: the picked one, or the one pointed at."""
+        key = ("ring", size, color, thick, alpha)
+        if key not in self._cache:
+            gap = self.px(3)
+            full, radius = size + 2 * gap, self.px(TILE_RADIUS) + gap
+            parts = [(glass.Shape(alpha=0.0, radius=radius - step, edge=color, edge_alpha=alpha), (step, step, full - step, full - step)) for step in range(thick)]
+            self._cache[key] = tk.PhotoImage(data=glass.picture(full, full, *parts))
         return self._cache[key]
 
     def _make_tile(self, fill: str, size: int, empty: bool) -> tk.PhotoImage:
+        radius = self.px(TILE_RADIUS)
+        if empty:
+            shape = glass.Shape(fill=fill, radius=radius, inset=0.55, zone=size * 0.22, edge="#27505f", edge_alpha=0.9)
+        else:
+            shape = glass.Shape(
+                fill=mix(fill, "#ffffff", 0.06), radius=radius, glow=0.26, shade=0.30, zone=size * 0.55, rim=0.65,
+                edge="#000000", edge_alpha=0.55,
+            )
+        return tk.PhotoImage(data=glass.picture(size, size, shape))
+
+    def _make_square_tile(self, fill: str, size: int, empty: bool) -> tk.PhotoImage:
         if empty:
             frame = ["#081a22", "#1f3f4b", "#1f3f4b", "#16313b", "#0a1d25"]
             center, edge = mix(fill, "#ffffff", 0.03), mix(fill, "#000000", 0.15)

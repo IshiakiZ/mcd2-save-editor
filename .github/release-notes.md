@@ -1,3 +1,16 @@
+## What's new in 1.15.0
+
+- **A new look: Liquid Glass.** Simple mode now opens with rounded glass panels and buttons, pill-shaped tabs, a
+  switch for Advanced mode, slim scroll bars, and top and bottom bars that float clear of the window's edges. The
+  colours, the lettering and the item tiles' pictures are still the game's, and everything is where it was.
+- **The Original look is still here.** **Menu → Look** switches between **Liquid Glass** and **Original** on the
+  spot. The editor remembers your choice with its other settings, which an update doesn't touch.
+- The windows Simple mode opens (Add items, Presets, Change effects and the rest) follow the look you picked.
+  Advanced mode keeps the Windows look.
+- Every shape in the new look is drawn by the editor when it starts. No picture files were added, and the download
+  is no bigger.
+- New pictures in the README.
+
 ## What's new in 1.14.1
 
 - **Eight more enchantment books: 31 of the game's 32.** A player's list
