@@ -563,7 +563,7 @@ class HeroTabTests(WindowTestCase):
         self.assertTrue(picker.confirm_button.instate(["disabled"]))
         picker.destroy()
         self.assertEqual(len(self.tab.hero.books()), 10)
-        self.assertIn("Added 9 enchantment books, saved the way the game saves one. Nobody has tried a book made by the editor", self.tab.item_message_var.get())
+        self.assertEqual(self.tab.item_message_var.get(), "Added 9 enchantment books, saved the way the game saves one. Press Save to game when you're done.")
         summary = self.save()
         self.assertIn("Added Somersault (enchantment book)", summary)
         self.assertEqual(len(self.saved_hero().books()), 10)
@@ -1375,11 +1375,7 @@ class SimpleModeTests(WindowTestCase):
         button.invoke()
         self.assertEqual((len(self.shown()), self.screen.count_text.get()), (9, "9 BOOKS"))
         self.assertFalse(bar.winfo_manager())  # none left to add
-        self.assertIn(
-            "Added 9 enchantment books, saved the way the game saves one. Nobody has tried a book made by the editor at the "
-            "Enchantsmith yet, so check that it's offered there.",
-            self.screen.item_message_var.get(),
-        )
+        self.assertEqual(self.screen.item_message_var.get(), "Added 9 enchantment books, saved the way the game saves one. Press Save to game when you're done.")
         self.assertEqual(self.app.changes_var.get(), "18 unsaved changes")  # each book, and its line in the loot you've discovered
         # A book's card: what its enchantment does, and nothing to set but whether it's there.
         screen = self.screen
@@ -1446,7 +1442,7 @@ class SimpleModeTests(WindowTestCase):
         self.assertTrue(picker.confirm_button.instate(["!disabled"]))
         made = next(item for item in self.screen.hero.books())
         self.assertEqual((made.name, made.rarity, made.power, made.count), ("Ancient Alchemy", "None", -1, 1))
-        self.assertIn("Added the Ancient Alchemy book, saved the way the game saves one. Nobody has tried", self.screen.item_message_var.get())
+        self.assertEqual(self.screen.item_message_var.get(), "Added the Ancient Alchemy book, saved the way the game saves one. Press Save to game when you're done.")
         # Back on gear, the boxes work again and there's nothing about books.
         picker.kind_var.set("Melee")
         picker._fill()

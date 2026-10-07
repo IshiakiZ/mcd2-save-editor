@@ -367,7 +367,7 @@ class EditingTests(ServerTestCase):
         done = self.call("add_enchantment_books", hero="00000000")
         self.assertTrue(done["done"].startswith("Added 8 enchantment books: Ancient Alchemy, Buddy Brew, "), done["done"])
         self.assertEqual((len(done["items"]), {item["kind"] for item in done["items"]}), (8, {"Enchantment Book"}))
-        self.assertIn("nobody has tried one the editor made at the Enchantsmith yet", done["untried"])
+        self.assertEqual(set(done), {"done", "items", "unsaved_changes", "note"})
         self.assertEqual(len([line for line in done["unsaved_changes"] if line.endswith("(enchantment book)")]), 9)
         self.assertIn("has every enchantment book the editor knows", self.call("add_enchantment_books", hero="00000000"))
         self.assertEqual(self.call("delete_item", hero="00000000", item=book)["done"], "Deleted the Somersault.")

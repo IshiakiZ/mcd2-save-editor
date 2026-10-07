@@ -71,8 +71,8 @@ INSTRUCTIONS = (
     "confirmed: false have a best-guess save ID, and the game may remove them. Talismans have no rarity or power, "
     "and one with effect_known: false can only be added without its effect. Enchantment books (kind Enchantment Book "
     "in find_items) have none either, and a hero has one of each: add_item adds one, add_enchantment_books every one "
-    "that's missing, saved the way the game saves a book. The Enchantsmith works from the books in the inventory, but "
-    "nobody has tried one the editor made there yet: say so, and ask the user how it went. Online heroes are stored on the "
+    "that's missing, saved the way the game saves a book. The Enchantsmith offers the enchantments of the books in the "
+    "inventory, the ones the editor added included (checked in the game). Online heroes are stored on the "
     "game's servers, so they can't be changed. set_item_effects gives a weapon, armor piece or artifact its "
     "effects and a weapon or armor piece its enchantment, from list_effects: the editor writes them exactly as a "
     "real save holds them, so it only has the ones it has seen so far. With best_for (a goal: Damage, Survival, "
@@ -513,7 +513,6 @@ class EditorServer:
             refs = _refs(hero)
             return f"Added {len(added)} enchantment {books}: {', '.join(item.name for item in added)}.", {
                 "items": [_item_info(item, refs, {}) for item in added],
-                "untried": "Each is saved the way the game saves a book, but nobody has tried one the editor made at the Enchantsmith yet.",
             }
 
         return self._edit(args["hero"], change)
@@ -779,7 +778,8 @@ class EditorServer:
                  self.add_item, ("hero", "item")),
             Tool("add_enchantment_books", "Add every enchantment book", "Give a hero every enchantment book the editor knows that it's "
                  "without (add_item adds a single one), each saved the way the game saves a book. With a book in the "
-                 "inventory the Enchantsmith can put its enchantment on gear; nobody has tried one the editor made there yet.",
+                 "inventory the Enchantsmith offers its enchantment for the gear it goes on (checked in the game with books the "
+                 "editor added).",
                  {"hero": HERO}, self.add_enchantment_books, ("hero",)),
             Tool("change_item", "Change an item", "Change an item's rarity, power or count, or turn it into another item (not while equipped). "
                  "A talisman has no rarity or power to change, and an enchantment book can't be changed at all: delete it, or add another.",

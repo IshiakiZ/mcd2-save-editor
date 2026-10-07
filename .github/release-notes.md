@@ -9,10 +9,11 @@
   of them, alike in everything but the ID. A book the editor adds is that very entry, key for key, whatever item it
   borrows the layout from. A book has no rarity or power and a hero has one of each, so the editor adds or deletes
   one and changes nothing on it. Its card says what its enchantment does and what it goes on.
-- **Not yet tried at the Enchantsmith.** The game's own script names say the Enchantsmith works from the books in
-  your inventory, but nobody has taken one the editor made there yet. Check that the enchantment is offered, and
-  [say how it went](https://github.com/IshiakiZ/mcd2-save-editor/discussions). The editor leaves the game's
-  collections and achievements alone, as it does for every item, so a book added here is in neither.
+- **Checked in the game.** The developer added 17 books with the editor: the game kept every one through its own
+  saves, and the Enchantsmith offered Fire Aspect and Poison Fog on a melee weapon, two enchantments the hero had no
+  book for before. So the Enchantsmith goes by the books in your inventory. The game's collections and its
+  achievement for collecting every book are the game's to write: the editor leaves them alone, as it does for every
+  item, and the game didn't add the editor's books to either, so a book added here counts for neither.
 - Nine of the game's 32 books can't be added yet, because nobody has sent the ID the game saves them under:
   Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul
   Blast and Tumbleshot. If you have one, **Share item IDs…** sends it.

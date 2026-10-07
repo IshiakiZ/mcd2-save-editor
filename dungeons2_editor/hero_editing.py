@@ -32,9 +32,6 @@ def power_text(item: Item) -> str:
     return "" if item.ungraded else number_text(item.power)
 
 
-# Said wherever the editor adds a book, until somebody has tried one in the game.
-BOOK_CAUTION = "Nobody has tried a book made by the editor at the Enchantsmith yet, so check that it's offered there."
-
 
 def book_hint() -> str:
     """What to say about an enchantment book where other items show their rarity and power."""
@@ -64,8 +61,7 @@ def effects_action(item: Item) -> tuple[str, bool]:
 
 
 __all__ = [
-    "BOOK_CAUTION", "HeroEditing", "SAVE_REMINDER", "book_hint", "effects_action", "number_text", "power_text", "talisman_hint",
-    "vendors_text",
+    "HeroEditing", "SAVE_REMINDER", "book_hint", "effects_action", "number_text", "power_text", "talisman_hint", "vendors_text",
 ]
 
 
@@ -219,7 +215,7 @@ class HeroEditing:
         self._fill_items()
         books = "book" if len(added) == 1 else "books"
         done = f"Added {len(added)} enchantment {books}, saved the way the game saves one."
-        self._say_item(f"{done} {BOOK_CAUTION} {SAVE_REMINDER}")
+        self._say_item(f"{done} {SAVE_REMINDER}")
         self.on_change()
         return done
 
@@ -241,7 +237,7 @@ class HeroEditing:
             added = self.hero.item(self.selected)
             note = added.own_effect_note  # a Unique comes without the effect of its own
             if added.is_book:
-                self._say_item(f"Added the {added.name} book, saved the way the game saves one. {BOOK_CAUTION} {SAVE_REMINDER}")
+                self._say_item(f"Added the {added.name} book, saved the way the game saves one. {SAVE_REMINDER}")
             else:
                 self._say_item(f"Added. {note + ' ' if note else ''}{SAVE_REMINDER}")
             self.on_change()

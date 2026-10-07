@@ -237,16 +237,17 @@ your sign-in, account or device data.
   follows the same pattern, but no save with a level-3 talisman has been seen yet. A companion's talisman (the Tasty
   Bone and the like) levels up by tags, which hasn't been seen either: for those, **Ready to level up** puts it one
   XP short of the next level (18,480 XP for level 2), and the next XP you earn with it equipped does the rest.
-- **Enchantment books: saved like the game's, not yet tried at the Enchantsmith.** The developer's own save shows
+- **Enchantment books: saved like the game's, and the Enchantsmith takes them.** The developer's own save shows
   how the game saves a book it has just handed over: seven of them, alike in everything but the ID. A book the editor
   adds comes out as that very entry, key for key, whatever item it borrows the layout from. A book has no rarity or
-  power, and a hero has one of each, so there's nothing on one to change: you add it or delete it. The game's own
-  script names say the Enchantsmith works from the books in your inventory (its `GetAllOwnedEnchantmentBooks` hands
-  back inventory entries), and a book stays there after you've used it. But nobody has taken a book the editor made
-  to the Enchantsmith yet, so check that its enchantment is offered there, and
-  [say how it went](https://github.com/IshiakiZ/mcd2-save-editor/discussions). When the game hands you a book it
-  also files it in its collections and counts it towards an achievement; the editor leaves both alone, as it does
-  for every item, so a book added here is in neither. The editor knows 23 of the game's 32 books by their save ID
+  power, and a hero has one of each, so there's nothing on one to change: you add it or delete it. Checked in the
+  game: the developer added 17 books with the editor, the game kept every one through its own saves, and the
+  Enchantsmith offered Fire Aspect and Poison Fog on a melee weapon, two enchantments the hero had no book for
+  before. So the Enchantsmith goes by the books in your inventory, as the game's own script names suggest (its
+  `GetAllOwnedEnchantmentBooks` hands back inventory entries), and a book stays there after you've used it. When
+  the game hands you a book it also files it in its collections and counts it towards an achievement. The editor
+  leaves both alone, as it does for every item, and the game didn't add the editor's books to either afterwards, so
+  a book added here counts for neither. The editor knows 23 of the game's 32 books by their save ID
   (MetaBot lists 34 enchantments, two of them built into Uniques). The nine it can't add yet are Bottomless Brew,
   Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
   Tumbleshot: nobody has sent the ID the game saves them under. A book in your own saves that the list doesn't name

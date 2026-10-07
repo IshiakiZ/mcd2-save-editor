@@ -105,7 +105,9 @@ VENDORS = {
     "Enchantsmith": "SW.UI.Onboarding.Panel.Enchantsmith.Overview",
 }
 # SW.Item.EnchantmentBook.<Name>. The Enchantsmith works from the books in the inventory: the game's own script
-# names say so (GetAllOwnedEnchantmentBooks hands back inventory entries), and the books stay there after use.
+# names say so (GetAllOwnedEnchantmentBooks hands back inventory entries), and it was checked in the game. With 17
+# books the editor had added, the game kept them all and the Enchantsmith offered their enchantments, though the
+# game's own collections never listed one of them.
 BOOK_KIND = "Enchantment Book"
 _BOOK_GROUP = "EnchantmentBook"
 ONE_OF_EACH = "A hero has one of each enchantment book"
