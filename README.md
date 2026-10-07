@@ -37,7 +37,7 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Talisman levels:** an item's card shows a talisman's level, and **Level up** raises it a level, saved exactly
   as the game saves a level-up. (A companion's talisman levels up another way, so it gets **Ready to level up**:
   one XP short, and the game does the rest the next time you earn XP with it on.)
-- **Enchantment books:** the **Books** tab shows the books your hero carries. **Add every book** gives it all 23
+- **Enchantment books:** the **Books** tab shows the books your hero carries. **Add every book** gives it all 31
   the editor knows in one go, **Add items** adds them one at a time, and Delete takes one away. Each is saved exactly
   as the game saves a book it hands you. See [what's known about them](#what-it-cant-do).
 - **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
@@ -144,17 +144,16 @@ You don't have to take anyone's word for what's in the download:
   connection is switched off when it's built (`dungeons2_editor/edition.py`), and the build checks that it refuses.
 - **You can skip the .exe** and run it from source, as above.
 
-### Code signing policy
+### Code signing
 
-**Status: applied for, not active yet. Releases up to 1.5.0 are not signed.**
+**Releases are not code-signed**, which is why Windows may warn the first time you open the .exe. Free signing for
+open-source projects (the [SignPath Foundation](https://signpath.org)'s programme) is for projects that are already
+widely known, and this one isn't there yet. Until it is, the build attestation above is the way to check that a
+download is the one built from this source.
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
+### Privacy
 
-- Committers and reviewers: [Ishiaki](https://github.com/IshiakiZ)
-- Approvers: [Ishiaki](https://github.com/IshiakiZ)
-
-Privacy policy: the editor never sends your saves, your hero's data or anything about you anywhere. It contacts
+The editor never sends your saves, your hero's data or anything about you anywhere. It contacts
 other computers in three cases only. When its window opens, it asks GitHub (api.github.com) which version is the
 latest; that request carries only what any web request does, your IP address and the editor's name and version.
 When you press **Update**, it downloads that version from GitHub. When you ask for item pictures, it downloads them
@@ -216,13 +215,10 @@ your sign-in, account or device data.
   confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
   GitHub issue with just those IDs and the effects saved with your items (see below), nothing else from your save.
-- **Most Uniques go by a pattern.** A Unique is saved under an ID of its own: The Burning Blade, the Unique Sword, is
-  `SW.Item.Sword_Unique1`, and the Oracle Tights are `SW.Item.MysticLeggings_Unique`. Of the 116, 115 have been
-  seen in real saves, and every one is its base item's ID with `_Unique1` (weapons) or `_Unique` (armor) on the end.
-  So the editor adds the one that's left (the Packleader Muzzle) under the ID that pattern gives, and says so. If one were wrong,
-  the game would drop that item and keep the rest. Making an item you already own Unique is stricter: it only turns
-  into its Unique when that ID has been seen; otherwise it keeps its name and just gets Unique rarity, because a
-  wrong ID would cost you the item.
+- **A Unique has an ID of its own.** The Burning Blade, the Unique Sword, is `SW.Item.Sword_Unique1`, and the
+  Oracle Tights are `SW.Item.MysticLeggings_Unique`. All 116 have now been seen in real saves (the last one, the
+  Packleader Muzzle, in a player's collections), and every one is its base item's ID with `_Unique1` (weapons) or
+  `_Unique` (armor) on the end. So adding a Unique, or making an item you own Unique, gives it the ID the game uses.
 - **A talisman is added with what it does.** A talisman has no rarity or power. A save holds what it does at
   each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and 1.35,
   and for a companion's talisman like the Tasty Bone, a tag at each level. Players have shared this for all 24
@@ -247,22 +243,26 @@ your sign-in, account or device data.
   `GetAllOwnedEnchantmentBooks` hands back inventory entries), and a book stays there after you've used it. When
   the game hands you a book it also files it in its collections and counts it towards an achievement. The editor
   leaves both alone, as it does for every item, and the game didn't add the editor's books to either afterwards, so
-  a book added here counts for neither. The editor knows 23 of the game's 32 books by their save ID
-  (MetaBot lists 34 enchantments, two of them built into Uniques). The nine it can't add yet are Bottomless Brew,
-  Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
-  Tumbleshot: nobody has sent the ID the game saves them under. A book in your own saves that the list doesn't name
-  is offered under a name made from its ID, and **Name it…** with **Share item IDs…** teaches the editor what the
-  game calls it.
+  a book added here counts for neither. The editor knows 31 of the game's 32 books by their save ID
+  (MetaBot lists 34 enchantments, two of them built into Uniques), and 23 of those by name as well. The other eight
+  came from a player's collections with their IDs alone, so they go by those: Blowback, Borealis, Burst Bowstring,
+  Channeling, Guarding Strike, Lingering Power, Shadow Strike and Soul Aspect. MetaBot's enchantments that no ID has
+  been tied to are Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak,
+  Shielding Smite, Soul Blast and Tumbleshot, so most likely eight of those nine are the eight above; which is
+  which is for someone who has the book to say, not for a guess. If you have one, pick it, press **Name it…**, and
+  **Share item IDs…** sends the name on.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 60 gear effects and 18 enchantments so far
-  (Ancient Alchemy at every tier; Healing Smite and Piercing at tiers I and III; Ender Quiver at II and III;
-  Somersault at II; Health Synergy at I; and at tier III Chain Reaction, Thundering, Fire Aspect, Gravity Pulse,
-  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and three the save calls Blowback, Borealis
-  and Lingering Power), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
+  files, so the editor learns how each one is saved from real saves: 60 gear effects and 20 enchantments so far
+  (Ancient Alchemy at every tier; Healing Smite, Piercing and Health Synergy at tiers I and III; Ender Quiver at II
+  and III; Somersault at II; and at tier III Chain Reaction, Thundering, Fire Aspect, Gravity Pulse, Springload,
+  Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and five the save calls Blowback, Borealis, Channeling,
+  Lingering Power and Soul Fire Aspect), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
   game's own numbers for them are published (MetaBot's table), so it also offers the tiers nobody has sent yet; it
   marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
-  game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. The effects the
+  game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. For some
+  enchantments even that number isn't fixed: two players' saves hold the one called Lingering Power at tier III with
+  two different numbers, and the editor writes the first it saw. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
 - **Best for is a recommendation, not a measurement.** Which effects an item can get is the game's rule: it

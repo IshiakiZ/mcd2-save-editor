@@ -142,6 +142,7 @@ UNIQUE_IDS = {
     FrostRimeBoots_Unique FrostRimeHelmet_Unique WellspringChest_Unique WellspringHelmet_Unique
     DiscipleLeggings_Unique EvocationBoots_Unique EvocationHelmet_Unique GiantMallet_Unique1 HewnBarkHelmet_Unique
     PhantomChest_Unique VoyagerHelmet_Unique WellspringLeggings_Unique WolfclutchChest_Unique WolfclutchLeggings_Unique
+    WolfclutchHelmet_Unique
     """.split()
 }
 # What a save calls an item, where that isn't the name players see with the spaces taken out.
@@ -245,8 +246,8 @@ SET_NAMES = {
     "Treehugger": "HewnBark",
     "Wolfpack": "Wolfclutch",
 }
-# Enchantment books seen in real saves, by the enchantment's name. They're listed so the editor can name them;
-# it only offers to add one a hero already has.
+# Enchantment books seen in real saves, by the enchantment's name. A book is laid out the same whichever it is
+# (Hero._as_book), so the editor can add any book whose ID it knows.
 BOOK_IDS = {
     "Ancient Alchemy": "SoulInfusedPotion",
     # Arcane by what a save holds for it: 9 at tier III, on leggings (/issues/23). Artifact Amplifier is the one
@@ -281,6 +282,12 @@ BOOK_IDS = {
     "Tempo Theft": "TempoTheft",
     "Thundering": "Thundering",
 }
+# Books in a save's collections that nobody has put a name to yet (/issues/28; GuardingStrike is in the developer's
+# own save as well). The game files a book there when it hands it over, so the IDs are the game's own, and the
+# editor lists each under a name made from its ID. MetaBot has nine enchantments without a book ID (Bottomless
+# Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
+# Tumbleshot); which of them these eight are is for someone who has the book to say, not for a guess.
+UNNAMED_BOOKS = ("Blowback", "Borealis", "BurstBowstring", "Channeling", "GuardingStrike", "LingeringPower", "ShadowStrike", "SoulAspect")
 # What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
 # effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
 # the effect's Intensity at each level. A talisman that isn't here can only be added without its effect, so the
@@ -322,10 +329,10 @@ TALISMAN_LEVEL_TAGS = {
 # the game: the developer's own play, and players' Share item IDs reports.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
-    "BeastBoss": ("BeastBoss", {"II": 0.25}),
+    "BeastBoss": ("BeastBoss", {"II": 0.25, "III": 0.3}),
     "Chains": ("Chains", {"III": 0.25}),
     "Committed": ("Committed", {"I": 0.2, "II": 0.25, "III": 0.3}),
-    "Constitution": ("Constitution", {"I": 0.1, "II": 0.2}),
+    "Constitution": ("Constitution", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Cooldown": ("Cooldown", {"I": -0.1, "II": -0.15}),
     "CriticalEdge": ("CriticalEdge", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "CriticalHit": ("CriticalHit", {"I": 0.05, "II": 0.1, "III": 0.15}),
@@ -335,7 +342,7 @@ GEAR_EFFECTS = {
     "EagleEye": ("EagleEye", {"II": 0.15}),
     "ElementalProtection": ("ElementalProtection", {"II": -0.15}),
     "EmeraldsIncrease": ("Prospector", {"I": 0.05, "III": 0.15}),
-    "Expand": ("Expand", {"I": 0.2}),
+    "Expand": ("Expand", {"I": 0.2, "III": 0.4}),
     "Finesse": ("Finesse", {"II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1, "III": -0.15}),
@@ -361,23 +368,23 @@ GEAR_EFFECTS = {
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "RapidStrike": ("RapidStrike", {"III": 0.2}),
     "Reconstruction": ("Reconstruction", {"II": -0.2, "III": -0.25}),
-    "Reeling": ("Reeling", {"I": 0.2}),
+    "Reeling": ("Reeling", {"I": 0.2, "III": 0.4}),
     "Regeneration": ("Regeneration", {"I": 0.05, "II": 0.075, "III": 0.1}),
     "Resilience": ("Resilience", {"I": -0.2, "II": -0.25, "III": -0.3}),
     "RollCooldown": ("Acrobat", {"I": 0.1, "II": 0.15}),
     "Saboteur": ("Saboteur", {"II": 0.6, "III": 0.8}),
     "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25, "III": 0.35}),
     "Sharpness": ("Sharpness", {"I": 0.1, "II": 0.2, "III": 0.3}),
-    "Sidestep": ("Sidestep", {"I": 0.1, "III": 0.2}),
+    "Sidestep": ("Sidestep", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Sniper": ("Sniper", {"II": 0.5}),
     "SoulFocus": ("SoulFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "SoulGatherMultiply": ("SoulSiphon", {"II": 0.35, "III": 0.45}),
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
     "SpeedBoost": ("SpeedBoost", {"II": 0.1, "III": 0.15}),
     "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
-    "SweepingEdge": ("SweepingEdge", {"II": 0.3}),
-    "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2}),
-    "Thorns": ("Thorns", {"II": 0.65}),
+    "SweepingEdge": ("SweepingEdge", {"II": 0.3, "III": 0.4}),
+    "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2, "III": 0.3}),
+    "Thorns": ("Thorns", {"II": 0.65, "III": 0.8}),
     "Vanguard": ("Vanguard", {"I": 0.2}),
     "Vestige": ("Vestige", {"I": 0.1, "II": 0.15}),
     "Vivify": ("Vivify", {"I": 0.15, "II": 0.3, "III": 0.5}),
@@ -465,21 +472,30 @@ EFFECT_GUESSES: dict[str, str] = {}
 # strength isn't the number the game shows (Ancient Alchemy I is 0.5 and gives 30 souls), so a tier can't be
 # worked out: each one has to be seen. ENCHANTMENT_TEMPLATES holds a template a save spells differently from its
 # effect: Springload is SW.Enchantment.SpringLoaded, from the template SW.Enchantment.Springloaded.III.
+# /issues/28 was made with 1.9.0 or 1.9.1 (it calls new exactly what those versions didn't have), which knew three
+# enchantments and eighteen gear effects, so what it holds beyond those is the game's: Channeling and SoulFireAspect
+# at tier III, HealthSynergy at III, and eight gear-effect tiers in GEAR_EFFECTS above (Constitution III among them,
+# the one tier MetaBot's table and wording disagreed on that no save had settled). Two tiers on that list were ones
+# 1.9.x offered itself (Cooldown III, Vanguard III) and stay unseen. Its LingeringPower III is 0.5 where /issues/26
+# has 0.244871: the same tier with two numbers, so that one isn't fixed (the game's own data has a least and a most
+# for an enchantment's number). The first one seen stays here.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
     "Blowback": {"III": 0.5},
     "Borealis": {"III": 0.287547},
     "ChainReaction": {"III": 5},
+    "Channeling": {"III": 3},
     "ExpandedQuiver": {"II": 3, "III": 4},
     "FireAspect": {"III": 1},
     "GravityPulse": {"III": 0},
-    "HealthSynergy": {"I": 0.15},
+    "HealthSynergy": {"I": 0.15, "III": 0.35},
     "LingeringPower": {"III": 0.244871},
     "MultiRoll": {"II": 2},
     "Piercing": {"I": 1, "III": 5},
     "PotionBarrier": {"III": 6},
     "Radiance": {"I": 0.3, "III": 0.5},
+    "SoulFireAspect": {"III": 3},
     "SoulInfusedPotion": {"I": 0.5, "II": 0.6, "III": 0.85},
     "SpringLoaded": {"III": 6},
     "Swirling": {"III": 1},
@@ -957,6 +973,13 @@ def main() -> None:
     for book in books:
         if book["name"] not in {enchantment["name"] for enchantment in enchantments}:
             print(f"warning: {book['name']} has a book in saves but isn't one of MetaBot's enchantments")
+    for book_id in sorted(set(UNNAMED_BOOKS) & set(BOOK_IDS.values())):
+        raise SystemExit(f"the book {book_id} has a name now: take it out of UNNAMED_BOOKS")
+    books += [
+        {"name": spaced(book_id), "kind": BOOK, "id": f"{PREFIX}EnchantmentBook.{book_id}", "confirmed": True, "name_from_id": True}
+        for book_id in UNNAMED_BOOKS
+    ]
+    books.sort(key=lambda book: book["name"].lower())
 
     catalog = sorted(items.values(), key=lambda e: (e["kind"], e["name"].lower())) + books
     by_id: dict[str, list[str]] = {}

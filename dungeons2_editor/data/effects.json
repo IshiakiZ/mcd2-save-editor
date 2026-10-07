@@ -89,7 +89,7 @@
      "tier": "III",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Companions deal 30% more damage."
     }
    ]
@@ -177,6 +177,12 @@
      "shown": "20%",
      "seen": true,
      "text": "Increases all healing received by 20%."
+    },
+    {
+     "tier": "III",
+     "strength": 0.3,
+     "shown": "30%",
+     "seen": true
     }
    ]
   },
@@ -483,7 +489,7 @@
      "tier": "III",
      "strength": 0.4,
      "shown": "40%",
-     "seen": false,
+     "seen": true,
      "text": "Increases the area of all positive status effects by 40%."
     }
    ]
@@ -1288,7 +1294,7 @@
      "tier": "III",
      "strength": 0.4,
      "shown": "40%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance to stagger enemies on hit by 40%."
     }
    ]
@@ -1497,7 +1503,7 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 15% chance to evade melee damage."
     },
     {
@@ -1721,7 +1727,7 @@
      "tier": "III",
      "strength": 0.4,
      "shown": "40%",
-     "seen": false,
+     "seen": true,
      "text": "Melee attacks deal 40% more damage to secondary targets."
     }
    ]
@@ -1752,7 +1758,7 @@
      "tier": "III",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Increases movement speed by 30% while Shadowcloaking."
     }
    ]
@@ -1783,7 +1789,7 @@
      "tier": "III",
      "strength": 0.8,
      "shown": "80%",
-     "seen": false,
+     "seen": true,
      "text": "Deals 80% of received damage back to the attacker."
     }
    ]
@@ -1930,6 +1936,18 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.Channeling",
+   "name": "Channeling",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 3,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.ExpandedQuiver",
    "name": "Ender Quiver",
    "tiers": [
@@ -1974,6 +1992,11 @@
     {
      "tier": "I",
      "strength": 0.15,
+     "seen": true
+    },
+    {
+     "tier": "III",
+     "strength": 0.35,
      "seen": true
     }
    ]
@@ -2040,6 +2063,18 @@
     {
      "tier": "III",
      "strength": 0.5,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.SoulFireAspect",
+   "name": "Soul Fire Aspect",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 3,
      "seen": true
     }
    ]

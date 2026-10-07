@@ -1,3 +1,24 @@
+## What's new in 1.14.1
+
+- **Eight more enchantment books: 31 of the game's 32.** A player's list
+  ([blasterguy24](https://github.com/blasterguy24),
+  [issue 28](https://github.com/IshiakiZ/mcd2-save-editor/issues/28)) had them in the game's own collections: the
+  books a save calls Blowback, Borealis, Burst Bowstring, Channeling, Guarding Strike, Lingering Power, Shadow
+  Strike and Soul Aspect. Nobody has said what the game calls them yet, so they go by those names, and **Add every
+  book** adds them with the rest. If you have one, **Name it…** on its card and **Share item IDs…** teach the editor
+  its name.
+- **Every Unique's ID has now been seen.** The same list has the Packleader Muzzle in its collections, the last of
+  the 116 that hadn't been. It's saved the way the pattern said.
+- **Two more enchantments, 20 in all:** the ones a save calls Channeling and Soul Fire Aspect, at tier III. Health
+  Synergy can now be put on at tier III as well.
+- **Recovery III:** the one tier where the game's published table and its wording disagreed and no save had settled
+  it. It's 30%, the table's number. Seven more tiers the editor offered on that table's word have now been seen in a
+  save, each as written: Pack Leader III, Totem Radius III, Momentum III, Evasion II, Brawler III, Prowler III and
+  Prickly III.
+- Not taken from that list: two tiers that the version which made it could have written itself, and the own effects
+  on eight armor pieces that were copies of another Unique.
+- The README's note on code signing now says where that stands: releases aren't code-signed.
+
 ## What's new in 1.14.0
 
 - **Enchantment books.** The inventory has a **Books** tab, and **Add every book** on it gives your hero all 23

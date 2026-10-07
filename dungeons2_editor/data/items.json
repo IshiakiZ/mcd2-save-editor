@@ -1785,6 +1785,7 @@
    "set": "Wolfpack",
    "unique": "Packleader Muzzle",
    "unique_effect": "Ranged attacks deal 100% more damage from far away.",
+   "unique_id": "SW.Item.WolfclutchHelmet_Unique",
    "unique_own": {
     "effect": "SW.Effect.Sniper",
     "strength": 1,
@@ -3691,16 +3692,44 @@
    "confirmed": true
   },
   {
+   "name": "Blowback",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Blowback",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
+   "name": "Borealis",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Borealis",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Buddy Brew",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.PotionSharing",
    "confirmed": true
   },
   {
+   "name": "Burst Bowstring",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.BurstBowstring",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Chain Reaction",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.ChainReaction",
    "confirmed": true
+  },
+  {
+   "name": "Channeling",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Channeling",
+   "confirmed": true,
+   "name_from_id": true
   },
   {
    "name": "Cow Stampede",
@@ -3745,6 +3774,13 @@
    "confirmed": true
   },
   {
+   "name": "Guarding Strike",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.GuardingStrike",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Healing Smite",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Radiance",
@@ -3755,6 +3791,13 @@
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.HealthSynergy",
    "confirmed": true
+  },
+  {
+   "name": "Lingering Power",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.LingeringPower",
+   "confirmed": true,
+   "name_from_id": true
   },
   {
    "name": "Piercing",
@@ -3775,6 +3818,13 @@
    "confirmed": true
   },
   {
+   "name": "Shadow Strike",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.ShadowStrike",
+   "confirmed": true,
+   "name_from_id": true
+  },
+  {
    "name": "Shockwave",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Shockwave",
@@ -3785,6 +3835,13 @@
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.MultiRoll",
    "confirmed": true
+  },
+  {
+   "name": "Soul Aspect",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.SoulAspect",
+   "confirmed": true,
+   "name_from_id": true
   },
   {
    "name": "Springload",

@@ -52,7 +52,12 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual([ids[name].id for name in ("Picnic Basket", "Blizzard Bangle", "Tempo Truffle")],
                          ["SW.Item.Artifact.PicnicBlanket", "SW.Item.Artifact.FrostBracelet", "SW.Item.Artifact.HasteMushroom"])
         self.assertEqual((ids["Mob Mallet"].id, ids["Mob Mallet"].confirmed), ("SW.Item.GiantMallet", True))
-        self.assertFalse([item.name for item in self.items if item.name_from_id])
+        # Every item goes by the game's name, but for eight books whose IDs a save's collections showed and nobody
+        # has put a name to: they go by their IDs.
+        self.assertEqual(
+            [item.name for item in self.items if item.name_from_id],
+            ["Blowback", "Borealis", "Burst Bowstring", "Channeling", "Guarding Strike", "Lingering Power", "Shadow Strike", "Soul Aspect"],
+        )
         # A talisman is saved by what it does, and its effect can go by another name than its level templates.
         fist = ids["Fist of Iron"]
         self.assertEqual((fist.id, [(level["effect"], level["intensity"], level["template"]) for level in fist.levels]),
@@ -158,11 +163,25 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual((springload.effect, springload.template, springload.strength), ("SW.Enchantment.SpringLoaded", "SW.Enchantment.Springloaded.III", 6))
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.Radiance"), "Healing Smite")  # the book the save calls Radiance
         # MetaBot's table says Critical Edge III is 30% and the game's wording for it says 40%. A save settled it: 0.3
-        # (the 40% is the tier a Unique carries). Recovery has the same clash, and no save has shown its tier III:
-        # a tier like that is left out until one does.
+        # (the 40% is the tier a Unique carries). Recovery had the same clash, and its tier III was left out until a
+        # save showed it: 0.3 as well, the table's number again (issue 28). The wording that disagrees isn't shown.
         self.assertEqual([(choice.tier, choice.strength, choice.seen) for choice in book.effects if choice.name == "Critical Edge"],
                          [("I", 0.1, True), ("II", 0.2, True), ("III", 0.3, True)])
-        self.assertEqual([choice.tier for choice in book.effects if choice.name == "Recovery"], ["I", "II"])
+        self.assertEqual([(choice.tier, choice.strength, choice.seen, choice.shown) for choice in book.effects if choice.name == "Recovery"],
+                         [("I", 0.1, True, "10%"), ("II", 0.2, True, "20%"), ("III", 0.3, True, "30%")])
+        self.assertNotIn("40", next(choice for choice in book.effects if choice.title == "Recovery III").what)
+        # Tiers the list offered on the table's word that a save has since shown (issue 28, made with a version that
+        # didn't offer them), and two on that list it leaves as they were: that version could write those itself.
+        seen = {choice.title: choice.seen for choice in book.effects}
+        self.assertEqual(
+            [seen[title] for title in ("Pack Leader III", "Totem Radius III", "Momentum III", "Evasion II", "Brawler III", "Prowler III", "Prickly III")],
+            [True] * 7,
+        )
+        self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (False, False))
+        # Two enchantments nobody has named, and Health Synergy's top tier, from the same list.
+        self.assertTrue({("Channeling III", 3), ("Soul Fire Aspect III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
+        # The same tier of one enchantment has been saved with two numbers (0.244871 and 0.5): the first one seen stays.
+        self.assertIn(("Lingering Power III", 0.244871), saved_enchantments)
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -345,10 +364,23 @@ class RealItemListTests(unittest.TestCase):
 
     def test_books_are_named_after_enchantments(self):
         books = [item for item in self.items if item.kind == heroes.BOOK_KIND]
-        self.assertTrue(books)
+        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (31, 8))
         for book in books:
-            self.assertIn(book.name, heroes.enchantments(), book.id)
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
+            if book.name_from_id:  # seen in a save's collections, but nobody has said what the game calls it
+                self.assertEqual(book.name, heroes.words(book.id.rsplit(".", 1)[1]))
+                self.assertNotIn(book.name, heroes.enchantments(), book.id)  # a name the game uses would be a claim
+                self.assertIsNone(heroes.book_enchantment(book.id))
+                self.assertFalse(heroes.name_is_known(book.id))
+            else:
+                self.assertIn(book.name, heroes.enchantments(), book.id)
+        self.assertEqual(heroes.book_text("SW.Item.EnchantmentBook.GuardingStrike"), "An enchantment book. The editor doesn't know what the game calls its enchantment yet.")
+        # A hero with none of them is offered all thirty-one, and gets them in one go.
+        hero = Hero(hero_save())
+        catalog = build_catalog([hero])
+        self.assertEqual(len(hero.missing_books(catalog)), 31)
+        self.assertEqual(len(hero.add_books(catalog)), 31)
+        self.assertEqual({item.rarity for item in hero.books()}, {"None"})
         # Two that players' saves and words tied to their names: they go on armor, as the game has them.
         named = {choice.effect: choice for choice in heroes.effect_choices()[1]}
         amplifier, stampede = named["SW.Enchantment.Arcane"], named["SW.Enchantment.Unstoppable"]
@@ -447,7 +479,7 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(picks("Damage", "SW.Item.MysticHelmet"), ["Sorcerer II"])
         self.assertEqual(picks("Damage", "SW.Item.MysticHelmet", elements={"Soul"}), ["Sorcerer II", "Soulmancer III"])
         self.assertEqual(picks("Artifacts and souls", "SW.Item.MysticHelmet"), ["Cooldown II", "Spiritual III", "Reaper III", "Sorcerer II"])
-        self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader II", "Shepherd II", "Veterinarian III"])
+        self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader III", "Shepherd II", "Veterinarian III"])
         self.assertEqual(picks("XP", "SW.Item.Sword"), [])
 
     def test_a_kit_only_gives_an_item_effects_the_game_rolls_on_it(self):
