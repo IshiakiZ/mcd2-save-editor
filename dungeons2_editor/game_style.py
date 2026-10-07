@@ -1,10 +1,12 @@
-"""Simple mode's look: the colours and lettering of Minecraft Dungeons II's inventory screen, on glass.
+"""Simple mode's looks: the colours and lettering of Minecraft Dungeons II's inventory screen, in two styles.
 
-Simple mode uses its own ttk theme, built on "clam" so everything can be set, and Advanced mode keeps the
+Simple mode uses its own ttk themes, built on "clam" so everything can be set, and Advanced mode keeps the
 Windows look. Switching modes switches the theme, so the windows Simple mode opens (Add items, Presets, ...)
-look the same. The shapes are Apple's (capsule buttons, rounded panels with a bright rim, one tinted button for
-the main action, bars that float); the colours, the lettering and the item tiles are the game's. The shapes are
-pictures the editor draws for itself when it starts (``glass.py``), fitted to each widget by ttk.
+look the same. There are two of them, one for each look. Original, the one the editor opens in, is flat and
+square, drawn by ttk itself. Liquid Glass, which Menu > Look switches to, has Apple's shapes (capsule buttons,
+rounded panels with a bright rim, one tinted button for the main action, bars that float): pictures the editor
+draws for itself when it starts (``glass.py``), fitted to each widget by ttk. The colours, the lettering and the
+item tiles' pictures are the game's in both.
 """
 
 from __future__ import annotations
@@ -20,9 +22,10 @@ from .game_art import RARITY_TILE, mix
 
 THEME = "mcd2"  # the original look
 GLASS_THEME = "mcd2glass"  # Liquid Glass
-# The looks Simple mode comes in: what the settings file calls each, and what the menu does.
-LOOKS = {"glass": "Liquid Glass", "classic": "Original"}
-DEFAULT_LOOK = "glass"
+# The looks Simple mode comes in: what the settings file calls each, and what the menu does. The original one
+# is what the editor opens in until Menu > Look says otherwise.
+LOOKS = {"classic": "Original", "glass": "Liquid Glass"}
+DEFAULT_LOOK = "classic"
 
 # Colours sampled from the game's inventory screen.
 BAR = "#181411"  # the tab bar along the top
@@ -365,7 +368,7 @@ def look_of(value: object) -> str:
 def use(root: tk.Tk, simple: bool, light_theme: str, look: str = DEFAULT_LOOK) -> None:
     """Switch the whole app between Simple mode's theme, in the look asked for, and the normal (light) one."""
     style = ttk.Style(root)
-    style.theme_use((THEME if look == "classic" else GLASS_THEME) if simple else light_theme)
+    style.theme_use((GLASS_THEME if look == "glass" else THEME) if simple else light_theme)
     root.option_clear()
     if simple:
         for pattern, value in _DARK_OPTIONS.items():

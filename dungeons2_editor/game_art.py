@@ -301,9 +301,9 @@ def tile_fill(rarity: str, kind: str = "") -> str:
 class Art:
     """Makes and keeps the editor's own pictures. ``scale`` is the screen's size factor (1 at 96 DPI)."""
 
-    def __init__(self, scale: float = 1.0, rounded: bool = True):
+    def __init__(self, scale: float = 1.0, rounded: bool = False):
         self.scale = max(1.0, scale)
-        self.rounded = rounded  # Liquid Glass's tiles; the original look has square, bevelled ones
+        self.rounded = rounded  # Liquid Glass's rounded tiles; the original look has square, bevelled ones
         self._cache: dict[tuple, tk.PhotoImage] = {}
 
     def px(self, size: float) -> int:

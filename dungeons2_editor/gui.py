@@ -137,10 +137,10 @@ SIMPLE_HELP_SECTIONS = [
     ),
     (
         "Two looks",
-        "This screen comes in two looks. Liquid Glass is the one it opens in: rounded panels and buttons of glass, with "
-        "bars that float clear of the window's edges. Original is the flat look the editor had before. MENU > Look "
-        "switches between them, there and then. The editor remembers which you picked, and an update doesn't change it. "
-        "Both show the same things in the same places; only the shapes differ.",
+        "This screen comes in two looks. Original is the one it opens in. Liquid Glass has rounded panels and buttons "
+        "of glass, and bars that float clear of the window's edges. MENU > Look switches between them, there and then. "
+        "The editor remembers which you picked, and an update doesn't change it. Both show the same things in the "
+        "same places; only the shapes differ.",
     ),
     (
         "Pictures",
@@ -284,7 +284,7 @@ class EditorApp:
         self.icons = IconLibrary(icon_root)
         self.settings_file = Path(settings_file)
         self.settings = _load_settings(self.settings_file)
-        self.look = game_style.look_of(self.settings.get("look"))  # Simple mode's look: Liquid Glass or the original
+        self.look = game_style.look_of(self.settings.get("look"))  # Simple mode's look: the original, or Liquid Glass
         self.names_file = Path(names_file)
         use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
@@ -600,7 +600,7 @@ class EditorApp:
         self.inventory.apply_look(glass)
 
     def _on_look_changed(self) -> None:
-        """Menu > Look: switch Simple mode between Liquid Glass and the original look, and remember which. The
+        """Menu > Look: switch Simple mode between the original look and Liquid Glass, and remember which. The
         choice is kept with the editor's other settings, which an update doesn't touch."""
         look = game_style.look_of(self.look_var.get())
         if look == self.look:

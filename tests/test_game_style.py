@@ -131,9 +131,9 @@ class DrawingTests(unittest.TestCase):
         self.assertFalse(tile.transparency_get(0, 0))  # square: it fills its corners
 
     def test_liquid_glass_tiles_are_rounded_and_lit_from_above(self):
-        art = Art()
+        self.assertFalse(Art().rounded)  # square unless asked: the original look
+        art = Art(rounded=True)
         tile = art.tile(RARITY_TILE["Unique"], 64)
-        self.assertTrue(art.rounded)
         self.assertTrue(all(tile.transparency_get(x, y) for x, y in ((0, 0), (63, 0), (0, 63), (63, 63))))
         self.assertFalse(tile.transparency_get(32, 32))
         self.assertGreater(sum(tile.get(32, 6)), sum(tile.get(32, 32)))
@@ -167,17 +167,16 @@ class DrawingTests(unittest.TestCase):
         style = ttk.Style(self.root)
         light = style.theme_use()
         game_style.install(style, game_style.GameFonts(self.root), 24, 30)
-        self.assertEqual((game_style.DEFAULT_LOOK, list(game_style.LOOKS.items())), ("glass", [("glass", "Liquid Glass"), ("classic", "Original")]))
-        self.assertEqual([game_style.look_of(value) for value in ("glass", "classic", "neon", None, 3)], ["glass", "classic", "glass", "glass", "glass"])
-        game_style.use(self.root, simple=True, light_theme=light)  # Liquid Glass unless told otherwise
-        self.assertEqual((style.theme_use(), game_style.is_glass(self.root)), (game_style.GLASS_THEME, True))
-        glass_button = style.layout("TButton")
-        self.assertEqual(glass_button[0][0], "glassbtn")  # a picture the editor drew, stretched to the button
-        self.assertIn("glasscard", style.element_names())
-        game_style.use(self.root, simple=True, light_theme=light, look="classic")
+        self.assertEqual((game_style.DEFAULT_LOOK, list(game_style.LOOKS.items())), ("classic", [("classic", "Original"), ("glass", "Liquid Glass")]))
+        self.assertEqual([game_style.look_of(value) for value in ("glass", "classic", "neon", None, 3)], ["glass", "classic", "classic", "classic", "classic"])
+        game_style.use(self.root, simple=True, light_theme=light)  # the original look unless told otherwise
         self.assertEqual((style.theme_use(), game_style.is_active(self.root), game_style.is_glass(self.root)), (game_style.THEME, True, False))
         self.assertEqual(style.layout("TButton")[0][0], "Button.border")  # drawn by ttk, as it always was
         self.assertNotIn("glasscard", style.element_names())
+        game_style.use(self.root, simple=True, light_theme=light, look="glass")
+        self.assertEqual((style.theme_use(), game_style.is_active(self.root), game_style.is_glass(self.root)), (game_style.GLASS_THEME, True, True))
+        self.assertEqual(style.layout("TButton")[0][0], "glassbtn")  # a picture the editor drew, fitted to the button
+        self.assertIn("glasscard", style.element_names())
         # Every style the screens ask for by name is in both looks, on the same surfaces.
         for look in game_style.LOOKS:
             game_style.use(self.root, simple=True, light_theme=light, look=look)

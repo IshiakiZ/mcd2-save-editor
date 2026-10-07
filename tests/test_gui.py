@@ -64,6 +64,7 @@ class WindowTestCase(unittest.TestCase):
     containers: dict = {}
     advanced = False
     scaling: float | None = None  # Tk's pixels per point: 1.3333 on a display at 100%, 2.0 at 150%
+    look: str | None = None  # Simple mode's look, as the settings file names it; None: nothing chosen yet (the original)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -71,7 +72,7 @@ class WindowTestCase(unittest.TestCase):
         self.dir = Path(self.temp.name)
         self.profile_path = make_profile(self.dir / "saves", self.containers)
         self.settings_file = self.dir / "settings.json"
-        self.settings_file.write_text(json.dumps({"advanced": self.advanced}), encoding="utf-8")
+        self.settings_file.write_text(json.dumps({"advanced": self.advanced, **({"look": self.look} if self.look else {})}), encoding="utf-8")
         patcher = mock.patch.object(saves, "running_game_processes", return_value=[])
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -193,7 +194,7 @@ class AdvancedSettingsTests(WindowTestCase):
         self.assertEqual(self.app.notebook.tab(self.app.edit_tab, "state"), "hidden")
         self.assertEqual(self.app.title_var.get(), "No offline heroes yet")
         self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8")), {"advanced": False})
-        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.GLASS_THEME)
+        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.THEME)
         self.assertTrue(self.app.simple_screen.winfo_manager())
         self.assertTrue(self.app.inventory.empty.winfo_manager())  # no hero to show: says how to get one
         self.assertIn("Reload", self.app.empty_text_var.get())
@@ -1051,40 +1052,36 @@ class SimpleModeTests(WindowTestCase):
     def test_the_look_is_switched_from_the_menu_and_remembered(self):
         app, screen = self.app, self.screen
         style = ttk.Style(self.root)
-        # Liquid Glass to begin with: rounded tiles, panels with room for their corners, bars clear of the edges.
-        self.assertEqual((app.look, style.theme_use(), screen.glass, app.art.rounded), ("glass", game_style.GLASS_THEME, True, True))
         top, _bar, _under, _bottom = app._bars
 
         def room(widget):
             return [int(str(side)) for side in widget.cget("padding")]
 
-        self.assertEqual(len(room(top)), 4)
-        glass_card, glass_well = room(screen.card_border), room(screen.well)
-        self.assertEqual((len(glass_card), glass_card[3] > glass_card[1] > 1, glass_well[0] > 1), (4, True, True))  # room for corners and a shadow
-        self.assertEqual([app.look_menu.entrycget(index, "label") for index in range(2)], ["Liquid Glass", "Original"])
+        # The original look to begin with: square tiles and panels, and bars from edge to edge, as it always was.
+        self.assertEqual((app.look, style.theme_use(), screen.glass, app.art.rounded), ("classic", game_style.THEME, False, False))
+        self.assertEqual((room(top), room(screen.card_border), room(screen.well)), ([0], [1], [0]))
+        self.assertEqual([app.look_menu.entrycget(index, "label") for index in range(2)], ["Original", "Liquid Glass"])
         self.assertEqual(app.app_menu.entrycget("Look", "menu"), str(app.look_menu))
         screen.pick_item(self.index_of("SW.Item.Longbow"))
-        self.assertEqual(self.screen.inventory_canvas.type("selection"), "image")  # a rounded frame round the picked tile
-
-        app.look_var.set("classic")
-        app.look_menu.invoke(1)
-        self.assertEqual((app.look, style.theme_use(), screen.glass, app.art.rounded), ("classic", game_style.THEME, False, False))
-        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8")), {"advanced": False, "look": "classic"})
-        self.assertEqual((room(top), room(screen.card_border), room(screen.well)), ([0], [1], [0]))  # edge to edge, as it was
-        self.assertEqual(screen.selected, self.index_of("SW.Item.Longbow"))  # what was picked stays picked
         self.assertEqual(self.screen.inventory_canvas.type("selection"), "rectangle")
+
+        # Liquid Glass: rounded tiles, panels with room for their corners and shadows, bars clear of the edges.
+        app.look_menu.invoke(1)
+        self.assertEqual((app.look, app.look_var.get(), style.theme_use(), screen.glass, app.art.rounded), ("glass", "glass", game_style.GLASS_THEME, True, True))
+        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8")), {"advanced": False, "look": "glass"})
+        self.assertEqual(len(room(top)), 4)
+        glass_card, glass_well = room(screen.card_border), room(screen.well)
+        self.assertEqual((len(glass_card), glass_card[3] > glass_card[1] > 1, glass_well[0] > 1), (4, True, True))
+        self.assertEqual(screen.selected, self.index_of("SW.Item.Longbow"))  # what was picked stays picked
+        self.assertEqual(self.screen.inventory_canvas.type("selection"), "image")  # a rounded frame round the picked tile
         self.assertEqual(app.changes_var.get(), "")  # a look changes nothing in a save
 
         # The next time the editor opens (after an update, say), it's in the look that was chosen.
         with mock.patch.object(saves, "find_profiles", return_value=[]):
             again = gui.EditorApp(tk.Toplevel(self.root), self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file, self.names_file)
-        self.assertEqual((again.look, again.look_var.get(), again.art.rounded, again.inventory.glass), ("classic", "classic", False, False))
+        self.assertEqual((again.look, again.look_var.get(), again.art.rounded, again.inventory.glass), ("glass", "glass", True, True))
         again.root.destroy()
 
-        app.look_var.set("glass")
-        app._on_look_changed()
-        self.assertEqual((style.theme_use(), room(screen.card_border), room(screen.well)), (game_style.GLASS_THEME, glass_card, glass_well))
-        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["look"], "glass")
         # Advanced mode keeps the Windows look whichever is chosen, and Simple mode comes back in the chosen one.
         app.advanced_var.set(True)
         app._on_advanced_toggled()
@@ -1095,17 +1092,18 @@ class SimpleModeTests(WindowTestCase):
         self.assertEqual(style.theme_use(), light)
         app.advanced_var.set(False)
         app._on_advanced_toggled()
-        self.assertEqual(style.theme_use(), game_style.THEME)
+        self.assertEqual((style.theme_use(), room(top), room(screen.card_border), room(screen.well)), (game_style.THEME, [0], [1], [0]))
+        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["look"], "classic")
 
-    def test_a_look_the_editor_doesnt_know_is_liquid_glass(self):
+    def test_a_look_the_editor_doesnt_know_is_the_original(self):
         self.settings_file.write_text(json.dumps({"advanced": False, "look": "neon"}), encoding="utf-8")
         with mock.patch.object(saves, "find_profiles", return_value=[]):
             again = gui.EditorApp(tk.Toplevel(self.root), self.profile_path, self.dir / "backups", self.dir / "icons", self.settings_file, self.names_file)
-        self.assertEqual((again.look, again.look_var.get()), ("glass", "glass"))
+        self.assertEqual((again.look, again.look_var.get()), ("classic", "classic"))
         again.root.destroy()
 
     def test_shows_the_game_style_screen(self):
-        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.GLASS_THEME)
+        self.assertEqual(ttk.Style(self.root).theme_use(), game_style.GLASS_THEME if self.look == "glass" else game_style.THEME)
         self.assertTrue(self.app.simple_screen.winfo_manager())
         self.assertFalse(self.app.advanced_screen.winfo_manager())
         self.assertEqual(self.app.container.name, HERO)
@@ -2043,6 +2041,26 @@ class EffectsWindowAt150Tests(EffectsWindowTests):
 
 class EffectsWindowAt200Tests(EffectsWindowTests):
     scaling = 2.6667
+
+
+class EffectsWindowInLiquidGlassTests(EffectsWindowAt200Tests):
+    """And in the other look, whose buttons and boxes are pictures drawn for the display's scaling."""
+
+    look = "glass"
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class LiquidGlassTests(SimpleModeTests):
+    """Simple mode in the Liquid Glass look: everything the original look does, it does the same."""
+
+    look = "glass"
+    test_the_look_is_switched_from_the_menu_and_remembered = None  # these two start from a hero whose look is unset
+    test_a_look_the_editor_doesnt_know_is_the_original = None
+
+    def test_it_opens_in_the_look_that_was_chosen(self):
+        self.assertEqual((self.app.look, self.app.look_var.get(), self.screen.glass, self.app.art.rounded), ("glass", "glass", True, True))
+        self.assertTrue(game_style.is_glass(self.root))
+        self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8")), {"advanced": False, "look": "glass"})  # opening changes no setting
 
 
 def newer_hero_save():

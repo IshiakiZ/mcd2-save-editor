@@ -6,7 +6,7 @@ equip items, and apply ready-made presets and complete kits from top builds, wit
 save files. It looks like the game's own inventory screen, so you already know your way around. Advanced mode shows
 the full save for people who want it.
 
-![Simple mode, laid out like the game's inventory, in the Liquid Glass look](docs/screenshots/inventory.png)
+![Simple mode, laid out like the game's inventory](docs/screenshots/inventory.png)
 
 > **Also from the same developer:** [**Lemma**](https://lemma.ishiakiz.com), a free creative studio for Minecraft, and
 > [**Batchly**](https://batch-ly.com), free browser games, tools and experiments.
@@ -20,8 +20,8 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   colour, the rest of your inventory in the middle, and the item card on the right, with level, gear power and your
   currencies along the top, just like the game's inventory screen. Click a tile to change it on its card, double-click
   an empty slot to put something in it, and right-click any tile for its actions.
-- **Two looks:** **Liquid Glass**, with rounded glass panels and buttons and bars that float clear of the window's
-  edges, and **Original**, the flat look from before. **Menu → Look** switches between them on the spot, and the
+- **Two looks:** **Original**, the one it opens in, and **Liquid Glass**, with rounded glass panels and buttons
+  and bars that float clear of the window's edges. **Menu → Look** switches between them on the spot, and the
   editor remembers your choice through updates. The colours, the lettering and the item tiles' pictures are the
   game's in both.
 - **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
@@ -88,9 +88,9 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 |---|---|
 | ![Add items](docs/screenshots/add-items.png) | ![A kit preset](docs/screenshots/presets-kit.png) |
 
-| The Original look (Menu → Look) | Advanced mode |
+| The Liquid Glass look (Menu → Look) | Advanced mode |
 |---|---|
-| ![Simple mode in the Original look](docs/screenshots/inventory-original.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
+| ![Simple mode in the Liquid Glass look](docs/screenshots/inventory-glass.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
 
 ## Download
 
