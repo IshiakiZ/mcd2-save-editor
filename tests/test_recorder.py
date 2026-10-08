@@ -103,6 +103,10 @@ class PlayRecorderTests(unittest.TestCase):
         self.assertTrue(any("NEW ITEM ID: SW.Item.Talisman.BrandNew" in line for line in self.said))
 
         text = self.recorder.summary()
+        # A summary is the part of a recording that gets passed on, so it says which kind of save it was and
+        # nothing of where: the folder's path holds the Windows account's name and the Xbox user's ID.
+        self.assertEqual(text.splitlines()[1], "Saves: the Xbox app")
+        self.assertFalse([part for part in (str(self.profile), self.profile.name, str(self.dir)) if part in text])
         self.assertIn("The game saved 1 time(s)", text)
         self.assertIn("Item IDs first seen while recording (2):", text)
         self.assertIn("changed  SW.Item.Longbow  ItemData.Effects[0]", text)

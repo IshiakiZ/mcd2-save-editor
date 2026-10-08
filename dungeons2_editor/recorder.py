@@ -1004,7 +1004,10 @@ class Recorder:
         return sorted(tag for tag, known in self.ids.items() if known in ("unknown", "unnamed") and ".Cosmetic." not in tag)
 
     def summary(self) -> str:
-        lines = [f"Play recording, {datetime.fromtimestamp(self.started):%Y-%m-%d %H:%M} to {datetime.fromtimestamp(self.clock()):%H:%M}", f"Save folder: {self.profile}", ""]
+        # Which kind of save, and not the folder: its path holds the Windows account's name and, for the Xbox app,
+        # the Xbox user's ID, and a summary is the part of a recording that gets passed on.
+        kind = "Steam" if saves.layout_of(self.profile) == "steam" else "the Xbox app"
+        lines = [f"Play recording, {datetime.fromtimestamp(self.started):%Y-%m-%d %H:%M} to {datetime.fromtimestamp(self.clock()):%H:%M}", f"Saves: {kind}", ""]
         written = [e for e in self.log if e["kind"] == "save_written"]
         lines.append(f"The game saved {len(written)} time(s); {self.snapshots} snapshot(s) kept.")
         new = sorted(tag for tag in self.ids if tag not in self.at_start)

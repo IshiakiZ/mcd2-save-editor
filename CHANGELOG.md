@@ -21,6 +21,10 @@ The short notes for the newest versions are on the
   which is what the editor wrote until now. This list has 0.5, which is also the game's published number for the
   tier (a 50% chance for 50% of the damage). Both are in real saves; the editor now writes the one that matches
   the game's table. An item enchanted with an earlier version keeps the number it has.
+- **The play recorder's summary no longer shows your save folder's path.** That path holds your Windows account's
+  name and, for the Xbox app's saves, your Xbox user's ID, and the summary is the part of a recording most likely
+  to be passed on. It now says which kind of save it was (Steam's or the Xbox app's) and nothing of where. The
+  recording's other files still hold your whole hero save, so the folder is still not for posting whole.
 - Not taken from that list: 22 tiers of gear effects that carry exactly the numbers the editor already offers.
   The version that made the list could have written those itself, so they stay marked as not seen.
 - **Shorter notes.** A release's page and the What's new window now hold the newest version and the two before

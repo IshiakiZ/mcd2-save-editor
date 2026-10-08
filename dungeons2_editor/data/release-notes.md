@@ -3,6 +3,7 @@
 - **Every Unique comes with its own effect now: 116 of 116.** The last one, the Packleader Paws', was in [berwulf](https://github.com/berwulf)'s list.
 - **Dynamo can be put on armor,** at tier III. The Melee damage kit and the Best armor preset now put it on.
 - **Thundering III** is saved as 0.5 now, the tier's number in the game's table and in a player's save.
+- **The play recorder's summary** no longer shows your save folder's path, which had your Windows account's name in it.
 - **Shorter notes.** These keep to the main things, for the newest version and the two before it. Every version, in full, is in the changelog.
 
 ## What's new in 1.15.0
