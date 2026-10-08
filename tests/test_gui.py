@@ -384,6 +384,31 @@ class HeroTabTests(WindowTestCase):
         self.assertNotIn("CharacterSaveV1", summary)
         self.assertEqual(self.saved_hero().attribute("Emeralds"), 5000)
 
+    def test_a_folder_that_keeps_each_save_in_a_folder_of_its_own_opens_by_hand(self):
+        from .test_folders import HERO as KEPT_HERO
+        from .test_folders import STAMP, make_save_folders
+
+        folder = make_save_folders(self.dir / "copy")
+        with mock.patch("tkinter.filedialog.askdirectory", return_value=str(folder)):
+            self.app._open_folder()
+        self.root.update()
+        self.assertEqual((self.app.profile.path, self.app.profile.layout, self.app.container.name), (folder, "folders", KEPT_HERO))
+        meta = self.app.meta_var.get()
+        self.assertTrue(meta.startswith(f"{KEPT_HERO} · ") and "revision" not in meta and ".sav" not in meta, meta)
+        self.assertTrue(self.app.launch_button.instate(["disabled"]))  # the editor doesn't know how that copy is started
+        self.app.hero_tab.stat_vars["Emeralds"].set("5000")
+        summary = self.save()
+        self.assertIn("Emeralds: 120 → 5,000", summary)
+        self.assertIn("a way of saving the editor's developer has no copy of to try", summary)  # said before it saves
+        self.assertEqual(saves.SaveProfile(folder).get(KEPT_HERO).hero.attribute("Emeralds"), 5000)
+        self.assertEqual((folder / KEPT_HERO / "LastModifiedTime").read_bytes(), STAMP)  # only the save's Data was written
+        self.assertEqual(self.saved_hero().attribute("Emeralds"), 55)  # the saves the editor found by itself: untouched
+        # A folder with no saves in it is still turned away.
+        with mock.patch("tkinter.filedialog.askdirectory", return_value=str(self.dir / "icons")), mock.patch("tkinter.messagebox.showerror") as error:
+            self.app._open_folder()
+        self.assertIn("isn't a Minecraft Dungeons II save folder", error.call_args.args[1])
+        self.assertEqual(self.app.profile.path, folder)
+
     def test_typed_value_is_kept_even_without_leaving_the_field(self):
         self.tab.stat_vars["Emeralds"].set("123")  # typed, then straight to Save to game
         self.save()

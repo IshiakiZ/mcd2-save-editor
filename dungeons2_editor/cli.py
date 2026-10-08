@@ -37,10 +37,11 @@ def _confirm(question: str, assume_yes: bool) -> bool:
 
 def cmd_list(args: argparse.Namespace) -> int:
     profile = _pick_profile(args.profile)
-    print(f"Profile: {profile.path}  ({'Steam' if profile.is_steam else 'Xbox app'} layout)")
+    layout = {"steam": "Steam layout", "folders": "a folder for each save"}.get(profile.layout, "Xbox app layout")
+    print(f"Profile: {profile.path}  ({layout})")
     for container in profile.containers:
         entry = container.entry
-        if profile.is_steam:
+        if profile.is_loose:
             print(f"  {container.name:<28} {container.kind.value:<10} {entry.size:>9,} bytes  {container.note}")
         else:
             sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, str(entry.sync_state))
@@ -147,7 +148,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     """Check, without writing anything, that every editable container re-encodes byte for byte."""
     profile = _pick_profile(args.profile)
     ok = True
-    if not profile.is_steam:
+    if not profile.is_loose:
         index_bytes = (profile.path / wgs.INDEX_FILE).read_bytes()
         ok = wgs.serialize_index(wgs.parse_index(index_bytes)) == index_bytes
         print(f"containers.index round trip: {'exact' if ok else 'DIFFERENT'}")

@@ -1028,7 +1028,7 @@ class Recorder:
         run of item lines, and nothing an item's entry says of when it was picked up."""
         # Which kind of save, and not the folder: its path holds the Windows account's name and, for the Xbox app,
         # the Xbox user's ID, and a summary is the part of a recording that gets passed on.
-        kind = "Steam" if saves.layout_of(self.profile) == "steam" else "the Xbox app"
+        kind = {"steam": "Steam", "folders": "a folder for each save"}.get(saves.layout_of(self.profile), "the Xbox app")
 
         def when(record: dict) -> str:
             if not sharing:

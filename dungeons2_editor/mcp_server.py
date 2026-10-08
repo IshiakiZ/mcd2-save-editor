@@ -740,6 +740,8 @@ class EditorServer:
             result["problems"] = problems
         if format_caution(Hero(document)):
             result["caution"] = format_caution(Hero(document))
+        if profile.layout == "folders":
+            result["caution"] = " ".join(filter(None, [result.get("caution"), saves.UNTRIED_LAYOUT]))
         return result
 
     # ------------------------------------------------------------------- tools

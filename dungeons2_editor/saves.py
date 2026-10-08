@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from . import codec, paths, steam, wgs
+from . import codec, folders, paths, steam, wgs
 from .hero import Hero, is_hero_document
 
 PACKAGE_PATTERN = "Microsoft.MinecraftDungeons2_*"
@@ -43,6 +43,13 @@ FRIENDLY_NAMES = {
 }
 
 ONLINE_HERO_NOTE = "Online hero. Its real data lives on the game's servers, so this copy is never changed."
+# Layouts with no index: each save is a file, or a folder, of its own, read and replaced in place. The module for
+# each has the same few functions (read_entries, find_entry, read_blobs, write_file, stamp).
+LOOSE_LAYOUTS = {"steam": steam, "folders": folders}
+UNTRIED_LAYOUT = (
+    "These saves are kept in a folder each, a way of saving the editor's developer has no copy of to try. Change "
+    "something small first and check it in the game. Restore a backup… puts things back."
+)
 
 
 def _plain(name: str) -> str:
@@ -140,8 +147,18 @@ def running_game_processes() -> list[str]:
 
 
 def layout_of(path: Path) -> str:
-    """``"steam"`` for a folder of ``.sav`` files, ``"xbox"`` for a folder with ``containers.index``."""
-    return "steam" if steam.is_steam_folder(Path(path)) else "xbox"
+    """``"steam"`` for a folder of ``.sav`` files, ``"folders"`` for one that keeps each save in a folder of its
+    own (``folders.py``), ``"xbox"`` for a folder with ``containers.index``."""
+    path = Path(path)
+    if steam.is_steam_folder(path):
+        return "steam"
+    return "folders" if folders.is_save_folder(path) else "xbox"
+
+
+def is_save_folder(path: Path) -> bool:
+    """Whether ``path`` holds saves laid out in one of the ways the editor reads."""
+    path = Path(path)
+    return (path / wgs.INDEX_FILE).is_file() or steam.is_steam_folder(path) or folders.is_save_folder(path)
 
 
 def find_profiles() -> list[Path]:
@@ -164,8 +181,9 @@ def find_profiles() -> list[Path]:
 def profile_stamp(path: Path) -> tuple | None:
     """A value that changes when the game (or anything) writes to the save folder; None if unreadable."""
     path = Path(path)
-    if layout_of(path) == "steam":
-        return steam.stamp(path)
+    loose = LOOSE_LAYOUTS.get(layout_of(path))
+    if loose is not None:
+        return loose.stamp(path)
     try:
         stat = (path / wgs.INDEX_FILE).stat()
     except OSError:
@@ -177,8 +195,9 @@ def current_revision(path: Path, name: str) -> int | None:
     """The revision of container ``name`` on disk now, or None if it's gone. May raise OSError or
     ``wgs.WgsFormatError`` when the folder is caught mid-write."""
     path = Path(path)
-    if layout_of(path) == "steam":
-        entry = steam.find_entry(path, name)
+    loose = LOOSE_LAYOUTS.get(layout_of(path))
+    if loose is not None:
+        entry = loose.find_entry(path, name)
     else:
         entry = wgs.read_index(path).find(name)
     return None if entry is None else entry.revision
@@ -186,7 +205,7 @@ def current_revision(path: Path, name: str) -> int | None:
 
 @dataclass
 class Container:
-    entry: wgs.IndexEntry | steam.LooseEntry
+    entry: wgs.IndexEntry | steam.LooseEntry | folders.FolderEntry
     kind: Kind
     note: str
     blobs: dict[str, bytes]  # raw blob bytes as loaded; empty for protected containers
@@ -223,33 +242,40 @@ class Backup:
 
 
 class SaveProfile:
-    """The containers of one set of Minecraft Dungeons II saves: one Xbox user's containers, or the Steam
-    version's folder of .sav files. ``layout`` says which."""
+    """The containers of one set of Minecraft Dungeons II saves: one Xbox user's containers, the Steam
+    version's folder of .sav files, or a folder that keeps each save in a folder of its own. ``layout`` says
+    which."""
 
     def __init__(self, path: Path):
         self.path = Path(path)
         self.layout = layout_of(self.path)
+        self._loose = LOOSE_LAYOUTS.get(self.layout)  # the module that reads it, for a layout with no index
         self.reload()
 
     @property
     def is_steam(self) -> bool:
         return self.layout == "steam"
 
+    @property
+    def is_loose(self) -> bool:
+        """No index, no revisions and no word of a cloud: each save is a file, or a folder, of its own."""
+        return self._loose is not None
+
     def reload(self) -> None:
-        if self.is_steam:
+        if self._loose is not None:
             self.index = None
-            entries = steam.read_entries(self.path)
+            entries = self._loose.read_entries(self.path)
         else:
             self.index = wgs.read_index(self.path)
             entries = self.index.entries
         self.containers = [self._load(entry) for entry in entries]
 
     def _read_blobs(self, entry) -> dict[str, bytes]:
-        return steam.read_blobs(self.path, entry) if self.is_steam else wgs.read_blobs(self.path, entry)
+        return self._loose.read_blobs(self.path, entry) if self._loose is not None else wgs.read_blobs(self.path, entry)
 
     def _write_blobs(self, name: str, blobs: dict[str, bytes]) -> None:
-        if self.is_steam:
-            steam.write_file(self.path, name, blobs)
+        if self._loose is not None:
+            self._loose.write_file(self.path, name, blobs)
         else:
             wgs.write_container(self.path, name, blobs)
 
@@ -379,8 +405,8 @@ class SaveProfile:
             )
 
     def _ensure_unchanged(self, container: Container) -> None:
-        if self.is_steam:
-            entry = steam.find_entry(self.path, container.name)
+        if self._loose is not None:
+            entry = self._loose.find_entry(self.path, container.name)
         else:
             entry = wgs.read_index(self.path).find(container.name)
         if entry is None or entry.revision != container.entry.revision or self._read_blobs(entry) != container.blobs:
@@ -414,7 +440,7 @@ def list_backups(backup_root: Path = DEFAULT_BACKUP_ROOT) -> list[Backup]:
     for folder in root.iterdir():
         try:
             info = json.loads((folder / BACKUP_INFO_FILE).read_text(encoding="utf-8"))
-            copy = next(child for child in folder.iterdir() if child.is_dir() and ((child / wgs.INDEX_FILE).is_file() or steam.is_steam_folder(child)))
+            copy = next(child for child in folder.iterdir() if child.is_dir() and is_save_folder(child))
             created = datetime.fromisoformat(info["created"])
         except (OSError, ValueError, KeyError, StopIteration):
             continue

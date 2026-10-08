@@ -1114,7 +1114,7 @@ class EditorApp:
         if not chosen:
             return
         path = Path(chosen)
-        if not (path / wgs.INDEX_FILE).is_file() and not saves.steam.is_steam_folder(path):
+        if not saves.is_save_folder(path):
             messagebox.showerror(
                 APP_TITLE, f"{path} has no {wgs.INDEX_FILE} file and no .sav files, so it isn't a Minecraft Dungeons II save folder.", parent=self.root
             )
@@ -1179,8 +1179,9 @@ class EditorApp:
         when = datetime.fromtimestamp(wgs.filetime_to_unix(entry.mtime))
         self.title_var.set(container.label)
         if self.advanced_var.get():
-            if self.profile is not None and self.profile.is_steam:
-                meta = f"{container.name}.sav · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M}"
+            if self.profile is not None and self.profile.is_loose:
+                file_name = f"{container.name}.sav" if self.profile.is_steam else container.name
+                meta = f"{file_name} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M}"
             else:
                 sync = wgs.SYNC_STATE_NAMES.get(entry.sync_state, f"sync state {entry.sync_state}")
                 meta = f"{container.name} · revision {entry.revision} · {entry.size:,} bytes · written {when:%Y-%m-%d %H:%M} · {sync}"
@@ -1188,7 +1189,7 @@ class EditorApp:
                 meta += " · formatting will be tidied when saved"
         else:
             meta = f"Last saved {when:%d %B %Y at %H:%M}"
-            if not (self.profile is not None and self.profile.is_steam) and entry.sync_state != wgs.SYNCED:
+            if not (self.profile is not None and self.profile.is_loose) and entry.sync_state != wgs.SYNCED:
                 meta += " · waiting to upload to the Xbox cloud (it will next time you play)"
         self.meta_var.set(meta)
 
@@ -1552,6 +1553,8 @@ class EditorApp:
         caution = format_caution(Hero(self.document)) if is_hero_document(self.document) else ""
         if caution:
             question += f"\n\n{caution}"
+        if self.profile.layout == "folders":
+            question += f"\n\n{saves.UNTRIED_LAYOUT}"
         if not messagebox.askyesno("Save to game", question, parent=self.root):
             return
         name = self.container.name
