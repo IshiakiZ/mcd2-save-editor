@@ -1769,6 +1769,12 @@
    "unique": "Packleader Paws",
    "unique_effect": "Grants a 50% chance to gain an additional arrow when ammo is regained.",
    "unique_id": "SW.Item.WolfclutchBoots_Unique",
+   "unique_own": {
+    "effect": "SW.Effect.ArrowBurst",
+    "strength": 0.5,
+    "template": "SW.EffectTemplate.ArrowBurst.Unique",
+    "seen": true
+   },
    "tags": [
     "Summoner"
    ],

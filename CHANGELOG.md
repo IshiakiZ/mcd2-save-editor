@@ -7,6 +7,27 @@ The short notes for the newest versions are on the
 **Menu → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.15.1
+
+- **Every Unique comes with the effect of its own: 116 of 116.** The last one, the Packleader Paws, was in
+  [berwulf](https://github.com/berwulf)'s list ([issue 32](https://github.com/IshiakiZ/mcd2-save-editor/issues/32)), made with a version that had no own
+  effect to write for it, so it's the game's: Bowyer at a tier of its own, a 50% chance of an extra arrow, which is
+  what the Unique's card says. A pair made with an earlier version has a button on its card, **Add its own
+  effect**.
+- **Dynamo can be put on an item,** at tier III, from the same list: the editor had no Dynamo to write, and the
+  number is the game's own for the tier, 40%. It goes on armor. That makes 22 enchantments. The Melee damage kit
+  and the Best armor preset, whose build names Dynamo for the Twisted Warden's hood, now put it on.
+- **Thundering at tier III is saved as 0.5.** An earlier list ([issue 26](https://github.com/IshiakiZ/mcd2-save-editor/issues/26)) has it as 0.264703,
+  which is what the editor wrote until now. This list has 0.5, which is also the game's published number for the
+  tier (a 50% chance for 50% of the damage). Both are in real saves; the editor now writes the one that matches
+  the game's table. An item enchanted with an earlier version keeps the number it has.
+- Not taken from that list: 22 tiers of gear effects that carry exactly the numbers the editor already offers.
+  The version that made the list could have written those itself, so they stay marked as not seen.
+- **Shorter notes.** A release's page and the What's new window now hold the newest version and the two before
+  it, with a line for each change. Every version, in full, is in this file.
+- **A shorter README.** Its lists of features and limits are a few lines each. What they said in full is in the
+  [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki): Features, Known limits, Safety and privacy, and Running from source.
+
 ## 1.15.0
 
 - **A second look: Liquid Glass.** **Menu → Look → Liquid Glass** gives Simple mode rounded glass panels and

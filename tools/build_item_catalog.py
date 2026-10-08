@@ -498,6 +498,12 @@ EFFECT_GUESSES: dict[str, str] = {}
 # /issues/29 and /issues/30 were made with 1.14.1, which had no tier of Poison Fog to write, so the PoisonFog III
 # on their Venomous Fangs is the game's. /issues/31 doesn't say which version made it, and no version has offered
 # MultiRoll III (the 3 follows the 2 that /issues/26 has for tier II, and the game's "+1 / +2 / +3 rolls").
+# /issues/32 was made with 1.14.2, which had no Dynamo to write, so the Dynamo III on its Redstone boots is the
+# game's (0.4, and MetaBot's tier III is 40%). The same list has Thundering III as 0.5 where /issues/26 has
+# 0.264703: a second enchantment saved with two numbers at one tier, and both odd ones are from /issues/26. For
+# Thundering the first one seen doesn't stay: 0.5 is in a save and is also the game's own number for the tier
+# (MetaBot: "a 50% chance for 50% of weapon damage"), so that is what the editor writes now. For LingeringPower
+# neither number is the game's 40%, so nothing says which to prefer, and the first stays.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -505,6 +511,7 @@ ENCHANTMENT_TIERS = {
     "Borealis": {"III": 0.287547},
     "ChainReaction": {"III": 5},
     "Channeling": {"III": 3},
+    "Dynamo": {"III": 0.4},
     "ExpandedQuiver": {"II": 3, "III": 4},
     "FireAspect": {"III": 1},
     "GravityPulse": {"III": 0},
@@ -519,7 +526,7 @@ ENCHANTMENT_TIERS = {
     "SoulInfusedPotion": {"I": 0.5, "II": 0.6, "III": 0.85},
     "SpringLoaded": {"III": 6},
     "Swirling": {"III": 1},
-    "Thundering": {"III": 0.264703},
+    "Thundering": {"III": 0.5},
     "Unstoppable": {"III": 0.3},
 }
 # Enchantment points a save has shown for an enchantment on a Unique item (EnchantmentPointsInvested), to check
@@ -536,7 +543,9 @@ SEEN_ENCHANT_POINTS = {("Unique", "I"): 3, ("Unique", "II"): 8, ("Unique", "III"
 # made by versions that couldn't write this kind of batch, so every one of them is the game's. A list made with
 # 1.10.0 or later can hold the editor's own (/issues/22 does: items its sender had made Unique), so from such a list
 # only an effect that version didn't have counts: the Humbler Heartstring's from /issues/22, and twenty-seven from
-# /issues/23, which leaves one Unique nobody has sent (the Packleader Paws). Two of those are saved with a template
+# /issues/23, which left one Unique nobody had sent, the Packleader Paws. That one came with /issues/32, made with
+# 1.14.2, which had no own effect to write for it: Bowyer at a tier of its own, 0.5, where MetaBot's words for the
+# Unique say "a 50% chance to gain an additional arrow". So all 116 are here now. Two are saved with a template
 # spelled SW.Effecttemplate, small t: Protection's Unique tier, on the Monster Masher and the Humbler Antenna.
 # /issues/23 also holds three Uniques whose ID its version (1.10.1) hadn't seen, so the editor can't have made them:
 # the Alchemist Top Hat, the Woodsprite Crown and the Dreamruler Cover, each with the very effect own_effects() had
@@ -636,6 +645,7 @@ UNIQUE_EFFECTS = {
     "WellspringChest_Unique": ("Effect.Vestige", 0.25, "EffectTemplate.Vestige.Unique"),  # Mad Sifter Vest
     "WellspringHelmet_Unique": ("Effect.Saboteur", 1, "EffectTemplate.Saboteur.Unique"),  # Mad Sifter Mask
     "WellspringLeggings_Unique": ("Effect.StatusBuff", 1.2, "EffectTemplate.StatusBuff.Unique"),  # Mad Sifter Slacks
+    "WolfclutchBoots_Unique": ("Effect.ArrowBurst", 0.5, "EffectTemplate.ArrowBurst.Unique"),  # Packleader Paws
     "WolfclutchChest_Unique": ("Effect.BeastBoss", 0.4, "EffectTemplate.BeastBoss.Unique"),  # Packleader Hide
     "WolfclutchLeggings_Unique": ("Effect.FriendsForever", -0.2, "EffectTemplate.FriendsForever.Unique"),  # Packleader Fur Chaps
 }

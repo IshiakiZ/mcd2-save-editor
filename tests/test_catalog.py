@@ -188,7 +188,7 @@ class RealItemListTests(unittest.TestCase):
         # Somersault's third, which no version has offered (issue 31). Poison Fog goes on melee weapons, as its book says.
         self.assertTrue({("Poison Fog III", 1), ("Somersault II", 2), ("Somersault III", 3)} <= saved_enchantments)
         self.assertEqual(next(choice for choice in book.enchantments if choice.title == "Poison Fog III").slots, ("Melee",))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (21, 28))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (22, 29))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -242,8 +242,8 @@ class RealItemListTests(unittest.TestCase):
     def test_uniques_come_with_the_effect_saves_show(self):
         uniques = [item for item in self.items if item.unique]
         owned = [item for item in uniques if item.unique_own is not None]
-        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 93)
-        self.assertGreaterEqual(len(owned), 115)
+        self.assertGreaterEqual(sum(item.unique_own.seen for item in owned), 97)
+        self.assertEqual((len(uniques), len(owned)), (116, 116))
         for item in owned:
             own = item.unique_own
             self.assertRegex(own.effect, r"^SW\.(Effect|Enchantment)\.[A-Za-z.]+$", item.unique)
@@ -273,8 +273,12 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(own["Lullaby Blade"], ("SW.Effect.SoulCurse", 1, "SW.EffectTemplate.SoulCurse"))
         # Three Uniques that say the same thing, each seen: saved alike.
         self.assertEqual({own[name] for name in ("Rimefrost Plodders", "Oracle Mantle", "Mad Sifter Mask")}, {("SW.Effect.Saboteur", 1, "SW.EffectTemplate.Saboteur.Unique")})
-        # Nothing is worked out for a Unique that says something no seen Unique says: one is left.
-        self.assertEqual([item.unique for item in uniques if item.unique_own is None], ["Packleader Paws"])
+        # Nothing is worked out for a Unique that says something no seen Unique says. The one that left, the
+        # Packleader Paws, came with /issues/32, made with a version that had no own effect to write for it: Bowyer
+        # at a tier of its own, past the 0.3 of tier III.
+        self.assertEqual(own["Packleader Paws"], ("SW.Effect.ArrowBurst", 0.5, "SW.EffectTemplate.ArrowBurst.Unique"))
+        self.assertTrue(next(item for item in owned if item.unique == "Packleader Paws").unique_own.seen)
+        self.assertEqual([item.unique for item in uniques if item.unique_own is None], [])
         # Two are saved with a template the game spells with a small t. Written as saved.
         self.assertEqual({own[name] for name in ("Humbler Antenna", "Monster Masher")}, {("SW.Effect.Protection", -0.25, "SW.Effecttemplate.Protection.Unique")})
         # "50% more" can be saved as 1.5: the way round follows the effect's rolled tiers (Spiritual I is 1.25).
@@ -436,13 +440,33 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(seen[("Chain Reaction", "III")], ("SW.Enchantment.ChainReaction", 5, True))
         self.assertEqual(seen[("Somersault", "II")], ("SW.Enchantment.MultiRoll", 2, True))
         self.assertEqual(seen[("Health Synergy", "I")], ("SW.Enchantment.HealthSynergy", 0.15, True))
-        self.assertEqual(seen[("Thundering", "III")], ("SW.Enchantment.Thundering", 0.264703, True))
+        self.assertNotEqual(seen[("Thundering", "III")][1], 0.264703)  # this list's number for it: see /issues/32's, below
         self.assertEqual(seen[("Power Amplifier", "III")], ("SW.Enchantment.LingeringPower", 0.244871, True))  # what a save calls LingeringPower
         self.assertEqual((seen[("Ender Quiver", "II")], seen[("Ender Quiver", "III")]), (("SW.Enchantment.ExpandedQuiver", 3, True), ("SW.Enchantment.ExpandedQuiver", 4, True)))
         # They roll where the game rolled them: Shackler on a Support's crossbow, Point Blank on a Tank's.
         by_name = {choice.name: choice for choice in gear}
         self.assertTrue(by_name["Shackler"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.ScatterCrossbow_Unique1")))
         self.assertTrue(by_name["Point Blank"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.HeavyCrossbow")))
+
+    def test_what_a_list_made_with_1_14_2_added(self):
+        # /issues/32. 1.14.2 had no Dynamo to write, so the one on this list's Redstone boots is the game's, and it
+        # is the game's own number for the tier (MetaBot: 20% / 30% / 40%).
+        _gear, enchantments = heroes.effect_choices()
+        seen = {(choice.name, choice.tier): choice for choice in enchantments}
+        dynamo = seen[("Dynamo", "III")]
+        self.assertEqual((dynamo.effect, dynamo.strength, dynamo.seen, dynamo.slots), ("SW.Enchantment.Dynamo", 0.4, True, ("Armor",)))
+        self.assertEqual((dynamo.what, dynamo.levels), ("Rolling amplifies your next attack", "20% / 30% / 40%"))
+        # The same list has Thundering at tier III as 0.5, where /issues/26 has 0.264703 and 1.14.2 would have
+        # written that. Both are in saves. 0.5 is also the game's own number for the tier (a 50% chance for 50% of
+        # the damage), so it's the one the editor writes.
+        thundering = seen[("Thundering", "III")]
+        self.assertEqual((thundering.effect, thundering.strength, thundering.seen), ("SW.Enchantment.Thundering", 0.5, True))
+        # A kit whose build names Dynamo can put it on now: MetaBot's planner has it on the Twisted Warden's hood.
+        fresh = Hero(hero_save())
+        kit = next(preset for preset in presets.PRESETS if preset.title == "Melee damage")
+        planned = presets.plan(kit, fresh, build_catalog([fresh]), power=30, rarity="Unique", enchant=True)
+        made = {addition.name: addition.enchantment.title for addition in planned.add if addition.enchantment is not None}
+        self.assertEqual(made["Twisted Warden Blindfold"], "Dynamo III")
 
     def test_every_item_that_rolls_effects_has_its_archetypes(self):
         gear = [item for item in self.items if item.kind in heroes.EFFECT_KINDS]

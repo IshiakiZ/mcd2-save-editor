@@ -1945,6 +1945,17 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.Dynamo",
+   "name": "Dynamo",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 0.4,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.ExpandedQuiver",
    "name": "Ender Quiver",
    "tiers": [
@@ -2140,7 +2151,7 @@
    "tiers": [
     {
      "tier": "III",
-     "strength": 0.264703,
+     "strength": 0.5,
      "seen": true
     }
    ]

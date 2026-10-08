@@ -1,3 +1,10 @@
+## What's new in 1.15.1
+
+- **Every Unique comes with its own effect now: 116 of 116.** The last one, the Packleader Paws', was in [berwulf](https://github.com/berwulf)'s list.
+- **Dynamo can be put on armor,** at tier III. The Melee damage kit and the Best armor preset now put it on.
+- **Thundering III** is saved as 0.5 now, the tier's number in the game's table and in a player's save.
+- **Shorter notes.** These keep to the main things, for the newest version and the two before it. Every version, in full, is in the changelog.
+
 ## What's new in 1.15.0
 
 - **World map.** **Menu → World map…** shows the ground your hero has explored, the doors it has found, and how far it has got in the story.
@@ -13,12 +20,6 @@
 
 - **All 32 enchantment books can be added.** The last one's ID was in lists players had already sent.
 - **Poison Fog** can be put on an item, and **Somersault** at tier III. Thanks to [Armagedon13](https://github.com/Armagedon13) and [icicle1133](https://github.com/icicle1133) for their lists.
-
-## What's new in 1.14.1
-
-- **Eight more enchantment books,** from [blasterguy24](https://github.com/blasterguy24)'s list.
-- **Two more enchantments,** and Health Synergy at tier III.
-- **Recovery III is settled** at 30%, and seven more effect tiers have been seen in a save.
 
 ## Earlier versions, and the details
 
