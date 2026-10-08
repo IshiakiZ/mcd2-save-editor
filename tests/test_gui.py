@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, game_style, gui, layout, recorder, saves, share_ids, updater, wgs, whats_new
+from dungeons2_editor import __version__, game_style, gui, layout, recorder, saves, share_ids, updater, wgs, whats_new, world_dialog
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -2299,6 +2299,15 @@ class WorldMapTests(WindowTestCase):
         self.assertTrue(dialog.in_button.instate(["disabled"]))
         dialog.zoom_by(0.001)
         self.assertEqual((dialog.zoom, dialog._size), (1.0, size))
+        # The wheel zooms when the pointer is over the map, and not when it's over the list beside it.
+        over_map = (dialog.canvas.winfo_rootx() + 40, dialog.canvas.winfo_rooty() + 40)
+        with mock.patch.object(dialog, "winfo_pointerx", return_value=over_map[0]), mock.patch.object(dialog, "winfo_pointery", return_value=over_map[1]):
+            dialog._wheel(world_dialog.ZOOM_STEP)
+        self.assertGreater(dialog.zoom, 1.0)
+        with mock.patch.object(dialog, "winfo_pointerx", return_value=over_map[0] - 5000), mock.patch.object(dialog, "winfo_pointery", return_value=over_map[1]):
+            dialog._wheel(1 / world_dialog.ZOOM_STEP)
+        self.assertGreater(dialog.zoom, 1.0)
+        dialog.zoom_by(0.001)
         # Another region.
         dialog.region_var.set("Meadow.R1")
         dialog.region_box.event_generate("<<ComboboxSelected>>")
@@ -2341,6 +2350,10 @@ class WorldMapTests(WindowTestCase):
         self.assertIn("Area: Brave Haven", nowhere.shown_text())
         nowhere.zoom_by(2)  # nothing to zoom
         nowhere.destroy()
+        # Recordings that can't be read don't stop the map: it's the save's own.
+        with mock.patch.object(recorder, "fresh_atlas", side_effect=ValueError("a recording nobody can read")):
+            self.assertEqual(self.app.open_world_map().shown("door"), 2)
+        self.assertEqual(self.root.cget("cursor"), "")
         # With something other than a hero on screen there's no map to draw.
         self.app.original = None
         with mock.patch("tkinter.messagebox.showinfo") as told:

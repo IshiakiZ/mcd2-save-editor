@@ -395,6 +395,10 @@ class MapTests(unittest.TestCase):
         self.assertIsNone(play_recorder.region_of(390, 720, regions))  # past the top line
         self.assertEqual(play_recorder.frontier(region), [0, 1, 4, 5])  # never seen, right next to what has been
         self.assertEqual(play_recorder.frontier({**region, "cells": [0] * 6}), [])
+        # A picture is as many squares as its size says, whatever the save holds for it: none missing, none over.
+        odd = play_recorder.map_regions(a_save(regions=[("short", 0, 0, 2, 2, [5, 6]), ("long", 0, 0, 1, 2, [5, 6, 7]), ("none", 0, 0, 0, -3, [1])]))
+        self.assertEqual([(region["across"], region["down"], region["cells"]) for region in odd.values()], [(2, 2, [5, 6, 0, 0]), (1, 2, [5, 6]), (0, 0, [])])
+        self.assertEqual((play_recorder.frontier(odd["short"]), play_recorder.frontier(odd["none"])), ([2, 3], []))
         # The overworld's picture lies three squares lower and half a square to the right of where its corner says.
         overworld = play_recorder.map_regions(a_save(regions=[("SW.Region.Overworld", -608, -192, 52, 52, [0] * 2704)]))["SW.Region.Overworld"]
         self.assertEqual(play_recorder.square_of(overworld, 960, -176), (0, 0))

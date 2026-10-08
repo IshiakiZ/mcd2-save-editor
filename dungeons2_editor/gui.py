@@ -1464,7 +1464,15 @@ class EditorApp:
         if self.world_map is not None and self.world_map.winfo_exists():
             self.world_map.destroy()  # one map at a time: this one is drawn from the save as it is now
         hero = Hero(document)
-        self.world_map = WorldDialog(self.root, document, recorder.fresh_atlas(recorder.DEFAULT_OUT), hero.skin or f"Hero {hero.character_id[:8]}")
+        self.root.configure(cursor="watch")  # reading the recordings again, when there are new ones, takes a moment
+        self.root.update_idletasks()
+        try:
+            atlas = recorder.fresh_atlas(recorder.DEFAULT_OUT)
+        except Exception:  # the map is the save's own: recordings that can't be read only leave it with less on it
+            atlas = None
+        finally:
+            self.root.configure(cursor="")
+        self.world_map = WorldDialog(self.root, document, atlas, hero.skin or f"Hero {hero.character_id[:8]}")
         return self.world_map
 
     # ------------------------------------------------------------------ what's new

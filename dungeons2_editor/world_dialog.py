@@ -201,9 +201,11 @@ class WorldDialog(tk.Toplevel):
         self.canvas = tk.Canvas(frame, width=side, height=side, background=GROUND, highlightthickness=0)
         self.canvas.grid(row=2, column=0, sticky="nsew")
         self.canvas.bind("<Configure>", self._resized)
-        self.canvas.bind("<MouseWheel>", lambda event: self.zoom_by(ZOOM_STEP if event.delta > 0 else 1 / ZOOM_STEP, (event.x, event.y)))
-        self.canvas.bind("<Button-4>", lambda event: self.zoom_by(ZOOM_STEP, (event.x, event.y)))  # the wheel, on Linux
-        self.canvas.bind("<Button-5>", lambda event: self.zoom_by(1 / ZOOM_STEP, (event.x, event.y)))
+        # The wheel zooms the map when the pointer is over it, whichever part of the window the turn of it goes to
+        # (on Windows that can be the part that last had a click, not the one under the pointer).
+        self.bind("<MouseWheel>", lambda event: self._wheel(ZOOM_STEP if event.delta > 0 else 1 / ZOOM_STEP))
+        self.bind("<Button-4>", lambda _event: self._wheel(ZOOM_STEP))  # the wheel, on Linux
+        self.bind("<Button-5>", lambda _event: self._wheel(1 / ZOOM_STEP))
         self.canvas.bind("<ButtonPress-1>", lambda event: self.canvas.scan_mark(event.x, event.y))
         self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
         data = ttk.Frame(frame)
@@ -253,6 +255,13 @@ class WorldDialog(tk.Toplevel):
         if self._redraw is not None:
             self.after_cancel(self._redraw)
         self._redraw = self.after(60, self.draw)
+
+    def _wheel(self, factor: float) -> None:
+        """A turn of the wheel: zoom about the pointer, if it's over the map."""
+        x, y = self.winfo_pointerx() - self.canvas.winfo_rootx(), self.winfo_pointery() - self.canvas.winfo_rooty()
+        width, height = self._room()
+        if 0 <= x < width and 0 <= y < height:
+            self.zoom_by(factor, (x, y))
 
     def zoom_by(self, factor: float, at: tuple[float, float] | None = None) -> None:
         """Make the map ``factor`` times as big, keeping what's under ``at`` (the middle, if not given) where it is.

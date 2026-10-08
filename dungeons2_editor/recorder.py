@@ -192,8 +192,11 @@ def map_regions(document: Any) -> dict[str, dict]:
     found = {}
     for area in (world.get("SavedFogOfWarExploration") or {}).get("Items") or []:
         corner, size, tag = area.get("WorldPosition") or {}, area.get("Size") or {}, str(area.get("Tag"))
-        found[tag] = {"x": corner.get("X", 0), "y": corner.get("Y", 0), "across": size.get("X", 0), "down": size.get("Y", 0),
-                      "cells": list(area.get("Data") or []), "shift": list(SHIFTS.get(tag, (0, 0)))}
+        across, down = (side if isinstance(side, int) and side > 0 else 0 for side in (size.get("X"), size.get("Y")))
+        # As many squares as the picture's size says, whatever the save holds: one short of them counts as never seen.
+        cells = [cell if isinstance(cell, int) else 0 for cell in (area.get("Data") or [])[: across * down]]
+        found[tag] = {"x": corner.get("X") or 0, "y": corner.get("Y") or 0, "across": across, "down": down,
+                      "cells": cells + [0] * (across * down - len(cells)), "shift": list(SHIFTS.get(tag, (0, 0)))}
     return found
 
 
