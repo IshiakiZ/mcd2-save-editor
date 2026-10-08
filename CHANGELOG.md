@@ -51,7 +51,7 @@ The short notes for the newest versions are on the
   Acrobat III, Tainted I, Sniper I, Reaper I, Vanguard II and Sorcerer III. 162 of the 180 tiers have now
   been seen. **Best for** picks the best tier a save has shown, so some of its picks go up a tier (Cooldown III
   and Sorcerer III, for two).
-- **The mark of a Soul Storm reward has turned up.** The same list from regnirok has a Special Giant Club saved
+- **The mark of a Soul Storm reward has turned up.** The same list from regnirok has a Special Clobberer saved
   with a mark the editor had never seen, `SW.Item.Property.StorminatorReward`, and with three rolled effects where
   a Special gets two. That is very likely how the game saves the Soulstorm Enhanced tag. The editor doesn't write
   it yet: it wants someone to say the game shows the tag on that item first.

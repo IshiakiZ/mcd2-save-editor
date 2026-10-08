@@ -475,7 +475,8 @@ class RealItemListTests(unittest.TestCase):
         potion = next(choice for choice in enchantments if choice.effect == "SW.Enchantment.MultiPotion")
         self.assertEqual((potion.title, potion.strength, potion.seen), ("Multi Potion III", 3, True))
         self.assertIn("Multi Potion", {book.name for book in self.items if book.kind == heroes.BOOK_KIND})
-        self.assertTrue(potion.fits("Armor", "Helmet"))  # it was on a helmet
+        cover = next(item for item in self.items if item.unique == "Dreamruler Cover")
+        self.assertTrue(potion.fits(cover.kind, cover.slot))  # the piece it was on: a chestplate
 
     def test_what_a_list_made_with_1_14_2_added(self):
         # /issues/32. 1.14.2 had no Dynamo to write, so the one on this list's Redstone boots is the game's, and it
