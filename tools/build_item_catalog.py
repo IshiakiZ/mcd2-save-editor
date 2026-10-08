@@ -343,26 +343,35 @@ TALISMAN_LEVEL_TAGS = {
 # (template, strength at each tier seen). The effect is SW.Effect.<effect>, a tier's template is
 # SW.EffectTemplate.<template>.<tier> and the strength is the save's Intensity. Everything here was written by
 # the game: the developer's own play, and players' Share item IDs reports.
+#
+# A list made with a version that offers a tier from MetaBot's table can't show by itself that the game rolled it,
+# since that version could have written it. /issues/29 and /issues/30 (made with 1.14.1) hold twenty such tiers
+# between them, each with the table's own number. Their sender answered on /issues/29: every effect on those items
+# is the game's, and the editor was only used to add emeralds. On that word they are here as seen: Chains I and II,
+# Cooldown III, Deflect II, EagleEye III, ElementalProtection III, Prospector II, Expand II, Friendship I,
+# PointBlank II, Precision III, RapidStrike II, Reconstruction I, Reeling II, Acrobat III, Saboteur I, Sniper I,
+# SoulSiphon I, Vanguard II and Vestige III. /issues/26 and /issues/33 hold more of the kind, and wait for the
+# same word from their senders.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"II": 0.25, "III": 0.3}),
-    "Chains": ("Chains", {"III": 0.25}),
+    "Chains": ("Chains", {"I": 0.1, "II": 0.15, "III": 0.25}),
     "Committed": ("Committed", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "Constitution": ("Constitution", {"I": 0.1, "II": 0.2, "III": 0.3}),
-    "Cooldown": ("Cooldown", {"I": -0.1, "II": -0.15}),
+    "Cooldown": ("Cooldown", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "CriticalEdge": ("CriticalEdge", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "CriticalHit": ("CriticalHit", {"I": 0.05, "II": 0.1, "III": 0.15}),
-    "Deflect": ("Deflect", {"III": 0.2}),
+    "Deflect": ("Deflect", {"II": 0.15, "III": 0.2}),
     "Desperation": ("Desperation", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Duelist": ("Duelist", {"II": 0.25, "III": 0.3}),
-    "EagleEye": ("EagleEye", {"II": 0.15}),
-    "ElementalProtection": ("ElementalProtection", {"II": -0.15}),
-    "EmeraldsIncrease": ("Prospector", {"I": 0.05, "III": 0.15}),
-    "Expand": ("Expand", {"I": 0.2, "III": 0.4}),
+    "EagleEye": ("EagleEye", {"II": 0.15, "III": 0.2}),
+    "ElementalProtection": ("ElementalProtection", {"II": -0.15, "III": -0.2}),
+    "EmeraldsIncrease": ("Prospector", {"I": 0.05, "II": 0.1, "III": 0.15}),
+    "Expand": ("Expand", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Finesse": ("Finesse", {"II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1, "III": -0.15}),
-    "Friendship": ("Friendship", {"II": -0.1}),
+    "Friendship": ("Friendship", {"I": -0.05, "II": -0.1}),
     "FrostFocus": ("FrostFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Gambler": ("Gambler", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35, "III": 0.5}),
@@ -375,34 +384,34 @@ GEAR_EFFECTS = {
     "MultiShot": ("MultiShot", {"I": 0.2}),
     "Opportunist": ("Opportunist", {"I": 0.25, "II": 0.35, "III": 0.5}),
     "Opulence": ("Opulence", {"I": 0.01, "II": 0.02, "III": 0.03}),
-    "PointBlank": ("PointBlank", {"I": 0.25}),
+    "PointBlank": ("PointBlank", {"I": 0.25, "II": 0.5}),
     "PoisonFocus": ("PoisonFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "PotionCooldown": ("PotionMaster", {"I": -0.05, "II": -0.1, "III": -0.2}),
     "Power": ("Power", {"I": 0.1, "II": 0.2, "III": 0.3}),
-    "Precision": ("Precision", {"I": 0.1}),
+    "Precision": ("Precision", {"I": 0.1, "III": 0.2}),
     "ProjectileProtection": ("ProjectileProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
-    "RapidStrike": ("RapidStrike", {"III": 0.2}),
-    "Reconstruction": ("Reconstruction", {"II": -0.2, "III": -0.25}),
-    "Reeling": ("Reeling", {"I": 0.2, "III": 0.4}),
+    "RapidStrike": ("RapidStrike", {"II": 0.15, "III": 0.2}),
+    "Reconstruction": ("Reconstruction", {"I": -0.15, "II": -0.2, "III": -0.25}),
+    "Reeling": ("Reeling", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Regeneration": ("Regeneration", {"I": 0.05, "II": 0.075, "III": 0.1}),
     "Resilience": ("Resilience", {"I": -0.2, "II": -0.25, "III": -0.3}),
-    "RollCooldown": ("Acrobat", {"I": 0.1, "II": 0.15}),
-    "Saboteur": ("Saboteur", {"II": 0.6, "III": 0.8}),
+    "RollCooldown": ("Acrobat", {"I": 0.1, "II": 0.15, "III": 0.25}),
+    "Saboteur": ("Saboteur", {"I": 0.4, "II": 0.6, "III": 0.8}),
     "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25, "III": 0.35}),
     "Sharpness": ("Sharpness", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Sidestep": ("Sidestep", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "Sniper": ("Sniper", {"II": 0.5}),
+    "Sniper": ("Sniper", {"I": 0.25, "II": 0.5}),
     "SoulFocus": ("SoulFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "SoulGatherMultiply": ("SoulSiphon", {"II": 0.35, "III": 0.45}),
+    "SoulGatherMultiply": ("SoulSiphon", {"I": 0.25, "II": 0.35, "III": 0.45}),
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
     "SpeedBoost": ("SpeedBoost", {"II": 0.1, "III": 0.15}),
     "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
     "SweepingEdge": ("SweepingEdge", {"II": 0.3, "III": 0.4}),
     "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2, "III": 0.3}),
     "Thorns": ("Thorns", {"II": 0.65, "III": 0.8}),
-    "Vanguard": ("Vanguard", {"I": 0.2}),
-    "Vestige": ("Vestige", {"I": 0.1, "II": 0.15}),
+    "Vanguard": ("Vanguard", {"I": 0.2, "II": 0.35}),
+    "Vestige": ("Vestige", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Vivify": ("Vivify", {"I": 0.15, "II": 0.3, "III": 0.5}),
 }
 # What the game calls an effect, by its template, where there's no doubt: the template is named as MetaBot names
@@ -504,6 +513,8 @@ EFFECT_GUESSES: dict[str, str] = {}
 # Thundering the first one seen doesn't stay: 0.5 is in a save and is also the game's own number for the tier
 # (MetaBot: "a 50% chance for 50% of weapon damage"), so that is what the editor writes now. For LingeringPower
 # neither number is the game's 40%, so nothing says which to prefer, and the first stays.
+# /issues/33 was made with 1.15.0, which had no MultiPotion to write, so the MultiPotion III on its Dreamruler Cover
+# is the game's (3, with 15 points). What the game calls it isn't known: its book is one of UNNAMED_BOOKS.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -517,6 +528,7 @@ ENCHANTMENT_TIERS = {
     "GravityPulse": {"III": 0},
     "HealthSynergy": {"I": 0.15, "III": 0.35},
     "LingeringPower": {"III": 0.244871},
+    "MultiPotion": {"III": 3},
     "MultiRoll": {"II": 2, "III": 3},
     "Piercing": {"I": 1, "III": 5},
     "PoisonFog": {"III": 1},

@@ -178,7 +178,9 @@ class RealItemListTests(unittest.TestCase):
             [seen[title] for title in ("Pack Leader III", "Totem Radius III", "Momentum III", "Evasion II", "Brawler III", "Prowler III", "Prickly III")],
             [True] * 7,
         )
-        self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (False, False))
+        # Cooldown III was one of the two: another player's lists hold it too, and that player has since said the
+        # game rolled every effect on them (see the test for those lists, below). Vanguard III is still as it was.
+        self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (True, False))
         # Two enchantments a save calls Channeling and SoulFireAspect, and Health Synergy's top tier, from the same
         # list. The developer put them on items and read the game's names for them off those.
         self.assertTrue({("Lightning Surge III", 3), ("Soul Blast III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
@@ -188,7 +190,7 @@ class RealItemListTests(unittest.TestCase):
         # Somersault's third, which no version has offered (issue 31). Poison Fog goes on melee weapons, as its book says.
         self.assertTrue({("Poison Fog III", 1), ("Somersault II", 2), ("Somersault III", 3)} <= saved_enchantments)
         self.assertEqual(next(choice for choice in book.enchantments if choice.title == "Poison Fog III").slots, ("Melee",))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (22, 29))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (23, 30))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -226,7 +228,7 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(made["Hunter's Hatchet"], ("Fire Aspect III", ["Critical Edge III"]))
         self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
         self.assertEqual(made["Sharpshooter Duster"], ("Health Synergy III", ["Projectile Protection III"]))
-        self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown II", "Spiritual III"]))  # an artifact tops out at Special: two effects
+        self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown III", "Spiritual III"]))  # an artifact tops out at Special: two effects
         # Every weapon and armor piece of every kit gets an enchantment, and no two pieces of a kit the same one.
         for kit in (preset for preset in presets.PRESETS if preset.group == presets.KITS):
             fresh = Hero(copy.deepcopy(save))
@@ -436,7 +438,7 @@ class RealItemListTests(unittest.TestCase):
         seen = {(choice.name, choice.tier): (choice.effect, choice.strength, choice.seen) for choice in gear + enchantments}
         self.assertEqual(seen[("Shackler", "III")], ("SW.Effect.Chains", 0.25, True))
         self.assertEqual(seen[("Point Blank", "I")], ("SW.Effect.PointBlank", 0.25, True))
-        self.assertEqual((seen[("Shackler", "I")][2], seen[("Point Blank", "III")][2]), (False, False))  # from the game files' table
+        self.assertEqual(seen[("Point Blank", "III")][2], False)  # from the game files' table
         self.assertEqual(seen[("Chain Reaction", "III")], ("SW.Enchantment.ChainReaction", 5, True))
         self.assertEqual(seen[("Somersault", "II")], ("SW.Enchantment.MultiRoll", 2, True))
         self.assertEqual(seen[("Health Synergy", "I")], ("SW.Enchantment.HealthSynergy", 0.15, True))
@@ -447,6 +449,33 @@ class RealItemListTests(unittest.TestCase):
         by_name = {choice.name: choice for choice in gear}
         self.assertTrue(by_name["Shackler"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.ScatterCrossbow_Unique1")))
         self.assertTrue(by_name["Point Blank"].rolls_on_item("Ranged", heroes.archetypes("SW.Item.HeavyCrossbow")))
+
+    def test_tiers_a_sender_vouched_for_count_as_seen(self):
+        # /issues/29 and /issues/30 were made with 1.14.1, which offers these twenty tiers from the game files' table,
+        # so the lists alone can't show the game rolled them. Their sender said it did: the editor had only been
+        # used to add emeralds. Each is saved with the table's own number.
+        gear, enchantments = heroes.effect_choices()
+        seen = {(choice.effect.rsplit(".", 1)[-1], choice.tier): (choice.strength, choice.seen) for choice in gear}
+        vouched = {
+            ("Chains", "I"): 0.1, ("Chains", "II"): 0.15, ("Cooldown", "III"): -0.2, ("Deflect", "II"): 0.15, ("EagleEye", "III"): 0.2,
+            ("ElementalProtection", "III"): -0.2, ("EmeraldsIncrease", "II"): 0.1, ("Expand", "II"): 0.3, ("Friendship", "I"): -0.05,
+            ("PointBlank", "II"): 0.5, ("Precision", "III"): 0.2, ("RapidStrike", "II"): 0.15, ("Reconstruction", "I"): -0.15,
+            ("Reeling", "II"): 0.3, ("RollCooldown", "III"): 0.25, ("Saboteur", "I"): 0.4, ("Sniper", "I"): 0.25,
+            ("SoulGatherMultiply", "I"): 0.25, ("Vanguard", "II"): 0.35, ("Vestige", "III"): 0.2,
+        }
+        self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 162))
+        # Tiers on other lists that wait for the same word from their senders stay as they were.
+        self.assertEqual([seen[key][1] for key in (("Vanguard", "III"), ("MultiShot", "III"), ("Duelist", "I"), ("PointBlank", "III"))], [False] * 4)
+
+    def test_what_a_list_made_with_1_15_0_added(self):
+        # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.
+        # What the game calls it isn't known yet: it goes by what a save calls it, like its book.
+        _gear, enchantments = heroes.effect_choices()
+        potion = next(choice for choice in enchantments if choice.effect == "SW.Enchantment.MultiPotion")
+        self.assertEqual((potion.title, potion.strength, potion.seen), ("Multi Potion III", 3, True))
+        self.assertIn("Multi Potion", {book.name for book in self.items if book.kind == heroes.BOOK_KIND})
+        self.assertTrue(potion.fits("Armor", "Helmet"))  # it was on a helmet
 
     def test_what_a_list_made_with_1_14_2_added(self):
         # /issues/32. 1.14.2 had no Dynamo to write, so the one on this list's Redstone boots is the game's, and it
@@ -537,9 +566,9 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(picks("Loot", "SW.Item.Bow"), ["Looter III", "Raider III", "Luck III", "Prospector III"])
         self.assertEqual(picks("Mobility", "SW.Item.Greatbow_Unique1"), ["Speed III"])
         self.assertEqual(picks("Mobility", "SW.Item.Sword"), [])
-        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet"), ["Sorcerer II"])
-        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet", elements={"Soul"}), ["Sorcerer II", "Soulmancer III"])
-        self.assertEqual(picks("Artifacts and souls", "SW.Item.MysticHelmet"), ["Cooldown II", "Spiritual III", "Reaper III", "Sorcerer II"])
+        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet"), ["Sorcerer III"])
+        self.assertEqual(picks("Damage", "SW.Item.MysticHelmet", elements={"Soul"}), ["Sorcerer III", "Soulmancer III"])
+        self.assertEqual(picks("Artifacts and souls", "SW.Item.MysticHelmet"), ["Cooldown III", "Spiritual III", "Reaper III", "Sorcerer III"])
         self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader III", "Shepherd II", "Veterinarian III"])
         self.assertEqual(picks("XP", "SW.Item.Sword"), [])
 

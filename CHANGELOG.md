@@ -21,12 +21,43 @@ The short notes for the newest versions are on the
   which is what the editor wrote until now. This list has 0.5, which is also the game's published number for the
   tier (a 50% chance for 50% of the damage). Both are in real saves; the editor now writes the one that matches
   the game's table. An item enchanted with an earlier version keeps the number it has.
+- **Share this recording…** The play recorder's window has a button that shows what a recording found, as it can
+  be sent on, and opens a GitHub issue with it or copies it: new item IDs, what happened to your items, how your
+  stats moved, quest steps and places, what the Soul Storm check saw, and your notes. It tells how far into the
+  recording each thing happened in place of the date and the time of day, and says which kind of save it was
+  (Steam's or the Xbox app's) and nothing of where. You can take lines out before sending, and nothing is sent
+  unless you send it. The recorder writes that copy beside its summary, as `to_share.txt`. The recording's other
+  files still hold your whole hero save, so the folder itself is still not for posting.
 - **The play recorder's summary no longer shows your save folder's path.** That path holds your Windows account's
-  name and, for the Xbox app's saves, your Xbox user's ID, and the summary is the part of a recording most likely
-  to be passed on. It now says which kind of save it was (Steam's or the Xbox app's) and nothing of where. The
-  recording's other files still hold your whole hero save, so the folder is still not for posting whole.
-- Not taken from that list: 22 tiers of gear effects that carry exactly the numbers the editor already offers.
-  The version that made the list could have written those itself, so they stay marked as not seen.
+  name and, for the Xbox app's saves, your Xbox user's ID. A recording made with an earlier version can't be
+  shared from the window for that reason: make a new one.
+- **The editor knows much more of the world.** [regnirok](https://github.com/regnirok)'s list
+  ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)) is the first with the world's part, from a hero at level 80. The editor's list
+  of the world went from 15 quests to 43 (318 steps to 900), from 35 doors to 194, from 5 minecart stations to 21
+  and from 5 regions to 23, with 13 more cutscenes and puzzle pieces. Nothing in it disagreed with what the editor
+  had. So Share item IDs… has less left to ask of you, and the world map counts against more of the story.
+- **Minecart stations: "of at least".** That list holds eight stations MetaBot's map doesn't mark (two in the
+  Carapace, four in the meadows, two in Frozen Highlands), so the game has more than the nineteen the editor
+  counted against. The world map and the recorder now say "found of at least 21", and the count goes up as saves
+  show more. One station's tag is spelled `Forest.A1.DangerZone` in a save: it's the Woodcutter's Outpost.
+- **A new enchantment:** the one a save calls Multi Potion, at tier III, from the same list (the editor had no
+  Multi Potion to write). That makes 23. What the game calls it isn't known yet, so it goes by that name, like
+  its book.
+- **Twenty more effect tiers count as seen.** [Armagedon13](https://github.com/Armagedon13)'s lists
+  ([issue 29](https://github.com/IshiakiZ/mcd2-save-editor/issues/29), [issue 30](https://github.com/IshiakiZ/mcd2-save-editor/issues/30)) hold them with the game's published numbers, from a
+  version that could have written them itself. Their sender has since said the game rolled every effect on those
+  items, so they count: Shackler I and II, Cooldown III, Deflection II, Aim III, Elemental Protection III,
+  Prospector II, Totem Radius II, Shepherd I, Point Blank II, Precision III, Swiftness II, Fletcher I, Momentum II,
+  Acrobat III, Tainted I, Sniper I, Reaper I, Vanguard II and Sorcerer III. 162 of the 180 tiers have now
+  been seen. **Best for** picks the best tier a save has shown, so some of its picks go up a tier (Cooldown III
+  and Sorcerer III, for two).
+- **The mark of a Soul Storm reward has turned up.** The same list from regnirok has a Special Giant Club saved
+  with a mark the editor had never seen, `SW.Item.Property.StorminatorReward`, and with three rolled effects where
+  a Special gets two. That is very likely how the game saves the Soulstorm Enhanced tag. The editor doesn't write
+  it yet: it wants someone to say the game shows the tag on that item first.
+- Not taken from berwulf's list, nor from regnirok's: the tiers of gear effects that carry exactly the numbers the
+  editor already offers (22 on one, 20 on the other). The versions that made the lists could have written those
+  themselves, so the ones nobody has vouched for stay marked as not seen.
 - **Shorter notes.** A release's page and the What's new window now hold the newest version and the two before
   it, with a line for each change. Every version, in full, is in this file.
 - **A shorter README.** Its lists of features and limits are a few lines each. What they said in full is in the

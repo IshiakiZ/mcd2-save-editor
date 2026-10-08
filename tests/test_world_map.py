@@ -17,7 +17,7 @@ class WorldMapListTests(unittest.TestCase):
         ])
         self.assertEqual(listed["Where the hero is"], ["Area: Howling Woods", "Quest in focus: CA04 (The Missing Note Blocks)", "Last minecart station: Little Howl Hamlet"])
         self.assertEqual(listed["So far"], [
-            "Story quests done: 1 of 3", "Quests met: 1 completed, 1 active, 1 available", "Quest steps done: 2 of 4", "Minecart stations found: 2 of 19",
+            "Story quests done: 1 of 3", "Quests met: 1 completed, 1 active, 1 available", "Quest steps done: 2 of 4", "Minecart stations found: 2 of at least 19",
             "Doors found: 3", "Cutscenes seen: 1", "Chests opened: 5, by the game's own count",
         ])
         # A story quest is named by the game's achievement for finishing it.
@@ -26,7 +26,7 @@ class WorldMapListTests(unittest.TestCase):
         self.assertEqual(missed[:3], [
             "Howling Woods: 1 of its 12 dungeon spots found",
             "(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)",
-            "Minecart stations: 2 found of 19",
+            "Minecart stations: 2 found of at least 19",
         ])
         self.assertEqual(missed[4:], [
             "Quest CA04 (The Missing Note Blocks): 1 of 2 steps left", "Quest FOa1_S10_A (The Cleric's Apprentice): not started",
@@ -54,7 +54,7 @@ class WorldMapListTests(unittest.TestCase):
         # A save that says nothing about the world still has a list to show, and no map.
         listed = dict(world_dialog.sections(hero_save()))
         self.assertEqual(listed["Where the hero is"], ["Area: Brave Haven"])
-        self.assertEqual(listed["So far"], ["Minecart stations found: 0 of 19", "Doors found: 0", "Cutscenes seen: 0"])
+        self.assertEqual(listed["So far"], ["Minecart stations found: 0 of at least 19", "Doors found: 0", "Cutscenes seen: 0"])
         self.assertNotIn("Ground explored", listed)
 
     def test_puts_doors_exactly_and_what_the_recordings_saw_around_where_it_turned_up(self):

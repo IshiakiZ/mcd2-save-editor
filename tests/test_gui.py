@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, game_style, gui, layout, recorder, saves, share_ids, updater, wgs, whats_new, world_dialog
+from dungeons2_editor import __version__, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, updater, wgs, whats_new, world_dialog
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -1515,6 +1515,10 @@ class SimpleModeTests(WindowTestCase):
         self.assertEqual((dialog.out, dialog.profile, dialog.start_button.cget("text")), (out, self.profile_path, "Start recording"))
         self.assertTrue(dialog.note_button.instate(["disabled"]))  # nothing to add a note to yet
         self.assertFalse(out.exists())  # opening the window writes nothing
+        with mock.patch("tkinter.messagebox.showinfo") as told:
+            dialog.share_button.invoke()  # nothing recorded yet, so nothing to send
+        self.assertIn("no recording to share yet", told.call_args.args[1])
+        self.assertFalse([child for child in dialog.winfo_children() if isinstance(child, recorder_dialog.ShareRecordingDialog)])
         dialog.start_button.invoke()
         self.assertEqual(dialog.start_button.cget("text"), "Stop recording")
         (session,) = list(out.iterdir())
@@ -1545,6 +1549,49 @@ class SimpleModeTests(WindowTestCase):
         self.assertIn("bought a sword", summary)
         self.assertIn("World progress:", dialog.shown_text())
         self.assertEqual(len(list((session / "snapshots").iterdir())), 3)  # the hero twice, the settings once
+
+        # Share this recording…: the copy that can be sent on, to read, trim, copy or post. Never the recording.
+        to_share = (session / "to_share.txt").read_text(encoding="utf-8")
+        dialog.share_button.invoke()
+        (sharing,) = [child for child in dialog.winfo_children() if isinstance(child, recorder_dialog.ShareRecordingDialog)]
+        self.root.update()
+        self.assertEqual(sharing.report(), to_share.strip())
+        self.assertIn("Emeralds: 55 -> 300 in 1 step(s)", sharing.report())
+        self.assertIn("bought a sword", sharing.report())
+        self.assertFalse([part for part in (str(self.profile_path), self.profile_path.name, str(self.dir), HERO) if part in sharing.report()])
+        self.assertNotRegex(sharing.report(), r"\d\d:\d\d:\d\d")  # no time of day
+        sharing.copy_button.invoke()
+        self.assertEqual((self.root.clipboard_get().strip(), sharing.message.get()), (to_share.strip(), "Copied."))
+        with mock.patch("webbrowser.open") as browser:
+            sharing.issue_button.invoke()  # one this short rides in the link
+        (link,) = browser.call_args.args
+        self.assertTrue(link.startswith("https://github.com/IshiakiZ/mcd2-save-editor/issues/new?template=play-recording.yml&title=A+play+recording&recording=Play+recording"))
+        self.assertIn(f"version={__version__}", link)
+        self.assertEqual(sharing.message.get(), "Opened in your browser.")
+        # A longer one, which most are, goes on the clipboard, and the form opens ready for it. What's in the box
+        # is what goes, so a line you took out stays out.
+        sharing.text.delete("1.0", "2.0")
+        sharing.text.insert("end", "\n" + "a line a longer recording would hold\n" * 400)
+        with mock.patch("webbrowser.open") as browser:
+            sharing.issue_button.invoke()
+        (link,) = browser.call_args.args
+        self.assertIn("recording=%28paste+the+recording+here", link)
+        self.assertLessEqual(len(link), share_ids.MAX_LINK)
+        self.assertIn("paste the recording into its first box", sharing.message.get())
+        copied = self.root.clipboard_get()
+        self.assertIn("a line a longer recording would hold", copied)
+        self.assertTrue(copied.startswith("Times are minutes and seconds into the recording."))
+        sharing.destroy()
+        # While a recording is going on, it's that one, as far as it has got.
+        dialog.start_button.invoke()
+        (going,) = [dialog.share()]
+        self.assertIn("Play recording, 1 minute(s) long.", going.report())
+        self.assertNotIn("Emeralds: 55 -> 300", going.report())  # a new recording: nothing has happened in it yet
+        going.destroy()
+        with mock.patch("tkinter.messagebox.askyesnocancel"):
+            dialog.start_button.invoke()
+        for extra in [folder for folder in out.iterdir() if folder.is_dir() and folder != session]:
+            self.assertTrue((extra / "to_share.txt").is_file())
         dialog.map_button.invoke()
         self.assertTrue((out / "world_progress_atlas.json").exists() and (out / "world_map.txt").exists())
         self.assertIn("hero saves read.", dialog.shown_text())

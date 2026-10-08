@@ -1,0 +1,31 @@
+name: Send a play recording
+description: What the editor's play recorder wrote down while you played, so the editor learns how the game saves something.
+title: "A play recording"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping! In the editor, **Menu → Play recorder… → Share this recording…** fills this in for you.
+        It sends what the recording found: new item IDs, what happened to your items, how your stats moved, quest
+        steps and places, and what the Soul Storm check saw, in the game's own names and numbers, with your notes.
+        It leaves out the date, the time of day and where your saves are.
+        Please don't attach the recording's folder or anything from it: its other files hold your whole hero save.
+  - type: textarea
+    id: recording
+    attributes:
+      label: The recording
+      description: If the editor says the recording is on your clipboard, paste it here.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: doing
+    attributes:
+      label: What you did while it recorded
+      description: The thing you'd like the editor to learn from. If you added notes while recording, they're already above.
+      placeholder: "Opened a Soul Storm's reward chest. Enchanted a sword with Fire Aspect at tier II. Levelled a talisman up."
+  - type: input
+    id: version
+    attributes:
+      label: Editor version
+      placeholder: "1.15.1"

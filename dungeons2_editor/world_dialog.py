@@ -116,7 +116,8 @@ def sections(document: Any, atlas: dict[str, Any] | None = None) -> list[tuple[s
         every = [value for values in steps.values() for value in values]
         so_far.append("Quests met: " + ", ".join(f"{states[state]} {state.lower()}" for state in sorted(states, key=lambda state: (STATES.index(state) if state in STATES else len(STATES), state))))
         so_far.append(f"Quest steps done: {sum(1 for value in every if value.startswith('Completed'))} of {len(every)}")
-    so_far.append(f"Minecart stations found: {len(labelled('minecart station'))} of {recorder.STATIONS_IN_ALL}")
+    stations = len(labelled("minecart station"))
+    so_far.append(f"Minecart stations found: {stations} of at least {recorder.stations_at_least(stations)}")
     so_far.append(f"Doors found: {len(labelled('door'))}")
     so_far.append(f"Cutscenes seen: {len(labelled('cutscene'))}")
     if isinstance(progress.get(recorder.CHESTS), int):

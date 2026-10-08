@@ -3,18 +3,24 @@
 The recording itself is ``recorder.Recorder``; this watches the save folder for it from the window's own
 timer, shows what it says as it happens, takes your notes, and at the end asks the Soul Storm check's
 questions. It reads your saves and writes only to the recordings folder.
+
+Share this recording… shows the copy of a recording's summary that can be sent on (``to_share.txt``: no date, no
+time of day, nothing of where the saves are), to copy or to post as a GitHub issue. The recording itself, which
+holds the whole hero save, stays where it is.
 """
 
 from __future__ import annotations
 
 import time
 import tkinter as tk
+import urllib.parse
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Callable
 
-from . import paths, recorder, saves
+from . import __version__, paths, recorder, saves, share_ids
 from .game_style import match_title_bar
 from .layout import fit_to_contents, scaled_size, text_width
 
@@ -22,7 +28,19 @@ INTRO = (
     "Leave this open while you play. Every time the game saves, the recorder reads your hero and settings saves again and "
     "writes down what changed: items, stats, quests, stations, doors, the ground you explored. It only reads your saves, and "
     "everything it writes stays in the recordings folder on this PC. A recording holds your whole hero save, so treat it like "
-    "a backup: it isn't for posting anywhere whole."
+    "a backup: it isn't for posting anywhere whole. To send what it found, press Share this recording…: it shows the part "
+    "that can be sent, and nothing goes anywhere unless you send it."
+)
+ISSUE_TEMPLATE = "play-recording.yml"
+NOTHING_TO_SHARE = (
+    "There's no recording to share yet. Press Start recording, play, and stop: this then shows what can be sent.\n\n"
+    "Recordings made with an earlier version of the editor can't be shared from here, because their summary names your save folder."
+)
+SHARE_INTRO = (
+    "This is what the recording found, as it can be sent: what the game saved while you played, in the game's own names and "
+    "numbers, with your notes. It leaves out the date, the time of day and where your saves are, and it isn't the recording "
+    "itself, which holds your whole hero save and stays on this PC. Take out any line you'd rather not send, then open a "
+    "GitHub issue (you need a free GitHub account) or copy it. Nothing is sent unless you send it."
 )
 LAST_SAVE_WAIT = 8.0  # seconds after the game closes before the wrap-up: its last save lands a moment after its window goes
 
@@ -77,6 +95,8 @@ class RecorderDialog(tk.Toplevel):
         self.map_button = ttk.Button(buttons, text="Show the map", command=self.make_map)
         self.map_button.pack(side="left", padx=8)
         ttk.Button(buttons, text="Open the recordings folder", command=self.open_folder).pack(side="left")
+        self.share_button = ttk.Button(buttons, text="Share this recording…", command=self.share)
+        self.share_button.pack(side="left", padx=8)
         ttk.Button(buttons, text="Close", command=self.close).pack(side="right")
         self._show_state()
         self._say(recorder.WORTH_DOING.replace("Type a note and press Enter", "Add a note"))
@@ -207,6 +227,23 @@ class RecorderDialog(tk.Toplevel):
         self.out.mkdir(parents=True, exist_ok=True)
         paths.open_in_file_manager(self.out)
 
+    def share(self) -> "ShareRecordingDialog | None":
+        """Show what of a recording can be sent on, to copy or to post: the one going on now, or else the last
+        one made."""
+        if self.recorder is not None:
+            text = self.recorder.summary(sharing=True)
+        else:
+            source = recorder.to_share(self.out)
+            if source is None:
+                messagebox.showinfo("Play recorder", NOTHING_TO_SHARE, parent=self)
+                return None
+            try:
+                text = source.read_text(encoding="utf-8")
+            except OSError as exc:
+                messagebox.showerror("Play recorder", f"The recording's copy for sending couldn't be read:\n{exc}", parent=self)
+                return None
+        return ShareRecordingDialog(self, text, __version__)
+
     def close(self) -> None:
         if self.recorder is not None:
             if not messagebox.askyesno("Play recorder", "Stop recording and close?", parent=self):
@@ -222,3 +259,65 @@ class RecorderDialog(tk.Toplevel):
             self.recorder.close()
             self.recorder = None
         super().destroy()
+
+
+def issue_url(recording: str, version: str) -> str:
+    query = {"template": ISSUE_TEMPLATE, "title": "A play recording", "recording": recording, "version": version}
+    return share_ids.ISSUE_URL + "?" + urllib.parse.urlencode(query)
+
+
+class ShareRecordingDialog(tk.Toplevel):
+    """What a recording found, as it can be sent on: to read, to trim, and to copy or post as a GitHub issue."""
+
+    def __init__(self, parent: tk.Misc, text: str, version: str):
+        super().__init__(parent)
+        self.version = version
+        self.title("Share this recording")
+        self.transient(parent)
+        match_title_bar(self)
+        frame = ttk.Frame(self, padding=12)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        ttk.Label(frame, text=SHARE_INTRO, wraplength=text_width(self, 96), justify="left").grid(row=0, column=0, columnspan=2, sticky="w")
+        self.text = tk.Text(frame, height=18, width=100, wrap="none", font=("Consolas", 10))
+        self.text.insert("1.0", text)
+        self.text.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
+        down = ttk.Scrollbar(frame, orient="vertical", command=self.text.yview)
+        down.grid(row=1, column=1, sticky="ns", pady=(8, 0))
+        across = ttk.Scrollbar(frame, orient="horizontal", command=self.text.xview)
+        across.grid(row=2, column=0, sticky="ew")
+        self.text.configure(yscrollcommand=down.set, xscrollcommand=across.set)
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        self.message = tk.StringVar()
+        ttk.Label(buttons, textvariable=self.message, style="Success.TLabel").pack(side="left")
+        ttk.Button(buttons, text="Close", command=self.destroy).pack(side="right")
+        self.copy_button = ttk.Button(buttons, text="Copy", command=self.copy)
+        self.copy_button.pack(side="right", padx=6)
+        self.issue_button = ttk.Button(buttons, text="Open a GitHub issue…", style="Accent.TButton", command=self.open_issue)
+        self.issue_button.pack(side="right")
+        fit_to_contents(self, *scaled_size(self, 860, 560))
+        self.bind("<Escape>", lambda _event: self.destroy())
+
+    def report(self) -> str:
+        return self.text.get("1.0", "end").strip()
+
+    def copy(self) -> None:
+        self.clipboard_clear()
+        self.clipboard_append(self.report())
+        self.message.set("Copied.")
+
+    def open_issue(self) -> None:
+        report = self.report()
+        link = issue_url(report, self.version)
+        if len(link) <= share_ids.MAX_LINK:
+            webbrowser.open(link)
+            self.message.set("Opened in your browser.")
+            return
+        # Too long to hand over in a link, which a recording nearly always is: it goes on the clipboard and the
+        # page opens ready for it.
+        self.clipboard_clear()
+        self.clipboard_append(report)
+        webbrowser.open(issue_url(share_ids.PASTE_HERE.replace("the list", "the recording"), self.version))
+        self.message.set("Copied, and the page is open: paste the recording into its first box (Ctrl+V).")

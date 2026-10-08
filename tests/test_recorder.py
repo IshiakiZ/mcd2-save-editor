@@ -3,11 +3,13 @@ import json
 import os
 import tempfile
 import unittest
+import urllib.parse
 from pathlib import Path
 from unittest import mock
 
+from dungeons2_editor import __version__
 from dungeons2_editor import recorder as play_recorder
-from dungeons2_editor import saves
+from dungeons2_editor import recorder_dialog, saves, share_ids
 
 from .helpers import SETTINGS_TEXT, hero_item, hero_save_text, make_profile, rolled, rolled_effect, shift_encode, snapshot
 
@@ -112,6 +114,83 @@ class PlayRecorderTests(unittest.TestCase):
         self.assertIn("changed  SW.Item.Longbow  ItemData.Effects[0]", text)
         self.assertIn("Emeralds: 55 -> 300 in 1 step(s)", text)
         self.assertEqual(self.recorder.write_summary().read_text(encoding="utf-8"), text)
+
+    def test_the_copy_for_sending_says_what_happened_and_nothing_of_when_or_where(self):
+        self.recorder.begin("1.1.1.0")
+
+        def play(document):
+            for attribute in document["CharacterSaveV1"]["Ability"]["Attributes"]:
+                if attribute["AttributeName"] == "Emeralds":
+                    attribute["CurrentValue"] = 300
+            longbow = next(e for e in document["CharacterSaveV1"]["Inventory"]["Entries"] if e["ItemData"]["TypeTag"] == "SW.Item.Longbow")
+            longbow["ItemData"]["EffectRerolls"] = 2
+
+        self.game_saves(play)  # a minute goes by
+        self.recorder.look()
+        self.recorder.note("rerolled the bow")
+        # Something an item's entry says of when you played, should the game ever change one in place.
+        self.recorder.event("item_changed", id="SW.Item.Longbow", changes=[{"path": "ItemData.PickupTimestamp", "old": 1790802481, "new": 1790809999}])
+        summary, shared = self.recorder.summary(), self.recorder.summary(sharing=True)
+
+        self.assertEqual(shared.splitlines()[:3], [
+            f"Play recording, 1 minute(s) long. Saves: the Xbox app. Editor {__version__}, game 1.1.1.0.",
+            "Times are minutes and seconds into the recording.",
+            "",
+        ])
+        # The same things, told by how far into the recording they happened.
+        self.assertIn("  +01:00  changed  SW.Item.Longbow  ItemData.EffectRerolls: 0 -> 2", shared)
+        self.assertIn("Emeralds: 55 -> 300 in 1 step(s)", shared)
+        self.assertIn("  +01:00  rerolled the bow", shared)
+        self.assertIn("Soul Storm check:", shared)
+        # No date, no time of day, nothing of where the saves or the recording are, no pickup time.
+        started = play_recorder.datetime.fromtimestamp(self.recorder.started)
+        self.assertRegex(summary, r"\d\d:\d\d:\d\d  changed  SW\.Item\.Longbow")
+        self.assertIn(f"{started:%Y-%m-%d}", summary)
+        self.assertNotRegex(shared, r"\d\d:\d\d:\d\d")
+        self.assertNotIn(f"{started:%Y-%m-%d}", shared)
+        self.assertFalse([part for part in (str(self.profile), self.profile.name, str(self.dir), HERO) if part in shared])
+        self.assertIn("ItemData.PickupTimestamp", summary)
+        self.assertNotIn("PickupTimestamp", shared)
+
+        # Both are written together, and the newest recording that has the copy is the one to send.
+        target = self.recorder.write_summary()
+        self.assertEqual((target.name, (target.parent / "to_share.txt").read_text(encoding="utf-8")), ("summary.txt", shared))
+        self.assertEqual(play_recorder.to_share(self.dir), target.parent / "to_share.txt")
+        self.assertIsNone(play_recorder.to_share(self.dir / "saves"))  # nothing there was made by the recorder
+        self.assertIsNone(play_recorder.to_share(self.dir / "not there"))
+        older = self.dir / "0001-01-01_00-00-00"  # a recording from a version that wrote only a summary
+        older.mkdir()
+        (older / "summary.txt").write_text("Play recording\nSave folder: somewhere\n", encoding="utf-8")
+        (self.dir / "play" / "to_share.txt").unlink()
+        self.assertIsNone(play_recorder.to_share(self.dir))
+
+    def test_the_copy_for_sending_fits_in_an_issue(self):
+        self.recorder.begin()
+        for number in range(play_recorder.MOST_SHARED + 40):
+            self.recorder.event("item_removed", id=f"SW.Item.Thing{number}", rarity="Common", power=1)
+        shared = self.recorder.summary(sharing=True)
+        self.assertIn("  (40 earlier lines were left out to keep this short enough to post)", shared)
+        self.assertNotIn("SW.Item.Thing39 ", shared)  # the latest are the ones kept
+        self.assertIn(f"SW.Item.Thing{play_recorder.MOST_SHARED + 39} ", shared)
+        self.assertEqual(self.recorder.summary().count("  removed  "), play_recorder.MOST_SHARED + 40)  # your own copy has them all
+        # However long the rest runs, it stays within what a GitHub issue holds.
+        for number in range(400):
+            self.recorder.note(f"note {number}: " + "x" * 300)
+        shared = self.recorder.summary(sharing=True)
+        self.assertLessEqual(len(shared), share_ids.MAX_REPORT)
+        self.assertRegex(shared.splitlines()[-1], r"^\(\d+ more lines were left out to keep this short enough to post\)$")
+
+    def test_the_issue_form_has_the_boxes_the_window_fills_in(self):
+        link = urllib.parse.urlsplit(recorder_dialog.issue_url("what it found", "9.9.9"))
+        self.assertEqual(f"{link.scheme}://{link.netloc}{link.path}", share_ids.ISSUE_URL)
+        self.assertEqual(
+            urllib.parse.parse_qs(link.query),
+            {"template": ["play-recording.yml"], "title": ["A play recording"], "recording": ["what it found"], "version": ["9.9.9"]},
+        )
+        form = (Path(__file__).resolve().parent.parent / ".github" / "ISSUE_TEMPLATE" / recorder_dialog.ISSUE_TEMPLATE).read_text(encoding="utf-8")
+        for box in ("recording", "version"):
+            self.assertIn(f"    id: {box}\n", form)
+        self.assertIn('title: "A play recording"', form)
 
     def test_a_save_format_change_stands_out(self):
         self.recorder.begin()
@@ -448,7 +527,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(lines[:5], [
             "Howling Woods: 2 of its 12 dungeon spots found", "Honeycomb Fields: 1 of its 8 rift spots found", "SwampB2: 1 rift spot found",
             "(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)",
-            "Minecart stations: 2 found of 19",
+            "Minecart stations: 2 found of at least 19",
         ])
         self.assertTrue(lines[5].startswith(
             "Stations not found yet: Town Fountain (Brave Haven); Honeycomb Farm, Honeybrook Bridge (Honeycomb Fields); "

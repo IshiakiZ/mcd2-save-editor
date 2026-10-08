@@ -4,17 +4,20 @@
 
 Leave it running while you play. It only ever reads. Every time the game saves, it reads the hero and settings
 saves again (never the sign-in, entitlement or device-ID containers), works out what changed and writes that
-down. Nothing leaves this PC. Each run's files go in the recordings folder, next to the backups, in a folder
-named after the date and time:
+down. Nothing leaves this PC unless you send it. Each run's files go in the recordings folder, next to the
+backups, in a folder named after the date and time:
 
     events.jsonl   one line per thing that happened: an item picked up, an item that changed (an enchantment, a
                    reroll, a power upgrade), a stat that moved, an item ID seen for the first time, a note you typed
     snapshots/     every version of each save the game wrote, as JSON, to look at closely afterwards
     summary.txt    written when the game closes and when you stop: new item IDs, what happened to items, how
                    the stats moved, world progress, and what it found for the Soul Storm check
+    to_share.txt   the summary as it can be sent on: how far into the recording each thing happened in place of
+                   the date and the time of day, and nothing of where your saves are
 
 A recording holds your whole hero save, version by version, so treat the folder like a backup: it's yours, and
-not for posting anywhere whole.
+not for posting anywhere whole. What can be sent is to_share.txt: Share this recording…, in the window, shows
+it and opens a GitHub issue with it, if you choose to.
 
 While it runs you can type a note ("enchanted the sword with Fire Aspect"); the note goes into the timeline at
 that moment. Run from a console, it also asks, when the game closes or you press Ctrl+C, what the game calls each
@@ -83,6 +86,10 @@ SETTLE = 0.7  # after the folder changes, wait this long before reading, so the 
 GAME_CHECK = 10.0  # seconds between checks for the game's process
 LONG = 400  # characters of a value kept in an event; snapshots keep everything
 MOST = 60  # changes listed per event
+SUMMARY_FILE = "summary.txt"
+SHARE_FILE = "to_share.txt"  # the summary as it can be sent on (Recorder.summary(sharing=True))
+MOST_SHARED = 250  # lines about items in the copy for sending, the latest ones, so it fits in a GitHub issue
+NOT_SHARED = ("PickupTimestamp", "GenesisRandomSeed")  # what an item's entry says of when you played: left out there
 MOST_QUESTIONS = 8  # items the Soul Storm check asks about at the end
 
 STORM = re.compile("storm", re.IGNORECASE)  # SoulStorm, Soulstorm, Storminator: however the game spells it
@@ -482,7 +489,9 @@ STATIONS = {  # a minecart station, as its tag ends: (what the game calls it, th
     "DesertA1.MountainPass": ("Archie's Ruins", "DesertA1"), "DesertA1.Fortress": ("Fortress Backgate", "DesertA1"), "DesertA1.Fortress2": ("Frozen Fortress", "DesertA1"),
     "DesertA1.IceShelf": ("Frozen Shipyard", "DesertA1"), "DesertA1.Cliffs": ("Highland Cliffs", "DesertA1"), "DesertA1.IceLagoon": ("Ice Caves", "DesertA1"),
 }
-STATIONS_IN_ALL = len(STATIONS)
+# MetaBot's map marks those nineteen. Saves have since shown stations it doesn't mark (two in the Carapace, four in
+# the meadows, and two more in Frozen Highlands, in /issues/33), so nineteen is not how many the game has: see
+# stations_at_least().
 QUESTS = {  # a quest, as a save names it: what the game calls it (the ones MetaBot's map marks a spot for)
     "CA01": "The Illagers from the Rift", "CA02": "The Silence in Little Howl", "CA02_B": "Corruption in the Woods", "CA04": "The Missing Note Blocks",
     "CA05": "Hiking Frozen Highlands", "CA06": "Returning the Note Blocks", "CA07": "Wading Rainy Plains", "PLa1_S04_A": "Keeper of the Bees",
@@ -504,10 +513,31 @@ def area_name(tag: str) -> str:
     return plain
 
 
+def station_key(tag: str) -> str:
+    """A minecart station's tag as STATIONS is keyed: less the part every one has, and with its area written as
+    one word, which the game doesn't always do (a save has SW.MinecartStation.Forest.A1.DangerZone)."""
+    key = tag.removeprefix(_STATION)
+    parts = key.split(".")
+    for count in range(2, len(parts)):
+        joined = "".join(parts[:count]) + "." + ".".join(parts[count:])
+        if joined in STATIONS:
+            return joined
+    return key
+
+
 def station_name(tag: str) -> str:
     """A minecart station by the game's name for it, where that's known, or its tag less the part every one has."""
-    key = tag.removeprefix(_STATION)
+    key = station_key(tag)
     return STATIONS[key][0] if key in STATIONS else key
+
+
+def stations_at_least(found: int = 0) -> int:
+    """How many minecart stations the game has, at the least: the ones MetaBot's map marks, the ones saves have
+    shown the editor, or the ones this hero has ``found``, whichever is most. It isn't the game's total, which
+    nothing readable gives."""
+    from . import world  # which reads this module, so not at the top
+
+    return max(len(STATIONS), len(world.known().get("stations") or ()), found)
 
 
 def quest_name(name: str) -> str:
@@ -544,8 +574,8 @@ def might_be_missing(progress: dict[str, Any], regions: dict[str, dict]) -> list
         lines.append(f"{AREAS.get(area, area)}: {len(found)} " + (f"of its {total} {kind.lower()} spots found" if total else f"{kind.lower()} spot{'s' if len(found) != 1 else ''} found"))
     if numbered:
         lines.append("(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)")
-    stations = {label[len("minecart station "):].removeprefix(_STATION) for label in progress if label.startswith("minecart station ")}
-    lines.append(f"Minecart stations: {len(stations)} found of {STATIONS_IN_ALL}")
+    stations = {station_key(label[len("minecart station "):]) for label in progress if label.startswith("minecart station ")}
+    lines.append(f"Minecart stations: {len(stations)} found of at least {stations_at_least(len(stations))}")
     unfound: dict[str, list[str]] = {}
     for key, (name, area) in STATIONS.items():
         if key not in stations:
@@ -736,6 +766,7 @@ class Recorder:
         self.retry = False  # a save couldn't be read (caught mid-write): look again even if nothing else changes
         self.snapshots = 0
         self.game: list[str] | None = None
+        self.game_version: str | None = None
         # The Soul Storm check: what each save says about storms, and the items worth asking about, by (container,
         # the item's identity).
         self.storms: dict[str, dict[str, Any]] = {}
@@ -767,6 +798,7 @@ class Recorder:
     # ------------------------------------------------------------------ looking
 
     def begin(self, version: str | None = None) -> None:
+        self.game_version = version
         self.event(
             "session_start",
             f"Recording {self.profile}",
@@ -1003,11 +1035,29 @@ class Recorder:
         """Item IDs in the saves that the editor has no name for."""
         return sorted(tag for tag, known in self.ids.items() if known in ("unknown", "unnamed") and ".Cosmetic." not in tag)
 
-    def summary(self) -> str:
+    def summary(self, sharing: bool = False) -> str:
+        """What the recording shows. With ``sharing`` it's the copy that can be sent on: the same, with how far
+        into the recording each thing happened in place of the date and the time of day, the latest of a long
+        run of item lines, and nothing an item's entry says of when it was picked up."""
         # Which kind of save, and not the folder: its path holds the Windows account's name and, for the Xbox app,
         # the Xbox user's ID, and a summary is the part of a recording that gets passed on.
         kind = "Steam" if saves.layout_of(self.profile) == "steam" else "the Xbox app"
-        lines = [f"Play recording, {datetime.fromtimestamp(self.started):%Y-%m-%d %H:%M} to {datetime.fromtimestamp(self.clock()):%H:%M}", f"Saves: {kind}", ""]
+
+        def when(record: dict) -> str:
+            if not sharing:
+                return record["time"][11:]
+            minutes, seconds = divmod(int(record.get("after") or 0), 60)
+            return f"+{minutes:02d}:{seconds:02d}"
+
+        if sharing:
+            lines = [
+                f"Play recording, {max(1, round((self.clock() - self.started) / 60))} minute(s) long. Saves: {kind}. Editor {__version__}"
+                + (f", game {self.game_version}" if self.game_version else "") + ".",
+                "Times are minutes and seconds into the recording.",
+                "",
+            ]
+        else:
+            lines = [f"Play recording, {datetime.fromtimestamp(self.started):%Y-%m-%d %H:%M} to {datetime.fromtimestamp(self.clock()):%H:%M}", f"Saves: {kind}", ""]
         written = [e for e in self.log if e["kind"] == "save_written"]
         lines.append(f"The game saved {len(written)} time(s); {self.snapshots} snapshot(s) kept.")
         new = sorted(tag for tag in self.ids if tag not in self.at_start)
@@ -1017,15 +1067,21 @@ class Recorder:
         guesses = sorted(tag for tag, known in self.ids.items() if known == "guess")
         lines += ["", f"Item IDs that confirm one of the editor's guesses ({len(guesses)}):"] + [f"  {tag}" for tag in guesses]
         lines += ["", "What happened to items:"]
+        items: list[str] = []
         for record in self.log:
             if record["kind"] == "item_added":
                 effects = len((record["entry"].get("ItemData") or {}).get("Effects") or [])
-                lines.append(f"  {record['time'][11:]}  added    {record['id']}  {record['rarity']}, power {record['power']}, {effects} effect(s)")
+                items.append(f"  {when(record)}  added    {record['id']}  {record['rarity']}, power {record['power']}, {effects} effect(s)")
             elif record["kind"] == "item_removed":
-                lines.append(f"  {record['time'][11:]}  removed  {record['id']}  {record['rarity']}, power {record['power']}")
+                items.append(f"  {when(record)}  removed  {record['id']}  {record['rarity']}, power {record['power']}")
             elif record["kind"] == "item_changed":
                 for change in record["changes"]:
-                    lines.append(f"  {record['time'][11:]}  changed  {record['id']}  {change['path']}: {json.dumps(change['old'], ensure_ascii=False)} -> {json.dumps(change['new'], ensure_ascii=False)}")
+                    if sharing and any(part in NOT_SHARED for part in re.split(r"[.\[\]]", str(change["path"]))):
+                        continue
+                    items.append(f"  {when(record)}  changed  {record['id']}  {change['path']}: {json.dumps(change['old'], ensure_ascii=False)} -> {json.dumps(change['new'], ensure_ascii=False)}")
+        if sharing and len(items) > MOST_SHARED:
+            items = [f"  ({len(items) - MOST_SHARED} earlier lines were left out to keep this short enough to post)"] + items[-MOST_SHARED:]
+        lines += items
         lines += ["", "How the stats moved:"]
         moves: dict[str, list] = {}
         for record in self.log:
@@ -1055,20 +1111,21 @@ class Recorder:
         lines.append(f"  Steps while recording ({len(loud)}, and {len(steps) - len(loud)} quieter changes in events.jsonl):")
         for r in loud[: MOST * 3]:
             where = f"at {r['at'][0]:.0f}, {r['at'][1]:.0f}" if r.get("at") else f"in {r.get('area')}" + (f", near {r['near']['x']}, {r['near']['y']}" if r.get("near") else "")
-            lines.append(f"    {r['time'][11:]}  {r['what']}: {json.dumps(r['old'], ensure_ascii=False)} -> {json.dumps(r['new'], ensure_ascii=False)}  [{where}]")
+            lines.append(f"    {when(r)}  {r['what']}: {json.dumps(r['old'], ensure_ascii=False)} -> {json.dumps(r['new'], ensure_ascii=False)}  [{where}]")
         lines += ["", "Soul Storm check:"]
         mentions = {label: value for found in self.storms.values() for label, value in found.items()}
         lines.append(f"  Places in the saves that mention a storm now ({len(mentions)}):")
         lines += [f"    {label}: {json.dumps(value, ensure_ascii=False)}" for label, value in sorted(mentions.items())[:MOST]]
         moved = [r for r in self.log if r["kind"] == "storm"]
         lines.append(f"  What changed there while recording ({len(moved)}):")
-        lines += [f"    {r['time'][11:]}  {r['where']}: {json.dumps(r['old'], ensure_ascii=False)} -> {json.dumps(r['new'], ensure_ascii=False)}" for r in moved[:MOST]]
+        lines += [f"    {when(r)}  {r['where']}: {json.dumps(r['old'], ensure_ascii=False)} -> {json.dumps(r['new'], ensure_ascii=False)}" for r in moved[:MOST]]
         if MARKED_ITEMS is None:
             lines.append("  This copy of the editor can't tell an item saved with something new: that part was left out.")
         lines.append(f"  Items saved with a mark or a field the editor has never seen ({len(self.marked)}):")
-        for key, about in self.marked.items():
+        for number, (key, about) in enumerate(self.marked.items()):
             lines.append(f"    {about['id']}  {about['name']}, {about['rarity']}: {', '.join(about['news'])}{self._storm_notes(key, about)}")
-            lines.append(f"      as saved: {json.dumps(about['as_saved'], ensure_ascii=False)}")
+            if not sharing or number < share_ids.MAX_MARK_LINES:  # a whole item each: a few show how it's saved
+                lines.append(f"      as saved: {json.dumps(about['as_saved'], ensure_ascii=False)}")
         lines.append(f"  Items with one more rolled effect than their rarity usually has ({len(self.extra)}):")
         for key, about in self.extra.items():
             lines.append(f"    {about['id']}  {about['name']}, {about['rarity']}, power {format_amount(about['power'])}: {', '.join(about['rolled'])}; marks: {about['marks'] or 'none'}{self._storm_notes(key, about)}")
@@ -1082,7 +1139,9 @@ class Recorder:
             lines += [f"  {key}: {count} value(s)" for key, count in sorted(seen.items())]
         notes = [r for r in self.log if r["kind"] == "note"]
         if notes:
-            lines += ["", "Your notes:"] + [f"  {r['time'][11:]}  {r['text']}" for r in notes]
+            lines += ["", "Your notes:"] + [f"  {when(r)}  {r['text']}" for r in notes]
+        if sharing:
+            lines = _fitting(lines, share_ids.MAX_REPORT)
         return "\n".join(lines) + "\n"
 
     def _storm_notes(self, key: tuple, about: dict) -> str:
@@ -1092,8 +1151,10 @@ class Recorder:
         return f"  [{'; '.join(notes)}]" if notes else ""
 
     def write_summary(self) -> Path:
-        target = self.out / "summary.txt"
+        """Write the summary, and beside it the copy that can be sent on (Share this recording…, in the window)."""
+        target = self.out / SUMMARY_FILE
         target.write_text(self.summary(), encoding="utf-8")
+        (self.out / SHARE_FILE).write_text(self.summary(sharing=True), encoding="utf-8")
         return target
 
     def ask_names(self, ask: Callable[[str], str | None], names_file: Path = NAMES_FILE) -> dict[str, str]:
@@ -1118,6 +1179,27 @@ class Recorder:
     def close(self) -> None:
         self.event("session_end", saves=len([e for e in self.log if e["kind"] == "save_written"]), snapshots=self.snapshots)
         self.events_file.close()
+
+
+def _fitting(lines: list[str], most: int) -> list[str]:
+    """The lines that fit in ``most`` characters, with a line saying how many were left out when some were."""
+    room, kept = most - 100, 0
+    for line in lines:
+        if room - len(line) - 1 < 0:
+            break
+        room -= len(line) + 1
+        kept += 1
+    return lines if kept == len(lines) else lines[:kept] + [f"({len(lines) - kept} more lines were left out to keep this short enough to post)"]
+
+
+def to_share(out: Path) -> Path | None:
+    """The copy for sending of the newest recording under ``out`` that has one. None when none has: a recording
+    made by a version before 1.15.1 has only a summary, and that one names the save folder."""
+    try:
+        folders = sorted((folder for folder in Path(out).iterdir() if folder.is_dir()), key=lambda folder: folder.name, reverse=True)
+    except OSError:
+        return None
+    return next((folder / SHARE_FILE for folder in folders if (folder / SHARE_FILE).is_file()), None)
 
 
 def run(profile: Path, out: Path, once: bool = False, questions: bool = True) -> int:
@@ -1168,6 +1250,7 @@ def run(profile: Path, out: Path, once: bool = False, questions: bool = True) ->
         recorder.look()
         print("\n" + recorder.summary())
         print(f"Summary written to {recorder.write_summary()}")
+        print(f"Beside it, {SHARE_FILE} is the copy that can be sent on. In the editor: Menu > Play recorder… > Share this recording…")
         if interactive:
             recorder.ask_names(ask)
             if recorder.ask_storm(ask):

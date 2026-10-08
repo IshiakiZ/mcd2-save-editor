@@ -348,6 +348,644 @@
    "CA03_BR_E01",
    "CA03_BR_AS01",
    "CA03_BR_Sequence01"
+  ],
+  "CA07": [
+   "CA07_E26",
+   "CA07_I18",
+   "CA07_E01",
+   "CA07_E03",
+   "CA07_I12",
+   "CA07_I02",
+   "CA07_E02",
+   "CA07_I19",
+   "CA07_E16",
+   "CA07_E22",
+   "CA07_Sequence02",
+   "CA07_Sequence05",
+   "CA07_E04",
+   "CA07_I04",
+   "CA07_E23",
+   "CA07_I05",
+   "CA07_Sequence03",
+   "CA07_Sequence06",
+   "CA07_E06",
+   "CA07_I06",
+   "CA07_E24",
+   "CA07_I07",
+   "CA07_Sequence04",
+   "CA07_Sequence07",
+   "CA07_E08",
+   "CA07_I08",
+   "CA07_E25",
+   "CA07_I09",
+   "CA07_E17",
+   "CA07_E19",
+   "CA07_E20",
+   "CA07_AS02",
+   "CA07_MT01",
+   "CA07_I15",
+   "CA07_E14",
+   "CA07_I10",
+   "CA07_PC01",
+   "CA07_AS01",
+   "CA07_E15",
+   "CA07_I11",
+   "CA07_PC02",
+   "CA07_E21",
+   "CA07_I16",
+   "CA07_Sequence01"
+  ],
+  "CA04_BR": [
+   "CA04_BR_AS01",
+   "CA04_BR_Sequence01"
+  ],
+  "CT_S01_A": [
+   "CT_S01_A_E01",
+   "CT_S01_A_Arena01",
+   "CT_S01_A_I01",
+   "CT_S01_A_E02",
+   "CT_S01_A_I02",
+   "CT_S01_A_Sequence01"
+  ],
+  "CT_S03_A": [
+   "CT_S03_A_E01",
+   "CT_S03_A_Arena01",
+   "CT_S03_A_I01",
+   "CT_S03_A_E02",
+   "CT_S03_A_I02",
+   "CT_S03_A_Sequence01"
+  ],
+  "CA05": [
+   "CA05_E20",
+   "CA05_I18",
+   "CA05_E01",
+   "CA05_I01",
+   "CA05_Standard01",
+   "CA05_Sequence01",
+   "CA05_E02",
+   "CA05_E03",
+   "CA05_Standard04",
+   "CA05_I02",
+   "CA05_I15",
+   "CA05_E17",
+   "CA05_AS01",
+   "CA05_Sequence02",
+   "CA05_E04",
+   "CA05_E05",
+   "CA05_I03",
+   "CA05_E06",
+   "CA05_I05",
+   "CA05_E07",
+   "CA05_I06",
+   "CA05_Standard03",
+   "CA05_Sequence03",
+   "CA05_E08",
+   "CA05_AS04",
+   "CA05_I07",
+   "CA05_Sequence07",
+   "CA05_E18",
+   "CA05_AS05",
+   "CA05_I14",
+   "CA05_E12",
+   "CA05_I11",
+   "CA05_PC01",
+   "CA05_E13",
+   "CA05_E21",
+   "CA05_Standard05",
+   "CA05_I19",
+   "CA05_I20",
+   "CA05_E22",
+   "CA05_E14",
+   "CA05_PC02",
+   "CA05_AS03",
+   "CA05_E15",
+   "CA05_I12",
+   "CA05_PC03",
+   "CA05_E19",
+   "CA05_E16",
+   "CA05_I13",
+   "CA05_PC04",
+   "CA05_Sequence00"
+  ],
+  "CA07_BR": [
+   "CA07_BR_E01",
+   "CA07_BR_AS01",
+   "CA07_BR_Sequence01"
+  ],
+  "PLa2_S15_A": [
+   "PLa2_S15_A_Sequence02",
+   "PLa2_S15_A_E01",
+   "PLa2_S15_A_SM01",
+   "PLa2_S15_A_K01",
+   "PLa2_S15_A_I01",
+   "PLa2_S15_A_Sequence03",
+   "PLa2_S15_A_E02",
+   "PLa2_S15_A_SM02",
+   "PLa2_S15_A_K02",
+   "PLa2_S15_A_I02",
+   "PLa2_S15_A_E03",
+   "PLa2_S15_A_AS01",
+   "PLa2_S15_A_I04",
+   "PLa2_S15_A_I05",
+   "PLa2_S15_A_Sequence01"
+  ],
+  "PLa2_S16_A": [
+   "PLa2_S16_A_E05",
+   "PLa2_S16_A_I10",
+   "PLa2_S16_A_Sequence02",
+   "PLa2_S16_A_E01",
+   "PLa2_S16_A_Standard04",
+   "PLa2_S16_A_SM08",
+   "PLa2_S16_A_SM01",
+   "PLa2_S16_A_K01",
+   "PLa2_S16_A_Standard01",
+   "PLa2_S16_A_I02",
+   "PLa2_S16_A_I03",
+   "PLa2_S16_A_I14",
+   "PLa2_S16_A_Sequence03",
+   "PLa2_S16_A_E02",
+   "PLa2_S16_A_Standard05",
+   "PLa2_S16_A_SM05",
+   "PLa2_S16_A_SM02",
+   "PLa2_S16_A_K02",
+   "PLa2_S16_A_Standard02",
+   "PLa2_S16_A_I06",
+   "PLa2_S16_A_I07",
+   "PLa2_S16_A_I11",
+   "PLa2_S16_A_I12",
+   "PLa2_S16_A_Sequence04",
+   "PLa2_S16_A_E03",
+   "PLa2_S16_A_Standard06",
+   "PLa2_S16_A_SM06",
+   "PLa2_S16_A_SM03",
+   "PLa2_S16_A_SM07",
+   "PLa2_S16_A_K03",
+   "PLa2_S16_A_Standard03",
+   "PLa2_S16_A_I08",
+   "PLa2_S16_A_I09",
+   "PLa2_S16_A_I13",
+   "PLa2_S16_A_I04",
+   "PLa2_S16_A_F01",
+   "PLa2_S16_A_SM04",
+   "PLa2_S16_A_K04",
+   "PLa2_S16_A_F02",
+   "PLa2_S16_A_I05",
+   "PLa2_S16_A_Sequence01"
+  ],
+  "PLa2_S17_A": [
+   "PLa2_S17_A_E01",
+   "PLa2_S17_A_I01",
+   "PLa2_S17_A_MT01",
+   "PLa2_S17_A_I03",
+   "PLa2_S17_A_AS01",
+   "PLa2_S17_A_Sequence02",
+   "PLa2_S17_A_E02",
+   "PLa2_S17_A_SM01",
+   "PLa2_S17_A_SM02",
+   "PLa2_S17_A_K01",
+   "PLa2_S17_A_Sequence03",
+   "PLa2_S17_A_E03",
+   "PLa2_S17_A_SM03",
+   "PLa2_S17_A_SM04",
+   "PLa2_S17_A_K02",
+   "PLa2_S17_A_I02",
+   "PLa2_S17_A_Sequence01"
+  ],
+  "CT_S04_A": [
+   "CT_S04_A_E01",
+   "CT_S04_A_Arena01",
+   "CT_S04_A_I01",
+   "CT_S04_A_E02",
+   "CT_S04_A_I02",
+   "CT_S04_A_Sequence01"
+  ],
+  "CA06": [
+   "CA06_E02",
+   "CA06_I02",
+   "CA06_E03",
+   "CA06_E04",
+   "CA06_I04",
+   "CA06_PC01",
+   "CA06_I05",
+   "CA06_PC02",
+   "CA06_Sequence01"
+  ],
+  "CA08": [
+   "CA08_E01",
+   "CA08_Standard01",
+   "CA08_Sequence02",
+   "CA08_E04",
+   "CA08_AS03",
+   "CA08_I02",
+   "CA08_Sequence03",
+   "CA08_E05",
+   "CA08_AS04",
+   "CA08_I04",
+   "CA08_Sequence04",
+   "CA08_I06",
+   "CA08_Sequence05",
+   "CA08_I09",
+   "CA08_E02",
+   "CA08_AS01",
+   "CA08_I07",
+   "CA08_E03",
+   "CA08_AS02",
+   "CA08_I08",
+   "CA08_PC01",
+   "CA08_Sequence01"
+  ],
+  "CA05_BR": [
+   "CA05_BR_E01",
+   "CA05_BR_AS01",
+   "CA05_BR_Sequence01"
+  ],
+  "CA08_B": [
+   "CA08_B_E01",
+   "CA08_B_Sequence05",
+   "CA08_B_Standard03",
+   "CA08_B_E06",
+   "CA08_B_E07",
+   "CA08_B_E08",
+   "CA08_B_E02",
+   "CA08_B_E03",
+   "CA08_B_I04",
+   "CA08_B_Standard01",
+   "CA08_B_Standard02",
+   "CA08_B_Sequence02",
+   "CA08_B_SM02",
+   "CA08_B_I01",
+   "CA08_B_Sequence04",
+   "CA08_B_SM03",
+   "CA08_B_I02",
+   "CA08_B_Sequence03",
+   "CA08_B_SM04",
+   "CA08_B_I03",
+   "CA08_B_SM01",
+   "CA08_B_E04",
+   "CA08_B_E05",
+   "CA08_B_AS01",
+   "CA08_B_Sequence01"
+  ],
+  "DEa1_S12_A": [
+   "DEa1_S12_A_E01",
+   "DEa1_S12_A_Standard01",
+   "DEa1_S12_A_I01",
+   "DEa1_S12_A_Arena03",
+   "DEa1_S12_A_I11",
+   "DEa1_S12_A_Standard02",
+   "DEa1_S12_A_Sequence02",
+   "DEa1_S12_A_E03",
+   "DEa1_S12_A_E10",
+   "DEa1_S12_A_E04",
+   "DEa1_S12_A_Arena01",
+   "DEa1_S12_A_I05",
+   "DEa1_S12_A_Sequence03",
+   "DEa1_S12_A_E05",
+   "DEa1_S12_A_E06",
+   "DEa1_S12_A_E11",
+   "DEa1_S12_A_Arena02",
+   "DEa1_S12_A_I06",
+   "DEa1_S12_A_Sequence04",
+   "DEa1_S12_A_E07",
+   "DEa1_S12_A_E08",
+   "DEa1_S12_A_SM01",
+   "DEa1_S12_A_SM02",
+   "DEa1_S12_A_I07",
+   "DEa1_S12_A_E09",
+   "DEa1_S12_A_Sequence05",
+   "DEa1_S12_A_I08",
+   "DEa1_S12_A_I09",
+   "DEa1_S12_A_I10",
+   "DEa1_S12_A_Arena04",
+   "DEa1_S12_A_Sequence01"
+  ],
+  "DEa1_S13_A": [
+   "DEa1_S13_A_SM01",
+   "DEa1_S13_A_SM02",
+   "DEa1_S13_A_K01",
+   "DEa1_S13_A_I01",
+   "DEa1_S13_A_E02",
+   "DEa1_S13_A_Standard01",
+   "DEa1_S13_A_I02",
+   "DEa1_S13_A_I03",
+   "DEa1_S13_A_I04",
+   "DEa1_S13_A_I05",
+   "DEa1_S13_A_I06",
+   "DEa1_S13_A_I07",
+   "DEa1_S13_A_E03",
+   "DEa1_S13_A_E04",
+   "DEa1_S13_A_I08",
+   "DEa1_S13_A_E05",
+   "DEa1_S13_A_E06",
+   "DEa1_S13_A_E07",
+   "DEa1_S13_A_E08",
+   "DEa1_S13_A_AS01",
+   "DEa1_S13_A_E09",
+   "DEa1_S13_A_I09",
+   "DEa1_S13_A_Sequence01"
+  ],
+  "DEa1_S14_A": [
+   "DEa1_S14_A_E01",
+   "DEa1_S14_A_E02",
+   "DEa1_S14_A_E03",
+   "DEa1_S14_A_I01",
+   "DEa1_S14_A_E04",
+   "DEa1_S14_A_E05",
+   "DEa1_S14_A_Arena01",
+   "DEa1_S14_A_I02",
+   "DEa1_S14_A_E06",
+   "DEa1_S14_A_I03",
+   "DEa1_S14_A_E07",
+   "DEa1_S14_A_E08",
+   "DEa1_S14_A_Arena02",
+   "DEa1_S14_A_Standard01",
+   "DEa1_S14_A_I04",
+   "DEa1_S14_A_I05",
+   "DEa1_S14_A_I06",
+   "DEa1_S14_A_E10",
+   "DEa1_S14_A_I07",
+   "DEa1_S14_A_Sequence01"
+  ],
+  "MEa1_S05_A": [
+   "MEa1_S05_A_E01",
+   "MEa1_S05_A_I01",
+   "MEa1_S05_A_Standard01",
+   "MEa1_S05_A_Sequence02",
+   "MEa1_S05_A_I02",
+   "MEa1_S05_A_Arena01",
+   "MEa1_S05_A_Sequence03",
+   "MEa1_S05_A_I03",
+   "MEa1_S05_A_Arena02",
+   "MEa1_S05_A_Sequence04",
+   "MEa1_S05_A_I05",
+   "MEa1_S05_A_Arena03Gateless",
+   "MEa1_S05_A_E02",
+   "MEa1_S05_A_I06",
+   "MEa1_S05_A_Arena03",
+   "MEa1_S05_A_E03",
+   "MEa1_S05_A_I07",
+   "MEa1_S05_A_Sequence01"
+  ],
+  "MEa1_S06_A": [
+   "MEa1_S06_A_E06",
+   "MEa1_S06_A_Selection04",
+   "MEa1_S06_A_Standard04",
+   "MEa1_S06_A_I12",
+   "false04",
+   "MEa1_S06_A_I13",
+   "MEa1_S06_A_Follow01",
+   "MEa1_S06_A_I14",
+   "MEa1_S06_A_E01",
+   "MEa1_S06_A_Selection01",
+   "MEa1_S06_A_Standard01",
+   "MEa1_S06_A_I01",
+   "MEa1_S06_A_I02",
+   "false01",
+   "MEa1_S06_A_I03",
+   "MEa1_S06_A_E02",
+   "MEa1_S06_A_Selection02",
+   "MEa1_S06_A_Standard02",
+   "MEa1_S06_A_I04",
+   "MEa1_S06_A_I05",
+   "false02",
+   "MEa1_S06_A_I06",
+   "MEa1_S06_A_E03",
+   "MEa1_S06_A_Selection03",
+   "MEa1_S06_A_Standard03",
+   "MEa1_S06_A_I07",
+   "MEa1_S06_A_I08",
+   "false03",
+   "MEa1_S06_A_I09",
+   "MEa1_S06_A_E04",
+   "MEa1_S06_A_I10",
+   "MEa1_S06_A_E05",
+   "MEa1_S06_A_SM01",
+   "MEa1_S06_A_K01",
+   "MEa1_S06_A_I11",
+   "MEa1_S06_A_Sequence01"
+  ],
+  "CT_S02_A": [
+   "CT_S02_A_E01",
+   "CT_S02_A_Arena",
+   "CT_S02_A_I01",
+   "CT_S02_A_E02",
+   "CT_S02_A_I02",
+   "CT_S02_A_Sequence01"
+  ],
+  "CA09": [
+   "CA09_Sequence06",
+   "CA09_Standard07",
+   "CA09_E21",
+   "CA09_E22",
+   "CA09_E23",
+   "CA09_E02B",
+   "CA09_E03",
+   "CA09_E04",
+   "CA09_I16",
+   "CA09_Standard06",
+   "CA09_Sequence02",
+   "CA09_E07",
+   "CA09_SM02",
+   "CA09_K01",
+   "CA09_SM05",
+   "CA09_K04",
+   "CA09_I19",
+   "CA09_MT02",
+   "CA09_Sequence03",
+   "CA09_E19",
+   "CA09_SM03",
+   "CA09_K02",
+   "CA09_SM06",
+   "CA09_SM09",
+   "CA09_K05",
+   "CA09_I20",
+   "CA09_MT03",
+   "CA09_Sequence04",
+   "CA09_E18",
+   "CA09_SM04",
+   "CA09_K03",
+   "CA09_SM07",
+   "CA09_SM08",
+   "CA09_K06",
+   "CA09_I21",
+   "CA09_MT04",
+   "CA09_E08",
+   "CA09_E09",
+   "CA09_I17",
+   "CA09_E14",
+   "CA09_A04",
+   "CA09_Sequence05",
+   "CA09_E15",
+   "CA09_E16",
+   "CA09_AS05",
+   "CA09_E17",
+   "CA09_Standard03",
+   "CA09_I07",
+   "CA09_I08",
+   "CA09_E20",
+   "CA09_Standard04",
+   "CA09_I12",
+   "CA09_I13",
+   "CA09_F01",
+   "CA09_MT01",
+   "CA09_I18",
+   "CA09_Sequence01"
+  ],
+  "CA10": [
+   "CA10_E00",
+   "CA10_E01",
+   "CA10_Standard01",
+   "CA10_E02",
+   "CA10_E03",
+   "CA10_E04",
+   "CA10_E05",
+   "CA10_Standard04",
+   "CA10_Sequence07",
+   "CA10_Standard06",
+   "CA10_MT02",
+   "CA10_E21",
+   "CA10_Sequence08",
+   "CA10_E23",
+   "CA10_MT05",
+   "CA10_E06",
+   "CA10_I07",
+   "CA10_Standard05",
+   "CA10_F01",
+   "CA10_Sequence05",
+   "CA10_E22",
+   "CA10_SM03",
+   "CA10_Standard03",
+   "CA10_SM01",
+   "CA10_AS05",
+   "CA10_Sequence04",
+   "CA10_MT03",
+   "CA10_I16",
+   "CA10_PC01",
+   "CA10_Sequence03",
+   "CA10_I17",
+   "CA10_Sequence06",
+   "CA10_F02",
+   "CA10_MT04",
+   "CA10_I10",
+   "CA10_I11",
+   "CA10_I12",
+   "CA10_E13",
+   "CA10_E14",
+   "CA10_E08",
+   "CA10_AS01",
+   "CA10_E09",
+   "CA10_E15",
+   "CA10_E16",
+   "CA10_E17",
+   "CA10_E24",
+   "CA10_AS06",
+   "CA10_E18",
+   "CA10_E19",
+   "CA10_E20",
+   "CA10_AS02",
+   "CA10_E10",
+   "CA10_E11",
+   "CA10_I13",
+   "CA10_PC02",
+   "CA10_AS03",
+   "CA10_T01",
+   "CA10_PC03",
+   "CA10_AS04",
+   "CA10_T02",
+   "CA10_I14",
+   "CA10_PC04",
+   "CA10_Sequence01"
+  ],
+  "CA09_BR": [
+   "CA09_BR_E01",
+   "CA09_BR_AS01",
+   "CA09_BR_Sequence01"
+  ],
+  "CA10_BR_B": [
+   "CA10_BR_B_E01",
+   "CA10_BR_B_AS01",
+   "CA10_BR_B_Sequence01"
+  ],
+  "CA10_BR": [
+   "CA10_BR_E01",
+   "CA10_BR_AS01",
+   "CA10_BR_I01",
+   "CA10_BR_AS02",
+   "CA10_BR_Sequence01"
+  ],
+  "CAa1_S03_A": [
+   "CAa1_S03_A_Standard01",
+   "CAa1_S03_A_Sequence02",
+   "CAa1_S03_A_E01",
+   "CAa1_S03_A_Arena01",
+   "CAa1_S03_A_Sequence03",
+   "CAa1_S03_A_E02",
+   "CAa1_S03_A_Arena02",
+   "CAa1_S03_A_Sequence04",
+   "CAa1_S03_A_E03",
+   "CAa1_S03_A_Arena03",
+   "CAa1_S03_A_Sequence05",
+   "CAa1_S03_A_E04",
+   "CAa1_S03_A_Arena04",
+   "CAa1_S03_A_E05",
+   "CAa1_S03_A_I02",
+   "CAa1_S03_A_Sequence01"
+  ],
+  "CAa1_S02_A": [
+   "CAa1_S02_A_Standard01",
+   "CAa1_S02_A_Sequence02",
+   "CAa1_S02_A_E01",
+   "CAa1_S02_A_Standard02",
+   "CAa1_S02_A_I01",
+   "CAa1_S02_A_I02",
+   "CAa1_S02_A_I03",
+   "CAa1_S02_A_Sequence03",
+   "CAa1_S02_A_E02",
+   "CAa1_S02_A_Standard03",
+   "CAa1_S02_A_I04",
+   "CAa1_S02_A_I05",
+   "CAa1_S02_A_I06",
+   "CAa1_S02_A_Standard04",
+   "CAa1_S02_A_Sequence04",
+   "CAa1_S02_A_E04",
+   "CAa1_S02_A_SM01",
+   "CAa1_S02_A_K01",
+   "CAa1_S02_A_I08",
+   "CAa1_S02_A_Sequence05",
+   "CAa1_S02_A_E05",
+   "CAa1_S02_A_SM02",
+   "CAa1_S02_A_K02",
+   "CAa1_S02_A_I09",
+   "CAa1_S02_A_Sequence06",
+   "CAa1_S02_A_E07",
+   "CAa1_S02_A_SM03",
+   "CAa1_S02_A_K03",
+   "CAa1_S02_A_I11",
+   "CAa1_S02_A_E06",
+   "CAa1_S02_A_I10",
+   "CAa1_S02_A_Sequence01"
+  ],
+  "MEa2_S02_A": [
+   "MEa2_S02_A_E01",
+   "MEa2_S02_A_I01",
+   "MEa2_S02_A_E02",
+   "MEa2_S02_A_I02",
+   "MEa2_S02_A_Standard01",
+   "MEa2_S02_A_Sequence02",
+   "MEa2_S02_A_E03",
+   "MEa2_S02_A_I03",
+   "MEa2_S02_A_Arena02",
+   "MEa2_S02_A_Sequence03",
+   "MEa2_S02_A_E04",
+   "MEa2_S02_A_I04",
+   "MEa2_S02_A_Arena03",
+   "MEa2_S02_A_Sequence04",
+   "MEa2_S02_A_E05",
+   "MEa2_S02_A_I05",
+   "MEa2_S02_A_Arena04",
+   "MEa2_S02_A_E06",
+   "MEa2_S02_A_I06",
+   "MEa2_S02_A_Sequence01"
   ]
  },
  "stations": [
@@ -355,7 +993,23 @@
   "SW.MinecartStation.PlainsA1.Barn",
   "SW.MinecartStation.PlainsA1.Border",
   "SW.MinecartStation.ForestA1.Outpost",
-  "SW.MinecartStation.ForestA1.SpiderCaveExit"
+  "SW.MinecartStation.ForestA1.SpiderCaveExit",
+  "SW.MinecartStation.Forest.A1.DangerZone",
+  "SW.MinecartStation.PlainsA2.VillagerOasis",
+  "SW.MinecartStation.PlainsA2.SouthEastBridge",
+  "SW.MinecartStation.PlainsA2.Central",
+  "SW.MinecartStation.PlainsA2.IllagerCamp",
+  "SW.MinecartStation.PlainsA2.NorthWestBridge",
+  "SW.MinecartStation.DesertA1.TaigaBeach",
+  "SW.MinecartStation.DesertA1.Fortress2",
+  "SW.MinecartStation.MeadowA1.SingersHaven",
+  "SW.MinecartStation.MeadowA1.SouthEast",
+  "SW.MinecartStation.CarapaceA1.Border",
+  "SW.MinecartStation.CarapaceA1.North",
+  "SW.MinecartStation.MeadowA2.Hilltop",
+  "SW.MinecartStation.MeadowA2.Fortress",
+  "SW.MinecartStation.DesertA1.MountainX",
+  "SW.MinecartStation.DesertA1.Cliffs"
  ],
  "cutscenes": [
   "SW.UI.Cutscene.Cutscenes.CS01",
@@ -368,7 +1022,20 @@
   "SW.UI.Cutscene.Cutscenes.CS06",
   "SW.UI.Cutscene.Cutscenes.CS07",
   "SW.UI.Cutscene.Cutscenes.CS08",
-  "SW.UI.Cutscene.Cutscenes.CS10"
+  "SW.UI.Cutscene.Cutscenes.CS10",
+  "SW.UI.Cutscene.Miniscene.MS29",
+  "SW.UI.Cutscene.Cutscenes.CS23",
+  "SW.UI.Cutscene.Cutscenes.CS16",
+  "SW.UI.Cutscene.Cutscenes.CS20",
+  "SW.UI.cutscene.cutscenes.CS21",
+  "SW.UI.Cutscene.Cutscenes.CS17",
+  "SW.UI.Cutscene.Cutscenes.CS12",
+  "SW.UI.Cutscene.Cutscenes.CS14",
+  "SW.UI.Cutscene.Miniscene.MS49",
+  "SW.UI.Cutscene.Miniscene.MS46",
+  "SW.UI.Cutscene.Cutscenes.CS27",
+  "SW.UI.Cutscene.Miniscene.MS47",
+  "SW.UI.Cutscene.Cutscenes.CS28"
  ],
  "gimmicks": [],
  "areas": [
@@ -665,6 +1332,1278 @@
     49.3
    ],
    "marker": 7
+  },
+  "SW.Doorway.PlainsA1.Dungeon.2": {
+   "at": [
+    220.5,
+    103.5,
+    51.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Dungeon.4": {
+   "at": [
+    298.5,
+    234.5,
+    53.5
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Dungeon.6": {
+   "at": [
+    235.5,
+    379.5,
+    34.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Rift.6": {
+   "at": [
+    307.0,
+    323.0,
+    41.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Dungeon.7": {
+   "at": [
+    353.5,
+    437.5,
+    52.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Rift.3": {
+   "at": [
+    249.0,
+    169.0,
+    47.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Dungeon.3": {
+   "at": [
+    300.5,
+    178.5,
+    53.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Interior.ScoutPoint": {
+   "at": [
+    -510.0,
+    272.0,
+    55.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Dungeon.9": {
+   "at": [
+    61.5,
+    640.5,
+    15.5
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Dungeon.8": {
+   "at": [
+    273.5,
+    616.5,
+    58.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.5": {
+   "at": [
+    327.0,
+    510.0,
+    13.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.Interior.WitchHut": {
+   "at": [
+    -2190.5,
+    -948.5,
+    50.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Dungeon.10": {
+   "at": [
+    329.5,
+    471.5,
+    13.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.11": {
+   "at": [
+    71.0,
+    877.0,
+    7.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Rift.1": {
+   "at": [
+    -86.0,
+    781.0,
+    5.9
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Dungeon.6": {
+   "at": [
+    -109.5,
+    741.5,
+    8.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Ext.4": {
+   "at": [
+    -224.5,
+    753.0,
+    6.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Int.4": {
+   "at": [
+    -359.5,
+    1231.0,
+    3.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.8": {
+   "at": [
+    -258.5,
+    759.0,
+    9.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Ext.1": {
+   "at": [
+    -342.0,
+    640.0,
+    7.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.RavagerTower": {
+   "at": [
+    -363.0,
+    680.0,
+    14.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.Top.Shortcut.Exit": {
+   "at": [
+    -968.0,
+    -380.5,
+    73.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.Entrance": {
+   "at": [
+    -989.0,
+    -374.5,
+    73.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.MiddleBottom": {
+   "at": [
+    -965.5,
+    -395.5,
+    81.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.Bottom": {
+   "at": [
+    -1378.5,
+    -268.5,
+    96.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.Top": {
+   "at": [
+    -1364.5,
+    -285.5,
+    114.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.MiddleTop": {
+   "at": [
+    -1138.5,
+    -411.0,
+    67.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.RavagerTower.Top.Shortcut": {
+   "at": [
+    -1134.0,
+    -375.5,
+    77.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.10": {
+   "at": [
+    -402.0,
+    754.0,
+    6.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Rift.2": {
+   "at": [
+    -464.0,
+    779.0,
+    10.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.CampTower": {
+   "at": [
+    -494.0,
+    852.0,
+    12.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.Top.Shortcut.Exit": {
+   "at": [
+    -990.0,
+    -114.5,
+    73.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.Entrance": {
+   "at": [
+    -1011.0,
+    -107.5,
+    73.8
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.MiddleBottom": {
+   "at": [
+    -987.5,
+    -128.5,
+    81.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.Bottom": {
+   "at": [
+    -1381.5,
+    -471.5,
+    96.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.Top": {
+   "at": [
+    -1368.5,
+    -488.5,
+    114.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.MiddleTop": {
+   "at": [
+    -1143.5,
+    -155.0,
+    67.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.CampTower.Top.Shortcut": {
+   "at": [
+    -1139.0,
+    -119.5,
+    77.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Ext.2": {
+   "at": [
+    -463.5,
+    846.0,
+    6.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Int.2": {
+   "at": [
+    -364.0,
+    1065.5,
+    -5.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.6": {
+   "at": [
+    -356.9,
+    838.5,
+    9.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Dungeon.3": {
+   "at": [
+    -368.5,
+    908.5,
+    6.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.Dungeon.1": {
+   "at": [
+    -216.5,
+    960.5,
+    9.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Ext.3": {
+   "at": [
+    -212.5,
+    938.0,
+    6.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Int.3": {
+   "at": [
+    -495.0,
+    1074.5,
+    -5.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.StorageTower": {
+   "at": [
+    -196.0,
+    908.0,
+    12.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.Top.Shortcut.Exit": {
+   "at": [
+    -986.0,
+    153.5,
+    73.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.Entrance": {
+   "at": [
+    -1008.0,
+    159.0,
+    73.8
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.MiddleBottom": {
+   "at": [
+    -983.5,
+    138.5,
+    81.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.Bottom": {
+   "at": [
+    -1377.5,
+    -58.5,
+    84.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.Top": {
+   "at": [
+    -1363.5,
+    -74.5,
+    101.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.MiddleTop": {
+   "at": [
+    -1161.5,
+    115.0,
+    66.9
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.StorageTower.Top.Shortcut": {
+   "at": [
+    -1157.0,
+    150.5,
+    77.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.NoteblockTower": {
+   "at": [
+    -303.4,
+    802.9,
+    12.3
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.NoteblockTower.Entrance": {
+   "at": [
+    -201.5,
+    190.0,
+    57.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.NoteblockTower.MiddleBottom": {
+   "at": [
+    -199.0,
+    197.3,
+    112.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.NoteblockTower.MiddleTop": {
+   "at": [
+    -198.0,
+    403.4,
+    96.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.NoteblockTower.Top": {
+   "at": [
+    -208.5,
+    471.0,
+    103.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Interior.NoteblockTower.FinalTop": {
+   "at": [
+    -1353.5,
+    115.5,
+    58.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.SpookyBarn": {
+   "at": [
+    299.0,
+    350.5,
+    42.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.Interior.SpookyBarn": {
+   "at": [
+    -658.5,
+    -536.0,
+    80.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.4": {
+   "at": [
+    -415.0,
+    886.0,
+    7.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Dungeon.5": {
+   "at": [
+    -526.5,
+    780.5,
+    5.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.Town.ReturnFromDeepDark.A2": {
+   "at": [
+    95.5,
+    -87.0,
+    35.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.5": {
+   "at": [
+    -141.0,
+    893.5,
+    6.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Dungeon.2": {
+   "at": [
+    -129.5,
+    856.5,
+    12.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.Dungeon.7": {
+   "at": [
+    -218.5,
+    703.5,
+    6.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.Dungeon.8": {
+   "at": [
+    -334.5,
+    753.5,
+    8.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.Rift.9": {
+   "at": [
+    -209.0,
+    800.0,
+    7.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Dungeon.4": {
+   "at": [
+    -486.5,
+    908.5,
+    6.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA2.Dungeon.9": {
+   "at": [
+    -567.5,
+    893.5,
+    6.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.12": {
+   "at": [
+    158.0,
+    917.0,
+    6.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Dungeon.1": {
+   "at": [
+    168.5,
+    968.5,
+    0.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Dungeon.4": {
+   "at": [
+    145.5,
+    1104.5,
+    2.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Ship1.Bow": {
+   "at": [
+    108.0,
+    1120.5,
+    0.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Ship1.Stern": {
+   "at": [
+    77.5,
+    1117.0,
+    -1.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Interior.Ship1.Bow": {
+   "at": [
+    -1125.0,
+    412.5,
+    -26.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Interior.Ship1.Stern": {
+   "at": [
+    -1188.0,
+    414.5,
+    -25.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Dungeon.5": {
+   "at": [
+    88.5,
+    1165.5,
+    -3.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Dungeon.2": {
+   "at": [
+    57.5,
+    1042.5,
+    1.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.1": {
+   "at": [
+    109.0,
+    998.0,
+    1.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Ship2": {
+   "at": [
+    80.2,
+    963.2,
+    3.4
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.11": {
+   "at": [
+    88.0,
+    945.0,
+    1.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Interior.Ship2.IceLagoon": {
+   "at": [
+    -1272.0,
+    413.5,
+    -25.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Dungeon.10": {
+   "at": [
+    106.5,
+    939.5,
+    1.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Dungeon.6": {
+   "at": [
+    294.5,
+    1124.5,
+    1.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Lake.House4.Basement4": {
+   "at": [
+    322.0,
+    1050.0,
+    5.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Lake.House1.Basement1": {
+   "at": [
+    321.0,
+    1031.0,
+    5.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.4": {
+   "at": [
+    295.0,
+    1057.0,
+    5.6
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Lake.Interior.Basement2.House2": {
+   "at": [
+    -2306.5,
+    413.5,
+    -26.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.2": {
+   "at": [
+    250.0,
+    993.0,
+    2.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Lake.House3.Basement3": {
+   "at": [
+    221.0,
+    988.0,
+    2.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Lake.Interior.Basement3.House3": {
+   "at": [
+    -2141.5,
+    395.5,
+    -25.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Courtyard.Keep": {
+   "at": [
+    192.1,
+    1231.5,
+    -3.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Junction.MainHall": {
+   "at": [
+    192.5,
+    1232.0,
+    7.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Tower1.Bottom": {
+   "at": [
+    191.5,
+    1243.0,
+    7.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.FortTrapEntrance": {
+   "at": [
+    167.9,
+    1244.4,
+    5.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.NoteRoom.EntryFromBoss": {
+   "at": [
+    -890.5,
+    263.0,
+    27.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.NoteRoom.ExitToMain": {
+   "at": [
+    -890.5,
+    306.5,
+    29.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.MainHall.EntryFromNoteRoom": {
+   "at": [
+    -684.5,
+    315.0,
+    29.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.MainHall.Junction": {
+   "at": [
+    -715.0,
+    304.5,
+    26.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.MainHall.Courtyard": {
+   "at": [
+    -681.0,
+    254.5,
+    26.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Tower1.SecretWall": {
+   "at": [
+    189.5,
+    1247.5,
+    34.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.Tower1.Bottom": {
+   "at": [
+    -520.0,
+    407.3,
+    26.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.Tower1.SecretWall": {
+   "at": [
+    -524.0,
+    420.5,
+    54.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.Tower1.Top": {
+   "at": [
+    -497.5,
+    419.0,
+    113.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.Tower1.Top": {
+   "at": [
+    209.0,
+    1246.5,
+    63.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.12": {
+   "at": [
+    184.0,
+    1341.0,
+    68.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Fortress.Courtyard.MainHall": {
+   "at": [
+    223.0,
+    1214.4,
+    11.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.DeepDarkT1": {
+   "at": [
+    -793.5,
+    1639.5,
+    81.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.Dungeon.4": {
+   "at": [
+    -833.5,
+    1800.5,
+    66.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Ext.3": {
+   "at": [
+    -922.5,
+    1784.0,
+    74.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.Dungeon.5": {
+   "at": [
+    -970.5,
+    1694.5,
+    62.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.Dungeon.10": {
+   "at": [
+    -899.5,
+    1655.5,
+    64.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.Dungeon.7": {
+   "at": [
+    -888.5,
+    1623.5,
+    75.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.Dungeon.6": {
+   "at": [
+    -1004.5,
+    1670.5,
+    74.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.Dungeon.8": {
+   "at": [
+    -728.5,
+    1864.5,
+    65.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.CarapaceA1.FirstLayer": {
+   "at": [
+    -760.5,
+    2062.0,
+    70.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.Dungeon.CarapaceA1.Dungeons.1": {
+   "at": [
+    -701.5,
+    2064.5,
+    65.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.CarapaceA1.SecondLayer": {
+   "at": [
+    -768.5,
+    2073.5,
+    73.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior.Entrance": {
+   "at": [
+    -2419.0,
+    -575.5,
+    49.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior.Exit": {
+   "at": [
+    -2442.5,
+    -557.0,
+    46.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.SecondLayerUp1": {
+   "at": [
+    -725.5,
+    2178.0,
+    73.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.Dungeon.CarapaceA1.Dungeons.2": {
+   "at": [
+    -713.5,
+    2160.5,
+    72.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.CarapaceA1.ThirdLayer1": {
+   "at": [
+    -730.0,
+    2193.5,
+    75.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior2.Entrance": {
+   "at": [
+    -2182.5,
+    -557.5,
+    39.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior2.Exit": {
+   "at": [
+    -2194.5,
+    -513.0,
+    35.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.Dungeon.CarapaceA1.Dungeons.3": {
+   "at": [
+    -695.5,
+    2220.5,
+    75.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.Dungeon.CarapaceA1.Dungeons.4": {
+   "at": [
+    -769.5,
+    2283.5,
+    77.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.CarapaceA1.Monarch.Entrance": {
+   "at": [
+    -683.5,
+    2431.5,
+    75.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.Dungeon.6": {
+   "at": [
+    -804.5,
+    2470.5,
+    77.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.Dungeon.3": {
+   "at": [
+    -898.5,
+    2399.5,
+    100.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.Dungeon.4": {
+   "at": [
+    -917.5,
+    2535.5,
+    105.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.FortressExteriorEntrance.02": {
+   "at": [
+    -683.5,
+    2842.0,
+    92.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.Portal": {
+   "at": [
+    -778.0,
+    2817.0,
+    76.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DeepDarkA2.Portal": {
+   "at": [
+    -2501.5,
+    2748.5,
+    128.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DeepDarkA2.ExitToTown": {
+   "at": [
+    -2460.0,
+    2691.5,
+    111.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.8": {
+   "at": [
+    393.0,
+    1109.0,
+    7.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Fortress.Courtyard.TwoEndTowers": {
+   "at": [
+    264.0,
+    1178.0,
+    2.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.WesternWall.Stair.TwoEndTowers": {
+   "at": [
+    267.0,
+    1175.5,
+    25.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Ext.02": {
+   "at": [
+    320.0,
+    1173.0,
+    37.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Int.02": {
+   "at": [
+    -1786.0,
+    121.5,
+    65.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Ext.01": {
+   "at": [
+    315.5,
+    1125.0,
+    37.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Int.01": {
+   "at": [
+    -1610.5,
+    135.5,
+    92.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Ext.03": {
+   "at": [
+    316.0,
+    1249.0,
+    37.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Fortress.SQTower.Int.03": {
+   "at": [
+    -1971.5,
+    117.5,
+    65.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Dungeon.8": {
+   "at": [
+    433.5,
+    978.5,
+    16.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Dungeon.7": {
+   "at": [
+    376.5,
+    951.5,
+    18.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.7": {
+   "at": [
+    375.0,
+    979.0,
+    26.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Fortress.WatchTower": {
+   "at": [
+    405.4,
+    1124.0,
+    21.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Dungeon.9": {
+   "at": [
+    422.5,
+    1203.5,
+    27.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.9": {
+   "at": [
+    416.0,
+    1213.0,
+    48.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Cliffs.IcedCavernEntrance": {
+   "at": [
+    388.5,
+    1233.0,
+    47.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.10": {
+   "at": [
+    387.0,
+    1271.0,
+    47.9
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Cliffs.IcedCavernEntrance3": {
+   "at": [
+    366.0,
+    1269.5,
+    31.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Cliffs.IcedCavernEntrance2": {
+   "at": [
+    257.5,
+    1357.0,
+    57.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Cliffs.IceCaves": {
+   "at": [
+    300.5,
+    1334.0,
+    63.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Dungeon.11": {
+   "at": [
+    211.5,
+    1301.5,
+    17.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.13": {
+   "at": [
+    279.2,
+    1295.6,
+    17.0
+   ],
+   "marker": 9
   }
  },
  "regions": {
@@ -716,6 +2655,186 @@
    "size": [
     4,
     4
+   ]
+  },
+  "SW.Area.Plains.A1.ScoutPoint": {
+   "corner": [
+    -544,
+    224
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Area.Forest.A1.WitchInt": {
+   "corner": [
+    -2208,
+    -960
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Area.Plains.A2.NatInteriors": {
+   "corner": [
+    -576,
+    1024
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Area.Plains.A2.RavagerTower": {
+   "corner": [
+    -1440,
+    -448
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Area.Plains.A2.CampTower": {
+   "corner": [
+    -1440,
+    -544
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Area.Plains.A2.StorageTower": {
+   "corner": [
+    -1440,
+    -128
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Area.Plains.A2.BossTower": {
+   "corner": [
+    -256,
+    128
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Area.Plains.A2.BossArena": {
+   "corner": [
+    -256,
+    384
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Area.Plains.A2.NoteblockRoom": {
+   "corner": [
+    -1408,
+    96
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "Sw.Area.Plains.A1.SpookyBarnBasement": {
+   "corner": [
+    -672,
+    -576
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Area.Desert.A1.ShipInt": {
+   "corner": [
+    -1600,
+    384
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Area.Desert.A1.Basement": {
+   "corner": [
+    -2336,
+    352
+   ],
+   "size": [
+    20,
+    20
+   ]
+  },
+  "SW.Area.Desert.A1.FortHalls": {
+   "corner": [
+    -928,
+    224
+   ],
+   "size": [
+    12,
+    12
+   ]
+  },
+  "SW.Area.Desert.A1.Tower": {
+   "corner": [
+    -576,
+    352
+   ],
+   "size": [
+    4,
+    4
+   ]
+  },
+  "SW.Region.Sift": {
+   "corner": [
+    -1120,
+    1536
+   ],
+   "size": [
+    44,
+    44
+   ]
+  },
+  "SW.Area.Carapace.A1.CarapaceInterior": {
+   "corner": [
+    -2496,
+    -608
+   ],
+   "size": [
+    12,
+    12
+   ]
+  },
+  "SW.Area.DeepDark.A2.PortalEntry": {
+   "corner": [
+    -2624,
+    2560
+   ],
+   "size": [
+    8,
+    8
+   ]
+  },
+  "SW.Area.Desert.A1.QuestTowers": {
+   "corner": [
+    -1984,
+    96
+   ],
+   "size": [
+    12,
+    12
    ]
   }
  },
@@ -833,6 +2952,123 @@
   },
   "SpiderCaveV3 BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA660315D2C602_1500185788": {
    "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV3-1685000-500-500.SpiderCaveV3:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA660315D2C602_1500185788",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_B025AA66031542C602_1385642837": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/7YBGXJDG988XBRMVIEW7OZ5P3.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA66031542C602_1385642837",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_SilverKeyGateDoorActorStateGimmick UAID_B025AA66031540C602_1965230244": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/7YBGXJDG988XBRMVIEW7OZ5P3.Overworld:PersistentLevel.BP_SilverKeyGateDoorActorStateGimmick_C_UAID_B025AA66031540C602_1965230244",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_ForestRoadblockActorStateGimmick UAID_B025AA660315039902_1645688867": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/7YBGXJDG988XBRMVIEW7OZ5P3.Overworld:PersistentLevel.BP_ForestRoadblockActorStateGimmick_C_UAID_B025AA660315039902_1645688867",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA66031541C602_1766883421": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/7YBGXJDG988XBRMVIEW7OZ5P3.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA66031541C602_1766883421",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D45D64043182C1A102_1365048627": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EP5X3YFC16TOEHTFNT52H54XP.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D45D64043182C1A102_1365048627",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D45D6404318212C402_1122301732": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EP5X3YFC16TOEHTFNT52H54XP.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D45D6404318212C402_1122301732",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D45D6404318212C402_1075015731": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EP5X3YFC16TOEHTFNT52H54XP.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D45D6404318212C402_1075015731",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D45D64043182C0A102_1450899431": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EP5X3YFC16TOEHTFNT52H54XP.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D45D64043182C0A102_1450899431",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_IllagerPlainsPlatformActorStateGimmick UAID_D45D64043182DAB502_1295357103": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/14C89DNEPRWYKFYYQZWR83X92.Overworld:PersistentLevel.BP_IllagerPlainsPlatformActorStateGimmick_C_UAID_D45D64043182DAB502_1295357103",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_IllagerLiftButtonActorStateGimmick UAID_D45D640431829DAA02_1904064825": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/5738XZV7ATXP25WBEPE7C37RL.Overworld:PersistentLevel.BP_IllagerLiftButtonActorStateGimmick_C_UAID_D45D640431829DAA02_1904064825",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "DesertA1_Anchor_Bossroom_002 BP_InvisibleProximityTrigger_TriggerObject UAID_2CF05D5608C06A5602_2106294976": {
+   "path": "/Game/Spicewood/Maps/Procedural/deserta1_bossarena/DesertA1_Anchor_Bossroom_002-574300-48700-13200.DesertA1_Anchor_Bossroom_002:PersistentLevel.BP_InvisibleProximityTrigger_TriggerObject_C_UAID_2CF05D5608C06A5602_2106294976",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_D85ED38239C340D602_1290412107": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/ENJNASAYUD8TD0GGR2D0JSXXD.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_D85ED38239C340D602_1290412107",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D85ED38239C340D602_1176926106": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/376W5NHRXWI4HS9BMU8SRODN6.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D85ED38239C340D602_1176926106",
    "states": [
     [
      0,

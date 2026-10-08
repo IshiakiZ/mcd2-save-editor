@@ -106,14 +106,14 @@
      "tier": "I",
      "strength": 0.1,
      "shown": "10%",
-     "seen": false,
+     "seen": true,
      "text": "Attacks have a 10% chance to inflict the Chained status on hits."
     },
     {
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Attacks have a 15% chance to inflict the Chained status on hits."
     },
     {
@@ -212,7 +212,7 @@
      "tier": "III",
      "strength": -0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Reduces artifact cooldown time by 20%."
     }
    ]
@@ -297,7 +297,7 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 15% chance to deflect enemy projectiles."
     },
     {
@@ -396,7 +396,7 @@
      "tier": "III",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance of critical hits from ranged attacks by 20%."
     }
    ]
@@ -427,7 +427,7 @@
      "tier": "III",
      "strength": -0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Reduces damage taken from elemental attacks by 20%."
     }
    ]
@@ -451,7 +451,7 @@
      "tier": "II",
      "strength": 0.1,
      "shown": "10%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 10% chance to receive additional emeralds."
     },
     {
@@ -482,7 +482,7 @@
      "tier": "II",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Increases the area of all positive status effects by 30%."
     },
     {
@@ -599,7 +599,7 @@
      "tier": "I",
      "strength": -0.05,
      "shown": "5%",
-     "seen": false,
+     "seen": true,
      "text": "Companions take 5% less damage."
     },
     {
@@ -1009,7 +1009,7 @@
      "tier": "II",
      "strength": 0.5,
      "shown": "50%",
-     "seen": false,
+     "seen": true,
      "text": "Ranged attacks deal 50% more damage at close range."
     },
     {
@@ -1140,7 +1140,7 @@
      "tier": "III",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance of critical hits with melee attacks by 20%."
     }
    ]
@@ -1226,7 +1226,7 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Increases melee attack speed by 15%."
     },
     {
@@ -1250,7 +1250,7 @@
      "tier": "I",
      "strength": -0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Reduces ranged ammo cooldown time by 15%."
     },
     {
@@ -1287,7 +1287,7 @@
      "tier": "II",
      "strength": 0.3,
      "shown": "30%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance to stagger enemies on hit by 30%."
     },
     {
@@ -1387,7 +1387,7 @@
      "tier": "III",
      "strength": 0.25,
      "shown": "25%",
-     "seen": false,
+     "seen": true,
      "text": "Reduces rolling cooldown time by 25%."
     }
    ]
@@ -1404,7 +1404,7 @@
      "tier": "I",
      "strength": 0.4,
      "shown": "40%",
-     "seen": false,
+     "seen": true,
      "text": "Increases duration of negative statuses on enemies by 40%."
     },
     {
@@ -1527,7 +1527,7 @@
      "tier": "I",
      "strength": 0.25,
      "shown": "25%",
-     "seen": false,
+     "seen": true,
      "text": "Ranged attacks deal 25% more damage from far away."
     },
     {
@@ -1589,7 +1589,7 @@
      "tier": "I",
      "strength": 0.25,
      "shown": "25%",
-     "seen": false,
+     "seen": true,
      "text": "Increases souls gained by 25%."
     },
     {
@@ -1813,7 +1813,7 @@
      "tier": "II",
      "strength": 0.35,
      "shown": "35%",
-     "seen": false,
+     "seen": true,
      "text": "Deal 35% more damage to enemies who are at full health."
     },
     {
@@ -1851,7 +1851,7 @@
      "tier": "III",
      "strength": 0.2,
      "shown": "20%",
-     "seen": false,
+     "seen": true,
      "text": "Artifact attacks deal 20% more damage."
     }
    ]
@@ -2016,6 +2016,18 @@
     {
      "tier": "III",
      "strength": 0.244871,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.MultiPotion",
+   "name": "Multi Potion",
+   "name_from_id": true,
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 3,
      "seen": true
     }
    ]
