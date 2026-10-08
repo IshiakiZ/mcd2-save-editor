@@ -187,15 +187,23 @@ def map_regions(document: Any) -> dict[str, dict]:
     """The picture of the fog a save keeps for each region: the corner saved with it (metres), how many squares
     it is across and down, the squares themselves line by line from the top (0 for one the hero has never seen,
     up to 255 for one all clear), and how far the picture lies from that corner (SHIFTS)."""
-    body = document.get("CharacterSaveV1") if isinstance(document, dict) else None
-    world = (body or {}).get("WorldExploration") or {}
+    def held(value: object, kind: type) -> Any:
+        return value if isinstance(value, kind) else kind()
+
+    def number(value: object) -> float:
+        return value if isinstance(value, (int, float)) and not isinstance(value, bool) else 0
+
+    body = held(document, dict).get("CharacterSaveV1")
+    fog = held(held(held(body, dict).get("WorldExploration"), dict).get("SavedFogOfWarExploration"), dict)
     found = {}
-    for area in (world.get("SavedFogOfWarExploration") or {}).get("Items") or []:
-        corner, size, tag = area.get("WorldPosition") or {}, area.get("Size") or {}, str(area.get("Tag"))
-        across, down = (side if isinstance(side, int) and side > 0 else 0 for side in (size.get("X"), size.get("Y")))
+    for area in held(fog.get("Items"), list):
+        if not isinstance(area, dict):
+            continue
+        corner, size, tag = held(area.get("WorldPosition"), dict), held(area.get("Size"), dict), str(area.get("Tag"))
+        across, down = (side if isinstance(side, int) and not isinstance(side, bool) and side > 0 else 0 for side in (size.get("X"), size.get("Y")))
         # As many squares as the picture's size says, whatever the save holds: one short of them counts as never seen.
-        cells = [cell if isinstance(cell, int) else 0 for cell in (area.get("Data") or [])[: across * down]]
-        found[tag] = {"x": corner.get("X") or 0, "y": corner.get("Y") or 0, "across": across, "down": down,
+        cells = [cell if isinstance(cell, int) and not isinstance(cell, bool) else 0 for cell in held(area.get("Data"), list)[: across * down]]
+        found[tag] = {"x": number(corner.get("X")), "y": number(corner.get("Y")), "across": across, "down": down,
                       "cells": cells + [0] * (across * down - len(cells)), "shift": list(SHIFTS.get(tag, (0, 0)))}
     return found
 

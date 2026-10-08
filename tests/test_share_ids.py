@@ -4,10 +4,10 @@ import unittest
 import urllib.parse
 from unittest import mock
 
-from dungeons2_editor import share_ids
+from dungeons2_editor import share_ids, world
 from dungeons2_editor.hero import Hero, effect_choices
 
-from .helpers import enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect, talisman_item
+from .helpers import enchanted, enchantment_effect, hero_item, hero_save, hero_with_a_world, rolled, rolled_effect, talisman_item
 
 
 class ShareIdsTests(unittest.TestCase):
@@ -259,6 +259,42 @@ class ShareIdsTests(unittest.TestCase):
         report = share_ids.report_text([Hero(hero_save())], "9.9.9")
         self.assertTrue(all(line.startswith("SW.Item.") for line in report.splitlines()))
         self.assertNotIn("00000000-0000-1000-8000-000000000002", report)  # the character ID stays out
+
+    def test_report_tells_of_the_world_too_under_the_items(self):
+        save = hero_with_a_world()
+        save["CharacterSaveV1"]["Inventory"]["Entries"].append(hero_item("SW.Item.SomethingNew", seed=31, unseen=False))
+        heroes = [Hero(save)]
+        places = {"chests": [{"opened": 2, "count": 4, "area": "SW.Area.Forest.A1", "near": [48, 48], "region": "SW.Region.Camp"}], "locations": [], "found_at": {}}
+        report = share_ids.report_text(heroes, "9.9.9", places)
+        items, told = report.split("\n\n", 1)
+        self.assertTrue(items.startswith("SW.Item.") and all(line.startswith("SW.Item.") for line in items.splitlines()))
+        self.assertEqual(told.splitlines()[:3], [world.SAVES_HEADER, "quest CA04 - Active; steps: E01+, E02~", "quest FOa1_S10_A - Available; steps: E01"])
+        self.assertEqual(told.splitlines()[-4:], ["", world.PLACES_HEADER, "chest - 2 opened in SW.Area.Forest.A1, around 48, 48 in SW.Region.Camp", "chests - 2 opened in SW.Area.Forest.A1"])
+        self.assertEqual(told.splitlines(), share_ids.world_lines(heroes, places))
+        self.assertNotIn("00000000-0000-1000-8000-000000000002", report)  # the character ID stays out of this part as well
+        self.assertNotIn("RangerDeluxe", report)
+        # The world's part is yours to leave out, and a list reads the same without it as it did before there was one.
+        self.assertEqual(share_ids.report_text(heroes, "9.9.9", places, world=False), items)
+        self.assertEqual((share_ids.without_world(report), share_ids.without_world(items), share_ids.without_world(told)), (items, items, ""))
+        self.assertEqual(share_ids.with_world(items + "\n", told.splitlines()), report)
+        self.assertEqual((share_ids.with_world("", told.splitlines()), share_ids.with_world(items, [])), (told, items))
+        # What the saves show of the world counts as news like an ID does; what the recordings add doesn't.
+        keys = share_ids.finding_keys(heroes)
+        self.assertTrue({"SW.Item.SomethingNew", "world quest CA04", "world door SW.Doorway.ForestA1.Dungeon.1"} <= keys)
+        self.assertEqual(len(keys), 14)
+        self.assertEqual(share_ids.finding_keys([Hero(hero_save())]), set())
+        # The whole list has to fit in a GitHub issue: the world's part takes what room the items leave it.
+        self.assertEqual(share_ids.world_lines(heroes, places, room=10_000_000), told.splitlines())
+        short = share_ids.world_lines(heroes, places, room=200)
+        self.assertLess(sum(len(line) + 1 for line in short[:-1]), 300)
+        self.assertIn("more lines were left out", short[-1])
+        self.assertEqual(share_ids.world_lines(heroes, places, room=-5)[-1][:4], "(15 ")  # no room at all: thirteen lines of the saves, two of the recordings
+        with mock.patch.object(share_ids, "MAX_REPORT", len(items) + 150):
+            self.assertIn("more lines were left out", share_ids.report_text(heroes, "9.9.9", places).splitlines()[-1])
+        # Whatever goes wrong reading the world out of a save, the items are still told and the editor still opens.
+        with mock.patch.object(world, "of_save", side_effect=TypeError("a save nobody has seen the like of")):
+            self.assertEqual(share_ids.report_text(heroes, "9.9.9", places), items)
+            self.assertEqual(share_ids.finding_keys(heroes), {"SW.Item.SomethingNew"})
 
     def test_issue_link_fills_in_the_form(self):
         url = share_ids.issue_url("SW.Item.X - Thing", "9.9.9")

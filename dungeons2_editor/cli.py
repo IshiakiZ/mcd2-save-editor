@@ -166,13 +166,22 @@ def cmd_ids(args: argparse.Namespace) -> int:
     from . import __version__
     from .share_ids import ISSUE_URL, report_text
 
+    from . import recorder
+
     profile = _pick_profile(args.profile)
-    report = report_text([c.hero for c in profile.containers if c.hero is not None], __version__)
+    try:
+        atlas = recorder.fresh_atlas(recorder.DEFAULT_OUT)
+    except Exception:  # recordings are extra: the saves' part of the list doesn't wait on them
+        atlas = None
+    report = report_text([c.hero for c in profile.containers if c.hero is not None], __version__, atlas)
     if not report:
-        print("Everything in your saves is already in the editor's list.")
+        print("Everything in your saves is already in the editor's lists.")
         return 0
     print(report)
-    print(f"\nAdd what the game calls each item after the dash, and post it at {ISSUE_URL} (only item IDs and what the game saved with those items, nothing else).")
+    print(
+        f"\nAdd what the game calls each item after its dash, and post it at {ISSUE_URL}. It holds item IDs with what the game saved with those items, and "
+        "what your saves and recordings show of the game's world, in the game's own names and numbers: no hero's ID or name, and nothing else."
+    )
     return 0
 
 

@@ -1,0 +1,46 @@
+{
+ "about": "A small list of the world for the tests, pinned like the item list beside it, so that the editor learning more of the world doesn't change what the tests see as new.",
+ "quests": {
+  "CA01": [
+   "CA01_E01"
+  ]
+ },
+ "stations": [
+  "SW.MinecartStation.Town"
+ ],
+ "cutscenes": [],
+ "gimmicks": [],
+ "areas": [
+  "SW.Area.Town"
+ ],
+ "doors": {
+  "SW.Doorway.Camp.Docks": {
+   "at": [
+    48.0,
+    80.0,
+    0.0
+   ],
+   "marker": 7
+  }
+ },
+ "regions": {
+  "SW.Region.Camp": {
+   "corner": [
+    0,
+    0
+   ],
+   "size": [
+    4,
+    3
+   ]
+  }
+ },
+ "achievements": {
+  "SW.Achievements.CompleteArriveInBraveHavenQuest": "QuestAchievements"
+ },
+ "progression": {},
+ "pieces": {},
+ "found": {},
+ "chests": [],
+ "chest_counts": {}
+}

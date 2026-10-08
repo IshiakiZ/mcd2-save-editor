@@ -1,11 +1,19 @@
-"""Sharing item IDs: the IDs in your saves that the editor doesn't know yet, ready to post on GitHub.
+"""Sharing item IDs: what your saves hold that the editor doesn't know yet, ready to post on GitHub.
 
-Only item IDs (like SW.Item.MysticHelmet) go into the report, and what the game saved with those items: what
-a talisman does when the editor can't add it with its effect yet, and the effects and enchantments on weapons,
-armor and artifacts that the editor's list doesn't have, which it can't add until it has seen them. That
-includes the effect a Unique comes with, for each Unique the editor hasn't seen it on. And an item saved with
-a mark or a field the editor has never met on one (however the game tags a Soul Storm piece, say) goes in as
-the save holds it. Nothing else from the save.
+Two things go into the report. First, item IDs (like SW.Item.MysticHelmet) and what the game saved with those
+items: what a talisman does when the editor can't add it with its effect yet, and the effects and enchantments
+on weapons, armor and artifacts that the editor's list doesn't have, which it can't add until it has seen them.
+That includes the effect a Unique comes with, for each Unique the editor hasn't seen it on. And an item saved
+with a mark or a field the editor has never met on one (however the game tags a Soul Storm piece, say) goes in
+as the save holds it.
+
+Second, unless you untick it, what your saves show of the game's world that the editor's list of it doesn't
+have (world.py): quests and their steps and how they stand, doors and where they are, minecart stations,
+regions, cutscenes, areas, achievements and puzzle pieces, and from your play recordings, if you've made any,
+where chests were opened and where stations and cutscenes turned up. All of it in the game's own names and
+numbers.
+
+Nothing else from the save: no hero's ID or name, nothing of your settings, nothing about when you played.
 """
 
 from __future__ import annotations
@@ -27,6 +35,7 @@ from .layout import fit_to_contents, text_width
 ISSUE_URL = "https://github.com/IshiakiZ/mcd2-save-editor/issues/new"
 ISSUE_TEMPLATE = "item-ids.yml"
 MAX_LINK = 6000  # characters; GitHub turns away a link much longer than this, so a longer list is pasted in instead
+MAX_REPORT = 60_000  # characters in a whole list: a GitHub issue holds 65,536, and the form adds a little of its own
 PASTE_HERE = "(paste the list here: it's on your clipboard, so press Ctrl+V)"
 MAX_GEAR_LINES = 60  # lines of gear effects in one report, so it fits in a GitHub issue
 MAX_MARK_LINES = 8  # lines for items saved with a mark or a field the editor doesn't know: each holds a whole item
@@ -60,6 +69,9 @@ KNOWN_FIELDS = {
 _LEFT_OUT = {("ItemData", "PickupTimestamp"), ("ItemData.GeneratorData", "GenesisRandomSeed")}
 _TAG_LIKE = re.compile(r"[A-Za-z0-9_.]{1,80}")  # the game's own names: SW.Item.Property.Dynamic.Unseen, ItemPower
 
+
+# What reading the world out of a save could trip over, if a save held it some way nobody has seen.
+_ODD_SAVE = (AttributeError, IndexError, KeyError, TypeError, ValueError)
 
 # How the game vouches for an ID (Hero.item_types_from_the_game), as the report puts it.
 SEEN_AS = {"collected": "in the collections", "merchant": "in the merchant's stock", "kept": "kept by the game"}
@@ -335,10 +347,35 @@ def marked_items(heroes: list[Hero]) -> list[tuple[str, str]]:
     return lines
 
 
+def _saves(heroes: list[Hero]) -> list[dict]:
+    """These heroes' saves, as the world's part of the report reads them."""
+    return [{"CharacterSaveV1": hero.body} for hero in heroes]
+
+
+def world_lines(heroes: list[Hero], atlas: dict | None = None, room: int = MAX_REPORT) -> list[str]:
+    """The world's part of the report (world.lines): what these saves show of the game's world that the editor's
+    list of it doesn't have, and what the play recorder's recordings (their atlas, if there is one) saw turn up
+    where. Under a heading each; empty when there's nothing to tell. It takes no more than ``room`` characters
+    (what the items' part leaves of a whole list), and never more than a world part may."""
+    from . import world  # here, not above: the recorder reads this module, and world reads the recorder
+
+    try:
+        return world.lines(_saves(heroes), atlas, max(0, min(world.MAX_CHARS, room)))
+    except _ODD_SAVE:  # the items' part of the list doesn't wait on a save laid out some way nobody has seen
+        return []
+
+
 def finding_keys(heroes: list[Hero]) -> set[str]:
-    """A key for each thing the report would tell. The editor remembers the ones you've been shown, so it can
-    tell when your saves hold something that wasn't there before."""
+    """A key for each thing the report would tell from your saves. The editor remembers the ones you've been
+    shown, so it can tell when your saves hold something that wasn't there before. (What your recordings add
+    to the report has no key: it's told along with the rest, and isn't news by itself.)"""
+    from . import world
+
     keys = {tag for tag, _note in unknown_ids(heroes)} | {f"{tag} effect" for tag, _text in talisman_effects(heroes)}
+    try:
+        keys |= world.keys(_saves(heroes))
+    except _ODD_SAVE:  # this is worked out as the editor opens: nothing in a save's world may get in the way of that
+        pass
     for item, pairs, own in _telling_items(heroes):
         keys |= {f"{effect} {template}".strip() for effect, template in pairs}
         if own:
@@ -348,9 +385,27 @@ def finding_keys(heroes: list[Hero]) -> set[str]:
     return keys
 
 
-def report_text(heroes: list[Hero], version: str) -> str:
-    lines = [f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes) + gear_effects(heroes) + marked_items(heroes)]
-    return "\n".join(lines)
+def items_text(heroes: list[Hero]) -> str:
+    """The items' part of the report: a line to an ID."""
+    return "\n".join(f"{tag} - {note}" for tag, note in unknown_ids(heroes) + talisman_effects(heroes) + gear_effects(heroes) + marked_items(heroes))
+
+
+def with_world(items: str, world_part: list[str]) -> str:
+    """A report: the items' part, and under it, after an empty line, the world's."""
+    return "\n\n".join(part for part in (items.strip(), "\n".join(world_part)) if part)
+
+
+def without_world(report: str) -> str:
+    """A report less its world part, whatever has been typed into the rest of it."""
+    from . import world
+
+    cut = min((report.find(heading) for heading in (world.SAVES_HEADER, world.PLACES_HEADER) if heading in report), default=-1)
+    return report if cut < 0 else report[:cut].rstrip()
+
+
+def report_text(heroes: list[Hero], version: str, atlas: dict | None = None, world: bool = True) -> str:
+    items = items_text(heroes)
+    return with_world(items, world_lines(heroes, atlas, MAX_REPORT - len(items)) if world else [])
 
 
 def issue_url(ids_text: str, version: str) -> str:
@@ -361,9 +416,11 @@ def issue_url(ids_text: str, version: str) -> str:
 class ShareIdsDialog(tk.Toplevel):
     """Shows the report, lets you add names, and copies it or opens a pre-filled GitHub issue."""
 
-    def __init__(self, parent: tk.Misc, heroes: list[Hero], version: str):
+    def __init__(self, parent: tk.Misc, heroes: list[Hero], version: str, atlas: dict | None = None):
         super().__init__(parent)
         self.version = version
+        items = items_text(heroes)
+        self.world_part = world_lines(heroes, atlas, MAX_REPORT - len(items))
         self.title("Share item IDs")
         self.transient(parent)
         match_title_bar(self)
@@ -372,22 +429,37 @@ class ShareIdsDialog(tk.Toplevel):
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
         wrap = text_width(self, 80)
-        report = report_text(heroes, version)
+        report = with_world(items, self.world_part)
         intro = (
-            "Your saves hold things the editor's list doesn't have yet: item IDs, what the game calls an item, "
-            "effects and enchantments on your gear, or an item the game marks some way the editor hasn't seen. It can only "
-            "write those once it has seen them. Add what the game calls an item after its dash if you know it, then open a "
-            "GitHub issue (you need a free GitHub account) or copy the list. Only item IDs and what the game saved with "
-            "those items are shared: nothing else from your saves."
+            "Your saves hold things the editor's lists don't have yet: item IDs, what the game calls an item, "
+            "effects and enchantments on your gear, an item the game marks some way the editor hasn't seen, or parts of "
+            "the game's world: quests and their steps, doors and where they are, minecart stations, regions, and where your "
+            "play recordings saw chests opened. The editor can only use those once it has seen them. Add what the game "
+            "calls an item after its dash if you know it, then open a GitHub issue (you need a free GitHub account) or copy "
+            "the list. Only what you see below is shared, in the game's own names and numbers: no hero's ID or name, and "
+            "nothing else from your saves."
             if report
-            else "Everything in your saves is already in the editor's list. Thanks for checking!"
+            else "Everything in your saves is already in the editor's lists. Thanks for checking!"
         )
-        ttk.Label(frame, text=intro, wraplength=wrap, justify="left").grid(row=0, column=0, sticky="w")
+        ttk.Label(frame, text=intro, wraplength=wrap, justify="left").grid(row=0, column=0, columnspan=2, sticky="w")
         self.text = tk.Text(frame, height=10, width=80, wrap="none", font=("Consolas", 10))
         self.text.insert("1.0", report)
         self.text.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
+        # A list with the world in it runs long, down and across: bars to move through it.
+        down = ttk.Scrollbar(frame, orient="vertical", command=self.text.yview)
+        down.grid(row=1, column=1, sticky="ns", pady=(8, 0))
+        across = ttk.Scrollbar(frame, orient="horizontal", command=self.text.xview)
+        across.grid(row=2, column=0, sticky="ew")
+        self.text.configure(yscrollcommand=down.set, xscrollcommand=across.set)
+        # The world's part is yours to leave out: unticked, it goes from the list, and what you typed above it stays.
+        self.world_var = tk.BooleanVar(value=True)
+        self.world_box = ttk.Checkbutton(
+            frame, text="Include what my saves and recordings show of the world (quests, doors, places, chests opened)", variable=self.world_var, command=self._world_toggled
+        )
+        if self.world_part:
+            self.world_box.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
         buttons = ttk.Frame(frame)
-        buttons.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        buttons.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         self.message = tk.StringVar()
         ttk.Label(buttons, textvariable=self.message, style="Success.TLabel").pack(side="left")
         ttk.Button(buttons, text="Close", command=self.destroy).pack(side="right")
@@ -403,6 +475,15 @@ class ShareIdsDialog(tk.Toplevel):
 
     def report(self) -> str:
         return self.text.get("1.0", "end").strip()
+
+    def _world_toggled(self) -> None:
+        """Take the world's part out of the list, or put it back under whatever the rest of the list says now."""
+        rest = without_world(self.report())
+        self.text.delete("1.0", "end")
+        self.text.insert("1.0", with_world(rest, self.world_part) if self.world_var.get() else rest)
+        nothing = ["disabled"] if not self.report() else ["!disabled"]
+        self.copy_button.state(nothing)
+        self.issue_button.state(nothing)
 
     def copy(self) -> None:
         self.clipboard_clear()

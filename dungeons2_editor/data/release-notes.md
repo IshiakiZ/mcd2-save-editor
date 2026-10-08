@@ -22,6 +22,12 @@
   or a chest turned up. It can't see a chest or a secret you haven't touched, because the game writes those to a
   save only once you have. It only reads your saves, and what it writes stays on your PC. It's also how the editor
   learned how effects, enchantments and books are saved.
+- **Share item IDs… tells of the world too.** The editor now keeps a list of the game's world, learned from saves
+  like its item list: quests and their steps, doors and where they are, minecart stations, regions. It starts
+  with what the developer's hero has seen, which is early in the story, so a hero further along has the rest.
+  Under the items, the share list now adds what your saves show of the world that the editor doesn't know yet,
+  and, if you've made play recordings, where they saw chests opened and stations turn up. It's all in the game's
+  own names and numbers, with no hero's ID or name; you see every line first, and a tick box leaves the world out.
 - **Launch game.** A button next to **Save to game** (and at the top of the menu) starts Minecraft Dungeons II for
   you: the Xbox app's copy or Steam's, whichever your saves belong to. If you have unsaved changes it asks first,
   because the editor can't save while the game is running. On a Mac, where the game runs inside CrossOver or

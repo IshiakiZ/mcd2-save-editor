@@ -81,6 +81,10 @@ class WindowTestCase(unittest.TestCase):
         patcher = mock.patch.object(saves, "running_game_processes", return_value=[])
         patcher.start()
         self.addCleanup(patcher.stop)
+        # The play recorder's recordings are looked for here, never in the folder of whoever runs the tests.
+        patcher = mock.patch.object(recorder, "DEFAULT_OUT", self.dir / "recordings")
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.root = tk.Tk()
         self.root.withdraw()
         self.root.tk.call("tk", "scaling", self.scaling or DISPLAY_SCALING)
@@ -2336,6 +2340,49 @@ class WorldMapTests(WindowTestCase):
         self.assertIn("Nothing yet for this hero.", again.shown_text())
         again.destroy()
         self.assertIsNone(again._redraw)
+
+    def test_sharing_tells_of_the_world_unless_you_untick_it(self):
+        from dungeons2_editor import world
+
+        # Everything this hero has found that the editor's list of the world lacks counts as news, like an item ID.
+        self.assertEqual(self.app.share_button.cget("text"), "SHARE ITEM IDS · 13 NEW")
+        places = {"chests": [{"opened": 2, "count": 4, "area": "SW.Area.Forest.A1", "near": [48, 48], "region": "SW.Region.Camp"}], "locations": [], "found_at": {}}
+        with mock.patch.object(recorder, "fresh_atlas", return_value=places) as fresh:
+            self.app.share_button.invoke()
+        fresh.assert_called_once_with(self.dir / "recordings")
+        self.root.update()
+        dialog = next(w for w in self.root.winfo_children() if isinstance(w, share_ids.ShareIdsDialog))
+        told = dialog.report().splitlines()
+        self.assertEqual(told[:2], [world.SAVES_HEADER, "quest CA04 - Active; steps: E01+, E02~"])
+        self.assertEqual(told[-3:], [world.PLACES_HEADER, "chest - 2 opened in SW.Area.Forest.A1, around 48, 48 in SW.Region.Camp", "chests - 2 opened in SW.Area.Forest.A1"])
+        self.assertTrue(dialog.world_box.winfo_manager() and dialog.world_var.get())
+        self.assertTrue(dialog.issue_button.instate(["!disabled"]))
+        # Unticked, the world's part goes, and with nothing else to tell there's nothing to send.
+        dialog.world_box.invoke()
+        self.assertEqual(dialog.report(), "")
+        self.assertTrue(dialog.issue_button.instate(["disabled"]) and dialog.copy_button.instate(["disabled"]))
+        # Ticked again it's back, under whatever was typed above it meanwhile.
+        dialog.text.insert("1.0", "SW.Item.Mine - a line I typed")
+        dialog.world_box.invoke()
+        self.assertEqual(dialog.report().splitlines()[:3], ["SW.Item.Mine - a line I typed", "", world.SAVES_HEADER])
+        self.assertEqual(dialog.report().splitlines()[2:], told)
+        dialog.world_box.invoke()
+        self.assertEqual(dialog.report(), "SW.Item.Mine - a line I typed")
+        dialog.world_box.invoke()
+        with mock.patch("webbrowser.open") as browser:
+            dialog.open_issue()
+        self.assertIn("door SW.Doorway.ForestA1.Dungeon.1 - at 16, 16, 0; marker 8", urllib.parse.unquote_plus(browser.call_args.args[0]))
+        dialog.destroy()
+        # Shown once, it isn't news the next time, and the button goes away.
+        self.assertFalse(self.app.share_button.winfo_manager())
+        self.assertIn("world quest CA04", json.loads(self.settings_file.read_text(encoding="utf-8"))["shared"])
+        # A hero whose saves hold nothing new has no box to untick; recordings that can't be read don't stop the list.
+        self.app.profile.get(HERO).decoded.document.update(hero_save())
+        with mock.patch.object(recorder, "fresh_atlas", side_effect=OSError("no such folder")):
+            self.app._share_ids()
+        plain = [w for w in self.root.winfo_children() if isinstance(w, share_ids.ShareIdsDialog)][-1]
+        self.assertEqual((plain.report(), plain.world_box.winfo_manager(), self.root.cget("cursor")), ("", "", ""))
+        plain.destroy()
 
     def test_the_recorders_window_shows_it_and_a_save_with_no_map_says_so(self):
         out = self.dir / "recordings"

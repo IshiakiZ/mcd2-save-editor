@@ -1,5 +1,5 @@
 name: Report item IDs
-description: Item IDs from your Minecraft Dungeons II saves, so the editor can add those items for everyone.
+description: Item IDs and parts of the world from your Minecraft Dungeons II saves, so the editor learns them for everyone.
 title: "Item IDs from my saves"
 body:
   - type: markdown
@@ -8,13 +8,17 @@ body:
         Thanks for helping! The editor's **Share item IDs…** button (on its Help tab) fills this in for you.
         An item ID looks like `SW.Item.MysticHelmet`. The button also adds what the game saved with your items:
         what a talisman does (`HealthBoost 1.2 (HealthBoost.I) / ...`), the effects on your gear, and any item
-        the game marks some way the editor hasn't seen (a Soul Storm piece, say). Those are wanted too. Please
-        don't paste anything else from your save: no character IDs, account names or backup files.
+        the game marks some way the editor hasn't seen (a Soul Storm piece, say). Those are wanted too.
+        Under the items, unless you untick it, the button adds what your saves show of the game's world that the
+        editor doesn't know yet: quests and their steps (`quest CA04 - Active; steps: E01+, E02~`), doors and where
+        they are, minecart stations, regions, and where your play recordings saw chests opened. That's wanted as
+        well: it's how the editor learns the rest of the story and the map. Please don't paste anything else from
+        your save: no character IDs, account names or backup files.
   - type: textarea
     id: ids
     attributes:
       label: Item IDs
-      description: One per line. After the dash, write what the game calls the item if you know it. If the editor says the list is on your clipboard, paste it here.
+      description: One per line. After the dash, write what the game calls the item if you know it. Leave the lines about the world as they are. If the editor says the list is on your clipboard, paste it here.
       placeholder: "SW.Item.UndauntedHelmet - Bounty Hunter Helmet"
     validations:
       required: true

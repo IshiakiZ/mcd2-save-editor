@@ -73,8 +73,9 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   **Paste picture**: the editor cuts the item out and keeps it on your PC.
 - **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
   The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it. When your saves hold
-  item IDs, effects or enchantments the editor's list doesn't have, or an item the game marks some way the editor
-  hasn't seen, a **Share item IDs** button with the count appears at the top; nothing is sent unless you send it.
+  item IDs, effects or enchantments the editor's list doesn't have, an item the game marks some way the editor
+  hasn't seen, or parts of the game's world it doesn't know yet (quests, doors, minecart stations), a **Share item
+  IDs** button with the count appears at the top; nothing is sent unless you send it.
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
@@ -237,8 +238,9 @@ your sign-in, account or device data.
   item the game has shown you. What the editor wrote doesn't count, or its own guesses would come back looking
   confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
   `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
-  GitHub issue with just those IDs and what the game saved with those items (their effects, and any mark or field
-  the editor has never seen on an item; see below), nothing else from your save.
+  GitHub issue with those IDs and what the game saved with those items (their effects, and any mark or field
+  the editor has never seen on an item; see below). Under them, unless you untick it, goes what your saves show of
+  the game's world that the editor doesn't know yet (see below). Nothing else from your save.
 - **A Unique has an ID of its own.** The Burning Blade, the Unique Sword, is `SW.Item.Sword_Unique1`, and the
   Oracle Tights are `SW.Item.MysticLeggings_Unique`. All 116 have now been seen in real saves (the last one, the
   Packleader Muzzle, in a player's collections), and every one is its base item's ID with `_Unique1` (weapons) or
@@ -302,6 +304,20 @@ your sign-in, account or device data.
   save holds it (less its pickup time and random seed; a number, a yes or no or one of the game's own names is
   passed on from a field it doesn't know, and any other text there is left out). A list from a save with a Soul
   Storm piece will show how the tag is saved, and then the editor can write it.
+- **The world is learned from saves too, and Share item IDs… sends what yours add.** The game's quests, doors,
+  minecart stations and regions are in its encrypted files, so the editor keeps a list of the world the way it
+  keeps one of items: from saves. It starts with what the developer's own hero has seen, which is early in the
+  story: 15 quests with their 318 steps, 35 doors, 5 of the 19 minecart stations, 5 regions. A hero further along
+  shows the rest, so **Share item IDs…** now adds, under the items, what your saves show of the world that the
+  list doesn't have: each new quest with its steps and how they stand, each new door with its place, new minecart
+  stations, regions (with the save's picture of the fog over one that's new, so the editor can work out how it
+  lies), cutscenes, areas, achievements and puzzle pieces such as a cleared roadblock. If you've made play
+  recordings it adds where they saw chests opened and where stations and cutscenes turned up. All of it is in the
+  game's own names and numbers: no hero's ID or name, nothing from your inventory beyond the items' part, nothing
+  about when you played. You see every line before anything is sent, and a tick box under the list leaves the
+  world out. This is what the editor needs before it can do more with the map, and before it could ever change how
+  far a hero has got: the names and steps of the quests your hero has met and the developer's hasn't.
+  `tools/build_world_list.py` puts a list someone sent into the editor's own.
 - **The play recorder and the world map see what the game saves, and nothing else.** The recorder reads your save
   files each time the game writes them. It doesn't read the game's memory or its screen, so neither can tell you
   about a chest or a secret you haven't touched: the game writes those to a save only once you have, and where
@@ -446,6 +462,7 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 | `dungeons2_editor/effects_dialog.py` | The window that changes an item's effects and enchantment |
 | `dungeons2_editor/recommend.py` | "Best for": the editor's picks of effects for a goal, out of the ones the game can roll on an item |
 | `dungeons2_editor/recorder.py`, `recorder_dialog.py`, `world_dialog.py` | The play recorder: what the game saves while you play, world progress and where things are, and its window; the World map window |
+| `dungeons2_editor/world.py`, `data/world.json` | What the editor knows of the game's world (quests, doors, stations, regions, chest spots), and what a save shows of it that's new, for Share item IDs (`tools/build_world_list.py` adds recordings and players' lists to it) |
 | `dungeons2_editor/game_launch.py`, `whats_new.py` | Starting the game, and the What's new window (the notes are `data/release-notes.md`) |
 | `tools/` | The item catalog builder, and the release build's helpers and checks |
 

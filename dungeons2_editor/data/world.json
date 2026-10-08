@@ -1,0 +1,1012 @@
+{
+ "about": "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, and from play recordings where things turned up and chests were opened. Built by tools/build_world_list.py; added to from players' Share item IDs lists.",
+ "quests": {
+  "CA00": [
+   "CA00_PC01",
+   "CA00_E01",
+   "CA00_SM01",
+   "CA00_K01",
+   "CA00_I01",
+   "CA00_E03",
+   "CA00_PC02",
+   "CA00_SM02",
+   "CA00_K02",
+   "CA00_I02",
+   "CA00_Standard01",
+   "CA00_Sequence02",
+   "CA00_SM03",
+   "CA00_I03",
+   "CA00_Sequence03",
+   "CA00_SM04",
+   "CA00_SM06",
+   "CA00_I04",
+   "CA00_Sequence04",
+   "CA00_SM05",
+   "CA00_SM07",
+   "CA00_I06",
+   "CA00_Sequence05",
+   "CA00_SM08",
+   "CA00_I10",
+   "CA00_E04",
+   "CA00_I07",
+   "CA00_I08",
+   "CA00_E05",
+   "CA00_AS01",
+   "CA00_E06",
+   "CA00_I09",
+   "CA00_PC03",
+   "CA00_Sequence01"
+  ],
+  "TOa1_S01_A": [
+   "TOa1_S01_A_MT01",
+   "TOa1_S01_A_E01",
+   "TOa1_S01_A_Sequence01"
+  ],
+  "CA01": [
+   "CA01_E14",
+   "CA01_I07",
+   "CA01_E12",
+   "CA01_E13",
+   "CA01_E10",
+   "CA01_AS01",
+   "CA01_I08",
+   "CA01_E01",
+   "CA01_SM02",
+   "CA01_K02",
+   "CA01_I02",
+   "CA01_Sequence03",
+   "CA01_E02",
+   "CA01_SM03",
+   "CA01_SM06",
+   "CA01_K03",
+   "CA01_E03",
+   "CA01_I03",
+   "CA01_PC01",
+   "CA01_AS03",
+   "CA01_I04",
+   "CA01_PC03",
+   "CA01_Sequence02",
+   "CA01_E06",
+   "CA01_AS02",
+   "CA01_E07",
+   "CA01_I05",
+   "CA01_Sequence01"
+  ],
+  "CA01_B": [
+   "CA01_B_I01",
+   "CA01_B_E02",
+   "CA01_B_AS01",
+   "CA01_B_I02",
+   "CA01_B_Standard01",
+   "CA01_B_Standard02",
+   "CA01_B_SM01",
+   "CA01_B_I03",
+   "CA01_B_Standard03",
+   "CA01_B_SM02",
+   "CA01_B_I04",
+   "CA01_B_Standard04",
+   "CA01_B_SM03",
+   "CA01_B_I05",
+   "CA01_B_Standard05",
+   "CA01_B_SM04",
+   "CA01_B_I06",
+   "CA01_B_E03",
+   "CA01_B_I07",
+   "CA01_B_E04",
+   "CA01_B_E05",
+   "CA01_B_I08",
+   "CA01_B_Sequence01"
+  ],
+  "PLa1_S08_A": [
+   "PLa1_S08_A_E01",
+   "PLa1_S08_A_I01",
+   "PLa1_S08_A_Sequence06",
+   "PLa1_S08_A_E09",
+   "PLa1_S08_A_SM05",
+   "PLa1_S08_A_K05",
+   "PLa1_S08_A_I12",
+   "PLa1_S08_A_E02",
+   "PLa1_S08_A_I02",
+   "PLa1_S08_A_E03",
+   "PLa1_S08_A_AS01",
+   "PLa1_S08_A_I03",
+   "PLa1_S08_A_Sequence02",
+   "PLa1_S08_A_Sequence03",
+   "PLa1_S08_A_E04",
+   "PLa1_S08_A_SM02",
+   "PLa1_S08_A_K02",
+   "PLa1_S08_A_I04",
+   "PLa1_S08_A_Sequence04",
+   "PLa1_S08_A_E05",
+   "PLa1_S08_A_SM03",
+   "PLa1_S08_A_K03",
+   "PLa1_S08_A_I05",
+   "PLa1_S08_A_Sequence05",
+   "PLa1_S08_A_E06",
+   "PLa1_S08_A_SM04",
+   "PLa1_S08_A_K04",
+   "PLa1_S08_A_I06",
+   "PLa1_S08_A_E07",
+   "PLa1_S08_A_Standard01",
+   "PLa1_S08_A_I08",
+   "PLa1_S08_A_I09",
+   "PLa1_S08_A_I10",
+   "PLa1_S08_A_I11",
+   "PLa1_S08_A_A01",
+   "PLa1_S08_A_E08",
+   "PLa1_S08_A_I07",
+   "PLa1_S08_A_Sequence01"
+  ],
+  "PLa1_S04_A": [
+   "PLa1_S04_A_E01",
+   "PLa1_S04_A_Standard01",
+   "PLa1_S04_A_I01",
+   "PLa1_S04_A_I02",
+   "PLa1_S04_A_I03",
+   "PLa1_S04_A_E06",
+   "PLa1_S04_A_I12",
+   "PLa1_S04_A_Sequence02",
+   "PLa1_S04_A_E02",
+   "PLa1_S04_A_SM01",
+   "PLa1_S04_A_K01",
+   "PLa1_S04_A_I04",
+   "PLa1_S04_A_E03",
+   "PLa1_S04_A_SM02",
+   "PLa1_S04_A_K02",
+   "PLa1_S04_A_I05",
+   "PLa1_S04_A_E04",
+   "PLa1_S04_A_SM03",
+   "PLa1_S04_A_K03",
+   "PLa1_S04_A_I06",
+   "PLa1_S04_A_E05",
+   "PLa1_S04_A_SM04",
+   "PLa1_S04_A_K04",
+   "PLa1_S04_A_I07",
+   "PLa1_S04_A_Standard02",
+   "PLa1_S04_A_I08",
+   "PLa1_S04_A_I09",
+   "PLa1_S04_A_I10",
+   "PLa1_S04_A_MT01",
+   "PLa1_S04_A_I11",
+   "PLa1_S04_A_Sequence01"
+  ],
+  "CA02": [
+   "CA02_E08",
+   "CA02_I09",
+   "CA02_I08",
+   "CA02_E02",
+   "CA02_I01",
+   "CA02_E03",
+   "CA02_AS01",
+   "CA02_PC01",
+   "CA02_E04",
+   "CA02_Sequence03",
+   "CA02_E05",
+   "CA02_I03",
+   "CA02_PC02",
+   "CA02_AS02",
+   "CA02_E06",
+   "CA02_AS03",
+   "CA02_I04",
+   "CA02_PC03",
+   "CA02_I05",
+   "CA02_PC04",
+   "CA02_I07",
+   "CA02_Sequence01"
+  ],
+  "CA02_C": [
+   "CA02_C_SM01",
+   "CA02_C_E01",
+   "CA02_C_Sequence02",
+   "CA02_C_I01",
+   "CA02_C_E02",
+   "CA02_C_Sequence03",
+   "CA02_C_I02",
+   "CA02_C_SM02",
+   "CA02_C_K01",
+   "CA02_C_E03",
+   "CA02_C_Sequence04",
+   "CA02_C_E04",
+   "CA02_C_E05",
+   "CA02_C_I03",
+   "CA02_C_AS01",
+   "CA02_C_E06",
+   "CA02_C_I05",
+   "CA02_C_E07",
+   "CA02_C_E08",
+   "CA02_C_I06",
+   "CA02_C_Sequence05",
+   "CA02_C_E09",
+   "CA02_C_E10",
+   "CA02_C_E11",
+   "CA02_C_I07",
+   "CA02_C_AS02",
+   "CA02_C_E12",
+   "CA02_C_E13",
+   "CA02_C_I08",
+   "CA02_C_Sequence01"
+  ],
+  "CA02_B": [
+   "CA02_B_E07",
+   "CA02_B_I09",
+   "CA02_B_E01",
+   "CA02_B_E02",
+   "CA02_B_I01",
+   "CA02_B_E03",
+   "CA02_B_E04",
+   "CA02_B_AS02",
+   "CA02_B_I03",
+   "CA02_B_E05",
+   "CA02_B_I06",
+   "CA02_B_E06",
+   "CA02_B_I07",
+   "CA02_B_PC01",
+   "CA02_B_AS03",
+   "CA02_B_Sequence02",
+   "CA02_B_MT01",
+   "CA02_B_MT02",
+   "CA02_B_I08",
+   "CA02_B_Sequence01"
+  ],
+  "FOa1_S08_A": [
+   "FOa1_S08_A_E03",
+   "FOa1_S08_A_I12",
+   "FOa1_S08_A_Sequence02",
+   "FOa1_S08_A_E01",
+   "FOa1_S08_A_AS01",
+   "FOa1_S08_A_Standard01",
+   "FOa1_S08_A_I01",
+   "FOa1_S08_A_I05",
+   "FOa1_S08_A_E04",
+   "FOa1_S08_A_I11",
+   "FOa1_S08_A_E02",
+   "FOa1_S08_A_AS02",
+   "FOa1_S08_A_Standard02",
+   "FOa1_S08_A_I06",
+   "FOa1_S08_A_I07",
+   "FOa1_S08_A_I08",
+   "FOa1_S08_A_I10",
+   "FOa1_S08_A_Sequence01"
+  ],
+  "CA03": [
+   "CA03_E01",
+   "CA03_E09",
+   "CA03_E10",
+   "CA03_E07",
+   "CA03_E08",
+   "CA03_E06",
+   "CA03_AS02",
+   "CA03_E02",
+   "CA03_I01",
+   "CA03_PC01",
+   "CA03_AS01",
+   "CA03_E03",
+   "CA03_I02",
+   "CA03_Sequence02",
+   "CA03_MT01",
+   "CA03_MT02",
+   "CA03_MT03",
+   "CA03_MT04",
+   "CA03_Sequence01"
+  ],
+  "CA02_B_BR": [
+   "CA02_B_BR_E01",
+   "CA02_B_BR_AS01",
+   "CA02_B_BR_Sequence01"
+  ],
+  "FOa1_S10_A": [
+   "FOa1_S10_A_E01",
+   "FOa1_S10_A_I01",
+   "FOa1_S10_A_A01",
+   "FOa1_S10_A_I02",
+   "FOa1_S10_A_E02",
+   "FOa1_S10_A_SM01",
+   "FOa1_S10_A_I03",
+   "FOa1_S10_A_I04",
+   "FOa1_S10_A_Sequence01"
+  ],
+  "CA04": [
+   "CA04_E08",
+   "CA04_I10",
+   "CA04_E01",
+   "CA04_I01",
+   "CA04_Standard01",
+   "CA04_Sequence02",
+   "CA04_E02",
+   "CA04_E07",
+   "CA04_AS02",
+   "CA04_I02",
+   "CA04_Sequence03",
+   "CA04_SM01",
+   "CA04_E03",
+   "CA04_AS03",
+   "CA04_I03",
+   "CA04_E04",
+   "CA04_I04",
+   "CA04_Standard03",
+   "CA04_Sequence04",
+   "CA04_I05",
+   "CA04_MT01",
+   "CA04_Sequence05",
+   "CA04_I06",
+   "CA04_MT02",
+   "CA04_AS01",
+   "CA04_Standard02",
+   "CA04_MT03",
+   "CA04_MT04",
+   "CA04_I07",
+   "CA04_Sequence06",
+   "CA04_F01",
+   "CA04_MT05",
+   "CA04_I08",
+   "CA04_E05",
+   "CA04_E06",
+   "CA04_I09",
+   "CA04_Sequence01"
+  ],
+  "CA03_BR": [
+   "CA03_BR_E01",
+   "CA03_BR_AS01",
+   "CA03_BR_Sequence01"
+  ]
+ },
+ "stations": [
+  "SW.MinecartStation.Town",
+  "SW.MinecartStation.PlainsA1.Barn",
+  "SW.MinecartStation.PlainsA1.Border",
+  "SW.MinecartStation.ForestA1.Outpost",
+  "SW.MinecartStation.ForestA1.SpiderCaveExit"
+ ],
+ "cutscenes": [
+  "SW.UI.Cutscene.Cutscenes.CS01",
+  "SW.UI.Cutscene.Miniscene.MS48",
+  "SW.UI.Cutscene.Cutscenes.CS02",
+  "SW.UI.Cutscene.Cutscenes.CS30",
+  "SW.UI.Cutscene.MiniScene.MS03",
+  "SW.UI.Cutscene.MiniScene.MS44",
+  "SW.UI.Cutscene.MiniScene.MS43",
+  "SW.UI.Cutscene.Cutscenes.CS06",
+  "SW.UI.Cutscene.Cutscenes.CS07",
+  "SW.UI.Cutscene.Cutscenes.CS08",
+  "SW.UI.Cutscene.Cutscenes.CS10"
+ ],
+ "gimmicks": [],
+ "areas": [
+  "SW.Area.Town",
+  "SW.Area.Plains.A1",
+  "SW.Area.Meadow.R0",
+  "SW.Area.Forest.A1",
+  "SW.Area.Meadow.R1",
+  "SW.Area.Forest.A1.Underwell",
+  "SW.Area.DeepDark.Tutorial",
+  "SW.Area.Meadow.T1.Rift.5",
+  "SW.Area.Meadow.Boss.3",
+  "SW.Area.Forest.A1.SpiderCaves.1",
+  "SW.Area.Forest.A1.SpiderCaves.3",
+  "SW.Area.DeepDark.A1"
+ ],
+ "doors": {
+  "SW.Doorway.Camp.Docks": {
+   "at": [
+    -2289.5,
+    61.0,
+    14.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.TownA1.Docks": {
+   "at": [
+    142.5,
+    -130.5,
+    36.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.Dungeon.1": {
+   "at": [
+    158.5,
+    38.5,
+    41.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.PlainsA1.Rift.1": {
+   "at": [
+    149.0,
+    119.0,
+    44.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Rift.2": {
+   "at": [
+    209.0,
+    141.0,
+    48.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Rift.4": {
+   "at": [
+    198.0,
+    177.0,
+    44.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Rift.5": {
+   "at": [
+    233.5,
+    246.5,
+    42.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.ScoutPoint": {
+   "at": [
+    271.0,
+    264.5,
+    42.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.Rift.7": {
+   "at": [
+    230.0,
+    284.0,
+    45.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Farm.MeadowR0.Entrance": {
+   "at": [
+    292.3,
+    384.0,
+    44.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowR0.Exit": {
+   "at": [
+    -577.5,
+    1536.0,
+    86.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.Rift.8": {
+   "at": [
+    252.0,
+    374.0,
+    40.9
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA1.Dungeon.5": {
+   "at": [
+    216.5,
+    275.5,
+    42.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.1": {
+   "at": [
+    163.6,
+    437.0,
+    18.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.Dungeon.1": {
+   "at": [
+    170.5,
+    529.5,
+    14.5
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.2": {
+   "at": [
+    229.0,
+    519.0,
+    20.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.Dungeon.3": {
+   "at": [
+    183.5,
+    595.5,
+    17.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.SpiderCaves.Exterior.3a": {
+   "at": [
+    220.5,
+    586.5,
+    19.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.OutpostZone.MeadowR1": {
+   "at": [
+    156.0,
+    599.5,
+    23.9
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowR1.ForestA1": {
+   "at": [
+    -791.8,
+    1550.4,
+    104.6
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Dungeon.4": {
+   "at": [
+    85.5,
+    523.5,
+    18.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Underwell.Exterior": {
+   "at": [
+    185.1,
+    487.2,
+    14.3
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Underwell.Interior": {
+   "at": [
+    -485.4,
+    68.5,
+    54.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA1.DeepDarkTutorial.Entrance": {
+   "at": [
+    159.0,
+    38.5,
+    42.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Rift.6": {
+   "at": [
+    183.0,
+    665.0,
+    22.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.SpiderCaves.Exterior.1": {
+   "at": [
+    191.0,
+    630.5,
+    23.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Rift.4": {
+   "at": [
+    234.0,
+    620.0,
+    31.9
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.SpiderCaves.Exterior.3b": {
+   "at": [
+    251.5,
+    564.0,
+    14.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Dungeon.5": {
+   "at": [
+    73.5,
+    723.5,
+    16.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Dungeon.6": {
+   "at": [
+    249.5,
+    653.5,
+    28.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Dungeon.2": {
+   "at": [
+    230.5,
+    485.5,
+    17.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Dungeon.7": {
+   "at": [
+    258.5,
+    609.5,
+    33.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.BossZone.WitchHut": {
+   "at": [
+    323.5,
+    544.5,
+    8.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.BossZone.DeepDarkT1": {
+   "at": [
+    309.5,
+    561.5,
+    -3.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.TownA1.DeepDarkT1": {
+   "at": [
+    252.1,
+    -101.0,
+    49.3
+   ],
+   "marker": 7
+  }
+ },
+ "regions": {
+  "SW.Region.Camp": {
+   "corner": [
+    -2720,
+    -192
+   ],
+   "size": [
+    16,
+    16
+   ]
+  },
+  "SW.Region.Overworld": {
+   "corner": [
+    -608,
+    -192
+   ],
+   "size": [
+    52,
+    52
+   ]
+  },
+  "SW.Area.Meadow.R0": {
+   "corner": [
+    -704,
+    1184
+   ],
+   "size": [
+    12,
+    12
+   ]
+  },
+  "SW.Area.Meadow.R1": {
+   "corner": [
+    -928,
+    1184
+   ],
+   "size": [
+    16,
+    12
+   ]
+  },
+  "SW.Area.Forest.A1.Underwell": {
+   "corner": [
+    -544,
+    32
+   ],
+   "size": [
+    4,
+    4
+   ]
+  }
+ },
+ "achievements": {
+  "SW.Achievements.CompleteArriveInBraveHavenQuest": "QuestAchievements",
+  "SW.Achievements.CompleteEnterTheNewDimensionQuest": "QuestAchievements",
+  "SW.Achievements.CompleteDefeatTheWanderingWitchQuest": "QuestAchievements",
+  "SW.Achievements.CompleteDefeatTheTwistedWardenQuest": "QuestAchievements",
+  "SW.Achievements.CompleteDefeatACopperMonstrosityQuest": "QuestAchievements",
+  "SW.Achievements.CompleteDefeatThePrimeEnchanterQuest": "QuestAchievements",
+  "SW.Achievements.CompleteActivateTheNoteblockMachineQuest": "QuestAchievements",
+  "SW.Achievements.CompleteFriendOfTheWellspringQuest": "QuestAchievements",
+  "SW.Achievements.CompleteCarapaceExplorerQuest": "QuestAchievements",
+  "SW.Achievements.CompleteDefeatTheSupremeEvokerAndSoulConstructQuest": "QuestAchievements",
+  "SW.Achievements.CompleteTheCoreQuest": "QuestAchievements",
+  "SW.Achievements.CompleteTheSoulCandleConspiracyQuest": "QuestAchievements",
+  "SW.Achievements.CompleteTheClericsApprenticeQuest": "QuestAchievements",
+  "SW.Achievements.CompleteTrueIllagerIntelligenceQuest": "QuestAchievements",
+  "SW.Achievements.CompleteRecyclingYourMonstrosityQuest": "QuestAchievements",
+  "SW.Achievements.CompleteWobbleRunQuest": "QuestAchievements",
+  "SW.Achievements.CompleteLonesomeInLullabyHillsQuest": "QuestAchievements",
+  "SW.Achievements.CompleteCarapaceSideQuest": "QuestAchievements",
+  "SW.Achievements.EquipAUniqueItem": "BoolAchievements",
+  "SW.Achievements.ReforgeASpecialPieceOfGear": "BoolAchievements",
+  "SW.Achievements.PurchaseASpecialGearPieceFromTheVillageMerchant": "BoolAchievements",
+  "SW.Achievements.DefeatAMonarch": "BoolAchievements",
+  "SW.Achievements.EnchantEveryInventorySlotWithLevel3Enchantments": "CollectionAchievements",
+  "SW.Achievements.CollectAllEnchantmentBooks": "CollectionAchievements",
+  "SW.Achievements.DiscoverAllMinecartStations": "CollectionAchievements",
+  "SW.Achievements.UpgradeAnEnchantmentToLevel3": "CountAchievements",
+  "SW.Achievements.UpgradeATalismanToLevel3": "CountAchievements",
+  "SW.Achievements.Open100Chests": "CountAchievements",
+  "SW.Achievements.Defeat1000MobsWithJumpAttacks": "CountAchievements",
+  "SW.Achievements.Kill10MobsWithATNT": "CountAchievements",
+  "SW.Achievements.ReachLevel50": "CountAchievements",
+  "SW.Achievements.ReachLevel100": "CountAchievements"
+ },
+ "progression": {},
+ "pieces": {
+  "Overworld BP_ForestRoadblockActorStateGimmick UAID_B025AA660315029902_1575102022": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/7YBGXJDG988XBRMVIEW7OZ5P3.Overworld:PersistentLevel.BP_ForestRoadblockActorStateGimmick_C_UAID_B025AA660315029902_1575102022",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_FarmBridgeActorStateGimmick UAID_08BFB81E52B9489F02_2059509211": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/24NYLMXCMSVSF2JHM0TFMPO7J.Overworld:PersistentLevel.BP_FarmBridgeActorStateGimmick_C_UAID_08BFB81E52B9489F02_2059509211",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV1 BP_KeyGolemLockActorStateGimmick UAID_B025AA66031527C702_1144398556": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV1-1677000-500-500.SpiderCaveV1:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA66031527C702_1144398556",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV1 BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA66031527C702_1144392555": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV1-1677000-500-500.SpiderCaveV1:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA66031527C702_1144392555",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV1 BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA66031527C702_1144401557": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV1-1677000-500-500.SpiderCaveV1:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA66031527C702_1144401557",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_ForestRoadblockActorStateGimmick UAID_B025AA660315049902_1155190365": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/102AQZRP54YQEJ98KA7TAW90V.Overworld:PersistentLevel.BP_ForestRoadblockActorStateGimmick_C_UAID_B025AA660315049902_1155190365",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV3 BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA660315D2C602_1500194790": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV3-1685000-500-500.SpiderCaveV3:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA660315D2C602_1500194790",
+   "states": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "SpiderCaveV3 BP_KeyGolemLockActorStateGimmick UAID_B025AA660315D2C602_1500191789": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV3-1685000-500-500.SpiderCaveV3:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA660315D2C602_1500191789",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV3 BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA660315D2C602_1500185788": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV3-1685000-500-500.SpiderCaveV3:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA660315D2C602_1500185788",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  }
+ },
+ "found": {
+  "minecart station SW.MinecartStation.PlainsA1.Barn": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     316,
+     322
+    ]
+   }
+  ],
+  "cutscene SW.UI.Cutscene.MiniScene.MS03": [
+   {
+    "region": "SW.Area.Meadow.R0",
+    "at": [
+     -638,
+     1237
+    ]
+   }
+  ],
+  "minecart station SW.MinecartStation.PlainsA1.Border": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     156,
+     515
+    ]
+   }
+  ],
+  "cutscene SW.UI.Cutscene.Cutscenes.CS06": [
+   {
+    "region": "SW.Area.Meadow.R1",
+    "at": [
+     -870,
+     1603
+    ]
+   }
+  ],
+  "minecart station SW.MinecartStation.ForestA1.Outpost": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     117,
+     653
+    ]
+   }
+  ],
+  "minecart station SW.MinecartStation.ForestA1.SpiderCaveExit": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     307,
+     512
+    ]
+   }
+  ],
+  "cutscene SW.UI.Cutscene.Cutscenes.CS08": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     352,
+     512
+    ]
+   }
+  ]
+ },
+ "chests": [
+  {
+   "area": "SW.Area.Plains.A1",
+   "region": "SW.Region.Overworld",
+   "at": [
+    240,
+    320
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Forest.A1",
+   "region": "SW.Region.Overworld",
+   "at": [
+    156,
+    515
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Meadow.R1",
+   "region": "SW.Area.Meadow.R1",
+   "at": [
+    -832,
+    1322
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Meadow.R1",
+   "region": "SW.Area.Meadow.R1",
+   "at": [
+    -877,
+    1466
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Meadow.T1.Rift.5",
+   "region": "SW.Region.Overworld",
+   "at": [
+    167,
+    688
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Forest.A1",
+   "region": "SW.Region.Overworld",
+   "at": [
+    186,
+    701
+   ],
+   "opened": 3
+  },
+  {
+   "area": "SW.Area.Meadow.T1.Rift.5",
+   "region": "SW.Region.Overworld",
+   "at": [
+    133,
+    740
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Town",
+   "region": "SW.Region.Overworld",
+   "at": [
+    257,
+    -88
+   ],
+   "opened": 2
+  },
+  {
+   "area": "SW.Area.Town",
+   "region": "SW.Region.Overworld",
+   "at": [
+    213,
+    -118
+   ],
+   "opened": 1
+  },
+  {
+   "area": "SW.Area.Forest.A1",
+   "region": "SW.Region.Overworld",
+   "at": [
+    126,
+    644
+   ],
+   "opened": 1
+  }
+ ],
+ "chest_counts": {
+  "SW.Area.Plains.A1": 2,
+  "SW.Area.Forest.A1": 7,
+  "SW.Area.Meadow.R1": 2,
+  "SW.Area.DeepDark.Tutorial": 1,
+  "SW.Area.Meadow.T1.Rift.5": 2,
+  "SW.Area.Forest.A1.SpiderCaves.1": 4,
+  "SW.Area.Forest.A1.SpiderCaves.3": 5,
+  "SW.Area.DeepDark.A1": 8,
+  "SW.Area.Town": 3
+ }
+}

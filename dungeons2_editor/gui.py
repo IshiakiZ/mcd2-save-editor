@@ -177,8 +177,10 @@ SIMPLE_HELP_SECTIONS = [
         "Names come from the game's item list, so new items you pick up show their names. When the editor doesn't "
         "know what the game calls an item, its card says its name is made from its save ID: press NAME IT… and type "
         "the name the game shows. It's kept on this PC, and Share item IDs (above) can send it on so the editor learns "
-        "it for everyone. When your saves hold item IDs, effects or enchantments the editor's list doesn't have, a "
-        "SHARE ITEM IDS button with the count appears in the top bar. Nothing is sent unless you send it.",
+        "it for everyone. When your saves hold item IDs, effects or enchantments the editor's list doesn't have, or parts "
+        "of the game's world it doesn't know yet (quests and their steps, doors, minecart stations), a SHARE ITEM IDS "
+        "button with the count appears in the top bar. The list shows every line that would be shared, in the game's "
+        "own names and numbers, and a tick box under it leaves the world out. Nothing is sent unless you send it.",
     ),
     ("Staying safe", _SAFE_TEXT.replace("{restore}", "Restore a backup… (in MENU)")),
     ("Where the data comes from", _DATA_TEXT),
@@ -805,9 +807,21 @@ class EditorApp:
     def _saved_heroes(self) -> list[Hero]:
         return [c.hero for c in self.profile.containers if c.hero is not None] if self.profile is not None else []
 
+    def _recordings_atlas(self) -> dict | None:
+        """What the play recorder's recordings have shown, up to the newest, or nothing if there are none or they
+        can't be read. Reading new ones takes a moment, so the pointer says the editor is busy meanwhile."""
+        self.root.configure(cursor="watch")
+        self.root.update_idletasks()
+        try:
+            return recorder.fresh_atlas(recorder.DEFAULT_OUT)
+        except Exception:  # recordings are extra: what's drawn or shared from the saves doesn't wait on them
+            return None
+        finally:
+            self.root.configure(cursor="")
+
     def _share_ids(self) -> None:
         heroes = self._saved_heroes()
-        share_ids.ShareIdsDialog(self.root, heroes, __version__)
+        share_ids.ShareIdsDialog(self.root, heroes, __version__, self._recordings_atlas())
         # You've been shown what there is to share now. The note comes back when your saves hold something else.
         shown = set(self._shared_already()) | share_ids.finding_keys(heroes)
         self.settings["shared"] = sorted(shown)
@@ -1464,15 +1478,8 @@ class EditorApp:
         if self.world_map is not None and self.world_map.winfo_exists():
             self.world_map.destroy()  # one map at a time: this one is drawn from the save as it is now
         hero = Hero(document)
-        self.root.configure(cursor="watch")  # reading the recordings again, when there are new ones, takes a moment
-        self.root.update_idletasks()
-        try:
-            atlas = recorder.fresh_atlas(recorder.DEFAULT_OUT)
-        except Exception:  # the map is the save's own: recordings that can't be read only leave it with less on it
-            atlas = None
-        finally:
-            self.root.configure(cursor="")
-        self.world_map = WorldDialog(self.root, document, atlas, hero.skin or f"Hero {hero.character_id[:8]}")
+        # The map is the save's own: recordings that can't be read only leave it with less on it.
+        self.world_map = WorldDialog(self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}")
         return self.world_map
 
     # ------------------------------------------------------------------ what's new
