@@ -230,6 +230,26 @@ class RealWorldListTests(unittest.TestCase):
         self.assertNotRegex(text, r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
         self.assertNotRegex(text, r"20\d\d-\d\d-\d\d|Character|snapshot|Users")
 
+    def test_its_stations_are_the_ones_the_preset_adds(self):
+        # Every minecart station the editor adds is one a real save has listed as found.
+        from dungeons2_editor import presets
+        from dungeons2_editor.hero import Hero
+
+        from .helpers import hero_with_a_world
+
+        known = presets.known_stations()
+        self.assertEqual(known, self.world["stations"])
+        self.assertGreaterEqual(len(known), 21)
+        self.assertEqual(len(set(known)), len(known))
+        self.assertNotIn("SW.MinecartStation.Town.Fountain", known)  # where a hero starts: named in saves, never listed as found
+        hero = Hero(hero_with_a_world())
+        preset = next(preset for preset in presets.PRESETS if preset.stations)
+        plan = presets.plan(preset, hero, [], power=1)
+        self.assertEqual(len(plan.stations), len(known) - 2)
+        presets.apply(plan, hero, [])
+        self.assertEqual(hero.minecart_stations(), ["SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"] + plan.stations)
+        self.assertEqual(sorted(hero.minecart_stations()), sorted(known))
+
     def test_tells_and_reads_back_whole(self):
         told = world.lines_of(self.world, have=world.empty())
         read = world.read_list("\n".join(told))

@@ -294,7 +294,7 @@ class PresetsDialog(tk.Toplevel):
         for line in lines:
             text.insert("end", f"•  {line}\n")
         if not lines:
-            text.insert("end", "Nothing to change: this hero already matches.\n", "muted")
+            text.insert("end", (presets.NO_STATION_LIST if plan.no_station_list else "Nothing to change: this hero already matches.") + "\n", "muted")
         if any("UpgradeLevel" in name for name in self.preset.stats):
             text.insert("end", vendors_text(self.hero) + "\n", "muted")  # a vendor's level only shows once it's unlocked
         if plan.unconfirmed:

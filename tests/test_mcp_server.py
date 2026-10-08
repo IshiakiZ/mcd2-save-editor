@@ -450,6 +450,8 @@ class EditingTests(ServerTestCase):
 
     def test_presets(self):
         self.assertEqual(self.call("apply_preset", hero="00000000", preset="most money")["preset_did"], ["Emeralds: 55 → 99,999"])
+        # A hero the game hasn't shown a minecart station yet has no list to add stations to, and is told so.
+        self.assertIn("keeps no list of minecart stations yet", self.call("apply_preset", hero="00000000", preset="Every minecart station"))
         kit = self.call("apply_preset", hero="00000000", preset="Melee damage", power=12)
         self.assertTrue(kit["left_out"])  # best-guess items stay out unless asked for
         self.assertIn("no preset", self.call("apply_preset", hero="00000000", preset="Max everything"))

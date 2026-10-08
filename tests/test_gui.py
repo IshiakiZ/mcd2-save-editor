@@ -2456,6 +2456,39 @@ class WorldMapTests(WindowTestCase):
         self.assertEqual((plain.report(), plain.world_box.winfo_manager(), self.root.cget("cursor")), ("", "", ""))
         plain.destroy()
 
+    def test_every_minecart_station_is_a_preset(self):
+        from dungeons2_editor import presets
+        from dungeons2_editor.presets_dialog import PresetsDialog
+
+        known = ["SW.MinecartStation." + name for name in ("Town", "ForestA1.Outpost", "PlainsA1.Barn", "DesertA1.TaigaBeach")]
+        with mock.patch.object(presets, "known_stations", return_value=known):
+            self.app.inventory.open_presets()
+            self.root.update()
+            dialog = next(w for w in self.app.inventory.winfo_children() if isinstance(w, PresetsDialog))
+            number = next(str(i) for i, preset in enumerate(presets.PRESETS) if preset.stations)
+            dialog.listing.selection_set(number)
+            dialog.listing.event_generate("<<TreeviewSelect>>")
+            self.root.update()
+            text = dialog.text.get("1.0", "end")
+            self.assertEqual(dialog.title_var.get(), "Every minecart station")
+            self.assertIn("•  Add 2 minecart stations to the 2 your hero has found: Honeycomb Farm, Taiga Beach (Frozen Highlands)", text)
+            self.assertIn("may not count towards it", text)  # the game's achievement is left alone, and the window says so
+            self.assertFalse(dialog.power_row.winfo_manager() or dialog.equip_check.winfo_manager())  # it adds no items
+            self.assertTrue(dialog.apply_button.instate(["!disabled"]))
+            dialog._apply()
+            self.assertTrue(dialog.message_var.get().startswith("Applied Every minecart station"))
+            self.assertIn("Nothing to change: this hero already matches.", dialog.text.get("1.0", "end"))
+            self.assertTrue(dialog.apply_button.instate(["disabled"]))
+            dialog.destroy()
+        self.assertEqual(self.app.inventory.hero.minecart_stations(), known)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertIn("Minecart stations: 2 more (Honeycomb Farm, Taiga Beach (Frozen Highlands))", ask.call_args.args[1])
+        self.assertEqual(saves.SaveProfile(self.profile_path).get(HERO).hero.minecart_stations(), known)
+        # The world map counts them.
+        shown = self.open_map().list_text()
+        self.assertIn("Minecart stations found: 4 of at least 19", shown)
+
     def test_the_recorders_window_shows_it_and_a_save_with_no_map_says_so(self):
         out = self.dir / "recordings"
         with mock.patch.object(recorder, "DEFAULT_OUT", out):

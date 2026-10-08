@@ -81,6 +81,7 @@ STAT_MINIMUMS = {"Level": 1, "VillageMerchantUpgradeLevel": 1, "EnchantsmithUpgr
 NOT_ADDABLE_GROUPS = {"Cosmetic", "QuestItem", "Currency"}
 # An item ID. The game writes one with a small "sw" (sw.Item.Talisman.Llama, the Wonderful Wheat), so both count.
 _ITEM_TAG = re.compile(r"(?:SW|sw)\.Item\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")
+_STATION_TAG = re.compile(r"SW\.MinecartStation\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*")  # SW.MinecartStation.PlainsA1.Barn
 _UNIQUE_SUFFIX = re.compile(r"_Unique\d*$")  # on a Unique's own ID: SW.Item.Sword_Unique1, SW.Item.MysticHelmet_Unique
 NO_RARITY = "None"  # what a talisman or an enchantment book has: SW.Rarity.None
 # Neither has a power. This is what the game saves in its place, for the one and for the other.
@@ -1507,6 +1508,36 @@ class Hero:
 
     # ------------------------------------------------------------ the town
 
+    def minecart_stations(self) -> list[str] | None:
+        """The minecart stations the hero has found, as the save lists them (the list itself, in the order they
+        were found). None for a save that keeps no such list."""
+        world = self.body.get("WorldExploration")
+        found = world.get("DiscoveredMinecartStationTags") if isinstance(world, dict) else None
+        return found if isinstance(found, list) else None
+
+    def add_minecart_stations(self, tags: Iterable[str]) -> list[str]:
+        """Add minecart stations to the ones the hero has found, and say which were new to it.
+
+        A station goes in the way the game saves one it has just found: its tag at the end of
+        WorldExploration.DiscoveredMinecartStationTags (seen in the developer's play recordings, four times
+        over). The game writes two more things at that moment, and the editor leaves both alone: the station
+        the hero last used, since the hero hasn't moved, and the game's own list for its achievement for
+        finding every station, since achievements are the game's to give.
+        """
+        found = self.minecart_stations()
+        if found is None:
+            raise ValueError("This hero's save keeps no list of minecart stations yet. Play until the game has shown you the first one.")
+        wanted = [str(tag) for tag in tags]
+        odd = [tag for tag in wanted if not _STATION_TAG.fullmatch(tag)]
+        if odd:
+            raise ValueError(f"{odd[0]} isn't a minecart station's tag.")
+        added = []
+        for tag in wanted:
+            if tag not in found:
+                found.append(tag)
+                added.append(tag)
+        return added
+
     def vendors_opened(self) -> dict[str, bool]:
         """Which of the town's three vendors this hero has unlocked and opened, by the game's own records: the
         hint it files the first time you open a vendor's window, and the counts it keeps of what each vendor
@@ -2004,6 +2035,12 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         name, value = attribute["AttributeName"], attribute.get("CurrentValue")
         if name in old_stats and old_stats[name] != value:
             lines.append(f"{attribute_label(name)}: {format_amount(old_stats[name])} → {format_amount(value)}")
+    had = old.minecart_stations() or []
+    more = [tag for tag in new.minecart_stations() or [] if tag not in had]
+    if more:
+        from .recorder import station_name  # which reads this module, so not at the top
+
+        lines.append(f"Minecart stations: {len(more)} more ({', '.join(station_name(tag) for tag in more)})")
     old_items, new_items = items_by_identity(old), items_by_identity(new)
     for key, item in old_items.items():
         other = new_items.get(key)

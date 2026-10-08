@@ -487,6 +487,9 @@ STATIONS = {  # a minecart station, as its tag ends: (what the game calls it, th
     "DesertA1.MountainPass": ("Archie's Ruins", "DesertA1"), "DesertA1.Fortress": ("Fortress Backgate", "DesertA1"), "DesertA1.Fortress2": ("Frozen Fortress", "DesertA1"),
     "DesertA1.IceShelf": ("Frozen Shipyard", "DesertA1"), "DesertA1.Cliffs": ("Highland Cliffs", "DesertA1"), "DesertA1.IceLagoon": ("Ice Caves", "DesertA1"),
 }
+# The Town Fountain is where a hero starts out: a save names it as the station last used (SW.MinecartStation.Town.Fountain)
+# and no save has ever listed it among the stations found, so it isn't one to find.
+NOT_FOUND_BY_RIDING = frozenset({"TownFountain"})
 # MetaBot's map marks those nineteen. Saves have since shown stations it doesn't mark (two in the Carapace, four in
 # the meadows, and two more in Frozen Highlands, in /issues/33), so nineteen is not how many the game has: see
 # stations_at_least().
@@ -516,17 +519,26 @@ def station_key(tag: str) -> str:
     one word, which the game doesn't always do (a save has SW.MinecartStation.Forest.A1.DangerZone)."""
     key = tag.removeprefix(_STATION)
     parts = key.split(".")
-    for count in range(2, len(parts)):
-        joined = "".join(parts[:count]) + "." + ".".join(parts[count:])
+    for count in range(2, len(parts) + 1):
+        joined = ".".join(["".join(parts[:count]), *parts[count:]])
         if joined in STATIONS:
             return joined
     return key
 
 
 def station_name(tag: str) -> str:
-    """A minecart station by the game's name for it, where that's known, or its tag less the part every one has."""
+    """A minecart station by the game's name for it, where that's known. Otherwise by what a save calls it, set
+    out to be read: SW.MinecartStation.DesertA1.TaigaBeach is Taiga Beach (Frozen Highlands)."""
     key = station_key(tag)
-    return STATIONS[key][0] if key in STATIONS else key
+    if key in STATIONS:
+        return STATIONS[key][0]
+    area, _, name = key.partition(".")
+    return f"{_words(name)} ({AREAS.get(area) or _words(area)})" if name else _words(key)
+
+
+def _words(name: str) -> str:
+    """A name the game runs together, with its words apart: TaigaBeach, MeadowA1, Forest.A1."""
+    return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", name.replace(".", " "))
 
 
 def stations_at_least(found: int = 0) -> int:
@@ -576,7 +588,7 @@ def might_be_missing(progress: dict[str, Any], regions: dict[str, dict]) -> list
     lines.append(f"Minecart stations: {len(stations)} found of at least {stations_at_least(len(stations))}")
     unfound: dict[str, list[str]] = {}
     for key, (name, area) in STATIONS.items():
-        if key not in stations:
+        if key not in stations and key not in NOT_FOUND_BY_RIDING:
             unfound.setdefault(AREAS.get(area, area), []).append(name)
     if unfound and stations:
         lines.append("Stations not found yet: " + "; ".join(f"{', '.join(names)} ({area})" for area, names in unfound.items()))

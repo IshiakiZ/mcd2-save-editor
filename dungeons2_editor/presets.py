@@ -58,6 +58,7 @@ METABOT_ENCHANTING = METABOT + "guides/enchanting-guide"
 METABOT_ENCHANTMENTS = METABOT + "enchantments"
 METABOT_EFFECTS = METABOT + "effects"
 METABOT_MERCHANTS = METABOT + "merchants"
+METABOT_MAP = METABOT + "map"
 # Where the secret talismans are hidden: a link only, since Maxroll's terms don't allow reusing its guides in software.
 MAXROLL_SECRETS = "https://maxroll.gg/minecraft-dungeons-2/guides/secret-talisman-locations-in-minecraft-dungeons-2"
 
@@ -93,6 +94,7 @@ class Preset:
     group: str = GOALS
     choose_rarity: bool = False  # the window asks what rarity to add the gear at
     equip: bool = False  # "Equip them" starts ticked
+    stations: bool = False  # every minecart station the editor knows of joins the ones the hero has found
 
 
 # Talismans and Uniques the goal presets mention (effects by talisman level, from MetaBot's talisman pages).
@@ -168,6 +170,18 @@ PRESETS: tuple[Preset, ...] = (
         "haven't unlocked yet keeps the level set here for when you do.",
         stats={"VillageMerchantUpgradeLevel": 3, "EnchantsmithUpgradeLevel": 3, "OldBlacksmithUpgradeLevel": 3, "SpringStone": 100},
         sources=(METABOT_PROGRESSION, METABOT_MERCHANTS),
+    ),
+    Preset(
+        "Every minecart station",
+        "Ride to every minecart station the editor knows of.",
+        "Adds every minecart station that players' saves have shown the editor to the ones your hero has found, so "
+        "the game lets you ride to them. The game may have stations no save has shown yet: those can't be added. "
+        "Nothing else changes. The map around a station stays unexplored until you go there, and the game's own "
+        "achievement for finding every station is left alone, so a station added here may not count towards it. "
+        "Riding somewhere the story hasn't taken you yet is at your own risk: a backup is made when you save, and "
+        "Restore a backup… puts it back. What the game calls each station comes from MetaBot's map.",
+        stations=True,
+        sources=(METABOT_MAP,),
     ),
     Preset(
         "Secret talisman hunt",
@@ -575,10 +589,14 @@ class Plan:
     upgrades: list[tuple[int, str, int]] = field(default_factory=list)  # (item index, rarity, power)
     enchant: bool = False  # the hero has opened the Enchantsmith in the game, so the kit's items get enchanted
     books: list[CatalogItem] = field(default_factory=list)  # enchantment books it adds: the build's own picks, and what it puts on
+    stations: list[str] = field(default_factory=list)  # minecart stations it adds to the ones found, by their tags
+    no_station_list: bool = False  # the preset is about stations, and this hero's save keeps no list of them yet
 
     @property
     def changes_anything(self) -> bool:
-        return bool(self.stats or self.add or self.upgrades or self.books or any(owned.slot or owned.enchantment for owned in self.have))
+        return bool(
+            self.stats or self.add or self.upgrades or self.books or self.stations or any(owned.slot or owned.enchantment for owned in self.have)
+        )
 
 
 def _names(item: Item) -> set[str]:
@@ -747,6 +765,10 @@ def plan(
         result.books = _books(preset, hero, result, catalog)
     if equip:
         _choose_slots(preset, hero, result, slots, check_level)
+    if preset.stations:
+        found = hero.minecart_stations()
+        result.no_station_list = found is None
+        result.stations = [tag for tag in known_stations() if tag not in found] if found is not None else []
     if preset.upgrade_gear:
         for item in hero.items():
             if item.is_cosmetic or item.stock_slot or item.power is None:
@@ -794,9 +816,29 @@ def _choose_slots(preset: Preset, hero: Hero, result: Plan, slots, check_level: 
 _UNIQUE_INTRO = re.compile(r"^At Unique (it's|they're) (the )?[^:]+: ")
 
 
+NO_STATION_LIST = "This hero's save keeps no list of minecart stations yet. Play until the game has shown you the first one."
+
+
+def known_stations() -> list[str]:
+    """The minecart stations the editor can add: the ones a real save has listed as found (the editor's list of
+    the world), in the order they came to it."""
+    from . import world  # which reads the recorder, which reads the presets' own module: not at the top
+
+    return [str(tag) for tag in world.known().get("stations") or []]
+
+
 def describe(preset_plan: Plan, hero: Hero) -> list[str]:
     """What the plan will do, in plain English."""
     lines = []
+    if preset_plan.stations:
+        from .recorder import station_name
+
+        have = len(hero.minecart_stations() or [])
+        names = ", ".join(station_name(tag) for tag in preset_plan.stations)
+        lines.append(
+            f"Add {len(preset_plan.stations)} minecart station{'s' if len(preset_plan.stations) != 1 else ''} "
+            f"to the {have} your hero has found: {names}"
+        )
     for name, value in preset_plan.stats.items():
         lines.append(f"{attribute_label(name)}: {format_amount(hero.attribute(name))} → {format_amount(value)}")
     for index, rarity, power in preset_plan.upgrades:
@@ -894,6 +936,8 @@ def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: 
     """Make the planned changes to ``hero``. Nothing changes if a stat is refused."""
     if preset_plan.stats:
         hero.set_attributes(dict(preset_plan.stats), game_caps=game_caps)
+    if preset_plan.stations:
+        hero.add_minecart_stations(preset_plan.stations)
     for index, rarity, power in preset_plan.upgrades:
         hero.update_item(index, rarity=rarity, power=power)
     for owned in preset_plan.have:

@@ -688,7 +688,7 @@ class EditorServer:
             )
             lines = presets.describe(plan, hero)
             if not lines:
-                raise ToolError(f"{preset.title} has nothing to change for this hero.")
+                raise ToolError(presets.NO_STATION_LIST if plan.no_station_list else f"{preset.title} has nothing to change for this hero.")
             presets.apply(plan, hero, catalog, game_caps=True, check_level=check_level)
             more: dict[str, Any] = {"preset_did": lines}
             left_out = [

@@ -529,16 +529,24 @@ class MapTests(unittest.TestCase):
             "(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)",
             "Minecart stations: 2 found of at least 19",
         ])
+        # The Town Fountain isn't among them: a hero starts there, and no save lists it as a station found.
         self.assertTrue(lines[5].startswith(
-            "Stations not found yet: Town Fountain (Brave Haven); Honeycomb Farm, Honeybrook Bridge (Honeycomb Fields); "
+            "Stations not found yet: Honeycomb Farm, Honeybrook Bridge (Honeycomb Fields); "
             "Deep Dark Entrance, Hidden Grove, Woodcutter's Outpost (Howling Woods); Monsoon Banks,"))
+        self.assertNotIn("Town Fountain", lines[5])
+        # A station by the game's name where MetaBot's map has it, however the game spells its tag, and otherwise
+        # by what a save calls it, set out to be read.
+        self.assertEqual(
+            [play_recorder.station_name("SW.MinecartStation." + key) for key in ("PlainsA1.Barn", "Forest.A1.DangerZone", "Town.Fountain", "DesertA1.TaigaBeach", "CarapaceA1.North", "Somewhere")],
+            ["Honeycomb Farm", "Woodcutter's Outpost", "Town Fountain", "Taiga Beach (Frozen Highlands)", "North (Carapace A1)", "Somewhere"],
+        )
         self.assertEqual(lines[6:], [
             "Quest CA02_B (Corruption in the Woods): 1 of 2 steps left", "Quest CA02_B_BR: not started", "Quest CA04 (The Missing Note Blocks): 1 of 1 steps left",
             f"{self.MEADOW}: 4 unexplored squares right next to the 2 you've explored (marked on the map)",
         ])
         self.assertEqual([play_recorder.area_name(tag) for tag in ("SW.Area.Town", "SW.Area.Plains.A1", "SW.Area.Forest.A1.SpiderCaves.3", "SW.Area.Meadow.R1")],
                          ["Brave Haven", "Honeycomb Fields", "Howling Woods: SpiderCaves.3", "Meadow.R1"])
-        self.assertEqual((play_recorder.station_name("SW.MinecartStation.ForestA1.Outpost"), play_recorder.station_name("SW.MinecartStation.Moon.Base")), ("Little Howl Hamlet", "Moon.Base"))
+        self.assertEqual((play_recorder.station_name("SW.MinecartStation.ForestA1.Outpost"), play_recorder.station_name("SW.MinecartStation.Moon.Base")), ("Little Howl Hamlet", "Base (Moon)"))
         self.assertEqual((play_recorder.quest_name("CA04"), play_recorder.quest_name("XX09")), ("CA04 (The Missing Note Blocks)", "XX09"))
         self.assertEqual(play_recorder.hero_id(document), "hero-1")
 

@@ -1,10 +1,12 @@
+import copy
 import unittest
+from unittest import mock
 
 from dungeons2_editor import hero as heroes
 from dungeons2_editor import presets
-from dungeons2_editor.hero import Hero, build_catalog
+from dungeons2_editor.hero import Hero, build_catalog, describe_changes
 
-from .helpers import enchanted, enchantment_effect, hero_item, hero_save, talisman_item
+from .helpers import enchanted, enchantment_effect, hero_item, hero_save, hero_with_a_world, talisman_item
 
 
 def by_title(title):
@@ -28,7 +30,7 @@ class PresetTests(unittest.TestCase):
         for preset in presets.PRESETS:
             self.assertTrue(preset.title and preset.goal and preset.details)
             self.assertTrue(preset.sources)
-            self.assertTrue(preset.stats or preset.items or preset.upgrade_gear)
+            self.assertTrue(preset.stats or preset.items or preset.upgrade_gear or preset.stations)
             self.assertIn(preset.group, presets.GROUPS)
         self.assertEqual(len({p.title for p in presets.PRESETS}), len(presets.PRESETS))
 
@@ -42,6 +44,49 @@ class PresetTests(unittest.TestCase):
                     slots = known[name].slots
                     fits = found.kind in slots or (found.kind == "Armor" and ("Armor" in slots or (found.piece == "Chestplate" and "Chestplate" in slots)))
                     self.assertTrue(fits, f"{preset.title}: {name} on {kit_item.name}")
+
+    def test_every_minecart_station_joins_the_ones_found(self):
+        # The stations players' saves have shown the editor (its list of the world) are added to the ones the hero
+        # has found, each the way the game saves one it has just found: its tag at the end of the save's list.
+        preset = next(preset for preset in presets.PRESETS if preset.stations)
+        self.assertEqual((preset.title, preset.group), ("Every minecart station", presets.GOALS))
+        known = ["SW.MinecartStation." + name for name in ("Town", "PlainsA1.Barn", "ForestA1.Outpost", "Forest.A1.DangerZone", "DesertA1.TaigaBeach")]
+        document = hero_with_a_world()
+        hero = Hero(document)
+        found = list(hero.minecart_stations())
+        self.assertEqual(found, ["SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"])
+        before = copy.deepcopy(document)
+        with mock.patch.object(presets, "known_stations", return_value=known):
+            plan = presets.plan(preset, hero, self.catalog, power=1)
+            self.assertEqual(plan.stations, [known[1], known[3], known[4]])
+            self.assertTrue(plan.changes_anything and not plan.no_station_list)
+            self.assertEqual(presets.describe(plan, hero), [
+                "Add 3 minecart stations to the 2 your hero has found: Honeycomb Farm, Woodcutter's Outpost, Taiga Beach (Frozen Highlands)",
+            ])
+            presets.apply(plan, hero, self.catalog)
+            world_before, world_after = before["CharacterSaveV1"]["WorldExploration"], document["CharacterSaveV1"]["WorldExploration"]
+            self.assertEqual(world_after["DiscoveredMinecartStationTags"], found + plan.stations)
+            self.assertEqual(describe_changes(before, document), ["Minecart stations: 3 more (Honeycomb Farm, Woodcutter's Outpost, Taiga Beach (Frozen Highlands))"])
+            # Nothing else in the save moves: not the station last used, not the game's achievements, not the map.
+            rest = copy.deepcopy(document)
+            rest["CharacterSaveV1"]["WorldExploration"]["DiscoveredMinecartStationTags"] = found
+            self.assertEqual(rest, before)
+            # Once more changes nothing.
+            again = presets.plan(preset, hero, self.catalog, power=1)
+            self.assertEqual((again.stations, again.changes_anything, presets.describe(again, hero)), ([], False, []))
+            self.assertEqual(hero.add_minecart_stations(known), [])
+            # A hero the game hasn't shown a station yet: its save keeps no list, and the editor doesn't make one.
+            new = Hero(hero_save())
+            self.assertIsNone(new.minecart_stations())
+            none = presets.plan(preset, new, self.catalog, power=1)
+            self.assertEqual((none.stations, none.no_station_list, none.changes_anything, presets.describe(none, new)), ([], True, False, []))
+        with self.assertRaisesRegex(ValueError, "keeps no list of minecart stations yet"):
+            new.add_minecart_stations(known)
+        self.assertNotIn("WorldExploration", new.body)
+        # Only a station's tag goes in.
+        with self.assertRaisesRegex(ValueError, "isn't a minecart station's tag"):
+            hero.add_minecart_stations(["SW.Item.Sword"])
+        self.assertEqual(hero.minecart_stations(), found + [known[1], known[3], known[4]])
 
     def test_kits_are_complete_loadouts(self):
         kits = [p for p in presets.PRESETS if p.group == presets.KITS]
