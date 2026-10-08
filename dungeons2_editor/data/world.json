@@ -1050,7 +1050,8 @@
   "SW.Area.Meadow.Boss.3",
   "SW.Area.Forest.A1.SpiderCaves.1",
   "SW.Area.Forest.A1.SpiderCaves.3",
-  "SW.Area.DeepDark.A1"
+  "SW.Area.DeepDark.A1",
+  "SW.Area.Carapace.A1"
  ],
  "doors": {
   "SW.Doorway.Camp.Docks": {
@@ -2604,6 +2605,38 @@
     17.0
    ],
    "marker": 9
+  },
+  "SW.Doorway.DesertA1.Dungeon.3": {
+   "at": [
+    172.5,
+    1084.5,
+    1.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.3": {
+   "at": [
+    348.0,
+    1001.0,
+    5.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Rift.6": {
+   "at": [
+    276.0,
+    1248.0,
+    42.1
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.MeadowA1.Dungeon.1": {
+   "at": [
+    -737.5,
+    1599.5,
+    78.0
+   ],
+   "marker": 8
   }
  },
  "regions": {
@@ -3069,6 +3102,51 @@
   },
   "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D85ED38239C340D602_1176926106": {
    "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/376W5NHRXWI4HS9BMU8SRODN6.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D85ED38239C340D602_1176926106",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D85ED38239C340D602_1297482108": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/376W5NHRXWI4HS9BMU8SRODN6.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D85ED38239C340D602_1297482108",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D85ED38239C33ED602_1229513660": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EBLC3N4SET6V2EFLA901BWQ23.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D85ED38239C33ED602_1229513660",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D85ED38239C33ED602_1137476659": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EBLC3N4SET6V2EFLA901BWQ23.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D85ED38239C33ED602_1137476659",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_D85ED38239C33ED602_1430288661": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/ABSOPFK8O7ZZ3PAP9I7E5ILKA.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_D85ED38239C33ED602_1430288661",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_MeadowRoadblockActorStateGimmick UAID_B025AA6603152C9A02_1138924448": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/8G3X26JZ6BDUHBP63KAZQZI2S.Overworld:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025AA6603152C9A02_1138924448",
    "states": [
     [
      0,
