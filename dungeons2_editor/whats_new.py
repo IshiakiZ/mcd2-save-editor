@@ -4,6 +4,9 @@ The notes are the ones on each release's page (``dungeons2_editor/data/release-n
 the editor): a ``## What's new in 1.15.0`` heading for each version, newest first, and the changes under it as a
 list. This reads them, picks the versions someone hasn't seen yet, and shows them in a window. Nothing is
 fetched: an edition that never goes online shows the same notes.
+
+They are short on purpose, the main things in a line each, for the newest version and the two before it.
+Every version, with the detail, is in ``CHANGELOG.md``.
 """
 
 from __future__ import annotations
@@ -20,7 +23,7 @@ from .game_style import match_title_bar
 from .layout import fit_to_contents, scaled_size
 
 NOTES_FILE = paths.resource("dungeons2_editor/data/release-notes.md")
-MOST_VERSIONS = 6  # versions shown at once; someone who skipped more than that gets the newest ones
+MOST_VERSIONS = 3  # versions the notes hold, and so the most shown at once; someone who skipped more gets the newest
 _HEADING = re.compile(r"^## What's new in (\d+(?:\.\d+)*)\b(.*)$")
 _LINK = re.compile(r"\[([^\]]+)\]\((?:[^()\s]|\([^()\s]*\))+\)")  # [text](address): the text is kept
 _MARKED = re.compile(r"(\*\*.+?\*\*|`[^`]+`)")
