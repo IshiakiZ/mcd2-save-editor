@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs, whats_new
+from dungeons2_editor import __version__, game_style, gui, layout, recorder, saves, share_ids, updater, wgs, whats_new
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -1480,6 +1480,62 @@ class SimpleModeTests(WindowTestCase):
                 app.launch_game()
             launch.assert_called_once_with("xbox")
         self.assertEqual(app.changes_var.get(), "1 unsaved change")  # still here, for when the game is closed again
+
+    def test_the_play_recorder_writes_down_what_the_game_saves(self):
+        out = self.dir / "recordings"
+        with mock.patch.object(recorder, "DEFAULT_OUT", out):
+            self.app.app_menu.invoke(self.app.app_menu.index("Play recorder…"))
+        (dialog,) = [child for child in self.root.winfo_children() if isinstance(child, gui.RecorderDialog)]
+        self.assertEqual((dialog.out, dialog.profile, dialog.start_button.cget("text")), (out, self.profile_path, "Start recording"))
+        self.assertTrue(dialog.note_button.instate(["disabled"]))  # nothing to add a note to yet
+        self.assertFalse(out.exists())  # opening the window writes nothing
+        dialog.start_button.invoke()
+        self.assertEqual(dialog.start_button.cget("text"), "Stop recording")
+        (session,) = list(out.iterdir())
+        self.assertIn("level 1, 5 items", dialog.shown_text())  # what's there to begin with
+
+        # The game saves: the recorder reads the saves again and says what changed.
+        profile = saves.SaveProfile(self.profile_path)
+        document = copy.deepcopy(profile.get(HERO).decoded.document)
+        for attribute in document["CharacterSaveV1"]["Ability"]["Attributes"]:
+            if attribute["AttributeName"] == "Emeralds":
+                attribute["CurrentValue"] = 300
+        profile.save(HERO, document, self.dir / "backups", check_game=lambda: [])
+        self.assertNotEqual(saves.profile_stamp(self.profile_path), dialog._stamp)  # which is how it notices
+        dialog._tick()  # the folder changed: it waits a moment for the game to finish writing, then reads
+        dialog._look()
+        self.assertIn("Emeralds: 55 -> 300", dialog.shown_text())
+        dialog.note_var.set("  bought a sword  ")
+        dialog.note_button.invoke()
+        self.assertEqual(dialog.note_var.get(), "")
+        self.assertIn("note: bought a sword", dialog.shown_text())
+
+        with mock.patch("tkinter.messagebox.askyesnocancel") as ask:
+            dialog.start_button.invoke()  # Stop recording
+        ask.assert_not_called()  # nothing here for the Soul Storm check to ask about
+        self.assertEqual(dialog.start_button.cget("text"), "Start recording")
+        summary = (session / "summary.txt").read_text(encoding="utf-8")
+        self.assertIn("Emeralds: 55 -> 300 in 1 step(s)", summary)
+        self.assertIn("bought a sword", summary)
+        self.assertIn("World progress:", dialog.shown_text())
+        self.assertEqual(len(list((session / "snapshots").iterdir())), 3)  # the hero twice, the settings once
+        dialog.map_button.invoke()
+        self.assertTrue((out / "world_progress_atlas.json").exists() and (out / "world_map.txt").exists())
+        self.assertIn("hero saves read.", dialog.shown_text())
+        dialog.close()
+        self.assertFalse(dialog.winfo_exists())
+        # If the editor closes while it's recording, the recording's file is closed with it and nothing is left waiting.
+        with mock.patch.object(recorder, "DEFAULT_OUT", out):
+            left_open = self.app.open_recorder()
+        left_open.start()
+        events = left_open.recorder.events_file
+        left_open.destroy()
+        self.assertTrue(events.closed and left_open.recorder is None and left_open._timer is None)
+        # With no saves open there's nothing to record.
+        self.app.profile = None
+        with mock.patch("tkinter.messagebox.showinfo") as told:
+            self.assertIsNone(self.app.open_recorder())
+        self.assertIn("no saves open to record", told.call_args.args[1])
 
     def test_whats_new_is_shown_the_first_time_a_version_opens_and_from_the_menu(self):
         app = self.app

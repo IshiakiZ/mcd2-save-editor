@@ -1,6 +1,9 @@
 # Your saves: backups hold sign-in tokens and must never be shared
 backups/
 
+# The play recorder's recordings: every version of your hero save the game wrote while you played
+recordings/
+
 # Pictures: downloaded from minecraft.wiki or added by you (Mojang artwork, not ours to publish)
 icons/
 

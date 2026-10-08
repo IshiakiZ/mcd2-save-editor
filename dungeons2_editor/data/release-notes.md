@@ -11,6 +11,13 @@
 - Every shape in Liquid Glass is drawn by the editor itself, the first time you pick the look. No picture files
   were added, the download is no bigger, and the editor opens as quickly as before in the Original look.
 - New pictures in the README.
+- **The play recorder.** **Menu → Play recorder…** writes down what the game saves while you play: items picked
+  up and changed, stats, every quest step, minecart stations, doors, cutscenes and the ground you explored, each
+  with where it happened. **Make the map** draws your world from all your recordings and lists what you may have
+  missed, as far as a save gives it away: a numbered dungeon or rift whose number is skipped, quests not finished,
+  and unexplored ground right next to where you've been. It can't see a chest or a secret you haven't touched,
+  because the game writes those to a save only once you have. It only reads your saves, and what it writes stays
+  on your PC. It's also how the editor learned how effects, enchantments and books are saved.
 - **Launch game.** A button next to **Save to game** (and at the top of the menu) starts Minecraft Dungeons II for
   you: the Xbox app's copy or Steam's, whichever your saves belong to. If you have unsaved changes it asks first,
   because the editor can't save while the game is running. On a Mac, where the game runs inside CrossOver or

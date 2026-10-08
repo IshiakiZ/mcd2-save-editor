@@ -78,6 +78,12 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
+- **Play recorder:** **Menu → Play recorder…** writes down what the game saves while you play: items picked up
+  and changed, stats, every quest step, minecart stations, doors, cutscenes and the ground you explored, each with
+  where it happened. **Make the map** draws your world from all your recordings and lists what you may have
+  missed, as far as a save gives it away: a numbered dungeon or rift whose number is skipped, quests not started
+  or not finished, and unexplored ground right next to where you've been. It only reads your saves, and everything
+  it writes stays on your PC.
 - **Launch game:** a button next to **Save to game** starts Minecraft Dungeons II, the Xbox app's copy or
   Steam's, whichever your saves belong to. With unsaved changes it asks first, since the editor can't save while
   the game runs.
@@ -290,6 +296,18 @@ your sign-in, account or device data.
   save holds it (less its pickup time and random seed; a number, a yes or no or one of the game's own names is
   passed on from a field it doesn't know, and any other text there is left out). A list from a save with a Soul
   Storm piece will show how the tag is saved, and then the editor can write it.
+- **The play recorder sees what the game saves, and nothing else.** It reads your save files each time the game
+  writes them. It doesn't read the game's memory or its screen, so it can't tell you about a chest or a secret you
+  haven't touched: the game writes those to a save only once you have, and where they are is in its encrypted
+  files. What it can say is what a save gives away. A door's position is the save's own; a minecart station, a
+  cutscene or a quest step is placed by the ground you had just explored when it turned up, to within a few
+  32-metre squares (that size is worked out from the doors: at 32 every one falls inside its region). How many
+  dungeon and rift entrances an area has in all comes from MetaBot's map, for the two areas whose save names are
+  certain so far (Rainy Plains and Howling Woods). A recording holds every version of your hero save the game wrote
+  while it ran, so treat the recordings folder like the backups folder: it's yours, and not for posting whole.
+  Changing how far a hero has got isn't something the editor does yet: a save lists only the quests its hero has
+  met, so the later ones have to come from saves of heroes further along, and nobody has tried what the game does
+  with a quest marked done by hand.
 - **Best for is a recommendation, not a measurement.** Which effects an item can get is the game's rule: it
   rolls them from the pool of the item's slot (any weapon, any artifact, all gear) and from one pool for each
   archetype the item carries (a Greatbow is Fighter and Ranger gear). MetaBot lists every item's archetypes and
@@ -376,6 +394,7 @@ python -m dungeons2_editor verify                               # checks saves r
 python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
+python -m dungeons2_editor record                               # the play recorder in a console (--atlas: make the map)
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 python -m dungeons2_editor update                               # look for a newer version on GitHub and install it
 python -m dungeons2_editor gui --look glass                     # open the window in Liquid Glass this once (classic: Original)
@@ -416,6 +435,8 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 | `dungeons2_editor/edition.py` | Which edition this is: the one on GitHub, or the one for Nexus Mods that never goes online (`tools/make_edition.py` switches) |
 | `dungeons2_editor/effects_dialog.py` | The window that changes an item's effects and enchantment |
 | `dungeons2_editor/recommend.py` | "Best for": the editor's picks of effects for a goal, out of the ones the game can roll on an item |
+| `dungeons2_editor/recorder.py`, `recorder_dialog.py` | The play recorder: what the game saves while you play, world progress, the map, and its window |
+| `dungeons2_editor/game_launch.py`, `whats_new.py` | Starting the game, and the What's new window (the notes are `data/release-notes.md`) |
 | `tools/` | The item catalog builder, and the release build's helpers and checks |
 
 ## Credits and disclaimer
@@ -460,6 +481,8 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   and artifacts pages and the archetypes' pages under [builds](https://metabot.gg/en/minecraft-dungeons-2/builds),
   and an artifact's element from the artifacts page.
   `tools/build_item_catalog.py` rebuilds the lists from those pages.
+- How many dungeon and rift entrances and minecart stations there are, in the play recorder's list of what you may
+  have missed, comes from MetaBot.GG's [Overworld map](https://metabot.gg/en/minecraft-dungeons-2/map).
 - The best gear, the kits and the numbers in the presets come from MetaBot.GG's
   [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.

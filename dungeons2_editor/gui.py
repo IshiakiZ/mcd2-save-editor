@@ -29,6 +29,7 @@ from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
 from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
+from .recorder_dialog import RecorderDialog
 from .restore_dialog import RestoreDialog
 
 APP_TITLE = "Minecraft Dungeons II Save Editor"
@@ -67,6 +68,9 @@ _SAFE_TEXT = (
 ) + (
     "\n• The first time a new version opens, it shows what's new in it. What's new… (on this page, and in Simple "
     "mode's menu) shows that again, with the versions before it. The notes come with the editor: nothing is fetched."
+    "\n• Play recorder… (in Simple mode's menu, and on Advanced mode's Help page) writes down what the game saves while you "
+    "play: items, stats, quest steps, stations, doors and the ground you explored. Make the map draws where you've been "
+    "and lists what you may have missed. It only reads your saves, and its recordings stay on this PC, next to the backups."
 )
 # What the edition that never goes online says where the other one downloads the Minecraft Wiki's pictures.
 _NO_PICTURES = (
@@ -528,6 +532,7 @@ class EditorApp:
         menu.add_command(label="Get item pictures…", command=self._get_pictures)
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
+        menu.add_command(label="Play recorder…", command=self.open_recorder)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
         menu.add_command(label="What's new…", command=self.show_whats_new)
@@ -762,6 +767,7 @@ class EditorApp:
         ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
         ttk.Button(share, text="Connect an AI…", command=self._connect_ai).pack(side="left")
         ttk.Button(share, text="What's new…", command=self.show_whats_new).pack(side="left", padx=10)
+        ttk.Button(share, text="Play recorder…", command=self.open_recorder).pack(side="left")
         text = tk.Text(
             self.help_tab,
             wrap="word",
@@ -1428,6 +1434,15 @@ class EditorApp:
             messagebox.showinfo(APP_TITLE, str(exc), parent=self.root)
             return
         self.status_var.set(f"Starting {game_launch.GAME}…")
+
+    # ------------------------------------------------------------------ the play recorder
+
+    def open_recorder(self) -> RecorderDialog | None:
+        """Menu > Play recorder: the window that writes down what the game saves while you play."""
+        if self.profile is None:
+            messagebox.showinfo(APP_TITLE, "There are no saves open to record. Open a save folder first.", parent=self.root)
+            return None
+        return RecorderDialog(self.root, self.profile.path)
 
     # ------------------------------------------------------------------ what's new
 

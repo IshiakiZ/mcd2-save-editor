@@ -176,6 +176,17 @@ def cmd_ids(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_record(args: argparse.Namespace) -> int:
+    """The play recorder, in a console: write down what the game saves while you play. It only reads the saves."""
+    from . import recorder
+
+    out = getattr(args, "out", None) or recorder.DEFAULT_OUT
+    if args.atlas:
+        print("\n".join(recorder.write_atlas(out)))
+        return 0
+    return recorder.run(_pick_profile(args.profile).path, out, once=args.once, questions=not args.no_questions)
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     """Run as an MCP server on stdin and stdout, for an AI assistant's app to start."""
     from .mcp_server import serve
@@ -274,6 +285,11 @@ def main(argv: list[str] | None = None) -> int:
     command("items", "list every item the editor can add, with its ID")
     command("ids", "list the item IDs in your saves that the editor doesn't know yet, to share")
     command("mcp", "run as an MCP server (stdin/stdout) so an AI assistant can customise your heroes")
+    record = command("record", "the play recorder: write down what the game saves while you play (it only reads your saves)")
+    record.add_argument("--out", type=Path, default=argparse.SUPPRESS, help="where recordings go (default: the recordings folder next to the backups)")
+    record.add_argument("--once", action="store_true", help="look once, write down what's there now, and stop")
+    record.add_argument("--no-questions", action="store_true", help="don't read notes or ask anything at the end")
+    record.add_argument("--atlas", action="store_true", help="read every recording so far and write the world map and everything the saves have shown")
     pictures = command("pictures", "download item pictures from minecraft.wiki into the icons folder")
     pictures.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     update = command("update", "look for a newer version on GitHub and install it")
@@ -307,6 +323,7 @@ def main(argv: list[str] | None = None) -> int:
         "items": cmd_items,
         "ids": cmd_ids,
         "mcp": cmd_mcp,
+        "record": cmd_record,
         "pictures": cmd_pictures,
         "update": cmd_update,
         "apply-update": cmd_apply_update,
