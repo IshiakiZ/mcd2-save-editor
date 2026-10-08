@@ -156,7 +156,10 @@ class WhatsNewDialog(tk.Toplevel):
             "code": tkfont.Font(self, family=tkfont.nametofont("TkFixedFont", root=self).cget("family"), size=size),
         }
         ttk.Label(frame, text=heading_for(versions), font=self.fonts["title"]).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
-        self.text = tk.Text(frame, wrap="word", width=92, height=22, relief="flat", borderwidth=0, padx=10, pady=8, cursor="arrow", takefocus=False)
+        self.text = tk.Text(
+            frame, wrap="word", width=92, height=22, relief="flat", borderwidth=0, highlightthickness=0, padx=12, pady=8, cursor="arrow", takefocus=False,
+            font=base,  # a Text widget writes in a typewriter's letters unless told otherwise
+        )
         scroll = ttk.Scrollbar(frame, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=scroll.set)
         self.text.grid(row=1, column=0, sticky="nsew")
