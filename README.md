@@ -110,6 +110,10 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 |---|---|
 | ![Simple mode in the Liquid Glass look](docs/screenshots/inventory-glass.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
 
+| The world map (Menu → World map…) | The play recorder (Menu → Play recorder…) |
+|---|---|
+| ![The world map: the ground a hero has explored, its doors, and how far it has got](docs/screenshots/world-map.png) | ![The play recorder writing down what the game saved](docs/screenshots/play-recorder.png) |
+
 ## Download
 
 **[⬇ Download MCD2SaveEditor.zip](https://github.com/IshiakiZ/mcd2-save-editor/releases/latest)** from the latest
