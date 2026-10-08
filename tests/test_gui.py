@@ -208,6 +208,10 @@ class AdvancedSettingsTests(WindowTestCase):
     def test_the_help_pages_buttons_all_fit(self):
         tools = self.app.help_tools
         self.assertEqual([button.cget("text") for button in tools.winfo_children()], ["World map…", "Play recorder…", "What's new…", "Connect an AI…"])
+        # Their line asks for no more room than the line above it, which the page is wide enough for. (That much can
+        # be checked on any screen; the rest needs one that shows the window whole.)
+        self.root.update_idletasks()
+        self.assertLessEqual(tools.winfo_reqwidth(), self.app.help_tab.winfo_children()[0].winfo_reqwidth())
         self.app.notebook.select(self.app.help_tab)
         self.show_on_screen(self.root)
         self.needs_room_for(self.root)
