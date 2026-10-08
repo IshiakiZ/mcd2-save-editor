@@ -19,12 +19,17 @@ from dungeons2_editor.item_picker import ItemPicker
 from dungeons2_editor.restore_dialog import RestoreDialog
 
 from .helpers import (
-    SETTINGS_TEXT, enchanted, enchantment_effect, hero_item, hero_save, hero_save_text, make_profile, rolled, rolled_effect,
-    shift_encode, talisman_item,
+    SETTINGS_TEXT, enchanted, enchantment_effect, hero_item, hero_save, hero_save_text, hero_with_a_world, make_profile, recordings_of_a_world, rolled,
+    rolled_effect, shift_encode, talisman_item,
 )
 
 HERO = "Character00000000-0000-1000-8000-000000000002"
 OTHER_HERO = "Character00000000-0000-1000-8000-000000000003"
+
+
+def snapshot_of(folder: Path) -> dict:
+    """Every file under a folder with what's in it: to see that looking changed nothing."""
+    return {str(path.relative_to(folder)): path.read_bytes() for path in sorted(Path(folder).rglob("*")) if path.is_file()}
 
 
 def _tk_available() -> bool:
@@ -198,6 +203,19 @@ class AdvancedSettingsTests(WindowTestCase):
         self.assertTrue(self.app.simple_screen.winfo_manager())
         self.assertTrue(self.app.inventory.empty.winfo_manager())  # no hero to show: says how to get one
         self.assertIn("Reload", self.app.empty_text_var.get())
+
+
+    def test_the_help_pages_buttons_all_fit(self):
+        tools = self.app.help_tools
+        self.assertEqual([button.cget("text") for button in tools.winfo_children()], ["World map…", "Play recorder…", "What's new…", "Connect an AI…"])
+        self.app.notebook.select(self.app.help_tab)
+        self.show_on_screen(self.root)
+        self.needs_room_for(self.root)
+        # Each line of buttons has the room it asks for: none of them runs off the side of the page.
+        for row in self.app.help_tab.winfo_children()[:2]:
+            self.assertLessEqual(row.winfo_reqwidth(), row.winfo_width(), [child.cget("text") for child in row.winfo_children()])
+        last = tools.winfo_children()[-1]
+        self.assertLessEqual(last.winfo_rootx() + last.winfo_width(), self.app.help_tab.winfo_rootx() + self.app.help_tab.winfo_width())
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
@@ -2229,6 +2247,109 @@ def newer_hero_save():
     document["SerializeMeta"]["SoftVersion"] = 6
     document["CharacterSaveV1"]["CollectionsStats"]["CollectedWeaponsUnique"] = ["SW.Item.Mace_Unique1"]
     return json.dumps(document, separators=(",", ":")).encode()
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class WorldMapTests(WindowTestCase):
+    """Menu > World map: the ground a hero has explored, drawn from its save, and how far it has got."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: json.dumps(hero_with_a_world(), separators=(",", ":")).encode()}
+
+    def open_map(self, atlas=None):
+        with mock.patch.object(recorder, "fresh_atlas", return_value=atlas) as fresh, mock.patch.object(recorder, "DEFAULT_OUT", self.dir / "recordings"):
+            self.app.app_menu.invoke(self.app.app_menu.index("World map…"))
+        fresh.assert_called_once_with(self.dir / "recordings")  # what the recordings have shown, up to the newest
+        return self.app.world_map
+
+    def test_draws_the_ground_explored_with_what_was_found_on_it(self):
+        before = snapshot_of(self.profile_path)
+        dialog = self.open_map(recordings_of_a_world())
+        self.assertEqual(dialog.title(), "World map: Ranger Deluxe")
+        self.assertEqual(list(dialog.region_box.cget("values")), ["Camp", "Meadow.R1"])  # the biggest region first
+        self.assertEqual(dialog.heading_var.get(), "Camp: 4 of 12 squares explored. One square is 32 metres across.")
+        # Four squares the fog has lifted from, the six unseen ones next to them, two doors, and from the
+        # recordings a station and the chests opened where it turned up.
+        self.assertEqual([dialog.shown(kind) for kind in ("explored", "edge", "door", "found", "chest", "name")], [4, 6, 2, 1, 1, 0])
+        colours = {dialog.canvas.itemcget(item, "fill") for item in dialog.canvas.find_withtag("explored")}
+        self.assertIn(recorder.clarity_colour(255), colours)
+        self.assertEqual(len(colours), 4)  # the clearer the fog, the greener
+        # The docks' door is on the square that's all clear: the third along the middle line.
+        size = dialog._size
+        (clear,) = [item for item in dialog.canvas.find_withtag("explored") if dialog.canvas.itemcget(item, "fill") == recorder.clarity_colour(255)]
+        left, top, right, bottom = dialog.canvas.coords(clear)
+        self.assertEqual((left, top), (2 * size, 1 * size))
+        docks = dialog.canvas.find_withtag("door")[0]
+        x0, y0, x1, y1 = dialog.canvas.coords(docks)
+        self.assertTrue(left < (x0 + x1) / 2 < right and top < (y0 + y1) / 2 < bottom)
+        # The station and the chests turned up at one spot: side by side, not one on top of the other.
+        found, chest = dialog.canvas.coords(dialog.canvas.find_withtag("found")[0]), dialog.canvas.coords(dialog.canvas.find_withtag("chest")[0])
+        self.assertGreaterEqual(chest[0], found[2])
+        # Names on: each dot gets its name, in the game's words where they're known.
+        dialog.names_box.invoke()
+        named = {dialog.canvas.itemcget(item, "text") for item in dialog.canvas.find_withtag("name")}
+        self.assertEqual(named, {"Camp.Docks", "ForestA1.Dungeon.1", "Little Howl Hamlet", "2 chests"})
+        dialog.names_box.invoke()
+        self.assertEqual(dialog.shown("name"), 0)
+        # Closer in and back out, never smaller than the whole region.
+        self.assertTrue(dialog.out_button.instate(["disabled"]))
+        dialog.in_button.invoke()
+        self.assertGreater(dialog._size, size)
+        self.assertTrue(dialog.out_button.instate(["!disabled"]))
+        dialog.zoom_by(100)
+        self.assertTrue(dialog.in_button.instate(["disabled"]))
+        dialog.zoom_by(0.001)
+        self.assertEqual((dialog.zoom, dialog._size), (1.0, size))
+        # Another region.
+        dialog.region_var.set("Meadow.R1")
+        dialog.region_box.event_generate("<<ComboboxSelected>>")
+        self.assertEqual(dialog.heading_var.get(), "Meadow.R1: 1 of 4 squares explored. One square is 32 metres across.")
+        self.assertEqual([dialog.shown(kind) for kind in ("explored", "edge", "door", "found", "chest")], [1, 2, 1, 0, 0])
+        # The list beside it, and a copy of it for the clipboard.
+        shown = dialog.shown_text()
+        for line in ("Area: Howling Woods", "Story quests done: 1 of 3", "Carapace Side Quest", "Howling Woods: 1 of its 12 dungeon spots found",
+                     "CA04 (The Missing Note Blocks): active, 1 of 2 steps done", "Little Howl Hamlet  (ForestA1.Outpost)", "Howling Woods: 2", "3 saves of this hero read"):
+            self.assertIn(line, shown)
+        dialog.copy_button.invoke()
+        copied = self.root.clipboard_get()
+        self.assertTrue(copied.startswith("Where the hero is\n  Area: Howling Woods\n"))
+        self.assertIn("\n\nThe story, by the game's achievements for it\n  ✓  Arrive In Brave Haven\n", copied)
+        self.assertIn("Copied", dialog.hover_var.get())
+        # Looking changes nothing: not the hero on screen, not the save folder.
+        self.assertEqual((self.app.change_count, snapshot_of(self.profile_path)), (0, before))
+        # One map at a time: opening it again draws it afresh.
+        again = self.open_map()
+        self.assertFalse(dialog.winfo_exists())
+        self.assertEqual([again.shown(kind) for kind in ("door", "found", "chest")], [2, 0, 0])  # no recordings: the save's own doors
+        self.assertIn("Nothing yet for this hero.", again.shown_text())
+        again.destroy()
+        self.assertIsNone(again._redraw)
+
+    def test_the_recorders_window_shows_it_and_a_save_with_no_map_says_so(self):
+        out = self.dir / "recordings"
+        with mock.patch.object(recorder, "DEFAULT_OUT", out):
+            window = self.app.open_recorder()
+            self.assertEqual(window.map_button.cget("text"), "Show the map")
+            window.map_button.invoke()  # reads the recordings (there are none yet), writes the atlas, opens the map
+        self.assertTrue(self.app.world_map.winfo_exists())
+        self.assertEqual(self.app.world_map.shown("door"), 2)
+        window.close()
+        self.app.world_map.destroy()
+        # A hero that has been nowhere: no picture to draw, and the list all the same.
+        nowhere = gui.WorldDialog(self.root, hero_save())
+        self.assertEqual((nowhere.region_var.get(), nowhere.heading_var.get(), nowhere.shown("explored")), ("", "", 0))
+        self.assertEqual(nowhere.canvas.itemcget(nowhere.canvas.find_all()[0], "text"), "This save has no map yet: the game draws one as the hero explores.")
+        self.assertIn("Area: Brave Haven", nowhere.shown_text())
+        nowhere.zoom_by(2)  # nothing to zoom
+        nowhere.destroy()
+        # With something other than a hero on screen there's no map to draw.
+        self.app.original = None
+        with mock.patch("tkinter.messagebox.showinfo") as told:
+            self.assertIsNone(self.app.open_world_map())
+        self.assertIn("Pick a hero first", told.call_args.args[1])
+
+
+class WorldMapInLiquidGlassTests(WorldMapTests):
+    look = "glass"
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")

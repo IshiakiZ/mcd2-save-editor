@@ -34,11 +34,13 @@ class RecorderDialog(tk.Toplevel):
         profile: Path,
         out: Path | None = None,
         running: Callable[[], list[str]] = saves.running_game_processes,
+        show_map: Callable[[], object] | None = None,
     ):
         super().__init__(parent)
         self.profile = Path(profile)
         self.out = Path(out) if out is not None else recorder.DEFAULT_OUT
         self.running = running
+        self.show_map = show_map  # opens the editor's world map window, once the map has been made
         self.recorder: recorder.Recorder | None = None
         self._stamp: tuple | None = None
         self._next_game_check = 0.0
@@ -72,7 +74,7 @@ class RecorderDialog(tk.Toplevel):
         buttons.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         self.start_button = ttk.Button(buttons, text="Start recording", style="Accent.TButton", command=self.toggle)
         self.start_button.pack(side="left")
-        self.map_button = ttk.Button(buttons, text="Make the map", command=self.make_map)
+        self.map_button = ttk.Button(buttons, text="Show the map", command=self.make_map)
         self.map_button.pack(side="left", padx=8)
         ttk.Button(buttons, text="Open the recordings folder", command=self.open_folder).pack(side="left")
         ttk.Button(buttons, text="Close", command=self.close).pack(side="right")
@@ -197,6 +199,9 @@ class RecorderDialog(tk.Toplevel):
                 self._say(line)
         except OSError as exc:
             messagebox.showerror("Play recorder", f"The map couldn't be written:\n{exc}", parent=self)
+            return
+        if self.show_map is not None:
+            self.show_map()
 
     def open_folder(self) -> None:
         self.out.mkdir(parents=True, exist_ok=True)

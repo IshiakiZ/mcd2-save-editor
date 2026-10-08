@@ -35,22 +35,28 @@ each area is explored, achievements, and anything else a save keeps about how fa
 is written down as the game saves it, so the recordings show how the game itself moves a hero along, which is
 what the editor would have to write to do the same.
 
-    python -m dungeons2_editor record --atlas      (Make the map, in the window)
+    python -m dungeons2_editor record --atlas      (Show the map, in the window)
 
 reads every recording made so far and writes world_progress_atlas.json next to them: every quest with its tasks
-in order, every station, door, cutscene, area and achievement any save has shown.
+in order, every station, door, cutscene, area and achievement any save has shown. The editor's World map window
+draws a hero's own map from its save, and takes from that file where the hero's recordings saw things turn up.
 
-And it tracks where things are. A save gives a door's exact position, and for each region a grid of the ground
-the hero has explored (a square is 32 metres across). So every step is written down with the area the hero was
-in and the middle of the ground explored since the save before: that is where a station, a cutscene or a quest
-step was found, to within a few squares. --atlas puts all of it on a map: world_map.txt, and world_map.png when
-Pillow is installed.
+And it tracks where things are. A save gives a door's exact position, and for each region a picture of the fog
+over it, a square of it being 32 metres of ground, laid out the way the game's own map is. So every step is
+written down with the area the hero was in and the middle of the ground whose fog cleared since the save before:
+that is where a station, a cutscene or a quest step was found, to within a few squares. --atlas puts all of it on
+a map: world_map.txt, and world_map.png when Pillow is installed.
 
-What it can say about things you may have missed is what a save gives away: a numbered door whose number is
-skipped (rifts 1, 2 and 4 found means a 3 is out there), how many dungeon and rift entrances an area has in all
-(MetaBot's count from the game files), quests you haven't started or finished, and ground you haven't explored
-right next to ground you have, which the map marks. It can't see a chest or a secret you haven't touched: the
-game writes those to a save only once you have, and where they are is in its encrypted files.
+What it can say about things you may have missed is what a save gives away: how many of an area's dungeon and
+rift spots you've found (MetaBot's counts, from the game's files; the game opens only a few of them at a time, so
+a spot you haven't found may not be open yet), the minecart stations you haven't found, by name, quests you
+haven't started or finished, and ground you haven't seen right next to ground you have, which the map marks. It
+can't see a chest or a secret you haven't touched: the game writes those to a save only once you have, and where
+they are is in its encrypted files.
+
+Chests you open, it counts: the game keeps a count of them for its "open 100 chests" achievement, so each time
+that goes up the recorder says so, with the area you were in and, out in the open, the spot. A save doesn't say
+which chest it was, and whether the count goes on past a hundred isn't known.
 """
 
 from __future__ import annotations
@@ -158,22 +164,36 @@ def storm_mentions(document: Any) -> dict[str, Any]:
 
 LOUD_PROGRESS = ("quest ", "task ", "minecart station ", "door ", "cutscene ", "gimmick ", "progression ")  # said out loud as they happen
 PLACED = ("quest ", "task ", "minecart station ", "cutscene ", "gimmick ", "actor ")  # what the atlas keeps a place for (doors have their own)
-# Metres across one square of the grid a save keeps of explored ground. A region's corner is saved in metres and
-# its size in squares, and nothing says how big a square is: at 32 every door in the saves falls inside its
-# region, and at 16 or 64 half of them fall outside. The squares run down each column in turn (that order puts
-# most doors on explored ground; row by row puts fewer there).
+ATLAS_FORMAT = 3  # goes up when the atlas is laid out differently, so that one written down the old way is read again
+CHESTS = "achievement Open100Chests"  # the game's own count of chests opened, the one thing a save says about chests
+# A save keeps, for each region, a picture of the fog over it: Size.X values to a line and Size.Y lines, each value
+# from 0 (never seen) to 255 (clear), a square of the picture being 32 metres of ground. The picture lies the way
+# the game's own map does: its lines run from the far side in the world's X down to the near side, and the values
+# in a line run with the world's Y. Read any other way, the doors a save lists land off the ground it shows
+# cleared; read this way all of them land on it, and MetaBot's map (https://metabot.gg/en/minecraft-dungeons-2/map,
+# from the game's files) has the same dungeon and rift spots the same way round.
 CELL = 32
+CLEAR = 128  # from here up a square counts as clear; under it the fog has only begun to lift (the edge of what was seen)
+# How far a region's picture lies from where the corner saved with it says, in squares: (down, to the right).
+# Nothing in a save says, so it's measured, and good to about a third of a square. With no entry a picture's
+# bottom left is the saved corner, which fits the camp and the meadows. The overworld's picture is three squares
+# lower and half a square to the right: that is where all 32 of its doors in the developer's saves sit on cleared
+# ground (less the few metres a hero stands in front of a door), and where the round patch cleared on stepping
+# into a region inside the overworld, which both pictures get, is in the same place in both.
+SHIFTS = {"SW.Region.Overworld": (3.0, 0.5), "SW.Area.Forest.A1.Underwell": (1.3, -0.4)}
 
 
 def map_regions(document: Any) -> dict[str, dict]:
-    """The grid of explored ground a save keeps for each region: its corner (metres), its size (squares) and the
-    squares themselves, zero for one the hero hasn't been to."""
+    """The picture of the fog a save keeps for each region: the corner saved with it (metres), how many squares
+    it is across and down, the squares themselves line by line from the top (0 for one the hero has never seen,
+    up to 255 for one all clear), and how far the picture lies from that corner (SHIFTS)."""
     body = document.get("CharacterSaveV1") if isinstance(document, dict) else None
     world = (body or {}).get("WorldExploration") or {}
     found = {}
     for area in (world.get("SavedFogOfWarExploration") or {}).get("Items") or []:
-        corner, size = area.get("WorldPosition") or {}, area.get("Size") or {}
-        found[str(area.get("Tag"))] = {"x": corner.get("X", 0), "y": corner.get("Y", 0), "cols": size.get("X", 0), "rows": size.get("Y", 0), "cells": list(area.get("Data") or [])}
+        corner, size, tag = area.get("WorldPosition") or {}, area.get("Size") or {}, str(area.get("Tag"))
+        found[tag] = {"x": corner.get("X", 0), "y": corner.get("Y", 0), "across": size.get("X", 0), "down": size.get("Y", 0),
+                      "cells": list(area.get("Data") or []), "shift": list(SHIFTS.get(tag, (0, 0)))}
     return found
 
 
@@ -187,28 +207,58 @@ def door_places(document: Any) -> dict[str, list[float]]:
     }
 
 
+def square_of(region: dict, x: float, y: float) -> tuple[float, float]:
+    """Where a spot in the world (metres) is on a region's picture: squares across from its left edge, and squares
+    down from its top."""
+    lower, right = region.get("shift") or (0, 0)
+    return (y - region["y"]) / CELL - right, region["down"] - lower - (x - region["x"]) / CELL
+
+
+def spot_of(region: dict, across: float, down: float) -> tuple[float, float]:
+    """The other way: the spot in the world (metres) at a place on a region's picture."""
+    lower, right = region.get("shift") or (0, 0)
+    return region["x"] + (region["down"] - lower - down) * CELL, region["y"] + (across + right) * CELL
+
+
 def newly_explored(before: dict[str, dict], after: dict[str, dict]) -> dict | None:
-    """Where the hero went between two saves: the region with the most squares explored since, and the middle of
-    those squares in metres. None if no new ground was explored."""
-    best = None
+    """Where the hero went between two saves: the region whose fog cleared the most, and the middle of what
+    cleared, in the world's metres. None if none did. When a smaller region cleared about as much as the one that
+    cleared most, it's the smaller: stepping into a region inside the overworld clears a patch of both pictures."""
+    cleared = []
     for tag, region in after.items():
         old = (before.get(tag) or {}).get("cells") or []
-        rows = region["rows"] or 1
-        fresh = [index for index, cell in enumerate(region["cells"]) if cell and not (old[index] if index < len(old) else 0)]
-        if fresh and (best is None or len(fresh) > best["squares"]):
-            best = {
-                "region": tag, "squares": len(fresh),
-                "x": round(region["x"] + (sum(index // rows for index in fresh) / len(fresh) + 0.5) * CELL),
-                "y": round(region["y"] + (sum(index % rows for index in fresh) / len(fresh) + 0.5) * CELL),
-            }
-    return best
+        gains = [(index, cell - (old[index] if index < len(old) else 0)) for index, cell in enumerate(region["cells"][: region["across"] * region["down"]])]
+        gains = [(index, gain) for index, gain in gains if gain > 0]
+        if gains:
+            cleared.append((sum(gain for _index, gain in gains), tag, gains))
+    if not cleared:
+        return None
+    most = max(total for total, _tag, _gains in cleared)
+    total, tag, gains = min((entry for entry in cleared if entry[0] >= 0.9 * most), key=lambda entry: (len(after[entry[1]]["cells"]), entry[1]))
+    region = after[tag]
+    across = sum((index % region["across"] + 0.5) * gain for index, gain in gains) / total
+    down = sum((index // region["across"] + 0.5) * gain for index, gain in gains) / total
+    x, y = spot_of(region, across, down)
+    return {"region": tag, "squares": len(gains), "x": round(x), "y": round(y)}
 
 
 def region_of(x: float, y: float, regions: dict[str, dict]) -> str | None:
-    """The region a spot is in: the smallest one whose grid covers it (the camp and the caves sit inside the overworld's)."""
-    inside = [(region["cols"] * region["rows"], tag) for tag, region in regions.items()
-              if 0 <= (x - region["x"]) / CELL < region["cols"] and 0 <= (y - region["y"]) / CELL < region["rows"]]
+    """The region a spot is in: the smallest one whose picture has it (the caves and the meadows lie inside the overworld's)."""
+    inside = []
+    for tag, region in regions.items():
+        across, down = square_of(region, x, y)
+        if 0 <= across < region["across"] and 0 <= down < region["down"]:
+            inside.append((region["across"] * region["down"], tag))
     return min(inside)[1] if inside else None
+
+
+def clarity_colour(value: int, edge: bool = False) -> str:
+    """The colour of a square on a map: the clearer its fog, the greener; a square never seen is dark, and one never
+    seen right next to one that has been stands out from the rest."""
+    if not value:
+        return "#3c5f78" if edge else "#16303f"
+    share = 0.3 + 0.7 * min(value, 255) / 255
+    return "#" + "".join(f"{round(dark + (light - dark) * share):02x}" for dark, light in ((0x16, 0x5D), (0x30, 0x8A), (0x3F, 0x66)))
 
 
 def world_progress(document: Any) -> dict[str, Any]:
@@ -267,6 +317,26 @@ def world_progress(document: Any) -> dict[str, Any]:
     return found
 
 
+def hero_id(document: Any) -> str:
+    """The ID the game gave the hero a save is of."""
+    body = document.get("CharacterSaveV1") if isinstance(document, dict) else None
+    return str(((body or {}).get("MetaData") or {}).get("CharacterId", ""))
+
+
+def quest_tasks(progress: dict[str, Any]) -> dict[str, list[str]]:
+    """How each step of each quest stands, by quest, in the save's order. A step is named for its quest (CA02_B_E07
+    is a step of CA02_B), so it goes to the quest with the longest name it starts with: CA02's steps start the
+    same way, and so do CA02_B_BR's."""
+    quests = [label[6:] for label in progress if label.startswith("quest ") and label != "quest in focus"]
+    steps: dict[str, list[str]] = {name: [] for name in quests}
+    for label, value in progress.items():
+        if label.startswith("task "):
+            owners = [name for name in quests if label[5:].startswith(name + "_")]
+            if owners:
+                steps[max(owners, key=len)].append(str(value))
+    return steps
+
+
 def progress_counts(progress: dict[str, Any]) -> str:
     """A hero's progress in a line: quests by how they stand, tasks done, and what's been found."""
     quests: dict[str, int] = {}
@@ -287,13 +357,18 @@ def build_atlas(play: Path) -> dict[str, Any]:
     each quest with its tasks in the save's own order, the states it and they have been in and the order its
     tasks were completed in, and every station, door, cutscene, area, achievement and progression tag."""
     atlas: dict[str, Any] = {
+        "format": ATLAS_FORMAT,
         "snapshots": 0, "quests": {}, "minecart_stations": [], "last_minecart_station_values": [], "doors": {}, "cutscenes": [], "gimmicks": [],
         "areas": {}, "achievements": {}, "progression": {}, "locations": [], "hints": [], "quests_in_focus": [],
-        # The map: each region's grid with every square any save shows explored, and where each thing was found,
-        # by the ground explored in the save it first appeared in (things there from the first save have no place).
+        # The map: each region's picture with every square as clear as any save shows it, and where each thing was
+        # found, by the ground cleared in the save it first appeared in (things there from the first save have no place).
         "map": {"metres_per_square": CELL, "regions": {}}, "found_at": {},
+        "chests": [],  # each time the count of chests opened went up: how many, where the hero was, and the spot if new ground was explored
+        # The same, hero by hero (by its ID), for a hero's own map: only what its own saves showed, and of what
+        # it found only what has a spot. Above, a thing two heroes found is where the first of them found it.
+        "heroes": {},
     }
-    earlier: tuple[dict[str, Any], dict[str, dict]] | None = None  # the save before: its progress and its grids
+    before: dict[str, tuple[dict[str, Any], dict[str, dict], str]] = {}  # each hero's save before this one: its progress, its grids, its recording
 
     def add(where: list, value: Any) -> None:
         if value is not None and value not in where:
@@ -312,15 +387,31 @@ def build_atlas(play: Path) -> dict[str, Any]:
         for tag, region in regions.items():
             merged = atlas["map"]["regions"].setdefault(tag, {**region, "cells": [0] * len(region["cells"])})
             if len(merged["cells"]) == len(region["cells"]):
-                merged["cells"] = [old | new for old, new in zip(merged["cells"], region["cells"])]
+                merged["cells"] = [max(old, new) for old, new in zip(merged["cells"], region["cells"])]
+        hero, recording = hero_id(document), path.parent.parent.name
+        mine = atlas["heroes"].setdefault(hero, {"saves": 0, "found_at": {}, "chests": []})
+        mine["saves"] += 1
+        earlier = before.get(hero)
         if earlier is not None:
-            near = newly_explored(earlier[1], regions)
+            # Two saves one after the other in a recording are one step of the game's, so what's new in the second
+            # happened on the ground explored between them. The last save of one recording and the first of the
+            # next are however long apart the hero played unrecorded: what's new then has no place to give.
+            together = earlier[2] == recording
+            near = newly_explored(earlier[1], regions) if together else None
+            where = {"area": progress.get("where CurrentLocation") if together else None, "near": [near["x"], near["y"]] if near else None,
+                     "region": near["region"] if near else None, "recording": recording, "snapshot": path.name}
+            was, now = earlier[0].get(CHESTS), progress.get(CHESTS)
+            if isinstance(was, int) and isinstance(now, int) and now > was:
+                chest = {"opened": now - was, "count": now, **where}
+                atlas["chests"].append(chest)
+                mine["chests"].append(chest)
             for label in progress:
                 first = label not in earlier[0] or (label.startswith(("quest ", "task ")) and str(progress[label]).startswith("Completed") and not str(earlier[0][label]).startswith("Completed"))
                 if first and label.startswith(PLACED) and label != "quest in focus":
-                    atlas["found_at"].setdefault(label, {"area": progress.get("where CurrentLocation"), "near": [near["x"], near["y"]] if near else None,
-                                                         "region": near["region"] if near else None, "recording": path.parent.parent.name, "snapshot": path.name})
-        earlier = (progress, regions)
+                    atlas["found_at"].setdefault(label, where)
+                    if near and not label.startswith(("task ", "actor ")):
+                        mine["found_at"].setdefault(label, where)
+        before[hero] = (progress, regions, recording)
         atlas["might_be_missing"] = might_be_missing(progress, regions)  # as the newest save has it
         add(atlas["locations"], (body.get("MetaData") or {}).get("CurrentLocation"))
         quests = body.get("quest") or {}
@@ -362,57 +453,101 @@ def build_atlas(play: Path) -> dict[str, Any]:
     return atlas
 
 
-# How many entrances each area has, from MetaBot's Overworld map (https://metabot.gg/en/minecraft-dungeons-2/map,
-# read from the game's files, build 1.1.1.0): (the area's name in the game, dungeon entrances, rifts). Only the
-# areas whose save names are certain are here: the spider caves are in Howling Woods and in the save's ForestA1,
-# and the plains the game starts in are PlainsA1.
-AREA_TOTALS = {"PlainsA1": ("Rainy Plains", 9, 10), "ForestA1": ("Howling Woods", 12, 12)}
-STATIONS_IN_ALL = 19  # minecart stations on the same map
+# What the game calls the places a save names by its own tags, and how many of each kind of spot an area has, from
+# MetaBot's Overworld map (https://metabot.gg/en/minecraft-dungeons-2/map, read from the game's files, build
+# 1.1.1.0). An area is keyed the way a save's doors and minecart stations name it. The first two areas' door names
+# are in the developer's saves; Rainy Plains and Frozen Highlands are keyed the way their stations are, and no
+# save has shown the editor a door there yet. The game opens only some of an area's dungeon and rift spots at a
+# time (four of its dungeons, MetaBot says), so a spot a hero hasn't found may not be there to find just now.
+AREAS = {"Town": "Brave Haven", "PlainsA1": "Honeycomb Fields", "ForestA1": "Howling Woods", "PlainsA2": "Rainy Plains", "DesertA1": "Frozen Highlands"}
+AREA_TOTALS = {"PlainsA1": (7, 8), "ForestA1": (12, 12), "PlainsA2": (9, 10), "DesertA1": (11, 16)}  # dungeon spots, rift spots
+STATIONS = {  # a minecart station, as its tag ends: (what the game calls it, the area it's in)
+    "Town": ("Haven Station", "Town"), "TownFountain": ("Town Fountain", "Town"),
+    "PlainsA1.Barn": ("Honeycomb Farm", "PlainsA1"), "PlainsA1.Border": ("Honeybrook Bridge", "PlainsA1"),
+    "ForestA1.Outpost": ("Little Howl Hamlet", "ForestA1"), "ForestA1.SpiderCaveExit": ("Deep Dark Entrance", "ForestA1"),
+    "ForestA1.NWPass": ("Hidden Grove", "ForestA1"), "ForestA1.DangerZone": ("Woodcutter's Outpost", "ForestA1"),
+    "PlainsA2.Central": ("Monsoon Banks", "PlainsA2"), "PlainsA2.IllagerCamp": ("Orange Tower", "PlainsA2"), "PlainsA2.VillagerOasis": ("Puddle Pond", "PlainsA2"),
+    "PlainsA2.NorthWestBridge": ("Red Tower", "PlainsA2"), "PlainsA2.SouthEastBridge": ("White Tower", "PlainsA2"),
+    "DesertA1.MountainPass": ("Archie's Ruins", "DesertA1"), "DesertA1.Fortress": ("Fortress Backgate", "DesertA1"), "DesertA1.Fortress2": ("Frozen Fortress", "DesertA1"),
+    "DesertA1.IceShelf": ("Frozen Shipyard", "DesertA1"), "DesertA1.Cliffs": ("Highland Cliffs", "DesertA1"), "DesertA1.IceLagoon": ("Ice Caves", "DesertA1"),
+}
+STATIONS_IN_ALL = len(STATIONS)
+QUESTS = {  # a quest, as a save names it: what the game calls it (the ones MetaBot's map marks a spot for)
+    "CA01": "The Illagers from the Rift", "CA02": "The Silence in Little Howl", "CA02_B": "Corruption in the Woods", "CA04": "The Missing Note Blocks",
+    "CA05": "Hiking Frozen Highlands", "CA06": "Returning the Note Blocks", "CA07": "Wading Rainy Plains", "PLa1_S04_A": "Keeper of the Bees",
+    "FOa1_S10_A": "The Cleric's Apprentice", "DEa1_S13_A": "The Fight at the End of the Tunnel",
+}
 _NUMBERED = re.compile(r"SW\.Doorway\.(\w+)\.(Dungeon|Rift)\.(\d+)$")
+_STATION = "SW.MinecartStation."
+
+
+def area_name(tag: str) -> str:
+    """An area by the game's name for it, where that's known: SW.Area.Forest.A1 is Howling Woods, and a place inside
+    it keeps the rest of its tag (Howling Woods: SpiderCaves.3). Otherwise the tag, less the SW.Area. on every one."""
+    plain = tag.removeprefix("SW.Area.")
+    parts = plain.split(".")
+    for count in range(len(parts), 0, -1):
+        name = AREAS.get("".join(parts[:count]))
+        if name:
+            return name + (": " + ".".join(parts[count:]) if parts[count:] else "")
+    return plain
+
+
+def station_name(tag: str) -> str:
+    """A minecart station by the game's name for it, where that's known, or its tag less the part every one has."""
+    key = tag.removeprefix(_STATION)
+    return STATIONS[key][0] if key in STATIONS else key
+
+
+def quest_name(name: str) -> str:
+    """A quest as a save names it, with what the game calls it where that's known."""
+    return f"{name} ({QUESTS[name]})" if name in QUESTS else name
 
 
 def frontier(region: dict) -> list[int]:
-    """The squares of a region the hero hasn't explored that touch one it has: the ground right next to where
-    it has been, which is where something walked past would be."""
-    cols, rows, cells = region["cols"], region["rows"], region["cells"]
+    """The squares of a region's picture the hero has never seen that touch one it has: the ground right next to
+    where it has been, which is where something walked past would be."""
+    across, down, cells = region["across"], region["down"], region["cells"]
     edge = []
-    for index, cell in enumerate(cells):
+    for index, cell in enumerate(cells[: across * down]):
         if not cell:
-            col, row = index // rows, index % rows
-            around = [(col - 1, row), (col + 1, row), (col, row - 1), (col, row + 1)]
-            if any(0 <= c < cols and 0 <= r < rows and cells[c * rows + r] for c, r in around):
+            line, place = divmod(index, across)
+            around = [(line - 1, place), (line + 1, place), (line, place - 1), (line, place + 1)]
+            if any(0 <= l < down and 0 <= p < across and cells[l * across + p] for l, p in around):
                 edge.append(index)
     return edge
 
 
 def might_be_missing(progress: dict[str, Any], regions: dict[str, dict]) -> list[str]:
-    """What a hero may have missed, as far as its save shows: doors whose numbers are skipped or short of the
-    area's count, minecart stations, quests not started or not finished, and unexplored ground beside explored."""
+    """What a hero may have missed, as far as its save shows: how many of each area's dungeon and rift spots it has
+    found, the minecart stations it hasn't, quests not started or not finished, and unseen ground beside seen."""
     lines = []
-    numbered: dict[tuple[str, str], list[int]] = {}
+    numbered: dict[tuple[str, str], set[int]] = {}
     for label in progress:
         match = _NUMBERED.match(label[5:]) if label.startswith("door ") else None
         if match:
-            numbered.setdefault((match.group(1), match.group(2)), []).append(int(match.group(3)))
+            numbered.setdefault((match.group(1), match.group(2)), set()).add(int(match.group(3)))
     for (area, kind), found in sorted(numbered.items()):
-        found = sorted(set(found))
-        name, dungeons, rifts = AREA_TOTALS.get(area, (area, None, None))
+        dungeons, rifts = AREA_TOTALS.get(area, (None, None))
         total = dungeons if kind == "Dungeon" else rifts
-        skipped = [number for number in range(1, max(found) + 1) if number not in found]
-        line = f"{name}: {len(found)} {kind.lower()} entrance{'s' if len(found) != 1 else ''} found" + (f" of {total}" if total else "")
-        if skipped:
-            line += f"; not found yet: number{'s' if len(skipped) != 1 else ''} {', '.join(map(str, skipped))}" + (f", and {total - max(found)} more above {max(found)}" if total and total > max(found) else "")
-        elif total and total > len(found):
-            line += f"; {total - len(found)} more to find"
-        lines.append(line)
-    stations = sum(1 for label in progress if label.startswith("minecart station "))
-    lines.append(f"Minecart stations: {stations} found of {STATIONS_IN_ALL}")
+        lines.append(f"{AREAS.get(area, area)}: {len(found)} " + (f"of its {total} {kind.lower()} spots found" if total else f"{kind.lower()} spot{'s' if len(found) != 1 else ''} found"))
+    if numbered:
+        lines.append("(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)")
+    stations = {label[len("minecart station "):].removeprefix(_STATION) for label in progress if label.startswith("minecart station ")}
+    lines.append(f"Minecart stations: {len(stations)} found of {STATIONS_IN_ALL}")
+    unfound: dict[str, list[str]] = {}
+    for key, (name, area) in STATIONS.items():
+        if key not in stations:
+            unfound.setdefault(AREAS.get(area, area), []).append(name)
+    if unfound and stations:
+        lines.append("Stations not found yet: " + "; ".join(f"{', '.join(names)} ({area})" for area, names in unfound.items()))
+    steps = quest_tasks(progress)
     for label, state in sorted(progress.items()):
         if label.startswith("quest ") and label != "quest in focus" and state in ("Available", "Active"):
             name = label[6:]
-            tasks = [value for task, value in progress.items() if task.startswith(f"task {name}_")]
+            tasks = steps[name]
             left = sum(1 for value in tasks if not str(value).startswith("Completed"))
-            lines.append(f"Quest {name}: " + ("not started" if state == "Available" else f"{left} of {len(tasks)} steps left"))
+            lines.append(f"Quest {quest_name(name)}: " + ("not started" if state == "Available" else f"{left} of {len(tasks)} steps left"))
     for tag, region in regions.items():
         explored, edge = sum(1 for cell in region["cells"] if cell), len(frontier(region))
         if edge:
@@ -421,22 +556,25 @@ def might_be_missing(progress: dict[str, Any], regions: dict[str, dict]) -> list
 
 
 def text_map(atlas: dict[str, Any]) -> str:
-    """The atlas as a map you can read in a text file: each region's grid, north at the top as the save has it
-    (# explored, . not), with a letter on each door's square and a number on each place something else was found."""
-    lines = [f"World map from {atlas['snapshots']} saves. One square is {CELL} metres. # explored, ? not explored but right next to it, . not yet.", ""]
+    """The atlas as a map you can read in a text file: each region's picture, the way round the game's own map is
+    (# clear, + the fog only beginning to lift, . never seen), with a letter on each door's square and a number
+    on each place something else was found."""
+    lines = [f"World map from {atlas['snapshots']} saves, the way round the game's own map is. One square is {CELL} metres. "
+             "# clear, + the fog only beginning to lift, ? never seen but right next to ground that has been, . never seen.", ""]
     if atlas.get("might_be_missing"):
         lines += ["What you may have missed, as far as a save shows it:"] + [f"  {line}" for line in atlas["might_be_missing"]] + [""]
     marks = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     for tag, region in atlas["map"]["regions"].items():
-        cols, rows = region["cols"], region["rows"]
+        across, down, cells = region["across"], region["down"], region["cells"]
         edge = set(frontier(region))
-        grid = [["#" if region["cells"][col * rows + row] else "?" if col * rows + row in edge else "." for col in range(cols)] for row in range(rows)]
+        grid = [["#" if cells[line * across + place] >= CLEAR else "+" if cells[line * across + place] else "?" if line * across + place in edge else "."
+                 for place in range(across)] for line in range(down)]
         legend = []
 
         def put(x: float, y: float, mark: str) -> bool:
-            col, row = int((x - region["x"]) // CELL), int((y - region["y"]) // CELL)
-            if 0 <= col < cols and 0 <= row < rows:
-                grid[row][col] = mark
+            place, line = square_of(region, x, y)
+            if 0 <= place < across and 0 <= line < down:
+                grid[int(line)][int(place)] = mark
                 return True
             return False
 
@@ -450,14 +588,34 @@ def text_map(atlas: dict[str, Any]) -> str:
             mark = str(number % 10)
             if put(place["near"][0], place["near"][1], mark):
                 legend.append(f"  {mark}  {label}  near {place['near'][0]}, {place['near'][1]}")
-        explored = sum(1 for cell in region["cells"] if cell)
-        lines += [f"{tag}  (corner {region['x']}, {region['y']}; {cols} by {rows} squares; {explored} explored)"] + ["  " + "".join(row) for row in grid] + legend + [""]
+        chests = [chest for chest in atlas.get("chests", []) if chest.get("region") == tag and chest.get("near")]
+        if any([put(chest["near"][0], chest["near"][1], "$") for chest in chests]):
+            legend.append(f"  $  a chest opened ({sum(chest['opened'] for chest in chests)} in this region with a spot to show)")
+        explored = sum(1 for cell in cells if cell)
+        lines += [f"{tag}  ({across} squares across, {down} down; {explored} explored)"] + ["  " + "".join(row) for row in grid] + legend + [""]
+    opened = chests_by_area(atlas.get("chests", []))
+    if opened:
+        lines += ["Chests opened, by the area you were in:"] + [f"  {area}: {count}" for area, count in opened.items()] + [""]
     return "\n".join(lines)
 
 
+BETWEEN = "while nothing was recording"  # where a chest was opened, when the count went up between one recording and the next
+
+
+def chests_by_area(chests: list[dict]) -> dict[str, int]:
+    """How many chests the recordings saw opened in each area, the areas in order of name, and last how many the
+    game's count went up by between one recording and the next."""
+    opened: dict[str, int] = {}
+    for chest in chests:
+        area = str(chest["area"]) if chest.get("area") else BETWEEN
+        opened[area] = opened.get(area, 0) + chest.get("opened", 1)
+    return {area: opened[area] for area in sorted(opened, key=lambda area: (area == BETWEEN, area))}
+
+
 def picture_map(atlas: dict[str, Any], target: Path) -> bool:
-    """The same map as a picture, if Pillow is installed: explored ground lighter, doors as orange dots with their
-    names, and a blue dot where anything else was found. False when it can't be drawn."""
+    """The same map as a picture, if Pillow is installed: the clearer the fog over a square the greener, doors as
+    orange dots with their names, a blue dot where anything else was found, a yellow one where a chest was
+    opened. False when it can't be drawn."""
     try:
         from PIL import Image, ImageDraw
     except ImportError:
@@ -466,25 +624,24 @@ def picture_map(atlas: dict[str, Any], target: Path) -> bool:
     if not regions:
         return False
     scale, gap, top = 14, 40, 26  # pixels to a square, between regions, and above each for its name
-    order = sorted(regions.items(), key=lambda pair: -pair[1]["cols"] * pair[1]["rows"])
-    width = max(region["cols"] for _tag, region in order) * scale + 2 * gap + 360
-    height = sum(max(region["rows"] * scale, 40 * 13) + gap + top for _tag, region in order) + gap  # room for the names beside a small grid
+    order = sorted(regions.items(), key=lambda pair: -pair[1]["across"] * pair[1]["down"])
+    width = max(region["across"] for _tag, region in order) * scale + 2 * gap + 360
+    height = sum(max(region["down"] * scale, 40 * 13) + gap + top for _tag, region in order) + gap  # room for the names beside a small picture
     image = Image.new("RGB", (width, height), "#0d1a24")
     draw = ImageDraw.Draw(image)
     y0 = gap
     for tag, region in order:
-        cols, rows = region["cols"], region["rows"]
-        draw.text((gap, y0), f"{tag}   {sum(1 for cell in region['cells'] if cell)} of {cols * rows} squares explored", fill="#d7e3ea")
+        across, down, cells = region["across"], region["down"], region["cells"]
+        draw.text((gap, y0), f"{tag}   {sum(1 for cell in cells if cell)} of {across * down} squares explored", fill="#d7e3ea")
         y0 += top
         edge = set(frontier(region))
-        for col in range(cols):
-            for row in range(rows):
-                shade = "#5d8a66" if region["cells"][col * rows + row] else "#3c5f78" if col * rows + row in edge else "#16303f"
-                draw.rectangle([gap + col * scale, y0 + row * scale, gap + (col + 1) * scale - 2, y0 + (row + 1) * scale - 2], fill=shade)
+        for index in range(min(len(cells), across * down)):
+            line, place = divmod(index, across)
+            draw.rectangle([gap + place * scale, y0 + line * scale, gap + (place + 1) * scale - 2, y0 + (line + 1) * scale - 2], fill=clarity_colour(cells[index], index in edge))
 
         def spot(x: float, y: float) -> tuple[float, float] | None:
-            col, row = (x - region["x"]) / CELL, (y - region["y"]) / CELL
-            return (gap + col * scale, y0 + row * scale) if 0 <= col < cols and 0 <= row < rows else None
+            place, line = square_of(region, x, y)
+            return (gap + place * scale, y0 + line * scale) if 0 <= place < across and 0 <= line < down else None
 
         labels = []
         for name, door in atlas["doors"].items():
@@ -498,13 +655,18 @@ def picture_map(atlas: dict[str, Any], target: Path) -> bool:
                 if at:
                     draw.ellipse([at[0] - 4, at[1] - 4, at[0] + 4, at[1] + 4], fill="#4cc3ff", outline="#04141d")
                     labels.append((at, label.replace("SW.MinecartStation.", "").replace("SW.UI.Cutscene.", ""), "#a8e1ff"))
-        side = gap + cols * scale + 24  # names go in a column beside the grid, each joined to its dot
+        for chest in atlas.get("chests", []):
+            at = spot(chest["near"][0], chest["near"][1]) if chest.get("region") == tag and chest.get("near") else None
+            if at:
+                draw.rectangle([at[0] - 4, at[1] - 3, at[0] + 4, at[1] + 3], fill="#ffd84a", outline="#2a2100")
+                labels.append((at, f"chest opened ({chest['opened']})", "#ffe98a"))
+        side = gap + across * scale + 24  # names go in a column beside the picture, each joined to its dot
         for number, (at, name, colour) in enumerate(sorted(labels, key=lambda entry: entry[0][1])):
             line_y = y0 + number * 13
-            if line_y < y0 + max(rows * scale, len(labels) * 13):
+            if line_y < y0 + max(down * scale, len(labels) * 13):
                 draw.line([at, (side - 4, line_y + 6)], fill="#33505f")
                 draw.text((side, line_y), name[:52], fill=colour)
-        y0 += max(rows * scale, len(labels) * 13) + gap
+        y0 += max(down * scale, len(labels) * 13) + gap
     image.crop((0, 0, width, min(height, y0 + gap))).save(target)
     return True
 
@@ -739,6 +901,9 @@ class Recorder:
                 where = f"at {at[0]:.0f}, {at[1]:.0f}" if at else f"in {area}" + (f", near {near['x']}, {near['y']}" if near else "")
                 line = f"PROGRESS: {label}: {was} -> {'(gone)' if new is doc.MISSING else new}  [{where}]" if label.startswith(LOUD_PROGRESS) else None
                 self.event("progress", line, container=container, what=label, old=compact(old), new=compact(new), area=area, near=near, at=at)
+                if label == CHESTS and isinstance(old, int) and isinstance(new, int) and new > old:
+                    more = new - old
+                    self.event("chest", f"CHEST OPENED: {more} more, {new} by the game's count  [{where}]", container=container, opened=more, count=new, area=area, near=near)
 
     # ------------------------------------------------------------------ the Soul Storm check
 
@@ -866,6 +1031,11 @@ class Recorder:
         for container, progress in self.progress.items():
             missing = might_be_missing(progress, self.regions.get(container, {}))
             lines += ["  What you may have missed, as far as the save shows it:"] + [f"    {line}" for line in missing]
+        chests: dict[str, int] = {}
+        for r in self.log:
+            if r["kind"] == "chest":
+                chests[str(r.get("area"))] = chests.get(str(r.get("area")), 0) + r["opened"]
+        lines.append(f"  Chests opened while recording: {sum(chests.values())}" + (f" ({', '.join(f'{count} in {area}' for area, count in sorted(chests.items()))})" if chests else ""))
         steps = [r for r in self.log if r["kind"] == "progress"]
         loud = [r for r in steps if r["what"].startswith(LOUD_PROGRESS)]
         lines.append(f"  Steps while recording ({len(loud)}, and {len(steps) - len(loud)} quieter changes in events.jsonl):")
@@ -1014,6 +1184,36 @@ def run(profile: Path, out: Path, once: bool = False, questions: bool = True) ->
         wrap_up()
     recorder.close()
     return 0
+
+
+def load_atlas(out: Path = DEFAULT_OUT) -> dict[str, Any] | None:
+    """What the recordings under ``out`` have shown, as it was last written down. None if it never was."""
+    try:
+        atlas = json.loads((Path(out) / "world_progress_atlas.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return atlas if isinstance(atlas, dict) else None
+
+
+def fresh_atlas(out: Path = DEFAULT_OUT) -> dict[str, Any] | None:
+    """What the recordings under ``out`` have shown, up to the newest of them: as last written down if nothing has
+    been recorded since, and read again first if something has (about a second for every few hundred saves).
+    None if there are no recordings."""
+    out = Path(out)
+    newest = written = None
+    try:
+        newest = max((folder.stat().st_mtime for folder in out.glob("*/snapshots")), default=None)
+        written = (out / "world_progress_atlas.json").stat().st_mtime
+    except OSError:
+        pass  # no recordings, or recordings and nothing written down about them yet
+    atlas = load_atlas(out)
+    if newest is not None and (atlas is None or written is None or newest > written or atlas.get("format") != ATLAS_FORMAT):
+        try:
+            write_atlas(out)
+        except OSError:
+            return build_atlas(out)  # it can't be written down here: read it all the same
+        atlas = load_atlas(out)
+    return atlas
 
 
 def write_atlas(out: Path = DEFAULT_OUT) -> list[str]:

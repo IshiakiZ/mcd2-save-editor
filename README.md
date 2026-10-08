@@ -78,12 +78,16 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
+- **World map:** **Menu → World map…** draws the ground your hero has explored, straight from its save and the
+  same way round as the game's own map: the clearer the fog over a square, the greener, with every door you've
+  found on it. Scroll to zoom, drag to move, tick **Names** to label the dots. Beside it is how far the hero has
+  got: the story quests, every quest and its steps, minecart stations by the game's names, what you may have
+  missed, and the game's own counts (chests opened, achievements). It's a view: nothing is changed.
 - **Play recorder:** **Menu → Play recorder…** writes down what the game saves while you play: items picked up
-  and changed, stats, every quest step, minecart stations, doors, cutscenes and the ground you explored, each with
-  where it happened. **Make the map** draws your world from all your recordings and lists what you may have
-  missed, as far as a save gives it away: a numbered dungeon or rift whose number is skipped, quests not started
-  or not finished, and unexplored ground right next to where you've been. It only reads your saves, and everything
-  it writes stays on your PC.
+  and changed, stats, every quest step, minecart stations, doors, cutscenes, chests you open and the ground you
+  explored, each with where it happened. What it records puts more on the world map: where a station, a cutscene
+  or a chest turned up. **Show the map** opens the map from there. It only reads your saves, and everything it
+  writes stays on your PC.
 - **Launch game:** a button next to **Save to game** starts Minecraft Dungeons II, the Xbox app's copy or
   Steam's, whichever your saves belong to. With unsaved changes it asks first, since the editor can't save while
   the game runs.
@@ -264,47 +268,53 @@ your sign-in, account or device data.
   the game hands you a book it also files it in its collections and counts it towards an achievement. The editor
   leaves both alone, as it does for every item, and the game didn't add the editor's books to either afterwards, so
   a book added here counts for neither. The editor knows all 32 of the game's books by their save ID
-  (MetaBot lists 34 enchantments, two of them built into Uniques), and 23 of them by name as well. The other nine
-  came from players' collections with their IDs alone, so they go by those: Blowback, Borealis, Burst Bowstring,
-  Channeling, Guarding Strike, Lingering Power, Multi Potion, Shadow Strike and Soul Aspect. MetaBot's enchantments
-  that no ID has been tied to are Bottomless Brew, Crash Landing, Ender Mines, Lightning Surge, Power Amplifier,
-  Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot: nine IDs without a name and nine names without an ID, so
-  they most likely pair off. Which goes with which is for someone who has the book to say, not for a guess. If you
-  have one, pick it, press **Name it…**, and **Share item IDs…** sends the name on. One name is in doubt: the
-  latest list calls the book saved as Channeling Thundering, the name the book saved as Thundering already has
-  here. Both keep the names they have until someone who has both books says which is which.
+  (MetaBot lists 34 enchantments, two of them built into Uniques), and 27 of them by name as well. The other five
+  came from players' collections with their IDs alone, so they go by those: Burst Bowstring, Guarding Strike, Multi
+  Potion, Shadow Strike and Soul Aspect. MetaBot's enchantments that no book has been tied to are Bottomless Brew,
+  Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot: five IDs without a name and five names without a book,
+  so they most likely pair off. Which goes with which is for someone who has the book to say, not for a guess. If
+  you have one, pick it, press **Name it…**, and **Share item IDs…** sends the name on. Four names were settled in
+  the game itself: the enchantments a save calls Blowback, Borealis, Channeling and Lingering Power, put on plain
+  items with the editor, show there as Crash Landing, Ender Mines, Lightning Surge and Power Amplifier, and the
+  one saved as Thundering is Thundering. The one saved as Soul Fire Aspect shows as Soul Blast; no book has that
+  ID, so the Soul Aspect book, most likely its own, keeps its ID until a save ties the two.
 - **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
   files, so the editor learns how each one is saved from real saves: 60 gear effects and 21 enchantments so far
   (Ancient Alchemy at every tier; Healing Smite, Piercing and Health Synergy at tiers I and III; Ender Quiver and
   Somersault at II and III; and at tier III Chain Reaction, Thundering, Fire Aspect, Poison Fog, Gravity Pulse,
-  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede and five the save calls Blowback, Borealis,
-  Channeling, Lingering Power and Soul Fire Aspect), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
+  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede, Crash Landing, Ender Mines, Lightning
+  Surge, Power Amplifier and Soul Blast), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
   game's own numbers for them are published (MetaBot's table), so it also offers the tiers nobody has sent yet; it
   marks those as not seen and asks before adding one. An enchantment's saved strength isn't
   the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
   game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. For some
-  enchantments even that number isn't fixed: two players' saves hold the one called Lingering Power at tier III with
+  enchantments even that number isn't fixed: two players' saves hold Power Amplifier at tier III with
   two different numbers, and the editor writes the first it saw. The effects the
   game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
   check the result in the game.
 - **The Soulstorm Enhanced tag can't be put on an item yet.** Gear from Soul Storm reward chests carries one
   effect more than its rarity usually gets, and that much the editor can already do: **Change effects…** lets you
-  give an item the extra one. The tag the game shows on such a piece is another matter. The game's readable script
+  give an item the extra one. The tag the game shows on such a piece is another matter: pieces given the extra
+  effect that way show no tag in the game, so the effect alone isn't what the game goes by. The game's readable script
   files have a check for it (`IsSoulStormGearItem`) and nothing about where it's kept, and no save the editor has
   seen holds a piece with it: the only mark on any item in them is the one for an item you haven't looked at. So
   **Share item IDs…** now also lists any item saved with a mark or a field the editor has never met, whole, as the
   save holds it (less its pickup time and random seed; a number, a yes or no or one of the game's own names is
   passed on from a field it doesn't know, and any other text there is left out). A list from a save with a Soul
   Storm piece will show how the tag is saved, and then the editor can write it.
-- **The play recorder sees what the game saves, and nothing else.** It reads your save files each time the game
-  writes them. It doesn't read the game's memory or its screen, so it can't tell you about a chest or a secret you
-  haven't touched: the game writes those to a save only once you have, and where they are is in its encrypted
-  files. What it can say is what a save gives away. A door's position is the save's own; a minecart station, a
-  cutscene or a quest step is placed by the ground you had just explored when it turned up, to within a few
-  32-metre squares (that size is worked out from the doors: at 32 every one falls inside its region). How many
-  dungeon and rift entrances an area has in all comes from MetaBot's map, for the two areas whose save names are
-  certain so far (Rainy Plains and Howling Woods). A recording holds every version of your hero save the game wrote
-  while it ran, so treat the recordings folder like the backups folder: it's yours, and not for posting whole.
+- **The play recorder and the world map see what the game saves, and nothing else.** The recorder reads your save
+  files each time the game writes them. It doesn't read the game's memory or its screen, so neither can tell you
+  about a chest or a secret you haven't touched: the game writes those to a save only once you have, and where
+  they are is in its encrypted files. What they can say is what a save gives away. The map is the save's own
+  picture of the fog over each region, a square of it being 32 metres of ground, and a door's position is the
+  save's own; how the picture lies on the world is measured from the doors, to about a third of a square. A
+  minecart station, a cutscene or a chest is placed by the ground whose fog had just cleared when it turned up:
+  around there, within a few squares, or in a place you went into from there. Chests are counted by the game's
+  own count of chests opened; a save doesn't say which chest it was. What the game calls an area, a minecart
+  station and a quest, and how many dungeon and rift spots an area has, come from MetaBot's map. The game opens
+  only a few of those spots at a time, so the list of what you may have missed says how many you've found, not
+  that the rest are waiting. A recording holds every version of your hero save the game wrote while it ran, so
+  treat the recordings folder like the backups folder: it's yours, and not for posting whole.
   Changing how far a hero has got isn't something the editor does yet: a save lists only the quests its hero has
   met, so the later ones have to come from saves of heroes further along, and nobody has tried what the game does
   with a quest marked done by hand.
@@ -394,7 +404,7 @@ python -m dungeons2_editor verify                               # checks saves r
 python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
-python -m dungeons2_editor record                               # the play recorder in a console (--atlas: make the map)
+python -m dungeons2_editor record                               # the play recorder in a console (--atlas: write the map files)
 python -m dungeons2_editor mcp                                  # run as an MCP server for an AI assistant (stdin/stdout)
 python -m dungeons2_editor update                               # look for a newer version on GitHub and install it
 python -m dungeons2_editor gui --look glass                     # open the window in Liquid Glass this once (classic: Original)
@@ -435,7 +445,7 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 | `dungeons2_editor/edition.py` | Which edition this is: the one on GitHub, or the one for Nexus Mods that never goes online (`tools/make_edition.py` switches) |
 | `dungeons2_editor/effects_dialog.py` | The window that changes an item's effects and enchantment |
 | `dungeons2_editor/recommend.py` | "Best for": the editor's picks of effects for a goal, out of the ones the game can roll on an item |
-| `dungeons2_editor/recorder.py`, `recorder_dialog.py` | The play recorder: what the game saves while you play, world progress, the map, and its window |
+| `dungeons2_editor/recorder.py`, `recorder_dialog.py`, `world_dialog.py` | The play recorder: what the game saves while you play, world progress and where things are, and its window; the World map window |
 | `dungeons2_editor/game_launch.py`, `whats_new.py` | Starting the game, and the What's new window (the notes are `data/release-notes.md`) |
 | `tools/` | The item catalog builder, and the release build's helpers and checks |
 
@@ -481,8 +491,9 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   and artifacts pages and the archetypes' pages under [builds](https://metabot.gg/en/minecraft-dungeons-2/builds),
   and an artifact's element from the artifacts page.
   `tools/build_item_catalog.py` rebuilds the lists from those pages.
-- How many dungeon and rift entrances and minecart stations there are, in the play recorder's list of what you may
-  have missed, comes from MetaBot.GG's [Overworld map](https://metabot.gg/en/minecraft-dungeons-2/map).
+- What the game calls an area, a minecart station and a quest, how many dungeon and rift spots an area has, and
+  which way round the map lies, in the World map and the play recorder's list of what you may have missed, come
+  from MetaBot.GG's [Overworld map](https://metabot.gg/en/minecraft-dungeons-2/map).
 - The best gear, the kits and the numbers in the presets come from MetaBot.GG's
   [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.

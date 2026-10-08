@@ -11,13 +11,17 @@
 - Every shape in Liquid Glass is drawn by the editor itself, the first time you pick the look. No picture files
   were added, the download is no bigger, and the editor opens as quickly as before in the Original look.
 - New pictures in the README.
+- **The world map.** **Menu → World map…** draws the ground your hero has explored, straight from its save and
+  the same way round as the game's own map: the clearer the fog over a square, the greener, with every door you've
+  found on it. Scroll to zoom, drag to move, tick **Names** to label the dots. Beside it is how far the hero has
+  got: the story quests, every quest and its steps, minecart stations by the game's names, what you may have
+  missed, and the game's own counts, such as chests opened. It's a view: nothing is changed.
 - **The play recorder.** **Menu → Play recorder…** writes down what the game saves while you play: items picked
-  up and changed, stats, every quest step, minecart stations, doors, cutscenes and the ground you explored, each
-  with where it happened. **Make the map** draws your world from all your recordings and lists what you may have
-  missed, as far as a save gives it away: a numbered dungeon or rift whose number is skipped, quests not finished,
-  and unexplored ground right next to where you've been. It can't see a chest or a secret you haven't touched,
-  because the game writes those to a save only once you have. It only reads your saves, and what it writes stays
-  on your PC. It's also how the editor learned how effects, enchantments and books are saved.
+  up and changed, stats, every quest step, minecart stations, doors, cutscenes, chests you open and the ground you
+  explored, each with where it happened. What it records puts more on the world map: where a station, a cutscene
+  or a chest turned up. It can't see a chest or a secret you haven't touched, because the game writes those to a
+  save only once you have. It only reads your saves, and what it writes stays on your PC. It's also how the editor
+  learned how effects, enchantments and books are saved.
 - **Launch game.** A button next to **Save to game** (and at the top of the menu) starts Minecraft Dungeons II for
   you: the Xbox app's copy or Steam's, whichever your saves belong to. If you have unsaved changes it asks first,
   because the editor can't save while the game is running. On a Mac, where the game runs inside CrossOver or
@@ -27,6 +31,11 @@
   the editor can write it, and otherwise the editor's own pick for that kind of gear, a different one on each
   piece. Until now the leggings, the boots and any piece whose pick the editor couldn't write were left bare. The
   kit also adds the books of the enchantments its build names, so the Enchantsmith offers those in the game.
+- **Five enchantments get their names.** The ones a save calls Blowback, Borealis, Channeling, Lingering Power and
+  Soul Fire Aspect are Crash Landing, Ender Mines, Lightning Surge, Power Amplifier and Soul Blast: put on plain
+  items with the editor and read off in the game. Four books take their names with them, which leaves five books
+  that go by their IDs. Thundering is Thundering, which settles the doubt 1.14.2 left. Kits whose builds name
+  Lightning Surge, Power Amplifier or Soul Blast now put those on.
 - **What's new, in the editor.** The first time a new version opens, after an update or a fresh download, it
   shows what changed since the version you had. **Menu → What's new…** (and a button on the Help page) shows it
   again. These notes come with the editor, so nothing is fetched to show them.
@@ -34,7 +43,7 @@
   it has seen holds a piece with the tag. So **Share item IDs…** now also lists any item the game saved with a mark
   or a field the editor has never met, as the save holds it. If you have a Soul Storm piece, that list is what
   teaches the editor the tag. Until then, **Change effects…** can already give an item the extra effect such a
-  piece carries.
+  piece carries, though that alone doesn't make the game show the tag.
 - An item you add no longer takes on the marks of the item its layout was copied from: it gets the one for an item
   you haven't looked at and no other, as the game hands one over.
 

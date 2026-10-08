@@ -1902,8 +1902,7 @@
   },
   {
    "effect": "SW.Enchantment.Blowback",
-   "name": "Blowback",
-   "name_from_id": true,
+   "name": "Crash Landing",
    "tiers": [
     {
      "tier": "III",
@@ -1914,8 +1913,7 @@
   },
   {
    "effect": "SW.Enchantment.Borealis",
-   "name": "Borealis",
-   "name_from_id": true,
+   "name": "Ender Mines",
    "tiers": [
     {
      "tier": "III",
@@ -1937,8 +1935,7 @@
   },
   {
    "effect": "SW.Enchantment.Channeling",
-   "name": "Channeling",
-   "name_from_id": true,
+   "name": "Lightning Surge",
    "tiers": [
     {
      "tier": "III",
@@ -2003,8 +2000,7 @@
   },
   {
    "effect": "SW.Enchantment.LingeringPower",
-   "name": "Lingering Power",
-   "name_from_id": true,
+   "name": "Power Amplifier",
    "tiers": [
     {
      "tier": "III",
@@ -2085,8 +2081,7 @@
   },
   {
    "effect": "SW.Enchantment.SoulFireAspect",
-   "name": "Soul Fire Aspect",
-   "name_from_id": true,
+   "name": "Soul Blast",
    "tiers": [
     {
      "tier": "III",

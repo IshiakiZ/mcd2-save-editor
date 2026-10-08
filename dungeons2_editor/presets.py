@@ -220,8 +220,8 @@ ANY_ARMOR = ("Luck",)
 # that goes on that piece and that no other piece of the kit carries, so a kit ends up with one of each. Damage
 # first on weapons; on armor, healing and artifact power before the rest.
 ENCHANT_FALLBACKS = {
-    "Melee": ("Fire Aspect", "Swirling", "Poison Fog", "Healing Smite"),
-    "Ranged": ("Chain Reaction", "Piercing", "Swirling", "Healing Smite"),
+    "Melee": ("Fire Aspect", "Thundering", "Swirling", "Poison Fog", "Healing Smite"),
+    "Ranged": ("Chain Reaction", "Thundering", "Piercing", "Swirling", "Healing Smite"),
     "Armor": ("Health Synergy", "Artifact Amplifier", "Somersault", "Barrier Brew", "Springload", "Ancient Alchemy", "Ender Quiver", "Gravity Pulse", "Cow Stampede"),
 }
 

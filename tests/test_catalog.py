@@ -53,11 +53,11 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual([ids[name].id for name in ("Picnic Basket", "Blizzard Bangle", "Tempo Truffle")],
                          ["SW.Item.Artifact.PicnicBlanket", "SW.Item.Artifact.FrostBracelet", "SW.Item.Artifact.HasteMushroom"])
         self.assertEqual((ids["Mob Mallet"].id, ids["Mob Mallet"].confirmed), ("SW.Item.GiantMallet", True))
-        # Every item goes by the game's name, but for nine books whose IDs players' collections showed and nobody
+        # Every item goes by the game's name, but for five books whose IDs players' collections showed and nobody
         # has put a name to: they go by their IDs.
         self.assertEqual(
             [item.name for item in self.items if item.name_from_id],
-            ["Blowback", "Borealis", "Burst Bowstring", "Channeling", "Guarding Strike", "Lingering Power", "Multi Potion", "Shadow Strike", "Soul Aspect"],
+            ["Burst Bowstring", "Guarding Strike", "Multi Potion", "Shadow Strike", "Soul Aspect"],
         )
         # A talisman is saved by what it does, and its effect can go by another name than its level templates.
         fist = ids["Fist of Iron"]
@@ -157,7 +157,7 @@ class RealItemListTests(unittest.TestCase):
         self.assertTrue({("Ancient Alchemy I", 0.5), ("Ancient Alchemy II", 0.6), ("Healing Smite I", 0.3), ("Piercing I", 1)} <= saved_enchantments)
         # From a player's Uniques (issue 20). An enchantment's saved strength follows no rule: Ancient Alchemy's 30,
         # 45 and 60 souls are 0.5, 0.6 and 0.85, while Barrier Brew's 6 seconds and Swirling's 100% are 6 and 1.
-        self.assertTrue({("Ancient Alchemy III", 0.85), ("Barrier Brew III", 6), ("Swirling III", 1), ("Blowback III", 0.5)} <= saved_enchantments)
+        self.assertTrue({("Ancient Alchemy III", 0.85), ("Barrier Brew III", 6), ("Swirling III", 1), ("Crash Landing III", 0.5)} <= saved_enchantments)
         self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.PotionBarrier"), "Barrier Brew")
         # A save spells Springload's template with a small l, unlike its effect: written as saved.
         springload = next(choice for choice in book.enchantments if choice.title == "Springload III")
@@ -179,10 +179,11 @@ class RealItemListTests(unittest.TestCase):
             [True] * 7,
         )
         self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (False, False))
-        # Two enchantments nobody has named, and Health Synergy's top tier, from the same list.
-        self.assertTrue({("Channeling III", 3), ("Soul Fire Aspect III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
+        # Two enchantments a save calls Channeling and SoulFireAspect, and Health Synergy's top tier, from the same
+        # list. The developer put them on items and read the game's names for them off those.
+        self.assertTrue({("Lightning Surge III", 3), ("Soul Blast III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
         # The same tier of one enchantment has been saved with two numbers (0.244871 and 0.5): the first one seen stays.
-        self.assertIn(("Lingering Power III", 0.244871), saved_enchantments)
+        self.assertIn(("Power Amplifier III", 0.244871), saved_enchantments)
         # Poison Fog's first tier, from lists made with a version that had none of it to write (issues 29 and 30), and
         # Somersault's third, which no version has offered (issue 31). Poison Fog goes on melee weapons, as its book says.
         self.assertTrue({("Poison Fog III", 1), ("Somersault II", 2), ("Somersault III", 3)} <= saved_enchantments)
@@ -383,12 +384,24 @@ class RealItemListTests(unittest.TestCase):
 
     def test_books_are_named_after_enchantments(self):
         books = [item for item in self.items if item.kind == heroes.BOOK_KIND]
-        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (32, 9))
+        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (32, 5))
         # That is every book there is: MetaBot's enchantments, less the two that are built into a Unique. And as
         # many enchantments are without a book here as books are without a name.
         bookless = set(heroes.enchantments()) - {book.name for book in books}
         self.assertEqual(len(books), len(heroes.enchantments()) - 2)
-        self.assertEqual(len(bookless - {"Ichor Blast", "Primed Enchantment"}), 9)
+        self.assertEqual(bookless - {"Ichor Blast", "Primed Enchantment"}, {"Bottomless Brew", "Shadowcloak", "Shielding Smite", "Soul Blast", "Tumbleshot"})
+        # Four books the developer named by putting their enchantments on items and reading the game's word for each.
+        # An enchantment is saved under its book's ID, so the book takes the name.
+        self.assertEqual(
+            [heroes.display_name(f"SW.Item.EnchantmentBook.{book}") for book in ("Blowback", "Borealis", "Channeling", "LingeringPower", "Thundering")],
+            ["Crash Landing", "Ender Mines", "Lightning Surge", "Power Amplifier", "Thundering"],
+        )
+        self.assertEqual(heroes.book_enchantment("SW.Item.EnchantmentBook.Channeling").slots, ("Melee",))
+        # The fifth, Soul Blast, is saved as SoulFireAspect, which no book is called: the enchantment has its name,
+        # and the book most likely to be its own (SoulAspect) keeps its ID until a save ties the two.
+        by_effect = {choice.effect: choice for choice in heroes.effect_choices()[1]}
+        self.assertEqual((by_effect["SW.Enchantment.SoulFireAspect"].title, by_effect["SW.Enchantment.SoulFireAspect"].slots), ("Soul Blast III", ("Melee",)))
+        self.assertEqual((heroes.display_name("SW.Item.EnchantmentBook.SoulAspect"), heroes.book_enchantment("SW.Item.EnchantmentBook.SoulAspect")), ("Soul Aspect", None))
         for book in books:
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
             if book.name_from_id:  # seen in a save's collections, but nobody has said what the game calls it
@@ -424,7 +437,7 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(seen[("Somersault", "II")], ("SW.Enchantment.MultiRoll", 2, True))
         self.assertEqual(seen[("Health Synergy", "I")], ("SW.Enchantment.HealthSynergy", 0.15, True))
         self.assertEqual(seen[("Thundering", "III")], ("SW.Enchantment.Thundering", 0.264703, True))
-        self.assertEqual(seen[("Lingering Power", "III")], ("SW.Enchantment.LingeringPower", 0.244871, True))  # no name for it yet
+        self.assertEqual(seen[("Power Amplifier", "III")], ("SW.Enchantment.LingeringPower", 0.244871, True))  # what a save calls LingeringPower
         self.assertEqual((seen[("Ender Quiver", "II")], seen[("Ender Quiver", "III")]), (("SW.Enchantment.ExpandedQuiver", 3, True), ("SW.Enchantment.ExpandedQuiver", 4, True)))
         # They roll where the game rolled them: Shackler on a Support's crossbow, Point Blank on a Tank's.
         by_name = {choice.name: choice for choice in gear}

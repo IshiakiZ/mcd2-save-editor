@@ -29,7 +29,9 @@ from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
 from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
+from . import recorder
 from .recorder_dialog import RecorderDialog
+from .world_dialog import WorldDialog
 from .restore_dialog import RestoreDialog
 
 APP_TITLE = "Minecraft Dungeons II Save Editor"
@@ -69,8 +71,12 @@ _SAFE_TEXT = (
     "\n• The first time a new version opens, it shows what's new in it. What's new… (on this page, and in Simple "
     "mode's menu) shows that again, with the versions before it. The notes come with the editor: nothing is fetched."
     "\n• Play recorder… (in Simple mode's menu, and on Advanced mode's Help page) writes down what the game saves while you "
-    "play: items, stats, quest steps, stations, doors and the ground you explored. Make the map draws where you've been "
-    "and lists what you may have missed. It only reads your saves, and its recordings stay on this PC, next to the backups."
+    "play: items, stats, quest steps, stations, doors, chests you open and the ground you explored. It only reads your "
+    "saves, and its recordings stay on this PC, next to the backups."
+    "\n• World map… (in the same two places) draws the ground the hero on screen has explored, from its save, with every "
+    "door it has found, and lists how far it has got: the story, quests, minecart stations, what it may have missed. "
+    "Your recordings add where stations, cutscenes and chests turned up. It can't show what the hero hasn't found: the "
+    "game writes a chest or a secret to a save only once you've been to it. Nothing is changed by looking."
 )
 # What the edition that never goes online says where the other one downloads the Minecraft Wiki's pictures.
 _NO_PICTURES = (
@@ -308,6 +314,7 @@ class EditorApp:
         self.profile: saves.SaveProfile | None = None
         self.container: saves.Container | None = None
         self.original: Any = None  # document as loaded from disk
+        self.world_map: WorldDialog | None = None  # the World map window, while one is open
         self.document: Any = None  # document being edited
         self.change_count = 0
         self.changed_paths: set[tuple] = set()
@@ -532,6 +539,7 @@ class EditorApp:
         menu.add_command(label="Get item pictures…", command=self._get_pictures)
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
+        menu.add_command(label="World map…", command=self.open_world_map)
         menu.add_command(label="Play recorder…", command=self.open_recorder)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
@@ -762,12 +770,14 @@ class EditorApp:
 
     def _build_help_tab(self) -> None:
         share = ttk.Frame(self.help_tab)
-        share.pack(fill="x", padx=6, pady=(4, 6))
+        share.pack(fill="x", padx=6, pady=(4, 0))
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.").pack(side="left")
         ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
-        ttk.Button(share, text="Connect an AI…", command=self._connect_ai).pack(side="left")
-        ttk.Button(share, text="What's new…", command=self.show_whats_new).pack(side="left", padx=10)
-        ttk.Button(share, text="Play recorder…", command=self.open_recorder).pack(side="left")
+        # The other tools get a line of their own: on one line with the sentence above, the last of them didn't fit.
+        self.help_tools = ttk.Frame(self.help_tab)
+        self.help_tools.pack(fill="x", padx=6, pady=(6, 6))
+        for label, command in (("World map…", self.open_world_map), ("Play recorder…", self.open_recorder), ("What's new…", self.show_whats_new), ("Connect an AI…", self._connect_ai)):
+            ttk.Button(self.help_tools, text=label, command=command).pack(side="left", padx=(0, 10))
         text = tk.Text(
             self.help_tab,
             wrap="word",
@@ -1442,7 +1452,20 @@ class EditorApp:
         if self.profile is None:
             messagebox.showinfo(APP_TITLE, "There are no saves open to record. Open a save folder first.", parent=self.root)
             return None
-        return RecorderDialog(self.root, self.profile.path)
+        return RecorderDialog(self.root, self.profile.path, show_map=self.open_world_map)
+
+    def open_world_map(self) -> WorldDialog | None:
+        """Menu > World map: the ground the hero on screen has explored and what it found there, from its save, with
+        what the play recorder's recordings add. It shows the hero as saved: the editor changes nothing of this."""
+        document = self.original if is_hero_document(self.original) else None
+        if document is None:
+            messagebox.showinfo(APP_TITLE, "Pick a hero first: the world map is drawn from a hero's save.", parent=self.root)
+            return None
+        if self.world_map is not None and self.world_map.winfo_exists():
+            self.world_map.destroy()  # one map at a time: this one is drawn from the save as it is now
+        hero = Hero(document)
+        self.world_map = WorldDialog(self.root, document, recorder.fresh_atlas(recorder.DEFAULT_OUT), hero.skin or f"Hero {hero.character_id[:8]}")
+        return self.world_map
 
     # ------------------------------------------------------------------ what's new
 

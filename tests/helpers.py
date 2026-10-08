@@ -168,6 +168,57 @@ def hero_save(online=False, emeralds=55, level=1):
     }
 
 
+def hero_with_a_world() -> dict:
+    """A hero that has been somewhere: a camp four squares across and three down, a meadow, three doors, two
+    minecart stations, quests at every stage and the game's counts."""
+    document = hero_save()
+    body = document["CharacterSaveV1"]
+    body["MetaData"]["CurrentLocation"] = "SW.Area.Forest.A1"
+
+    def quest(name, state, *steps):
+        return {"QuestName": name, "State": state, "TaskData": [{"TaskName": f"{name}_E0{number}", "State": step, "PartialProgress": 0} for number, step in enumerate(steps, start=1)]}
+
+    body["quest"] = {"FocusedQuestId": "CA04", "Quests": [quest("CA01", "Completed", "Completed"), quest("CA04", "Active", "Completed", "Active"), quest("FOa1_S10_A", "Available", "NotSet")]}
+    body["WorldExploration"] = {
+        "DiscoveredMinecartStationTags": ["SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"],
+        "LastMinecartStation": "SW.MinecartStation.ForestA1.Outpost",
+        "SavedCutsceneTags": ["SW.UI.Cutscene.Cutscenes.CS01"],
+        "ActivatedGimmickTags": [],
+        "DiscoveredDungeonDoors": [
+            {"DoorId": "SW.Doorway.Camp.Docks", "MarkerType": 7, "Location": {"X": 4800, "Y": 8000, "Z": 0}},
+            {"DoorId": "SW.Doorway.ForestA1.Dungeon.1", "MarkerType": 8, "Location": {"X": 1600, "Y": 1600, "Z": 0}},
+            {"DoorId": "SW.Doorway.MeadowR1.ForestA1", "MarkerType": 7, "Location": {"X": 104000, "Y": 104000, "Z": 0}},
+        ],
+        "SavedFogOfWarExploration": {"Items": [
+            # Line by line from the top, which is the far side in X: nothing, then three squares, then one.
+            {"Tag": "SW.Region.Camp", "WorldPosition": {"X": 0, "Y": 0}, "Size": {"X": 4, "Y": 3}, "Data": [0, 0, 0, 0, 0, 90, 255, 40, 0, 0, 120, 0]},
+            {"Tag": "SW.Area.Meadow.R1", "WorldPosition": {"X": 1000, "Y": 1000}, "Size": {"X": 2, "Y": 2}, "Data": [0, 7, 0, 0]},
+        ]},
+        "SavedActorStates": [],
+    }
+    body["Achievements"] = {
+        "QuestAchievements": {
+            "SW.Achievements.CompleteArriveInBraveHavenQuest": {"bCompleted": True}, "SW.Achievements.CompleteWobbleRunQuest": {"bCompleted": False},
+            "SW.Achievements.CompleteCarapaceSideQuest": {"bCompleted": False},
+        },
+        "BoolAchievements": {"SW.Achievements.EquipAUniqueItem": {"bCompleted": True}},
+        "CollectionAchievements": {"SW.Achievements.DiscoverAllMinecartStations": {"CollectedTags": ["SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"]}},
+        "CountAchievements": {"SW.Achievements.Open100Chests": {"Count": 5}},
+    }
+    return document
+
+
+def recordings_of_a_world() -> dict:
+    """What the play recorder's recordings showed of that hero, as their atlas has it: where a station turned up,
+    two chests opened in one go, and one more while nothing was recording."""
+    place = {"area": "SW.Area.Forest.A1", "near": [48, 48], "region": "SW.Region.Camp", "recording": "2026-10-01_10-00-00", "snapshot": "0002.json"}
+    return {"format": 3, "heroes": {"00000000-0000-1000-8000-000000000002": {
+        "saves": 3,
+        "found_at": {"minecart station SW.MinecartStation.ForestA1.Outpost": place},
+        "chests": [{"opened": 2, "count": 4, **place}, {"opened": 1, "count": 5, "area": None, "near": None, "region": None, "recording": "2026-10-02_10-00-00", "snapshot": "0001.json"}],
+    }}}
+
+
 def hero_save_text(**kwargs) -> str:
     """Written the way the game writes hero saves: compact, numbers in shortest form."""
     return json.dumps(hero_save(**kwargs), separators=(",", ":"), ensure_ascii=False)

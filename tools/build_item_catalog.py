@@ -262,8 +262,16 @@ BOOK_IDS = {
     # Unstoppable by its owner's word: the player whose Monstrosity Horns carry it read its name off the game
     # (/issues/23). MetaBot gives it no numbers to check against (the same text at every level).
     "Cow Stampede": "Unstoppable",
+    # Crash Landing, Ender Mines, Lightning Surge and Power Amplifier by the game's own word: on 2026-10-07 the
+    # developer put the enchantments a save calls Blowback, Borealis, Channeling and LingeringPower on plain items
+    # with the editor, each at the tier and number a real save holds, and read off what the game shows for them
+    # (and for Thundering, which it shows as Thundering, and SoulFireAspect, which it shows as Soul Blast). That
+    # settles /issues/31, which had Channeling down as Thundering: its Crash Landing and Ender Mines were right.
+    # An enchantment is saved under its book's ID in every case seen, so the books take the same names.
+    "Crash Landing": "Blowback",
     "Critical Quiver": "CriticalQuiver",
     "Dynamo": "Dynamo",
+    "Ender Mines": "Borealis",
     "Ender Quiver": "ExpandedQuiver",
     "Fire Aspect": "FireAspect",
     "Frost Crescent": "FrostCrescent",
@@ -272,8 +280,10 @@ BOOK_IDS = {
     # Ancient Alchemy (MetaBot's enchanting guide), and a save got Piercing, Radiance and SoulInfusedPotion from it.
     "Healing Smite": "Radiance",
     "Health Synergy": "HealthSynergy",
+    "Lightning Surge": "Channeling",
     "Piercing": "Piercing",
     "Poison Fog": "PoisonFog",
+    "Power Amplifier": "LingeringPower",
     "Ricochet": "Ricochet",
     "Shockwave": "Shockwave",
     "Somersault": "MultiRoll",
@@ -285,14 +295,15 @@ BOOK_IDS = {
 # Books in a save's collections that nobody has put a name to yet (/issues/28; GuardingStrike is in the developer's
 # own save as well; MultiPotion is in the collections of /issues/17, /issues/20 and /issues/23). The game files a
 # book there when it hands it over, so the IDs are the game's own, and the editor lists each under a name made from
-# its ID. With these nine every book has an ID, and MetaBot has nine enchantments without one (Bottomless Brew,
-# Crash Landing, Ender Mines, Lightning Surge, Power Amplifier, Shadowcloak, Shielding Smite, Soul Blast and
-# Tumbleshot); which is which is for someone who has the book to say, not for a guess. /issues/31 puts names to four
-# by elimination (Blowback as Crash Landing, Borealis as Ender Mines, Channeling as Thundering, SoulAspect as Soul
-# Blast; Borealis and SoulAspect as the two its sender couldn't work out). They aren't taken yet: Thundering is
-# what the book saved as Thundering goes by here, the name the same sender typed for it in /issues/2, and their hero
-# has both books, so one of the two names is wrong and nobody has said which.
-UNNAMED_BOOKS = ("Blowback", "Borealis", "BurstBowstring", "Channeling", "GuardingStrike", "LingeringPower", "MultiPotion", "ShadowStrike", "SoulAspect")
+# its ID. Every book has an ID now, and MetaBot has five enchantments without one (Bottomless Brew, Shadowcloak,
+# Shielding Smite, Soul Blast and Tumbleshot): five IDs and five names, so they most likely pair off, and which is
+# which is for someone who has the book to say, not for a guess. One is close to certain: the enchantment the
+# game calls Soul Blast is saved as SoulFireAspect (ENCHANTMENT_NAMES), no book has that ID, and SoulAspect is the
+# one book left with a soul in its name.
+UNNAMED_BOOKS = ("BurstBowstring", "GuardingStrike", "MultiPotion", "ShadowStrike", "SoulAspect")
+# What the game calls an enchantment whose book hasn't been tied to it, by how a save names the enchantment. The
+# developer read Soul Blast off an item in the game (see BOOK_IDS, Crash Landing).
+ENCHANTMENT_NAMES = {"SoulFireAspect": "Soul Blast"}
 # What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
 # effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
 # the effect's Intensity at each level. A talisman that isn't here can only be added without its effect, so the
@@ -948,7 +959,7 @@ def main() -> None:
         print(f"warning: MetaBot's enchanting guide lists {name}, but its enchantments page doesn't")
 
     # Effects and enchantments the editor can write: only as real saves hold them.
-    names_by_book = {book_id: name for name, book_id in BOOK_IDS.items()}
+    names_by_book = {**{book_id: name for name, book_id in BOOK_IDS.items()}, **ENCHANTMENT_NAMES}
     enchantment_tiers = [
         {
             "effect": f"SW.Enchantment.{enchantment}",

@@ -3692,20 +3692,6 @@
    "confirmed": true
   },
   {
-   "name": "Blowback",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.Blowback",
-   "confirmed": true,
-   "name_from_id": true
-  },
-  {
-   "name": "Borealis",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.Borealis",
-   "confirmed": true,
-   "name_from_id": true
-  },
-  {
    "name": "Buddy Brew",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.PotionSharing",
@@ -3725,16 +3711,15 @@
    "confirmed": true
   },
   {
-   "name": "Channeling",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.Channeling",
-   "confirmed": true,
-   "name_from_id": true
-  },
-  {
    "name": "Cow Stampede",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Unstoppable",
+   "confirmed": true
+  },
+  {
+   "name": "Crash Landing",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Blowback",
    "confirmed": true
   },
   {
@@ -3747,6 +3732,12 @@
    "name": "Dynamo",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Dynamo",
+   "confirmed": true
+  },
+  {
+   "name": "Ender Mines",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.Borealis",
    "confirmed": true
   },
   {
@@ -3793,11 +3784,10 @@
    "confirmed": true
   },
   {
-   "name": "Lingering Power",
+   "name": "Lightning Surge",
    "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.LingeringPower",
-   "confirmed": true,
-   "name_from_id": true
+   "id": "SW.Item.EnchantmentBook.Channeling",
+   "confirmed": true
   },
   {
    "name": "Multi Potion",
@@ -3816,6 +3806,12 @@
    "name": "Poison Fog",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.PoisonFog",
+   "confirmed": true
+  },
+  {
+   "name": "Power Amplifier",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.LingeringPower",
    "confirmed": true
   },
   {

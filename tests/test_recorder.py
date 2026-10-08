@@ -1,8 +1,10 @@
 import copy
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from dungeons2_editor import recorder as play_recorder
 from dungeons2_editor import saves
@@ -302,10 +304,15 @@ class PlayRecorderTests(unittest.TestCase):
         self.assertTrue(any("PROGRESS: task CA01_E01: Active -> Completed (1)" in line for line in self.said))
         self.assertTrue(any("PROGRESS: minecart station SW.MinecartStation.PlainsA1.Barn: (not there) -> True" in line for line in self.said))
         self.assertFalse(any("Open100Chests" in line or "explored" in line for line in self.said if "PROGRESS" in line))
+        # A chest, though: the game's own count of chests opened went up, which is all a save says about one.
+        (chest,) = self.events("chest")
+        self.assertEqual((chest["opened"], chest["count"], chest["area"], chest["near"]["x"]), (1, 4, "SW.Area.Town", 48))
+        self.assertTrue(any("CHEST OPENED: 1 more, 4 by the game's count  [in SW.Area.Town, near 48, 16]" in line for line in self.said))
         text = self.recorder.summary()
         self.assertIn("World progress:", text)
         self.assertIn("Now: quests: 1 active, 1 completed; tasks done: 2 of 3; 2 minecart stations, 1 doors, 1 cutscenes", text)
         self.assertIn("Steps while recording (4, and 2 quieter changes in events.jsonl):", text)
+        self.assertIn("Chests opened while recording: 1 (1 in SW.Area.Town)", text)
         self.assertIn("task CA01_E01: \"Active\" -> \"Completed (1)\"", text)
 
         # The atlas: everything every recording has shown, with a quest's tasks in the save's order and the order
@@ -317,20 +324,28 @@ class PlayRecorderTests(unittest.TestCase):
             "task_states": {"CA01_E01": ["Active", "Completed (1)"], "CA01_E02": ["NotSet", "Active"]},
         })
         self.assertEqual(atlas["minecart_stations"], ["SW.MinecartStation.Town", "SW.MinecartStation.PlainsA1.Barn"])
-        # Where things are. A door's place is the save's own, in metres; a square of explored ground is 32 metres,
-        # so the station turned up near the middle of the square explored in that save (the top left one).
+        # Where things are. A door's place is the save's own, in metres; a square of a region's picture is 32 metres,
+        # so the station turned up near the middle of the square that cleared in that save: the first of the top
+        # line, which is the far side in X and the near side in Y.
         self.assertEqual(atlas["doors"], {"SW.Doorway.Camp.Docks": {
             "metres": [48.0, 16.0, 0.0], "region": "SW.Region.Camp", "MarkerType": 7, "Location": {"X": 4800, "Y": 1600, "Z": 3}}})
         found = atlas["found_at"]["minecart station SW.MinecartStation.PlainsA1.Barn"]
-        self.assertEqual((found["area"], found["near"], found["region"], found["recording"]), ("SW.Area.Town", [16, 16], "SW.Region.Camp", "play"))
+        self.assertEqual((found["area"], found["near"], found["region"], found["recording"]), ("SW.Area.Town", [48, 16], "SW.Region.Camp", "play"))
         self.assertEqual(atlas["map"]["regions"]["SW.Region.Camp"]["cells"], [1, 3, 0, 1])  # every square any save shows explored
         station = next(event for event in self.events("progress") if event["what"].startswith("minecart station"))
-        self.assertEqual((station["area"], station["near"]), ("SW.Area.Town", {"region": "SW.Region.Camp", "squares": 1, "x": 16, "y": 16}))
-        self.assertTrue(any("-> True  [in SW.Area.Town, near 16, 16]" in line for line in self.said))
+        self.assertEqual((station["area"], station["near"]), ("SW.Area.Town", {"region": "SW.Region.Camp", "squares": 1, "x": 48, "y": 16}))
+        self.assertTrue(any("-> True  [in SW.Area.Town, near 48, 16]" in line for line in self.said))
         drawn = play_recorder.text_map(atlas)
-        self.assertIn("SW.Region.Camp  (corner 0, 0; 2 by 2 squares; 3 explored)", drawn)
+        self.assertIn("SW.Region.Camp  (2 squares across, 2 down; 3 explored)", drawn)
         self.assertIn("  A  SW.Doorway.Camp.Docks  at 48, 16", drawn)
-        self.assertIn("  2  cutscene SW.UI.Cutscene.Cutscenes.CS02  near 16, 16", drawn)
+        self.assertIn("  2  cutscene SW.UI.Cutscene.Cutscenes.CS02  near 48, 16", drawn)
+        self.assertEqual([(chest["opened"], chest["count"], chest["area"], chest["near"]) for chest in atlas["chests"]], [(1, 4, "SW.Area.Town", [48, 16])])
+        self.assertIn("  $  a chest opened (1 in this region with a spot to show)", drawn)
+        self.assertIn("Chests opened, by the area you were in:\n  SW.Area.Town: 1", drawn)
+        # The same, for this hero alone, is what its map in the editor takes: what has a spot, and the chests.
+        mine = atlas["heroes"]["00000000-0000-1000-8000-000000000002"]
+        self.assertEqual((mine["saves"], sorted(mine["found_at"]), mine["chests"]), (
+            2, ["cutscene SW.UI.Cutscene.Cutscenes.CS02", "minecart station SW.MinecartStation.PlainsA1.Barn"], atlas["chests"]))
         self.assertEqual(play_recorder.newly_explored({}, {}), None)
         self.assertEqual(play_recorder.region_of(48, 16, atlas["map"]["regions"]), "SW.Region.Camp")
         self.assertEqual(atlas["areas"]["SW.Region.Camp"]["most_explored"], 3)
@@ -341,6 +356,157 @@ class PlayRecorderTests(unittest.TestCase):
         long = play_recorder.compact(["x" * 50] * 20)
         self.assertTrue(long.endswith("characters)") and len(long) < play_recorder.LONG + 40)
         self.assertEqual(play_recorder.path_text(("ItemData", "Effects", 0, "Tier")), "ItemData.Effects[0].Tier")
+
+
+def a_save(hero="hero-1", where="SW.Area.Town", chests=None, regions=(), doors=(), quests=(), stations=()):
+    """A hero save with only what the map and world progress read. A region is (tag, corner X, corner Y, squares
+    across, squares down, the squares); a door (name, X, Y) in metres; a quest (name, state, [(step, state)])."""
+    body = {
+        "MetaData": {"CharacterId": hero, "CurrentLocation": where},
+        "quest": {"Quests": [{"QuestName": name, "State": state, "TaskData": [{"TaskName": step, "State": how, "PartialProgress": 0} for step, how in steps]} for name, state, steps in quests]},
+        "WorldExploration": {
+            "DiscoveredMinecartStationTags": list(stations),
+            "DiscoveredDungeonDoors": [{"DoorId": name, "MarkerType": 8, "Location": {"X": x * 100, "Y": y * 100, "Z": 0}} for name, x, y in doors],
+            "SavedFogOfWarExploration": {"Items": [{"Tag": tag, "WorldPosition": {"X": x, "Y": y}, "Size": {"X": across, "Y": down}, "Data": list(data)} for tag, x, y, across, down, data in regions]},
+        },
+    }
+    if chests is not None:
+        body["Achievements"] = {"CountAchievements": {"SW.Achievements.Open100Chests": {"Count": chests}}}
+    return {"CharacterSaveV1": body}
+
+
+class MapTests(unittest.TestCase):
+    """How a save's pictures of the fog lie on the world, and what the recordings' atlas makes of them."""
+
+    MEADOW = "SW.Area.Meadow.R9"
+
+    def meadow(self, *squares):
+        return a_save(regions=[(self.MEADOW, 320, 640, 3, 2, squares)])
+
+    def test_a_regions_picture_lies_the_way_the_games_own_map_does(self):
+        # Three squares to a line, two lines. The first line is the far side in X, and a line runs with Y.
+        regions = play_recorder.map_regions(self.meadow(0, 0, 200, 9, 0, 0))
+        region = regions[self.MEADOW]
+        self.assertEqual((region["across"], region["down"], region["shift"]), (3, 2, [0, 0]))
+        self.assertEqual(play_recorder.spot_of(region, 2.5, 0.5), (368, 720))  # the clear square: far in X, far in Y
+        self.assertEqual(play_recorder.square_of(region, 368, 720), (2.5, 0.5))
+        self.assertEqual(play_recorder.spot_of(region, 0, 2), (320, 640))  # the bottom left is the corner the save gives
+        self.assertEqual(play_recorder.region_of(368, 720, regions), self.MEADOW)
+        self.assertIsNone(play_recorder.region_of(390, 720, regions))  # past the top line
+        self.assertEqual(play_recorder.frontier(region), [0, 1, 4, 5])  # never seen, right next to what has been
+        self.assertEqual(play_recorder.frontier({**region, "cells": [0] * 6}), [])
+        # The overworld's picture lies three squares lower and half a square to the right of where its corner says.
+        overworld = play_recorder.map_regions(a_save(regions=[("SW.Region.Overworld", -608, -192, 52, 52, [0] * 2704)]))["SW.Region.Overworld"]
+        self.assertEqual(play_recorder.square_of(overworld, 960, -176), (0, 0))
+        self.assertEqual(play_recorder.spot_of(overworld, 0, 0), (960, -176))
+        # A region inside another: a spot in both is in the smaller.
+        both = {**regions, "SW.Region.Overworld": overworld}
+        self.assertEqual((play_recorder.region_of(368, 720, both), play_recorder.region_of(100, 100, both)), (self.MEADOW, "SW.Region.Overworld"))
+        # The colour of a square: the clearer its fog the greener, and an unseen one next to a seen one stands out.
+        self.assertEqual([play_recorder.clarity_colour(0), play_recorder.clarity_colour(0, True), play_recorder.clarity_colour(255)], ["#16303f", "#3c5f78", "#5d8a66"])
+        self.assertNotIn(play_recorder.clarity_colour(40), ("#16303f", "#5d8a66"))
+
+    def test_where_the_hero_went_is_the_middle_of_the_fog_that_cleared(self):
+        before = play_recorder.map_regions(self.meadow(0, 0, 200, 9, 0, 0))
+        self.assertIsNone(play_recorder.newly_explored(before, before))
+        after = play_recorder.map_regions(self.meadow(0, 100, 200, 9, 0, 0))
+        self.assertEqual(play_recorder.newly_explored(before, after), {"region": self.MEADOW, "squares": 1, "x": 368, "y": 688})
+        # Two squares cleared, one more than the other: nearer the one that cleared more.
+        after = play_recorder.map_regions(self.meadow(0, 100, 255, 9, 0, 0))
+        self.assertEqual(play_recorder.newly_explored(before, after), {"region": self.MEADOW, "squares": 2, "x": 368, "y": 699})
+        # Fog that got no clearer says nothing, and a region the save before didn't have counts from nothing.
+        self.assertEqual(play_recorder.newly_explored({}, before)["squares"], 2)
+        # Stepping into a region inside the overworld clears a patch of both pictures: the hero is in the smaller.
+        outside = ("SW.Region.Overworld", -608, -192, 52, 52, [0] * 2704)
+        was = play_recorder.map_regions(a_save(regions=[outside, (self.MEADOW, 320, 640, 3, 2, [0] * 6)]))
+        now = play_recorder.map_regions(a_save(regions=[outside[:5] + ([0] * 100 + [210] + [0] * 2603,), (self.MEADOW, 320, 640, 3, 2, [0, 0, 200, 0, 0, 0])]))
+        self.assertEqual(play_recorder.newly_explored(was, now)["region"], self.MEADOW)
+        now = play_recorder.map_regions(a_save(regions=[outside[:5] + ([0] * 100 + [210, 250] + [0] * 2602,), (self.MEADOW, 320, 640, 3, 2, [0, 0, 200, 0, 0, 0])]))
+        self.assertEqual(play_recorder.newly_explored(was, now)["region"], "SW.Region.Overworld")  # far more cleared out there
+
+    def test_what_may_have_been_missed_is_said_in_the_games_own_names(self):
+        document = a_save(
+            quests=[("CA02", "Completed", [("CA02_E01", "Completed")]), ("CA02_B", "Active", [("CA02_B_E01", "Completed"), ("CA02_B_E02", "Active")]),
+                    ("CA02_B_BR", "Available", [("CA02_B_BR_E01", "NotSet")]), ("CA04", "Active", [("CA04_E01", "NotSet")])],
+            stations=["SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"],
+            doors=[("SW.Doorway.ForestA1.Dungeon.1", 0, 0), ("SW.Doorway.ForestA1.Dungeon.7", 0, 0), ("SW.Doorway.PlainsA1.Rift.2", 0, 0),
+                   ("SW.Doorway.SwampB2.Rift.1", 0, 0), ("SW.Doorway.TownA1.Docks", 0, 0)],
+            regions=[(self.MEADOW, 320, 640, 3, 2, [0, 0, 200, 9, 0, 0])],
+        )
+        progress = play_recorder.world_progress(document)
+        # A step is its quest's alone: CA02_B's steps start the way CA02's do, and CA02_B_BR's the way CA02_B's do.
+        self.assertEqual(play_recorder.quest_tasks(progress), {"CA02": ["Completed"], "CA02_B": ["Completed", "Active"], "CA02_B_BR": ["NotSet"], "CA04": ["NotSet"]})
+        lines = play_recorder.might_be_missing(progress, play_recorder.map_regions(document))
+        self.assertEqual(lines[:5], [
+            "Howling Woods: 2 of its 12 dungeon spots found", "Honeycomb Fields: 1 of its 8 rift spots found", "SwampB2: 1 rift spot found",
+            "(The game opens only a few of an area's dungeon and rift spots at a time, so one you haven't found may not be open yet.)",
+            "Minecart stations: 2 found of 19",
+        ])
+        self.assertTrue(lines[5].startswith(
+            "Stations not found yet: Town Fountain (Brave Haven); Honeycomb Farm, Honeybrook Bridge (Honeycomb Fields); "
+            "Deep Dark Entrance, Hidden Grove, Woodcutter's Outpost (Howling Woods); Monsoon Banks,"))
+        self.assertEqual(lines[6:], [
+            "Quest CA02_B (Corruption in the Woods): 1 of 2 steps left", "Quest CA02_B_BR: not started", "Quest CA04 (The Missing Note Blocks): 1 of 1 steps left",
+            f"{self.MEADOW}: 4 unexplored squares right next to the 2 you've explored (marked on the map)",
+        ])
+        self.assertEqual([play_recorder.area_name(tag) for tag in ("SW.Area.Town", "SW.Area.Plains.A1", "SW.Area.Forest.A1.SpiderCaves.3", "SW.Area.Meadow.R1")],
+                         ["Brave Haven", "Honeycomb Fields", "Howling Woods: SpiderCaves.3", "Meadow.R1"])
+        self.assertEqual((play_recorder.station_name("SW.MinecartStation.ForestA1.Outpost"), play_recorder.station_name("SW.MinecartStation.Moon.Base")), ("Little Howl Hamlet", "Moon.Base"))
+        self.assertEqual((play_recorder.quest_name("CA04"), play_recorder.quest_name("XX09")), ("CA04 (The Missing Note Blocks)", "XX09"))
+        self.assertEqual(play_recorder.hero_id(document), "hero-1")
+
+    def test_the_atlas_keeps_each_heros_finds_apart_and_gives_no_place_across_a_gap(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        out = Path(temp.name)
+
+        def recorded(recording, name, document):
+            folder = out / recording / "snapshots"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / name).write_text(json.dumps(document), encoding="utf-8")
+
+        self.assertIsNone(play_recorder.fresh_atlas(out))  # no recordings: nothing to say, and nothing written
+        self.assertEqual(list(out.iterdir()), [])
+        town, station = "SW.MinecartStation.Town", "SW.MinecartStation.ForestA1.Outpost"
+        recorded("2026-10-01_10-00-00", "0001_A.json", a_save("A", chests=3, regions=[(self.MEADOW, 320, 640, 3, 2, [0] * 6)]))
+        recorded("2026-10-01_10-00-00", "0002_B.json", a_save("B", chests=0, regions=[(self.MEADOW, 320, 640, 3, 2, [0] * 6)]))
+        recorded("2026-10-01_10-00-00", "0003_A.json", a_save("A", chests=4, stations=[town], regions=[(self.MEADOW, 320, 640, 3, 2, [0, 200, 0, 0, 0, 0])]))
+        recorded("2026-10-01_10-00-00", "0004_B.json", a_save("B", chests=1, where="SW.Area.Forest.A1", regions=[(self.MEADOW, 320, 640, 3, 2, [0] * 6)]))
+        # The next day the count has gone up by two and a station is there that wasn't: found while nothing recorded.
+        recorded("2026-10-02_10-00-00", "0001_A.json", a_save("A", chests=6, stations=[town, station], regions=[(self.MEADOW, 320, 640, 3, 2, [9, 200, 0, 0, 0, 0])]))
+        recorded("2026-10-02_10-00-00", "0002_A.json", a_save("A", chests=7, stations=[town, station], regions=[(self.MEADOW, 320, 640, 3, 2, [9, 200, 0, 0, 0, 50])]))
+        atlas = play_recorder.fresh_atlas(out)
+        self.assertEqual((atlas["format"], atlas["snapshots"], sorted(atlas["heroes"])), (play_recorder.ATLAS_FORMAT, 6, ["A", "B"]))
+        mine, other = atlas["heroes"]["A"], atlas["heroes"]["B"]
+        self.assertEqual((mine["saves"], other["saves"]), (4, 2))
+        self.assertEqual([(chest["opened"], chest["count"], chest["area"], chest["near"], chest["region"]) for chest in mine["chests"]], [
+            (1, 4, "SW.Area.Town", [368, 688], self.MEADOW), (2, 6, None, None, None), (1, 7, "SW.Area.Town", [336, 720], self.MEADOW)])
+        self.assertEqual([(chest["opened"], chest["area"], chest["near"]) for chest in other["chests"]], [(1, "SW.Area.Forest.A1", None)])  # no fog cleared: no spot
+        self.assertEqual(len(atlas["chests"]), 4)  # everyone's, for the map of all the recordings
+        self.assertEqual(play_recorder.chests_by_area(mine["chests"]), {"SW.Area.Town": 2, play_recorder.BETWEEN: 2})
+        # The station found with the recorder on has a spot; the one found between two recordings has none.
+        self.assertEqual(list(mine["found_at"]), [f"minecart station {town}"])
+        self.assertEqual((mine["found_at"][f"minecart station {town}"]["near"], atlas["found_at"][f"minecart station {station}"]["near"]), ([368, 688], None))
+        self.assertEqual(atlas["map"]["regions"][self.MEADOW]["cells"], [9, 200, 0, 0, 0, 50])  # each square as clear as any save has it
+        self.assertIn("  while nothing was recording: 2", play_recorder.text_map(atlas))
+
+        # It's written down, and read again only when a recording is newer than what was written, or was written the old way.
+        written = out / "world_progress_atlas.json"
+        self.assertEqual(json.loads(written.read_text(encoding="utf-8"))["heroes"], atlas["heroes"])
+        with mock.patch.object(play_recorder, "write_atlas", wraps=play_recorder.write_atlas) as write:
+            self.assertEqual(play_recorder.fresh_atlas(out)["snapshots"], 6)
+            write.assert_not_called()
+            recorded("2026-10-02_10-00-00", "0003_A.json", a_save("A", chests=7, regions=[(self.MEADOW, 320, 640, 3, 2, [9, 200, 0, 0, 0, 50])]))
+            later = written.stat().st_mtime + 30
+            os.utime(out / "2026-10-02_10-00-00" / "snapshots", (later, later))
+            self.assertEqual(play_recorder.fresh_atlas(out)["snapshots"], 7)
+            self.assertEqual(write.call_count, 1)
+            os.utime(written, (later + 30, later + 30))
+            written.write_text(json.dumps({"format": 2, "snapshots": 7}), encoding="utf-8")
+            os.utime(written, (later + 30, later + 30))
+            self.assertIn("heroes", play_recorder.fresh_atlas(out))
+            self.assertEqual(write.call_count, 2)
+        self.assertEqual(play_recorder.load_atlas(out / "nowhere"), None)
 
 
 if __name__ == "__main__":
