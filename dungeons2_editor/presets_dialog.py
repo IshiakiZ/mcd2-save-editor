@@ -25,13 +25,14 @@ ENCHANTING_HELP = (
     "an enchantment costs enchantment points and Echo Shards, which you can set in the editor."
 )
 ENCHANTS_ADDED = (
-    "This hero has unlocked the Enchantsmith, so the editor puts an enchantment on where it can: it writes one exactly "
-    "as a real save holds it, so only the ones it has seen so far, at the highest tier seen. Enchant an item with any "
-    "other in the game and the editor can copy that one from your save. The rest are for you to pick at the Enchantsmith."
+    "This hero has unlocked the Enchantsmith, so every weapon and armor piece gets an enchantment. The editor writes one "
+    "exactly as a real save holds it, so only the ones it has seen so far, at the highest tier seen: the build's own pick "
+    "where it can, and otherwise a pick of its own for that kind of gear, a different one on each piece. It also adds the "
+    "books of the enchantments named here, so the Enchantsmith offers them: put the build's own on there if you'd rather."
 )
 ENCHANTS_LEFT_OFF = (
     "This hero hasn't opened the Enchantsmith in the game yet, so the editor leaves enchantments off. Once it has, "
-    "this kit adds the ones the editor can write. These are the ones to pick there."
+    "this kit enchants every weapon and armor piece. These are the ones to pick there."
 )
 
 
@@ -257,7 +258,7 @@ class PresetsDialog(tk.Toplevel):
             self._write_loadout(preset)
         else:
             self._write_changes()
-        suggestions = presets.enchant_suggestions(preset)
+        suggestions = presets.enchant_suggestions(preset, self.plan)
         if suggestions:
             self._write_enchantments(suggestions)
         rolled = [(addition.name, [choice.title for choice in addition.effects]) for addition in self.plan.add if addition.effects]
@@ -414,6 +415,13 @@ class PresetsDialog(tk.Toplevel):
                         text.insert("end", f" (added at tier {given.tier})" if given.tier else " (added)", ("row", "muted"))
                     elif pick.book:
                         text.insert("end", f" (book: {pick.book})", ("row", "muted"))
+            if given is not None and given.name not in [pick.name if isinstance(pick, Enchantment) else pick for pick in picks]:
+                # None of the build's picks can be written yet (or it names none for this piece): the editor's own.
+                text.insert("end", (" · " if picks else "") + given.name, ("row", "bold"))
+                text.insert("end", f" (the editor's pick, added at tier {given.tier})" if given.tier else " (the editor's pick, added)", ("row", "muted"))
+                known = presets.enchantments().get(given.name)
+                if known is not None:
+                    described.setdefault(known.name, known)
             text.insert("end", "\n", "row")
         for enchantment in described.values():
             if enchantment.what and enchantment.levels:  # what it does, with its numbers at each tier

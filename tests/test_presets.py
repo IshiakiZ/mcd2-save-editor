@@ -82,15 +82,22 @@ class PresetTests(unittest.TestCase):
         plan = presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special")
         self.assertFalse(plan.enchant)
         self.assertEqual(added(plan), {"Sword": (None, ["Critical Edge II", "Looter I"]), "Longbow": (None, []), "Mystic Circlet": (None, [])})
-        # Once it has, each item gets the first of its enchantments that the editor can write and that fits it.
+        self.assertEqual((plan.books, [line for line in presets.describe(plan, self.hero) if "book" in line]), ([], []))
+        # Once it has, each item gets the first of its enchantments that the editor can write and that fits it,
+        # and where it can't write any of them, its own pick for that kind of gear.
         self.hero.body["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
         plan = presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special")
         self.assertTrue(plan.enchant)
         self.assertEqual(added(plan), {
             "Sword": ("Healing Smite I", ["Critical Edge II", "Looter I"]),  # Lightning Surge hasn't been seen saved yet
-            "Longbow": (None, []),  # nor has Chain Reaction
+            "Longbow": ("Piercing I", []),  # nor has Chain Reaction, nor Ricochet: the editor's pick for a ranged weapon
             "Mystic Circlet": ("Ancient Alchemy II", []),
         })
+        # The kit brings the books too: the ones for the enchantments the build names, which the Enchantsmith
+        # then offers even where the editor can't write them yet, and the ones for what it put on.
+        self.assertEqual([book.name for book in plan.books], ["Ancient Alchemy", "Piercing", "Ricochet"])
+        self.assertEqual(presets.describe(plan, self.hero)[-1],
+                         "Add the enchantment books for Ancient Alchemy, Piercing and Ricochet, so the Enchantsmith offers them")
         self.assertEqual(presets.enchanted_by(plan)[id(kit.items[0])].title, "Healing Smite I")
         self.assertIn("Add Sword (Special, power 20): Hits things. With Critical Edge II, Looter I, enchanted with Healing Smite I.", presets.describe(plan, self.hero))
         self.assertEqual(added(presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special", enchant=False))["Sword"][0], None)
@@ -101,6 +108,8 @@ class PresetTests(unittest.TestCase):
         self.assertEqual(sword.effect_lines(), ["Critical Edge II 20%", "Looter I 20%", "Enchanted: Healing Smite I, 2 enchantment points"])
         circlet = max((item for item in self.hero.items() if item.tag == "SW.Item.MysticHelmet"), key=lambda item: item.power)
         self.assertEqual(circlet.effect_lines(), ["Enchanted: Ancient Alchemy II, 6 enchantment points"])
+        self.assertEqual(sorted(book.name for book in self.hero.books()), ["Ancient Alchemy", "Piercing", "Ricochet"])
+        self.assertEqual(presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special").books, [])  # it has them now
         # An enchantment found on an item in the saves can be written too. Its book says what it's called and what
         # it goes on (the book saved as Ricochet is Ricochet, for ranged weapons); without a named book, all the
         # editor knows is the kind of item it was on.
@@ -112,6 +121,36 @@ class PresetTests(unittest.TestCase):
                          [("Chain Lightning II", ("Melee",)), ("Ricochet III", ("Ranged",))])
         again = presets.plan(kit, self.hero, self.catalog, power=30, rarity="Special", effects=learned)
         self.assertEqual(added(again)["Longbow"], ("Ricochet III", []))
+
+    def test_every_piece_of_a_kit_gets_an_enchantment_of_its_own(self):
+        self.hero.body["CollectionsStats"]["ShownHints"] = [{"Tag": "SW.UI.Onboarding.Panel.Enchantsmith.Overview", "Count": 1}]
+
+        def kit_of(*items):
+            return presets.Preset("Test kit", "A goal.", "Details.", sources=("https://example.com",), group=presets.KITS, choose_rarity=True, items=items)
+
+        def given(plan):
+            return {entry.kit.name: entry.enchantment.title if entry.enchantment else None for entry in [*plan.add, *plan.have]}
+
+        # The build names nothing for these, so each gets the editor's own pick for its kind of gear. Two pieces
+        # don't get the same one: nobody knows that two of one add up. (The editor can write one armor enchantment
+        # here, so the second piece goes without.) Artifacts and talismans take none.
+        kit = kit_of(
+            presets.KitItem("Disciple Robe", "Armor", "Warm."), presets.KitItem("Disciple Wraps", "Armor", "Soft."),
+            presets.KitItem("Longbow", "Ranged", "Shoots things."), presets.KitItem("Warrior Drums", "Artifact", "Loud."),
+        )
+        plan = presets.plan(kit, self.hero, self.catalog, power=20, rarity="Special")
+        self.assertEqual(given(plan), {"Disciple Robe": "Ancient Alchemy II", "Disciple Wraps": None, "Longbow": "Piercing I", "Warrior Drums": None})
+        # What the build names for a piece comes before anyone's fallback, whatever the order of the pieces.
+        named = kit_of(presets.KitItem("Disciple Robe", "Armor", "Warm."), presets.KitItem("Disciple Wraps", "Armor", "Soft.", enchants=("Ancient Alchemy",)))
+        self.assertEqual(given(presets.plan(named, self.hero, self.catalog, power=20, rarity="Special")), {"Disciple Robe": None, "Disciple Wraps": "Ancient Alchemy II"})
+        # A piece of your own keeps the enchantment it has, and the kit's other pieces get something else.
+        presets.apply(presets.plan(kit_of(presets.KitItem("Disciple Robe", "Armor", "Warm.")), self.hero, self.catalog, power=20, rarity="Special"), self.hero, self.catalog)
+        again = presets.plan(kit, self.hero, build_catalog([self.hero, self.other]), power=20, rarity="Special")
+        self.assertEqual((given(again)["Disciple Robe"], given(again)["Disciple Wraps"]), (None, None))
+        # The real kits: with the lists the editor ships, every weapon and armor piece of every kit gets one.
+        self.assertEqual({kind: len(names) > 2 for kind, names in presets.ENCHANT_FALLBACKS.items()}, {"Melee": True, "Ranged": True, "Armor": True})
+        known = heroes.enchantments()
+        self.assertEqual([name for names in presets.ENCHANT_FALLBACKS.values() for name in names if name not in known], [])
 
     def test_a_kit_enchants_your_own_copy_only_when_it_has_no_enchantment(self):
         kit = presets.Preset("Test kit", "A goal.", "Details.", sources=("https://example.com",), items=(

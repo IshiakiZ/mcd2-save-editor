@@ -11,6 +11,18 @@
 - Every shape in Liquid Glass is drawn by the editor itself, the first time you pick the look. No picture files
   were added, the download is no bigger, and the editor opens as quickly as before in the Original look.
 - New pictures in the README.
+- **Launch game.** A button next to **Save to game** (and at the top of the menu) starts Minecraft Dungeons II for
+  you: the Xbox app's copy or Steam's, whichever your saves belong to. If you have unsaved changes it asks first,
+  because the editor can't save while the game is running. On a Mac, where the game runs inside CrossOver or
+  Whisky, the button is switched off.
+- **Kits enchant every piece.** Once your hero has unlocked the Enchantsmith, a kit (and the best-weapon and
+  best-armor presets) puts an enchantment on every weapon and armor piece it adds: the one its build names where
+  the editor can write it, and otherwise the editor's own pick for that kind of gear, a different one on each
+  piece. Until now the leggings, the boots and any piece whose pick the editor couldn't write were left bare. The
+  kit also adds the books of the enchantments its build names, so the Enchantsmith offers those in the game.
+- **What's new, in the editor.** The first time a new version opens, after an update or a fresh download, it
+  shows what changed since the version you had. **Menu → What's new…** (and a button on the Help page) shows it
+  again. These notes come with the editor, so nothing is fetched to show them.
 - **A first step towards the Soulstorm Enhanced tag.** Nobody has shown the editor how the game saves it: no save
   it has seen holds a piece with the tag. So **Share item IDs…** now also lists any item the game saved with a mark
   or a field the editor has never met, as the save holds it. If you have a Soul Storm piece, that list is what

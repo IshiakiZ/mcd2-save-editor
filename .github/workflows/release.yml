@@ -146,4 +146,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file .github/release-notes.md
+        run: gh release create "${{ github.ref_name }}" dist/MCD2SaveEditor.zip --title "MCD2 Save Editor ${{ github.ref_name }}" --notes-file dungeons2_editor/data/release-notes.md

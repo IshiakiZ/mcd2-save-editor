@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, edition, game_style, merge, paths, saves, share_ids, updater, wgs, wiki
+from . import __version__, codec, edition, game_launch, game_style, merge, paths, saves, share_ids, updater, whats_new, wgs, wiki
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -64,6 +64,9 @@ _SAFE_TEXT = (
     if edition.ONLINE
     else f"• This edition of the editor, from {edition.NAME}, never goes online: it doesn't look for updates and it "
     f"doesn't download anything. New versions are on {edition.NAME}. Links open in your own browser."
+) + (
+    "\n• The first time a new version opens, it shows what's new in it. What's new… (on this page, and in Simple "
+    "mode's menu) shows that again, with the versions before it. The notes come with the editor: nothing is fetched."
 )
 # What the edition that never goes online says where the other one downloads the Minecraft Wiki's pictures.
 _NO_PICTURES = (
@@ -116,9 +119,11 @@ SIMPLE_HELP_SECTIONS = [
         "with the town upgrades, and says which of the three town vendors this hero has unlocked.\n"
         "• + ADD ITEMS adds any weapon, armor piece, artifact or talisman in the game at the rarity and power you "
         "pick, or an enchantment book. Pick Unique to get an item's Unique version. PRESETS sets your hero up in one go: goals like Most "
-        "money, the most powerful gear, or complete kits from top builds. A kit's gear comes with effects, and with "
-        "enchantments once your hero has unlocked the Enchantsmith in the game.\n"
-        "Then press SAVE TO GAME. Try a small change first and check it in the game.\n\n"
+        "money, the most powerful gear, or complete kits from top builds. A kit's gear comes with effects, and once your "
+        "hero has unlocked the Enchantsmith in the game, with an enchantment on every weapon and armor piece and the "
+        "books of the enchantments its build names.\n"
+        "Then press SAVE TO GAME. Try a small change first and check it in the game: LAUNCH GAME, next to it, starts "
+        "the game for you (the Xbox app's copy or Steam's, whichever your saves belong to).\n\n"
         "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game) and opens gear slots with your level, as the game does. Online heroes are stored on the game's "
         "servers, so no save editor can change them. Cosmetics from your game edition can't be changed.",
@@ -200,9 +205,12 @@ HELP_SECTIONS = [
         "that has been checked in the game.\n"
         "• Presets: goals (Most money, Most XP, Best loot and more), the most powerful weapon, armor, artifacts and "
         "talismans, and complete kits from top builds. Pick the item power and rarity, and the editor adds and equips "
-        "everything. A kit's gear gets effects, and once your hero has unlocked the Enchantsmith in the game, the "
-        "enchantments the editor can write; the rest it lists for you to pick at the Enchantsmith.\n"
-        "Then press Save to game. Try a small change first and check it in the game.\n\n"
+        "everything. A kit's gear gets effects, and once your hero has unlocked the Enchantsmith in the game, an "
+        "enchantment on every weapon and armor piece: the build's own pick where the editor can write it, and otherwise "
+        "its own pick for that kind of gear. The kit adds the books of the build's picks too, so the Enchantsmith offers "
+        "them.\n"
+        "Then press Save to game. Try a small change first and check it in the game: Launch game, next to it, starts "
+        "the game for you (the Xbox app's copy or Steam's, whichever your saves belong to).\n\n"
         "Simple mode keeps numbers within the game's caps (for example 99,999 emeralds; anything above is lost in "
         "the game). Online heroes are stored on the game's servers, so no save editor can change them. Cosmetics "
         "from your game edition are shown but can't be changed or copied.",
@@ -471,6 +479,8 @@ class EditorApp:
         actions = ttk.Frame(right, padding=(0, 10, 0, 0))
         actions.grid(row=3, column=0, sticky="ew")
         ttk.Label(actions, textvariable=self.changes_var, style="Changes.TLabel").pack(side="left")
+        self.launch_button = ttk.Button(actions, text="Launch game", command=self.launch_game)
+        self.launch_button.pack(side="right", padx=(8, 0))
         self.save_button = ttk.Button(actions, text="Save to game", style="Accent.TButton", command=self.save_to_game)
         self.save_button.pack(side="right")
         self.discard_button = ttk.Button(actions, text="Discard changes", command=self.discard_changes)
@@ -498,6 +508,8 @@ class EditorApp:
         menu_button = ttk.Menubutton(bar, text="MENU", image=self.art.icon("menu", game_style.SOFT, 1), compound="left", style="Bar.TMenubutton")
         menu_button.pack(side="left")
         self.app_menu = menu = tk.Menu(menu_button, tearoff=False)
+        menu.add_command(label=f"Launch {game_launch.GAME}", command=self.launch_game)
+        menu.add_separator()
         menu.add_command(label="Reload", command=self.reload)
         menu.add_command(label="Open a save folder…", command=self._open_folder)
         self.profile_menu = tk.Menu(menu, tearoff=False)
@@ -518,6 +530,7 @@ class EditorApp:
         menu.add_command(label="Share item IDs…", command=self._share_ids)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
+        menu.add_command(label="What's new…", command=self.show_whats_new)
         menu.add_separator()
         for name, what, url in MORE_FROM_DEVELOPER:
             menu.add_command(label=f"{name}: {what} ↗", command=lambda url=url: webbrowser.open(url))
@@ -584,6 +597,8 @@ class EditorApp:
         self.simple_discard_button.grid(row=0, column=4, padx=(0, 8))
         self.simple_save_button = ttk.Button(bottom, text="SAVE TO GAME", style="BarAccent.TButton", command=self.save_to_game)
         self.simple_save_button.grid(row=0, column=5)
+        self.simple_launch_button = ttk.Button(bottom, text="LAUNCH GAME", style="Bar.TButton", command=self.launch_game)
+        self.simple_launch_button.grid(row=0, column=6, padx=(8, 0))
         self._apply_look()
         self._show_page()
 
@@ -625,6 +640,7 @@ class EditorApp:
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.", style="Body.TLabel").pack(side="left")
         ttk.Button(share, text="SHARE ITEM IDS…", command=self._share_ids).pack(side="left", padx=12)
         ttk.Button(share, text="CONNECT AN AI…", command=self._connect_ai).pack(side="left")
+        ttk.Button(share, text="WHAT'S NEW…", command=self.show_whats_new).pack(side="left", padx=12)
         text = tk.Text(
             page, wrap="word", font=self.game_fonts.body, relief="flat", borderwidth=0, highlightthickness=0, padx=4, pady=4,
             background=game_style.BG, foreground=game_style.SOFT, cursor="arrow",
@@ -745,6 +761,7 @@ class EditorApp:
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.").pack(side="left")
         ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
         ttk.Button(share, text="Connect an AI…", command=self._connect_ai).pack(side="left")
+        ttk.Button(share, text="What's new…", command=self.show_whats_new).pack(side="left", padx=10)
         text = tk.Text(
             self.help_tab,
             wrap="word",
@@ -1377,6 +1394,62 @@ class EditorApp:
             button.state(["!disabled"] if dirty and not self.game_running else ["disabled"])
         for button in (self.discard_button, self.simple_discard_button):
             button.state(["!disabled"] if dirty else ["disabled"])
+        can_launch = self._launch_layout() is not None and not self.game_running
+        for button in (self.launch_button, self.simple_launch_button):
+            button.state(["!disabled"] if can_launch else ["disabled"])
+
+    # ------------------------------------------------------------ starting the game
+
+    def _launch_layout(self) -> str | None:
+        """Which copy of the game the open saves belong to ("xbox" or "steam"), if the editor can start it here."""
+        layout = self.profile.layout if self.profile is not None else None
+        return layout if game_launch.target(layout) is not None else None
+
+    def launch_game(self) -> None:
+        """Start the game the open saves belong to. With unsaved changes it asks first: once the game is
+        running the editor can't save, so they'd have to wait until it's closed again."""
+        layout = self.profile.layout if self.profile is not None else None
+        if self.game_running:
+            self.status_var.set(f"{game_launch.GAME} is already running.")
+            return
+        self._hero_editor().commit_pending()
+        if self.change_count:
+            count = f"{self.change_count} unsaved change{'s' if self.change_count != 1 else ''}"
+            question = (
+                f"You have {count}, and the editor can't save while the game is running.\n\n"
+                "Start the game without saving them? They stay here, and you can save them once the game is closed again. "
+                "To play with them, press No and save first."
+            )
+            if not messagebox.askyesno(f"Launch {game_launch.GAME}", question, default="no", parent=self.root):
+                return
+        try:
+            game_launch.launch(layout)
+        except game_launch.LaunchError as exc:
+            messagebox.showinfo(APP_TITLE, str(exc), parent=self.root)
+            return
+        self.status_var.set(f"Starting {game_launch.GAME}…")
+
+    # ------------------------------------------------------------------ what's new
+
+    def show_whats_new(self) -> None:
+        """Menu > What's new: the notes of this version and the few before it."""
+        versions = whats_new.load()
+        whats_new.WhatsNewDialog(self.root, whats_new.unseen(versions, "0", __version__))
+
+    def greet_new_version(self) -> bool:
+        """The first time a version opens on this PC (after an update, or freshly downloaded), show what's new in
+        it: every version since the one that was here before. True if there was something to show. The editor
+        remembers the version with its other settings, so it's shown once."""
+        seen = self.settings.get("seen_version")
+        if seen == __version__:
+            return False
+        versions = whats_new.unseen(whats_new.load(), seen if isinstance(seen, str) else None, __version__)
+        self.settings["seen_version"] = __version__
+        _save_settings(self.settings_file, self.settings)
+        if not versions:
+            return False
+        whats_new.WhatsNewDialog(self.root, versions)
+        return True
 
     def _confirm_discard(self) -> bool:
         self._hero_editor().commit_pending()
@@ -1869,6 +1942,8 @@ def run(
     root.report_callback_exception = report
     try:
         app = EditorApp(root, profile, backup_root, icon_root, look=look)
+        if close_after is None:
+            root.after(300, app.greet_new_version)  # once the window is up: what's new, the first time a version opens
         if close_after is None and edition.ONLINE:  # a build check stays offline, and so does the offline edition
             app.check_for_updates()
             threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()

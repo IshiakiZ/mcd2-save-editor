@@ -3,6 +3,7 @@
 The other tests use a pinned copy, so these are the ones that notice a list that came out wrong.
 """
 
+import copy
 import json
 import unittest
 
@@ -219,10 +220,23 @@ class RealItemListTests(unittest.TestCase):
         piercing = next(choice for choice in heroes.effect_choices([])[1] if choice.title == "Piercing III")
         hero.set_enchantment(heartstring.index, piercing)
         self.assertEqual(hero.item(heartstring.index).effect_lines(), ["Its own: Piercing", "Enchanted: Piercing III, 15 enchantment points"])
-        self.assertEqual(made["Hunter's Hatchet"], (None, ["Critical Edge III"]))
+        # The build names nothing for the Hunter's Hatchet, and Critical Quiver (its pick for the Duster) hasn't been
+        # seen saved yet: those get the editor's own pick for their kind of gear, and so do the leggings and boots.
+        self.assertEqual(made["Hunter's Hatchet"], ("Fire Aspect III", ["Critical Edge III"]))
         self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
-        self.assertEqual(made["Sharpshooter Duster"], (None, ["Projectile Protection III"]))  # Critical Quiver hasn't been seen saved yet
+        self.assertEqual(made["Sharpshooter Duster"], ("Health Synergy III", ["Projectile Protection III"]))
         self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown II", "Spiritual III"]))  # an artifact tops out at Special: two effects
+        # Every weapon and armor piece of every kit gets an enchantment, and no two pieces of a kit the same one.
+        for kit in (preset for preset in presets.PRESETS if preset.group == presets.KITS):
+            fresh = Hero(copy.deepcopy(save))
+            planned = presets.plan(kit, fresh, build_catalog([fresh]), power=30, rarity="Unique")
+            gear = [addition for addition in planned.add if addition.found.kind in presets.ENCHANT_FALLBACKS]
+            given = [addition.enchantment.title for addition in gear if addition.enchantment is not None]
+            self.assertEqual((len(given), len(set(given))), (len(gear), len(gear)), f"{kit.title}: {given}")
+            # It brings the books of what the build names and of what it put on, where the editor knows the book.
+            wanted = {name for item in kit.items for name in item.enchants} | {addition.enchantment.name for addition in gear}
+            self.assertEqual({book.name for book in planned.books}, wanted & {book.name for book in fresh.missing_books(build_catalog([fresh]))}, kit.title)
+            self.assertTrue(planned.books, kit.title)
 
     def test_uniques_come_with_the_effect_saves_show(self):
         uniques = [item for item in self.items if item.unique]

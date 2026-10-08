@@ -822,8 +822,9 @@ class EditorServer:
                  {"hero": HERO, "item": ITEM}, self.delete_item, ("hero", "item")),
             Tool("apply_preset", "Apply a preset", "Apply a preset from list_presets: set stats, and add and equip its gear at the power and rarity given. "
                  "Items with best-guess save IDs, and talismans whose effect isn't known, are left out unless include_unconfirmed. "
-                 "A kit's gear gets the effects the game would roll for it, and its enchantments once the hero has unlocked the "
-                 "Enchantsmith, from the ones the editor can write.",
+                 "A kit's gear gets the effects the game would roll for it, and once the hero has unlocked the Enchantsmith, an "
+                 "enchantment on every weapon and armor piece (the build's pick where the editor can write it, else its own pick, a "
+                 "different one on each piece) and the books of the enchantments the build names.",
                  {"hero": HERO, "preset": _string("The preset's name from list_presets."), "power": POWER,
                   "rarity": RARITY, "equip": {"type": "boolean", "description": "Equip the gear it adds (kits and gear presets do by default)."},
                   "include_unconfirmed": _flag("Also add items whose save ID is a best guess (the game may remove them) and "

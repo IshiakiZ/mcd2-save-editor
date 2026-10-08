@@ -56,9 +56,11 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
     Close-range crossbow, Humbler tank, Soul caster and Companion support).
 
   Pick the item power and rarity, and the preset adds and equips everything. A kit's gear comes with effects, and
-  with enchantments once your hero has unlocked the Enchantsmith in the game, from the ones the editor can write.
-  Each preset shows what it will change, and lists the best enchantment for every piece, what it does and where its
-  book drops.
+  once your hero has unlocked the Enchantsmith in the game, every weapon and armor piece gets an enchantment too:
+  the one the build names where the editor can write it, and otherwise the editor's own pick for that kind of gear,
+  a different one on each piece. The kit also adds the books of the enchantments the build names, so the
+  Enchantsmith offers those even where the editor can't write them yet. Each preset shows what it will change, and
+  lists the best enchantment for every piece, what it does and where its book drops.
 - **Let an AI do it:** connect Claude or another AI assistant over MCP, and ask it for what you want ("give my hero
   the best melee kit at power 30"). It shows you its changes before anything is written. See
   [Let an AI customise your hero](#let-an-ai-customise-your-hero-mcp).
@@ -76,6 +78,11 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
   slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
   every value in the save, the raw JSON, the settings save and raw item IDs.
+- **Launch game:** a button next to **Save to game** starts Minecraft Dungeons II, the Xbox app's copy or
+  Steam's, whichever your saves belong to. With unsaved changes it asks first, since the editor can't save while
+  the game runs.
+- **What's new:** the first time a new version opens, it shows what changed, and **Menu → What's new…** shows it
+  again. The notes come with the editor, so nothing is fetched.
 - **Updates itself:** when a newer version is out, an **Update** button appears. Press it and the editor downloads
   the new version from GitHub, checks it and replaces itself; your saves, backups, pictures and settings aren't
   touched.

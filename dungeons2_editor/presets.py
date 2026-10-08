@@ -8,12 +8,15 @@ data came from; every preset links its pages.
 
 A preset can set stats, upgrade the gear you own, add items and equip them.
 Items whose save ID is only a best guess are added only when asked to (see
-hero.build_catalog). A kit's weapons and armor also get an enchantment, once
-the hero has opened the Enchantsmith in the game, and the gear it adds gets
-the effects the game would roll for it. The editor can only write an
+hero.build_catalog). A kit's weapons and armor also get an enchantment each,
+once the hero has opened the Enchantsmith in the game, and the gear it adds
+gets the effects the game would roll for it. The editor can only write an
 enchantment or an effect it has seen in a real save (hero.effect_choices),
 so a kit names its picks best first and takes the first one that can be
-written; the rest stay suggestions for the Enchantsmith.
+written. Where it can't write any of them (or the build names none for that
+piece), the piece gets the editor's own pick for its kind of gear instead,
+and the kit adds the books of the enchantments the build names, so the
+Enchantsmith offers those in the game.
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ import re
 from dataclasses import dataclass, field
 
 from .hero import (
+    BOOK_KIND,
     GEAR_SLOTS,
     NO_RARITY,
     STAT_CAPS,
@@ -211,6 +215,15 @@ TRICKSTER_ARMOR = ("Acrobat", "Luck")  # rolls recharge sooner
 STURDY_ARMOR = ("Projectile Protection", "Luck")  # fighter, ranger and tank gear: less damage from ranged attacks
 MAGE_ARMOR = ("Spiritual", "Cooldown", "Luck")
 ANY_ARMOR = ("Luck",)
+# Enchantments for a weapon or armor piece when the build names none for it, or none the editor can write yet: the
+# editor's own picks, best first, for any kit. Each piece of a kit takes the first one that the editor can write,
+# that goes on that piece and that no other piece of the kit carries, so a kit ends up with one of each. Damage
+# first on weapons; on armor, healing and artifact power before the rest.
+ENCHANT_FALLBACKS = {
+    "Melee": ("Fire Aspect", "Swirling", "Poison Fog", "Healing Smite"),
+    "Ranged": ("Chain Reaction", "Piercing", "Swirling", "Healing Smite"),
+    "Armor": ("Health Synergy", "Artifact Amplifier", "Somersault", "Barrier Brew", "Springload", "Ancient Alchemy", "Ender Quiver", "Gravity Pulse", "Cow Stampede"),
+}
 
 # The pieces of MetaBot's builds. Weapons and armor are base items: at Unique rarity they're the Unique named. The
 # enchantments are the ones its build planner puts on each piece, then the alternatives its guide names.
@@ -561,10 +574,11 @@ class Plan:
     find: list[KitItem] = field(default_factory=list)
     upgrades: list[tuple[int, str, int]] = field(default_factory=list)  # (item index, rarity, power)
     enchant: bool = False  # the hero has opened the Enchantsmith in the game, so the kit's items get enchanted
+    books: list[CatalogItem] = field(default_factory=list)  # enchantment books it adds: the build's own picks, and what it puts on
 
     @property
     def changes_anything(self) -> bool:
-        return bool(self.stats or self.add or self.upgrades or any(owned.slot or owned.enchantment for owned in self.have))
+        return bool(self.stats or self.add or self.upgrades or self.books or any(owned.slot or owned.enchantment for owned in self.have))
 
 
 def _names(item: Item) -> set[str]:
@@ -604,17 +618,59 @@ def _best(matches: list[EffectChoice]) -> EffectChoice | None:
     return max(usable, key=lambda choice: order.get(choice.tier, -1), default=None)
 
 
-def pick_enchantment(names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice], own: str = "") -> EffectChoice | None:
+def pick_enchantment(
+    names: tuple[str, ...], kind: str, piece: str | None, known: list[EffectChoice], own: str = "", taken: set[str] | frozenset[str] = frozenset()
+) -> EffectChoice | None:
     """The first of ``names`` (enchantments, best first) that the editor can write on an item of this kind, at
     the highest tier a real save has shown. None when it can't write any of them yet. ``own`` is the effect the
     item comes with, if it's a Unique: a kit doesn't spend an enchantment on that one again (the Humbler
     Heartstring comes with Piercing for ten enemies; the game would allow it, but nobody knows that it adds
-    anything)."""
+    anything). ``taken`` are the enchantments other pieces of the kit carry: nobody knows that two of one add up
+    either, so each piece gets a different one."""
     for name in names:
-        found = _best([choice for choice in known if choice.name == name and choice.is_enchantment and choice.fits(kind, piece) and choice.effect != own])
+        found = _best([
+            choice for choice in known
+            if choice.name == name and choice.is_enchantment and choice.fits(kind, piece) and choice.effect != own and choice.effect not in taken
+        ])
         if found is not None:
             return found
     return None
+
+
+def _enchant(preset: Preset, hero: Hero, result: Plan, known: list[EffectChoice]) -> None:
+    """Give every weapon and armor piece of the preset an enchantment, in the preset's order: first the ones
+    the build names for a piece, where the editor can write one, then the editor's own pick for the pieces still
+    without (ENCHANT_FALLBACKS). A piece of the hero's own keeps the enchantment it has."""
+    entries: dict[int, Addition | Owned] = {id(entry.kit): entry for entry in [*result.add, *result.have]}
+    wanting = []  # (the plan's entry, kind, piece, the effect it comes with)
+    taken: set[str] = set()
+    for kit_item in preset.items:
+        entry = entries.get(id(kit_item))
+        if isinstance(entry, Addition):
+            comes_with = entry.found.own_effect_at(entry.rarity)
+            if entry.found.kind in ENCHANT_FALLBACKS:
+                wanting.append((entry, entry.found.kind, entry.found.piece, comes_with.effect if comes_with is not None else ""))
+        elif isinstance(entry, Owned):
+            item = hero.item(entry.index)
+            if item.enchantment is not None:
+                taken.add(item.enchantment.tag)
+            elif item.can_be_enchanted and item.kind in ENCHANT_FALLBACKS:
+                wanting.append((entry, item.kind, item.piece, next((effect.tag for effect in item.own_effects), "")))
+    for names_of in (lambda kit_item, kind: kit_item.enchants, lambda kit_item, kind: ENCHANT_FALLBACKS[kind]):
+        for entry, kind, piece, own in wanting:
+            if entry.enchantment is None:
+                entry.enchantment = pick_enchantment(names_of(entry.kit, kind), kind, piece, known, own, taken)
+                if entry.enchantment is not None:
+                    taken.add(entry.enchantment.effect)
+
+
+def _books(preset: Preset, hero: Hero, result: Plan, catalog: list[CatalogItem]) -> list[CatalogItem]:
+    """The enchantment books a kit brings: the ones for the enchantments its build names, so the Enchantsmith
+    offers those even where the editor can't write them yet, and the ones for what the kit puts on, so they can
+    be put on again or raised there. Only books the editor knows, and that the hero is without."""
+    wanted = {name for kit_item in preset.items for name in kit_item.enchants}
+    wanted |= {entry.enchantment.name for entry in [*result.add, *result.have] if entry.enchantment is not None}
+    return [book for book in hero.missing_books(catalog) if book.name in wanted]
 
 
 def pick_effects(
@@ -683,16 +739,12 @@ def plan(
         kit_item, found = addition.kit, addition.found
         comes_with = found.own_effect_at(addition.rarity)
         own = comes_with.effect if comes_with is not None else ""
-        if result.enchant:
-            addition.enchantment = pick_enchantment(kit_item.enchants, found.kind, found.piece, known_enchantments, own)
         addition.effects = pick_effects(
             kit_item.effects, ROLLED_EFFECTS.get(addition.rarity or "", 0), gear_effects, own, found.kind, archetypes(addition.tag)
         )
-    for owned in result.have:
-        item = hero.item(owned.index)
-        if result.enchant and item.enchantment is None and item.can_be_enchanted:
-            own = next((effect.tag for effect in item.own_effects), "")
-            owned.enchantment = pick_enchantment(owned.kit.enchants, item.kind, item.piece, known_enchantments, own)
+    if result.enchant:
+        _enchant(preset, hero, result, known_enchantments)
+        result.books = _books(preset, hero, result, catalog)
     if equip:
         _choose_slots(preset, hero, result, slots, check_level)
     if preset.upgrade_gear:
@@ -780,6 +832,10 @@ def describe(preset_plan: Plan, hero: Hero) -> list[str]:
             lines.append(f"Your {item.name}: {enchanted[2:]}")
         else:
             lines.append(f"Already have {item.name}" + (" (equipped)" if item.equipped_slot else ""))
+    if preset_plan.books:
+        names = [book.name for book in preset_plan.books]
+        listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+        lines.append(f"Add the enchantment book{'s' if len(names) != 1 else ''} for {listed}, so the Enchantsmith offers {'them' if len(names) != 1 else 'it'}")
     return lines
 
 
@@ -818,11 +874,15 @@ def loadout(preset: Preset, preset_plan: Plan, hero: Hero, catalog: list[Catalog
     return [by_kit[id(kit_item)] for kit_item in preset.items if id(kit_item) in by_kit]
 
 
-def enchant_suggestions(preset: Preset) -> list[tuple[KitItem, list[Enchantment | str]]]:
+def enchant_suggestions(preset: Preset, preset_plan: Plan | None = None) -> list[tuple[KitItem, list[Enchantment | str]]]:
     """For each item in the preset with suggested enchantments: (item, its enchantments, best first).
-    Enchantments missing from the game data come back as plain names."""
+    Enchantments missing from the game data come back as plain names. Given the plan, the pieces it enchants
+    with a pick of the editor's own are listed too, the ones the build names nothing for with no suggestions."""
     known = enchantments()
-    return [(kit_item, [known.get(name, name) for name in kit_item.enchants]) for kit_item in preset.items if kit_item.enchants]
+    given = enchanted_by(preset_plan) if preset_plan is not None else {}
+    return [
+        (kit_item, [known.get(name, name) for name in kit_item.enchants]) for kit_item in preset.items if kit_item.enchants or id(kit_item) in given
+    ]
 
 
 def enchanted_by(preset_plan: Plan) -> dict[int, EffectChoice]:
@@ -859,3 +919,6 @@ def apply(preset_plan: Plan, hero: Hero, catalog: list[CatalogItem], game_caps: 
     for owned in preset_plan.have:
         if owned.enchantment is not None:
             hero.set_enchantment(owned.index, owned.enchantment)
+    for book in preset_plan.books:
+        if not hero.has_book(book.tag):
+            hero.add_item(book.tag, template_for(book.tag, catalog))

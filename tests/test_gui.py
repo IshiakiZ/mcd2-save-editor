@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs
+from dungeons2_editor import __version__, game_style, gui, layout, saves, share_ids, updater, wgs, whats_new
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -1435,6 +1435,91 @@ class SimpleModeTests(WindowTestCase):
         with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
             self.app._save_shortcut()
         self.assertEqual(self.saved_hero().attribute("Emeralds"), 123)
+
+    def test_launch_game_starts_the_copy_the_saves_belong_to(self):
+        app = self.app
+        launch_buttons = (app.simple_launch_button, app.launch_button)
+        self.assertEqual(app.app_menu.entrycget(0, "label"), "Launch Minecraft Dungeons II")
+        with mock.patch.object(gui.game_launch, "target", return_value="somewhere to open"):
+            app._update_buttons()
+            self.assertTrue(all(button.instate(["!disabled"]) for button in launch_buttons))
+            with mock.patch.object(gui.game_launch, "launch") as launch:
+                app.simple_launch_button.invoke()
+            launch.assert_called_once_with("xbox")  # these saves are the Xbox app's
+            self.assertEqual(app.status_var.get(), "Starting Minecraft Dungeons II…")
+            # While the game runs there's nothing to start.
+            app.game_running = ["Dungeons.exe"]
+            app._update_buttons()
+            self.assertTrue(all(button.instate(["disabled"]) for button in launch_buttons))
+            with mock.patch.object(gui.game_launch, "launch") as launch:
+                app.launch_game()  # from the menu, say
+            launch.assert_not_called()
+            self.assertEqual(app.status_var.get(), "Minecraft Dungeons II is already running.")
+            app.game_running = []
+            # When it can't be started, the editor says where to start it instead.
+            with mock.patch.object(gui.game_launch, "launch", side_effect=gui.game_launch.LaunchError("Start it from the Xbox app.")), \
+                    mock.patch("tkinter.messagebox.showinfo") as told:
+                app.launch_game()
+            self.assertEqual(told.call_args.args[1], "Start it from the Xbox app.")
+        # Where the editor can't start the game at all (a Mac, say), the button is there but switched off.
+        with mock.patch.object(gui.game_launch, "target", return_value=None):
+            app._update_buttons()
+            self.assertTrue(all(button.instate(["disabled"]) for button in launch_buttons))
+
+    def test_launching_with_unsaved_changes_asks_first(self):
+        app = self.app
+        self.screen.stat_vars["Emeralds"].set("123")
+        self.assertTrue(self.screen._apply_stat("Emeralds"))
+        with mock.patch.object(gui.game_launch, "target", return_value="somewhere to open"), mock.patch.object(gui.game_launch, "launch") as launch:
+            with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+                app.launch_game()
+            launch.assert_not_called()  # No: save first
+            self.assertIn("You have 1 unsaved change, and the editor can't save while the game is running.", ask.call_args.args[1])
+            self.assertEqual(ask.call_args.kwargs["default"], "no")
+            with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+                app.launch_game()
+            launch.assert_called_once_with("xbox")
+        self.assertEqual(app.changes_var.get(), "1 unsaved change")  # still here, for when the game is closed again
+
+    def test_whats_new_is_shown_the_first_time_a_version_opens_and_from_the_menu(self):
+        app = self.app
+        notes = whats_new.parse(
+            f"## What's new in {__version__}\n\n- **A new thing.** With `code`.\n  - A point under it.\n\n"
+            "## What's new in 0.9.1\n\n- A fix.\n\n## What's new in 0.9.0\n\n- The first.\n"
+        )
+
+        def dialogs():
+            return [child for child in self.root.winfo_children() if isinstance(child, whats_new.WhatsNewDialog)]
+
+        self.assertEqual(dialogs(), [])  # opening the editor in a test, or to check a build, shows nothing
+        with mock.patch.object(gui.whats_new, "load", return_value=notes):
+            # The first time this version opens here: its own notes, once.
+            self.assertTrue(app.greet_new_version())
+            (dialog,) = dialogs()
+            self.assertEqual(dialog.shown_text(), "•  A new thing. With code.\n–  A point under it.")
+            self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["seen_version"], __version__)
+            dialog.close_button.invoke()
+            self.assertEqual(dialogs(), [])
+            self.assertFalse(app.greet_new_version())
+            self.assertEqual(dialogs(), [])
+            # After an update: everything since the version that was here before.
+            app.settings["seen_version"] = "0.9.0"
+            self.assertTrue(app.greet_new_version())
+            (dialog,) = dialogs()
+            self.assertEqual(dialog.shown_text().splitlines()[0], f"Version {__version__}")
+            self.assertIn("Version 0.9.1\n•  A fix.", dialog.shown_text())
+            self.assertNotIn("The first.", dialog.shown_text())
+            dialog.destroy()
+            # The menu shows the newest few whenever you ask.
+            app.app_menu.invoke(app.app_menu.index("What's new…"))
+            (dialog,) = dialogs()
+            self.assertIn("The first.", dialog.shown_text())
+            dialog.destroy()
+        # Nothing to show (the notes didn't come with this copy): the version is remembered all the same.
+        app.settings.pop("seen_version")
+        with mock.patch.object(gui.whats_new, "load", return_value=[]):
+            self.assertFalse(app.greet_new_version())
+        self.assertEqual((dialogs(), app.settings["seen_version"]), ([], __version__))
 
     def test_enchantment_books_have_a_tab_of_their_own(self):
         button, bar = self.screen.books_button, self.screen.books_bar
