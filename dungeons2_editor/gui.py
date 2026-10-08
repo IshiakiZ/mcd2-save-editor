@@ -202,6 +202,7 @@ HELP_SECTIONS = [
         "seen in real saves and anything on an item in your own. Best for, in that window, puts the editor's picks "
         "for a goal on the item (damage, survival, mobility, loot, artifacts and souls, companions), out of the effects "
         "the game can roll on that very item; which of those is best is the editor's own judgement. "
+        "Soulstorm Enhanced, in the same window, puts on the mark the game gives gear from a Soul Storm's reward chest. "
         "For a talisman the button is Level up: it raises the talisman a level, saved the way the game saves a "
         "level-up. A companion's talisman levels up another way, so its button is Ready to level up: it "
         "puts the talisman one XP short of its next level, and the game does the rest. "

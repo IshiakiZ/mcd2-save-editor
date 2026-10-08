@@ -366,14 +366,17 @@ class HeroEditing:
         if dialog.result is None:
             return
         effects, enchantment = dialog.result
-        before = copy.deepcopy(item.data.get("Effects"))
+        before, marks = copy.deepcopy(item.data.get("Effects")), copy.deepcopy(item.data.get("DynamicPropertyTags"))
         try:
             if item.can_have_effects:
                 self.hero.set_effects(index, effects)
+                self.hero.set_soulstorm(index, dialog.soulstorm)
             if item.can_be_enchanted or enchantment is None:
                 self.hero.set_enchantment(index, enchantment)
         except ValueError as exc:
             item.data["Effects"] = before  # all of it or none of it
+            if marks is not None:
+                item.data["DynamicPropertyTags"] = marks
             self._show_item(index)
             self._say_item(str(exc), error=True)
             return

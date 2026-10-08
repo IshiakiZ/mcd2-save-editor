@@ -29,6 +29,7 @@ from .hero import (
     BOOK_KIND,
     MAX_ITEM_POWER,
     MAX_STACK,
+    SOULSTORM,
     NO_OWN_EFFECT,
     RARITIES,
     STAT_CAPS,
@@ -569,10 +570,15 @@ class EditorServer:
                 else:
                     hero.set_enchantment(index, _effect_choice(wanted, enchantments, allow))
                     did.append(f"enchanted with {hero.item(index).enchantment.title}")
+            if args.get("soulstorm_enhanced") is not None:
+                if not isinstance(args["soulstorm_enhanced"], bool):
+                    raise ToolError("soulstorm_enhanced is true or false.")
+                hero.set_soulstorm(index, args["soulstorm_enhanced"])
+                did.append(f"made {SOULSTORM}" if args["soulstorm_enhanced"] else f"no longer {SOULSTORM}")
             if not did:
                 raise ToolError(
-                    "Say what to set: effects (a list of names from list_effects), best_for (a goal, for the editor's own picks) "
-                    "or enchantment (a name, or \"none\")."
+                    "Say what to set: effects (a list of names from list_effects), best_for (a goal, for the editor's own picks), "
+                    "enchantment (a name, or \"none\") or soulstorm_enhanced (true or false)."
                 )
             item = hero.item(index)
             more = {"item": _item_info(item, _refs(hero), {})}
@@ -791,13 +797,16 @@ class EditorServer:
                  "has. A name without a tier gets the highest tier a save has shown. Or give best_for and the editor picks: "
                  "the best effects for that goal out of the ones the game can roll on this very item (it rolls from the pool of "
                  "the item's slot and of each archetype the item carries), ahead of the effects it has. Which is best is the "
-                 "editor's judgement, not a measurement.",
+                 "editor's judgement, not a measurement. soulstorm_enhanced puts on, or takes off, the mark the game shows as "
+                 "Soulstorm Enhanced: gear from a Soul Storm's reward chest has it, along with one more effect than its rarity "
+                 "usually gets, which is yours to add with effects.",
                  {"hero": HERO, "item": ITEM,
                   "best_for": {"type": "string", "enum": [goal.name for goal in recommend.GOALS if goal.order],
                                "description": "A goal, instead of effects. The answer says what was picked, kept and taken off."},
                   "effects": {"type": "array", "items": {"type": "string"},
                               "description": "Names from list_effects, with a tier if you like: [\"Critical Edge II\", \"Looter\"]. At most 4; [] removes them."},
                   "enchantment": _string("An enchantment from list_effects, with a tier if you like (\"Healing Smite I\"), or \"none\" to take it off."),
+                  "soulstorm_enhanced": {"type": "boolean", "description": "true makes the item Soulstorm Enhanced, false takes that off. Left out, it stays as it is."},
                   "allow_unseen": _flag("Allow a tier no save has shown yet (seen: false). If the game doesn't know it as written, it may drop the effect or the item.")},
                  self.set_item_effects, ("hero", "item")),
             Tool("add_unique_effect", "Give a Unique its own effect", "Give a Unique that's without it (unique_effect_note) the effect it comes with "
@@ -927,6 +936,8 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         info["item_level"] = item.level
     if item.effects:  # as the game saved them; set_item_effects changes the rolled ones and the enchantment
         info["effects"] = [_effect_info(effect) for effect in item.effects]
+    if item.is_soulstorm:
+        info["soulstorm_enhanced"] = True
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
             info["unique_effect"] = known.unique_effect  # what the Unique does in the game

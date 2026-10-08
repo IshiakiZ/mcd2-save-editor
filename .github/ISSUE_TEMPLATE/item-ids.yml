@@ -8,7 +8,7 @@ body:
         Thanks for helping! The editor's **Share item IDs…** button (on its Help tab) fills this in for you.
         An item ID looks like `SW.Item.MysticHelmet`. The button also adds what the game saved with your items:
         what a talisman does (`HealthBoost 1.2 (HealthBoost.I) / ...`), the effects on your gear, and any item
-        the game marks some way the editor hasn't seen (a Soul Storm piece, say). Those are wanted too.
+        the game marks some way the editor hasn't seen. Those are wanted too.
         Under the items, unless you untick it, the button adds what your saves show of the game's world that the
         editor doesn't know yet: quests and their steps (`quest CA04 - Active; steps: E01+, E02~`), doors and where
         they are, minecart stations, regions, and where your play recordings saw chests opened. That's wanted as

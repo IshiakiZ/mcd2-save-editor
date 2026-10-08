@@ -23,7 +23,7 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 - **Items:** add any of the game's 180 items and all 116 Uniques, with pictures and search. Change rarity, power
   and count, equip, copy or delete.
 - **Effects and enchantments:** pick them yourself, or let **Best for** pick for damage, survival, mobility, loot,
-  artifacts and souls, or companions.
+  artifacts and souls, or companions. A piece can be made **Soulstorm Enhanced** too.
 - **Talismans and enchantment books:** level a talisman up, and add any of the game's 32 books, so the Enchantsmith
   offers their enchantments.
 - **Presets and kits:** most money, most XP, best loot, the most powerful gear, or one of six complete builds, added
@@ -124,9 +124,8 @@ your sign-in, account or device data.
   60 gear effects, all 32 enchantment books, and 23 of the 32 enchantments. An effect tier nobody has sent yet is
   marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
   add; nothing is sent unless you send it.
-- **Still missing:** the names of five enchantment books, the other enchantments and some tiers, the Soulstorm
-  Enhanced tag, and levelling a companion's talisman outright (**Ready to level up** leaves it one XP short, and
-  the game does the rest).
+- **Still missing:** the names of five enchantment books, the other enchantments and some tiers, and levelling a
+  companion's talisman outright (**Ready to level up** leaves it one XP short, and the game does the rest).
 - **Story progress.** The world map and the play recorder show what the game has saved and change nothing. They
   can't see a chest or a secret you haven't touched.
 - **Collections and achievements.** The editor leaves the game's own records alone, so a book added here counts
@@ -261,7 +260,7 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   ([#32](https://github.com/IshiakiZ/mcd2-save-editor/issues/32)), which had the last Unique's own effect.
 - Most of what the editor knows of the game's world (its quests and their steps, doors, minecart stations and
   regions) comes from [regnirok](https://github.com/regnirok)'s list ([#33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)), the first to hold
-  the world's part.
+  the world's part. The same list showed how the game saves the Soulstorm Enhanced tag.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

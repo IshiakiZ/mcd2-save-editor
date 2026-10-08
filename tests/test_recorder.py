@@ -268,7 +268,7 @@ class PlayRecorderTests(unittest.TestCase):
         })
         self.assertEqual(play_recorder.storm_mentions({"CharacterSaveV1": {"Inventory": {"Entries": []}}}), {})
 
-    def test_the_soul_storm_check_says_what_turns_up_and_asks_about_it(self):
+    def test_the_soul_storm_check_says_what_turns_up(self):
         def before_recording(document):  # a Unique the hero already has, with a rolled effect more than usual
             old = hero_item("SW.Item.Sword_Unique1", rarity="Unique", seed=700, unseen=False)
             old["ItemData"]["Effects"] = [rolled(rolled_effect("Sharpness", 0.1, "I"), rolled_effect("Looting", 0.2, "I"))]
@@ -286,7 +286,10 @@ class PlayRecorderTests(unittest.TestCase):
             chest["ItemData"]["DynamicPropertyTags"].append("SW.Item.Property.Dynamic.SoulStorm")
             plain = hero_item("SW.Item.Mace", rarity="Special", seed=702)  # an ordinary drop
             plain["ItemData"]["Effects"] = [rolled(rolled_effect("Sharpness", 0.1, "I"))]
-            body["Inventory"]["Entries"] += [chest, plain]
+            reward = hero_item("SW.Item.GiantClub", rarity="Special", power=118, seed=703, unseen=False)  # as a real save holds one
+            reward["ItemData"]["Effects"] = [rolled(rolled_effect("CriticalEdge", 0.1, "I"), rolled_effect("SweepingEdge", 0.2, "I"), rolled_effect("Knockback", 0.3, "III"))]
+            reward["ItemData"]["DynamicPropertyTags"] = ["SW.Item.Property.StorminatorReward"]
+            body["Inventory"]["Entries"] += [chest, plain, reward]
             body.setdefault("WorldExploration", {})["SoulStormsCompleted"] = 1
 
         self.game_saves(a_soul_storm)
@@ -295,48 +298,45 @@ class PlayRecorderTests(unittest.TestCase):
         self.assertEqual((marked["id"], marked["news"], marked["new"], marked["rolled"]),
                          ("SW.Item.Axe", ["mark SW.Item.Property.Dynamic.SoulStorm"], True, ["Sharpness.I", "Looting.I", "CriticalEdge.I"]))
         self.assertNotIn("PickupTimestamp", marked["as_saved"]["ItemData"])  # the whole item as saved, the way Share item IDs gives one
-        self.assertEqual([e["id"] for e in self.events("extra_effect")], ["SW.Item.Axe"])  # the Mace has no more than usual
-        # Two things in the save mention a storm that didn't before: the counter, and the mark on the Axe.
+        self.assertEqual([e["id"] for e in self.events("extra_effect")], ["SW.Item.Axe", "SW.Item.GiantClub"])  # the Mace has no more than usual
+        # Three things in the save mention a storm that didn't before: the counter, and the marks on the two items.
         storms = {storm["where"]: (storm["old"], storm["new"]) for storm in self.events("storm")}
         self.assertEqual(storms, {
             "CharacterSaveV1.WorldExploration.SoulStormsCompleted": ("(not there)", 1),
             "CharacterSaveV1.Inventory.Entries[].ItemData.DynamicPropertyTags[] SW.Item.Property.Dynamic.SoulStorm": ("(not there)", True),
+            "CharacterSaveV1.Inventory.Entries[].ItemData.DynamicPropertyTags[] SW.Item.Property.StorminatorReward": ("(not there)", True),
         })
         self.assertTrue(any("AN ITEM SAVED WITH SOMETHING THE EDITOR HASN'T SEEN: Axe" in line for line in self.said))
         self.assertTrue(any("SOUL STORM IN THE SAVE: CharacterSaveV1.WorldExploration.SoulStormsCompleted" in line for line in self.said))
         self.assertTrue(any("new item: Axe" in line and "3 rolled effects (one more than usual)" in line for line in self.said))
 
-        # At the end it asks about each of them, what arrived while recording first.
-        self.assertEqual([about["id"] for _key, about in self.recorder.storm_questions()], ["SW.Item.Axe", "SW.Item.Sword_Unique1"])
-        answers = iter(["Y", "n"])
-        asked = []
+        # The game's own mark for a Soul Storm reward is one the editor knows, so that item isn't news: it's listed
+        # as Soulstorm Enhanced, and said so as it arrives.
+        (reward,) = self.events("soulstorm_item")
+        self.assertEqual((reward["id"], reward["marks"], reward["new"]), ("SW.Item.GiantClub", ["SW.Item.Property.StorminatorReward"], True))
+        self.assertTrue(any("SOULSTORM ENHANCED: Clobberer" in line for line in self.said))
+        self.assertTrue(any("new item: Clobberer" in line and "3 rolled effects (one more than usual), Soulstorm Enhanced" in line for line in self.said))
 
-        def ask(question):
-            asked.append(question.strip())
-            return next(answers)
-
-        given = self.recorder.ask_storm(ask)
-        self.assertEqual(sorted(given.values()), ["no", "yes"])
-        self.assertEqual(asked[0], "Axe (Special, power 40, effects: Sharpness.I, Looting.I, CriticalEdge.I) =")
-        self.assertEqual([(e["id"], e["shows_soulstorm_enhanced"]) for e in self.events("storm_answer")], [("SW.Item.Axe", "yes"), ("SW.Item.Sword_Unique1", "no")])
-        self.assertEqual(self.recorder.storm_questions(), [])  # nothing is asked twice
-        self.assertEqual(self.recorder.ask_storm(lambda question: self.fail("asked again")), {})
-
+        # Nothing is asked: what the game shows as Soulstorm Enhanced is that mark, and the save has it or hasn't.
+        self.assertFalse(hasattr(self.recorder, "ask_storm"))
         text = self.recorder.summary()
         self.assertIn("Soul Storm check:", text)
-        self.assertIn("Places in the saves that mention a storm now (2):", text)
-        self.assertIn("What changed there while recording (2):", text)
+        self.assertIn("Places in the saves that mention a storm now (3):", text)
+        self.assertIn("What changed there while recording (3):", text)
         self.assertIn("Items saved with a mark or a field the editor has never seen (1):", text)
-        self.assertIn("SW.Item.Axe  Axe, Special: mark SW.Item.Property.Dynamic.SoulStorm  [arrived while recording; Soulstorm Enhanced in the game, you said: yes]", text)
-        self.assertIn("Items with one more rolled effect than their rarity usually has (2):", text)
-        self.assertIn("SW.Item.Sword_Unique1  The Burning Blade, Unique, power 1: Sharpness.I, Looting.I; marks: none  [Soulstorm Enhanced in the game, you said: no]", text)
+        self.assertIn("SW.Item.Axe  Axe, Special: mark SW.Item.Property.Dynamic.SoulStorm  [arrived while recording]", text)
+        self.assertIn("Soulstorm Enhanced items, by the game's mark for a Soul Storm reward (1):", text)
+        self.assertIn("SW.Item.GiantClub  Clobberer, Special, power 118: CriticalEdge.I, SweepingEdge.I, Knockback.III  [arrived while recording]", text)
+        self.assertIn("Items with one more rolled effect than their rarity usually has (3):", text)
+        self.assertIn("SW.Item.Sword_Unique1  The Burning Blade, Unique, power 1: Sharpness.I, Looting.I; marks: none", text)
+        self.assertNotIn("you said", text)
 
         # Salvaged afterwards: what it looked like is kept, and it isn't asked about any more.
         self.game_saves(lambda document: document["CharacterSaveV1"]["Inventory"]["Entries"].__setitem__(
             slice(None), [e for e in document["CharacterSaveV1"]["Inventory"]["Entries"] if e["ItemData"]["TypeTag"] != "SW.Item.Axe"]))
         self.recorder.look()
         self.assertIn("gone again", self.recorder.summary())
-        self.assertEqual(len(self.events("storm")), 3)  # the mark went with it, which is a change in what the save says about storms
+        self.assertEqual(len(self.events("storm")), 4)  # the mark went with it, which is a change in what the save says about storms
 
     def test_tracks_world_progress_step_by_step(self):
         def a_hero_partway(document):

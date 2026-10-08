@@ -478,6 +478,44 @@ class RealItemListTests(unittest.TestCase):
         cover = next(item for item in self.items if item.unique == "Dreamruler Cover")
         self.assertTrue(potion.fits(cover.kind, cover.slot))  # the piece it was on: a chestplate
 
+    def test_a_soul_storm_reward_is_rebuilt_as_the_game_saved_it(self):
+        # /issues/33 holds a Special Clobberer from a Soul Storm's reward chest, as saved (less its pickup time and
+        # seed): three rolled effects where a Special gets two, and the mark the game shows as Soulstorm Enhanced.
+        real = {
+            "ItemData": {
+                "TypeTag": "SW.Item.GiantClub", "RarityTag": "SW.Rarity.Special",
+                "Effects": [{"TypeTag": "SW.Item.Effect.Rerollable", "EffectsInThisBatch": [
+                    {"TypeTag": "SW.Effect.CriticalEdge", "Intensity": 0.1, "Quality": 0, "EnchantmentPointsInvested": 0,
+                     "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.CriticalEdge.I", "Locked": False}},
+                    {"TypeTag": "SW.Effect.SweepingEdge", "Intensity": 0.2, "Quality": 0, "EnchantmentPointsInvested": 0,
+                     "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.SweepingEdge.I", "Locked": False}},
+                    {"TypeTag": "SW.Effect.Knockback", "Intensity": 0.3, "Quality": 0, "EnchantmentPointsInvested": 0,
+                     "GeneratorData": {"GeneratorParentTemplate": "SW.EffectTemplate.Knockback.III", "Locked": False}},
+                ]}],
+                "ItemProgression": {"CurrentLevel": 0, "CurrentXP": 0, "ItemLevels": []},
+                "DynamicPropertyTags": ["SW.Item.Property.StorminatorReward"],
+                "TargetSlotOverride": "None", "EffectRerolls": 0,
+            },
+            "StackCount": 1, "EquippedSlot": "None", "MerchantItemSold": False, "MerchantDiscount": 0,
+        }
+        hero = Hero(hero_save())
+        index = hero.add_item("SW.Item.GiantClub", build_catalog([hero])[0].template, rarity="Special", power=118)
+        by_title = {choice.title: choice for choice in heroes.effect_choices([hero])[0]}
+        hero.set_effects(index, [by_title[title] for title in ("Critical Edge I", "Brawler I", "Knockback III")])
+        hero.set_soulstorm(index, True)
+        made = hero.item(index)
+        self.assertEqual((made.name, made.is_soulstorm), ("Clobberer", True))
+        self.assertEqual(made.effect_lines(), ["Soulstorm Enhanced", "Critical Edge I 10%", "Brawler I 20%", "Knockback III 30%"])
+        # The same as the game's in everything but when it was picked up, its seed, how its power was rolled, and
+        # the mark for an item you haven't looked at, which the game takes off when it shows you the item.
+        data = copy.deepcopy(made.entry["ItemData"])
+        self.assertEqual(data.pop("DynamicPropertyTags"), ["SW.Item.Property.StorminatorReward", "SW.Item.Property.Dynamic.Unseen"])
+        generator = data.pop("GeneratorData")
+        self.assertEqual((generator["PowerGeneratorValues"]["ItemPower"], "PickupTimestamp" in data), (118, True))
+        del data["PickupTimestamp"]
+        self.assertEqual(data, {key: value for key, value in real["ItemData"].items() if key != "DynamicPropertyTags"})
+        self.assertEqual({key: value for key, value in made.entry.items() if key != "ItemData"}, {key: value for key, value in real.items() if key != "ItemData"})
+
     def test_what_a_list_made_with_1_14_2_added(self):
         # /issues/32. 1.14.2 had no Dynamo to write, so the one on this list's Redstone boots is the game's, and it
         # is the game's own number for the tier (MetaBot: 20% / 30% / 40%).

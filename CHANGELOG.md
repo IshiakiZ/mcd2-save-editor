@@ -9,6 +9,19 @@ The short notes for the newest versions are on the
 
 ## 1.15.1
 
+- **Soulstorm Enhanced.** **Change effects…** has a tick box for it, for a weapon, an armor piece or an artifact.
+  In the game, gear from a Soul Storm's reward chest shows that tag and has one more effect than its rarity
+  usually gets. A save holds the tag as a mark on the item, `SW.Item.Property.StorminatorReward`:
+  [regnirok](https://github.com/regnirok)'s list ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)) has it on a Special Clobberer
+  with three rolled effects where a Special gets two. Checked in the game: a copy of that Clobberer made with
+  the editor shows Soulstorm Enhanced there, and the game kept the mark through its own saves. The tick box puts
+  on the mark and nothing else, so add the extra effect yourself, in the same window. An item's card, the list
+  of changes before you save and the AI server's `set_item_effects` (`soulstorm_enhanced`) all know it.
+- **The play recorder asks nothing at the end any more.** It used to ask, for each item with one more effect
+  than usual, whether the game showed Soulstorm Enhanced on it, which is how the tag was to be found. Now a save
+  says so by itself, and the recorder's summary lists the Soulstorm Enhanced items it holds.
+- **Checked against the game's update to 1.1.2.0.** It saves heroes the way 1.1.1.0 did, and the editor reads
+  and writes those saves byte for byte.
 - **Every Unique comes with the effect of its own: 116 of 116.** The last one, the Packleader Paws, was in
   [berwulf](https://github.com/berwulf)'s list ([issue 32](https://github.com/IshiakiZ/mcd2-save-editor/issues/32)), made with a version that had no own
   effect to write for it, so it's the game's: Bowyer at a tier of its own, a 50% chance of an extra arrow, which is
@@ -51,10 +64,6 @@ The short notes for the newest versions are on the
   Acrobat III, Tainted I, Sniper I, Reaper I, Vanguard II and Sorcerer III. 162 of the 180 tiers have now
   been seen. **Best for** picks the best tier a save has shown, so some of its picks go up a tier (Cooldown III
   and Sorcerer III, for two).
-- **The mark of a Soul Storm reward has turned up.** The same list from regnirok has a Special Clobberer saved
-  with a mark the editor had never seen, `SW.Item.Property.StorminatorReward`, and with three rolled effects where
-  a Special gets two. That is very likely how the game saves the Soulstorm Enhanced tag. The editor doesn't write
-  it yet: it wants someone to say the game shows the tag on that item first.
 - Not taken from berwulf's list, nor from regnirok's: the tiers of gear effects that carry exactly the numbers the
   editor already offers (22 on one, 20 on the other). The versions that made the lists could have written those
   themselves, so the ones nobody has vouched for stay marked as not seen.

@@ -1374,14 +1374,37 @@ class SimpleModeTests(WindowTestCase):
             dialog.add()
             self.assertTrue(dialog.select("Healing Smite"))
             dialog.add()
+            self.assertEqual((str(dialog.soulstorm_box.cget("text")), dialog.soulstorm_var.get()), ("Soulstorm Enhanced", False))
+            dialog.soulstorm_box.invoke()  # what the game shows on gear from a Soul Storm's reward chest
             dialog.apply()
 
         with mock.patch.object(self.screen, "wait_window", side_effect=choose):
             self.screen.effects_button.invoke()
-        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Soulstorm Enhanced", "Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
         self.assertIn("Effects changed.", self.screen.item_message_var.get())
-        self.assertIn("Sword: effects: Looter I 20%, enchanted with Healing Smite I", self.save())
-        self.assertEqual(self.saved_hero().item(sword).effect_lines(), ["Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertIn("Sword: effects: Looter I 20%, enchanted with Healing Smite I, made Soulstorm Enhanced", self.save())
+        saved = self.saved_hero().item(sword)
+        self.assertEqual(saved.effect_lines(), ["Soulstorm Enhanced", "Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertIn("SW.Item.Property.StorminatorReward", saved.data["DynamicPropertyTags"])
+
+        def untick(dialog):  # the window opens on what the item has, and takes it off again
+            self.assertTrue(dialog.soulstorm_var.get())
+            self.assertTrue(dialog.apply_button.instate(["disabled"]))  # nothing changed yet
+            dialog.soulstorm_box.invoke()
+            self.assertTrue(dialog.apply_button.instate(["!disabled"]))  # the tick alone is a change
+            dialog.soulstorm_box.invoke()
+            self.assertTrue(dialog.apply_button.instate(["disabled"]))  # and ticking it back is none
+            dialog.soulstorm_box.invoke()
+            dialog.apply_button.invoke()
+
+        sword = self.index_of("SW.Item.Sword")
+        self.screen.pick_item(sword)
+        with mock.patch.object(self.screen, "wait_window", side_effect=untick) as waited:
+            self.screen.effects_button.invoke()
+        waited.assert_called_once()
+        self.assertEqual(self.screen.enchant_text.get().splitlines(), ["Looter I 20%", "Enchanted: Healing Smite I, 1 enchantment point"])
+        self.assertNotIn("SW.Item.Property.StorminatorReward", self.screen.hero.item(sword).data["DynamicPropertyTags"])
+        self.assertIn("Sword: no longer Soulstorm Enhanced", self.save())
 
     def test_merchant_stock_can_be_copied_but_not_worn(self):
         self.show("Merchant")
@@ -2172,10 +2195,12 @@ class EffectsWindowTests(WindowTestCase):
         self.assertEqual((self.on_item(dialog), dialog.clear_button.instate(["disabled"])), ([], True))
         dialog.destroy()
         self.assertIsNone(dialog.result)
-        # An artifact takes effects and no enchantment.
+        # An artifact takes effects and no enchantment. Soulstorm Enhanced goes wherever effects do.
         horn = self.open("SW.Item.Artifact.RallyingHorn")
         self.assertTrue(horn.kind_buttons["Enchantments"].instate(["disabled"]))
         self.assertEqual(horn.choices["Enchantments"], [])
+        self.assertTrue(horn.soulstorm_box.instate(["!disabled"]))
+        self.assertFalse(horn.soulstorm)  # as the item is, until Apply says otherwise
 
     def test_an_effect_of_the_items_own_is_left_alone(self):
         dialog = self.open("SW.Item.HoneyHelmet")

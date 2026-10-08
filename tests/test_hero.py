@@ -6,7 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from dungeons2_editor import hero as heroes
-from dungeons2_editor import my_items
+from dungeons2_editor import my_items, share_ids
 from dungeons2_editor.hero import Hero
 
 from .helpers import book_item, enchanted, enchantment_effect, hero_item, hero_save, rolled, rolled_effect, talisman_item
@@ -593,6 +593,49 @@ class HeroTests(unittest.TestCase):
         self.hero.set_effects(sword, [])
         self.hero.set_enchantment(sword, None)
         self.assertEqual(heroes.describe_changes(after, self.document), ["Sword: effects: none, enchantment taken off"])
+
+    def test_soulstorm_enhanced_is_a_mark_on_the_item(self):
+        # What the game shows as Soulstorm Enhanced is the mark it saves on a Soul Storm's reward: seen in a player's
+        # save, and shown by the game on an item the editor had put it on.
+        sword = self.item_index("SW.Item.Sword")
+        before = copy.deepcopy(self.document)
+        marks = self.hero.item(sword).data["DynamicPropertyTags"]
+        marks[:] = []  # an item the game has shown you
+        self.assertFalse(self.hero.item(sword).is_soulstorm)
+        self.hero.set_soulstorm(sword, True)
+        # The game's mark, and the one for an item you haven't looked at: what the editor wrote isn't the game's word yet.
+        self.assertEqual(marks, ["SW.Item.Property.StorminatorReward", "SW.Item.Property.Dynamic.Unseen"])
+        self.assertTrue(self.hero.item(sword).is_soulstorm)
+        self.assertEqual(self.hero.item(sword).effect_lines(), ["Soulstorm Enhanced"])
+        self.assertEqual(heroes.describe_changes(before, self.document), ["Sword: made Soulstorm Enhanced"])
+        self.hero.set_soulstorm(sword, True)  # twice is once
+        self.assertEqual(marks.count("SW.Item.Property.StorminatorReward"), 1)
+        # It goes with the item's effects, which are set on their own: a Soul Storm piece has one more than usual.
+        self.hero.set_effects(sword, [self.choice("Knockback"), self.choice("Critical Edge", "II")])
+        self.assertEqual(self.hero.item(sword).effect_lines(), ["Soulstorm Enhanced", "Knockback I 15%", "Critical Edge II 20%"])
+        # A copy is the same item again, mark and all; a new item takes no mark from the one its layout came from.
+        copied = self.hero.item(self.hero.duplicate_item(sword))
+        self.assertTrue(copied.is_soulstorm)
+        added = self.hero.item(self.hero.add_item("SW.Item.Mace", self.hero.item(sword).entry))
+        self.assertEqual((added.is_soulstorm, added.data["DynamicPropertyTags"]), (False, ["SW.Item.Property.Dynamic.Unseen"]))
+        # Off again leaves the other marks alone.
+        marked = copy.deepcopy(self.document)
+        self.hero.set_soulstorm(sword, False)
+        self.assertEqual(marks, ["SW.Item.Property.Dynamic.Unseen"])
+        self.assertIn("Sword: no longer Soulstorm Enhanced", heroes.describe_changes(marked, self.document))
+        self.hero.set_soulstorm(sword, False)
+        self.assertEqual(marks, ["SW.Item.Property.Dynamic.Unseen"])
+        # The game gives it to gear that rolls effects: not to a talisman, nor to a book.
+        self.body["Inventory"]["Entries"].append(talisman_item("SW.Item.Talisman.HealthBoost", "HealthBoost", seed=77))
+        with self.assertRaisesRegex(ValueError, "can't be Soulstorm Enhanced"):
+            self.hero.set_soulstorm(self.item_index("SW.Item.Talisman.HealthBoost"), True)
+        # Share item IDs asks about a mark the editor has never seen, and this one it has.
+        self.hero.set_soulstorm(sword, True)
+        self.assertEqual(share_ids.marked_items([self.hero]), [])
+        marks.append("SW.Item.Property.SomethingElse")
+        ((tag, line),) = share_ids.marked_items([self.hero])
+        self.assertEqual(tag, "SW.Item.Sword")
+        self.assertIn("(mark SW.Item.Property.SomethingElse)", line)
 
     def test_the_save_format_the_editor_was_checked_against(self):
         self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 5), True))

@@ -23,15 +23,14 @@ While it runs you can type a note ("enchanted the sword with Fire Aspect"); the 
 that moment. Run from a console, it also asks, when the game closes or you press Ctrl+C, what the game calls each
 item the editor has no name for, and keeps the answers for the editor (item-names.json).
 
-The Soul Storm check is for finding out how the game saves the Soulstorm Enhanced tag, which no save has shown
-yet. It watches three things and says so at once when one turns up:
+The Soul Storm check is how the Soulstorm Enhanced tag was found: the game saves it as a mark on the item
+(hero.SOULSTORM_TAG), and a player's list showed one. It still watches for what a save holds that the editor
+hasn't met, and says so at once when one turns up:
 
-    an item saved with a mark or a field the editor has never seen on one (the tag itself, if it's kept on the item)
-    anything anywhere in a save that mentions a storm, and every change to it (if it's kept somewhere else)
-    an item with one more rolled effect than its rarity usually has, which is what a Soul Storm chest gives
-
-At the end it asks, for each such item, whether the game shows Soulstorm Enhanced on it. An item that does and
-one that doesn't, side by side as saved, is what shows where the tag lives.
+    an item saved with a mark or a field the editor has never seen on one
+    anything anywhere in a save that mentions a storm, and every change to it
+    an item the game marks as a Soul Storm reward, and an item with one more rolled effect than its rarity
+    usually has, which is what a Soul Storm's chest gives
 
 It also tracks world progress: every quest and each of its tasks, minecart stations, doors, cutscenes, how much of
 each area is explored, achievements, and anything else a save keeps about how far the hero has got. Each step
@@ -77,7 +76,7 @@ from typing import Any, Callable
 
 from . import __version__, paths, saves, share_ids
 from . import document as doc
-from .hero import Hero, format_amount, game_item, is_hero_document, is_unique_version, items_by_identity
+from .hero import SOULSTORM, Hero, format_amount, game_item, is_hero_document, is_unique_version, items_by_identity
 from .my_items import NAMES_FILE, load_names, save_names
 
 DEFAULT_OUT = paths.data_dir() / "recordings"  # next to the backups, on this PC only
@@ -90,7 +89,6 @@ SUMMARY_FILE = "summary.txt"
 SHARE_FILE = "to_share.txt"  # the summary as it can be sent on (Recorder.summary(sharing=True))
 MOST_SHARED = 250  # lines about items in the copy for sending, the latest ones, so it fits in a GitHub issue
 NOT_SHARED = ("PickupTimestamp", "GenesisRandomSeed")  # what an item's entry says of when you played: left out there
-MOST_QUESTIONS = 8  # items the Soul Storm check asks about at the end
 
 STORM = re.compile("storm", re.IGNORECASE)  # SoulStorm, Soulstorm, Storminator: however the game spells it
 # The most rolled effects an item of each rarity usually has. A Soul Storm chest is said to give one more.
@@ -104,7 +102,7 @@ WORTH_DOING = """Most useful things to do while this runs (any of them, in any o
   - pick up or buy items you haven't had before, talismans above all
   - reroll an effect and raise an item's power at the Blacksmith
   - salvage an item, and level up
-  - play a Soul Storm, open its reward chests, and look at what you got: does a piece say Soulstorm Enhanced?
+  - play a Soul Storm and open its reward chests
 Type a note and press Enter whenever something happens that the save alone won't explain."""
 
 
@@ -772,7 +770,7 @@ class Recorder:
         self.storms: dict[str, dict[str, Any]] = {}
         self.marked: dict[tuple, dict] = {}  # items saved with a mark or a field the editor doesn't know
         self.extra: dict[tuple, dict] = {}  # items with one more rolled effect than their rarity usually has
-        self.storm_answers: dict[tuple, str] = {}  # whether the game shows Soulstorm Enhanced on one, as you said
+        self.soulstorm: dict[tuple, dict] = {}  # items the game marks as a Soul Storm reward: Soulstorm Enhanced
         self.progress: dict[str, dict[str, Any]] = {}  # each hero's world progress as last read
         self.regions: dict[str, dict[str, dict]] = {}  # and its grids of explored ground
 
@@ -890,6 +888,7 @@ class Recorder:
             earlier = old_items.get(key)
             if earlier is None:
                 more = f", {len(rolled_effects(item))} rolled effects (one more than usual)" if one_more_than_usual(item) else ""
+                more += f", {SOULSTORM}" if item.is_soulstorm else ""
                 self.event("item_added", f"new item: {item.name}  [{item.tag}]  {item.rarity}, power {format_amount(item.power)}{more}", container=container, id=item.tag, name=item.name, rarity=item.rarity, power=item.power, where=item.where, entry=item.entry)
                 continue
             found = changes(earlier.entry, item.entry)
@@ -965,13 +964,13 @@ class Recorder:
                 self.event("storm", f"SOUL STORM IN THE SAVE: {label}: {json.dumps(compact(old), ensure_ascii=False)} -> {json.dumps(compact(new), ensure_ascii=False)}", container=container, where=label, old=compact(old), new=compact(new))
 
     def _storm_items(self, container: str, hero: Hero, new: set) -> None:
-        """Keep track of the items a Soul Storm might have to do with: one saved with something the editor has
-        never seen on an item, and one with a rolled effect more than usual. ``new`` holds the identities of the
-        items that have just arrived."""
+        """Keep track of the items a Soul Storm has to do with, or might: one saved with something the editor has
+        never seen on an item, one the game marks as a Soul Storm reward, and one with a rolled effect more than
+        usual. ``new`` holds the identities of the items that have just arrived."""
         items = items_by_identity(hero)
         by_entry = {id(item.entry): key for key, item in items.items()}
         here = {(container, key) for key in items}
-        for known in (self.marked, self.extra):
+        for known in (self.marked, self.extra, self.soulstorm):
             for key in [key for key in known if key[0] == container and key not in here]:
                 known[key]["gone"] = True  # salvaged, sold or dropped since; what it looked like is kept
         for item, news in MARKED_ITEMS([hero]) if MARKED_ITEMS is not None else []:
@@ -985,6 +984,10 @@ class Recorder:
                 self.extra[key] = self._about(item, identity in new)
                 if identity in new:
                     self.event("extra_effect", container=container, **self.extra[key])
+            if item.is_soulstorm and key not in self.soulstorm:
+                self.soulstorm[key] = self._about(item, identity in new)
+                if identity in new:
+                    self.event("soulstorm_item", f"{SOULSTORM.upper()}: {item.name}  [{item.tag}]", container=container, **self.soulstorm[key])
 
     @staticmethod
     def _about(item: Any, new: bool, **more: Any) -> dict:
@@ -992,34 +995,6 @@ class Recorder:
             "id": item.tag, "name": item.name, "rarity": item.rarity, "power": item.power, "rolled": rolled_effects(item),
             "marks": list(item.data.get("DynamicPropertyTags") or []), "new": new, "as_saved": AS_SAVED(item) if AS_SAVED is not None else item.entry, **more,
         }
-
-    def storm_questions(self) -> list[tuple[tuple, dict]]:
-        """The items to ask about at the end, the ones that arrived while recording first: does the game show
-        Soulstorm Enhanced on it? One that's gone, or already answered, isn't asked about."""
-        both = {**self.extra, **self.marked}
-        open_ones = [(key, about) for key, about in both.items() if key not in self.storm_answers and not about.get("gone")]
-        return sorted(open_ones, key=lambda pair: not pair[1]["new"])[:MOST_QUESTIONS]
-
-    def ask_storm(self, ask: Callable[[str], str | None]) -> dict[tuple, str]:
-        """Ask whether the game shows Soulstorm Enhanced on each item a Soul Storm might have to do with, and
-        write the answers down next to how the item is saved."""
-        asking = self.storm_questions()
-        given: dict[tuple, str] = {}
-        if asking:
-            self.say(
-                f"\nSoul Storm check: {len(asking)} item(s) here are saved with something new, or have one more effect than usual. "
-                "Does the game show Soulstorm Enhanced on them? Type y or n for each, or just press Enter to skip."
-            )
-        for key, about in asking:
-            answer = ask(f"  {about['name']} ({about['rarity']}, power {format_amount(about['power'])}, effects: {', '.join(about['rolled']) or 'none'}) = ")
-            if answer is None:
-                break
-            said = answer.strip().lower()
-            if said:
-                given[key] = "yes" if said in ("y", "yes") else "no" if said in ("n", "no") else answer.strip()
-                self.storm_answers[key] = given[key]
-                self.event("storm_answer", container=key[0], shows_soulstorm_enhanced=given[key], **about)
-        return given
 
     def check_game(self, running: list[str]) -> bool:
         """Note the game starting or closing. True when it has just closed."""
@@ -1126,6 +1101,9 @@ class Recorder:
             lines.append(f"    {about['id']}  {about['name']}, {about['rarity']}: {', '.join(about['news'])}{self._storm_notes(key, about)}")
             if not sharing or number < share_ids.MAX_MARK_LINES:  # a whole item each: a few show how it's saved
                 lines.append(f"      as saved: {json.dumps(about['as_saved'], ensure_ascii=False)}")
+        lines.append(f"  {SOULSTORM} items, by the game's mark for a Soul Storm reward ({len(self.soulstorm)}):")
+        for key, about in self.soulstorm.items():
+            lines.append(f"    {about['id']}  {about['name']}, {about['rarity']}, power {format_amount(about['power'])}: {', '.join(about['rolled']) or 'no rolled effects'}{self._storm_notes(key, about)}")
         lines.append(f"  Items with one more rolled effect than their rarity usually has ({len(self.extra)}):")
         for key, about in self.extra.items():
             lines.append(f"    {about['id']}  {about['name']}, {about['rarity']}, power {format_amount(about['power'])}: {', '.join(about['rolled'])}; marks: {about['marks'] or 'none'}{self._storm_notes(key, about)}")
@@ -1146,8 +1124,6 @@ class Recorder:
 
     def _storm_notes(self, key: tuple, about: dict) -> str:
         notes = (["arrived while recording"] if about["new"] else []) + (["gone again"] if about.get("gone") else [])
-        if key in self.storm_answers:
-            notes.append(f"Soulstorm Enhanced in the game, you said: {self.storm_answers[key]}")
         return f"  [{'; '.join(notes)}]" if notes else ""
 
     def write_summary(self) -> Path:
@@ -1253,8 +1229,6 @@ def run(profile: Path, out: Path, once: bool = False, questions: bool = True) ->
         print(f"Beside it, {SHARE_FILE} is the copy that can be sent on. In the editor: Menu > Play recorder… > Share this recording…")
         if interactive:
             recorder.ask_names(ask)
-            if recorder.ask_storm(ask):
-                print(f"Summary written again with your answers: {recorder.write_summary()}")
 
     stamp = saves.profile_stamp(profile)
     next_game_check = 0.0

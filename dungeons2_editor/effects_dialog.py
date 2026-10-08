@@ -15,12 +15,16 @@ from typing import Iterable
 
 from . import recommend
 from .game_style import match_title_bar
-from .hero import TIERS, EffectChoice, Item, _base_of, the
+from .hero import SOULSTORM, TIERS, EffectChoice, Item, _base_of, the
 from .layout import fit_to_contents, text_width
 
 EFFECTS, ENCHANTMENTS = "Effects", "Enchantments"
 ROWS = 8  # choices in view before the list scrolls
 BEST_LINES = 4  # lines kept free for what "Best for" says it did
+SOULSTORM_HINT = (
+    "What the game shows on gear from a Soul Storm's reward chest. Such a piece also has one more effect than its rarity "
+    "usually gets: add that one above."
+)
 BEST_HINT = (
     "Pick what you want from this item, and the editor puts the best effects for it on, out of the ones the game "
     "can roll on this very item. Which of those is best is the editor's own judgement: nobody has measured it."
@@ -40,7 +44,8 @@ class EffectsDialog(tk.Toplevel):
     """Pick the effects and the enchantment for ``item`` from ``gear`` and ``enchantments`` (hero.effect_choices).
 
     ``result`` stays None when the window is closed without applying. Apply leaves ``(effects, enchantment)``
-    there: the effects the item should have, in order, and its enchantment or None.
+    there: the effects the item should have, in order, and its enchantment or None. ``soulstorm`` then says
+    whether the item is to be Soulstorm Enhanced.
 
     ``elements`` are the elements of the artifacts the hero has equipped (Fire, Soul...): "Best for" only picks
     an effect that boosts one element's attacks when that element is in play.
@@ -72,6 +77,7 @@ class EffectsDialog(tk.Toplevel):
         self.enchantment: EffectChoice | None = enchanted.as_choice() if enchanted is not None else None
         self._start = (list(self.effects), self.enchantment)
         self.result: tuple[list[EffectChoice], EffectChoice | None] | None = None
+        self.soulstorm = item.is_soulstorm
         self._groups: dict[str, list[EffectChoice]] = {}
         self._row: str | None = None  # the row of the list whose tiers are on offer
         self._unseen_ok = False
@@ -146,6 +152,15 @@ class EffectsDialog(tk.Toplevel):
         self.clear_button.pack(side="left", padx=6)
         self.count_var = tk.StringVar()
         ttk.Label(under, textvariable=self.count_var, style="Muted.TLabel").pack(side="right")
+        # What the game shows on gear from a Soul Storm's reward chest: a mark on the item, set here like the rest.
+        self.soulstorm_var = tk.BooleanVar(value=item.is_soulstorm)
+        self.soulstorm_box = ttk.Checkbutton(left, text=SOULSTORM, variable=self.soulstorm_var, command=self._show_buttons)
+        self.soulstorm_box.grid(row=3, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        if not item.can_have_effects:
+            self.soulstorm_box.state(["disabled"])
+        ttk.Label(left, text=SOULSTORM_HINT, style="Muted.TLabel", wraplength=text_width(self, 52), justify="left").grid(
+            row=4, column=0, columnspan=2, sticky="w", pady=(2, 0)
+        )
 
         # Right: what can be added.
         right = ttk.Frame(frame)
@@ -247,7 +262,7 @@ class EffectsDialog(tk.Toplevel):
         picked = self._picked_current()
         self.remove_button.state(["!disabled"] if picked is not None and not picked.startswith("own") else ["disabled"])
         self.clear_button.state(["!disabled"] if self.effects or self.enchantment is not None else ["disabled"])
-        changed = (self.effects, self.enchantment) != self._start
+        changed = (self.effects, self.enchantment) != self._start or bool(self.soulstorm_var.get()) != self.item.is_soulstorm
         self.apply_button.state(["!disabled"] if changed else ["disabled"])
         self._show_choice()
 
@@ -461,4 +476,5 @@ class EffectsDialog(tk.Toplevel):
 
     def apply(self) -> None:
         self.result = (list(self.effects), self.enchantment)
+        self.soulstorm = bool(self.soulstorm_var.get())
         self.destroy()

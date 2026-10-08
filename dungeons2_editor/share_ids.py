@@ -4,8 +4,8 @@ Two things go into the report. First, item IDs (like SW.Item.MysticHelmet) and w
 items: what a talisman does when the editor can't add it with its effect yet, and the effects and enchantments
 on weapons, armor and artifacts that the editor's list doesn't have, which it can't add until it has seen them.
 That includes the effect a Unique comes with, for each Unique the editor hasn't seen it on. And an item saved
-with a mark or a field the editor has never met on one (however the game tags a Soul Storm piece, say) goes in
-as the save holds it.
+with a mark or a field the editor has never met on one goes in as the save holds it. That is how the mark of a
+Soul Storm reward was found.
 
 Second, unless you untick it, what your saves show of the game's world that the editor's list of it doesn't
 have (world.py): quests and their steps and how they stand, doors and where they are, minecart stations,
@@ -26,8 +26,8 @@ import webbrowser
 from tkinter import ttk
 
 from .hero import (
-    NOT_ADDABLE_GROUPS, UNSEEN_TAG, Hero, Item, effect_book, game_item, game_items, is_unique_version, item_group, item_kind, local_name,
-    own_effect,
+    KNOWN_MARKS, NOT_ADDABLE_GROUPS, UNSEEN_TAG, Hero, Item, effect_book, game_item, game_items, is_unique_version, item_group, item_kind,
+    local_name, own_effect,
 )
 from .game_style import match_title_bar
 from .layout import fit_to_contents, text_width
@@ -277,9 +277,10 @@ def _unknown_fields(value: object, where: str = "") -> dict[str, object]:
 
 
 def _unknown_marks(item: Item) -> list[str]:
-    """The marks on an item besides the one for an item you haven't looked at, the only one the editor knows."""
+    """The marks on an item besides the ones the editor knows: the one for an item you haven't looked at, and the
+    one for a Soul Storm reward."""
     marks = item.data.get("DynamicPropertyTags")
-    return [str(_plain(mark)) for mark in marks if mark != UNSEEN_TAG] if isinstance(marks, list) else []
+    return [str(_plain(mark)) for mark in marks if mark not in KNOWN_MARKS] if isinstance(marks, list) else []
 
 
 def _as_saved(item: Item) -> dict:
@@ -325,9 +326,9 @@ def _marked_items(heroes: list[Hero]) -> list[tuple[Item, list[str]]]:
 
 def marked_items(heroes: list[Hero]) -> list[tuple[str, str]]:
     """(item ID, the whole item as saved) for items the game saved with a mark or a field the editor has never
-    seen on one. The mark for an item you haven't looked at is the only one any save sent so far holds, so
-    another one is how the editor learns it: what the game tags a Soul Storm piece with, for one. The line asks
-    what the game shows on the item, since a save only has the game's own name for the mark.
+    seen on one. Two marks are known: the one for an item you haven't looked at, and the one for a Soul Storm
+    reward, which a list like this showed. Another one is how the editor learns the next. The line asks what the
+    game shows on the item, since a save only has the game's own name for the mark.
 
     One line for each item that shows something the lines before it don't, up to MAX_MARK_LINES."""
     covered: set[str] = set()

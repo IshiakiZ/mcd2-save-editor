@@ -307,6 +307,18 @@ class EditingTests(ServerTestCase):
         self.assertIn("No effect on gear gives XP. The Eye of Experience talisman does", self.call("set_item_effects", hero="00000000", item=sword, best_for="XP"))
         self.assertIn("best_for is one of: Damage, Survival, Mobility, Loot, Artifacts and souls, Companions.", self.call("set_item_effects", hero="00000000", item=sword, best_for="Fishing"))
         self.assertIn("Give effects or best_for, not both", self.call("set_item_effects", hero="00000000", item=sword, effects=["Looter"], best_for="Loot"))
+        # Soulstorm Enhanced is a mark of its own on the item: on or off, by itself or with the rest.
+        self.assertNotIn("soulstorm_enhanced", best["item"])
+        stormy = self.call("set_item_effects", hero="00000000", item=sword, soulstorm_enhanced=True)
+        self.assertEqual((stormy["done"], stormy["item"]["soulstorm_enhanced"]), ("The Sword: made Soulstorm Enhanced.", True))
+        self.assertIn("made Soulstorm Enhanced", json.dumps(self.call("preview_changes", hero="00000000")["unsaved_changes"]))
+        self.assertIn("soulstorm_enhanced is true or false", self.call("set_item_effects", hero="00000000", item=sword, soulstorm_enhanced="yes"))
+        calmer = self.call("set_item_effects", hero="00000000", item=sword, soulstorm_enhanced=False, effects=["Knockback I", "Looter I"])
+        self.assertEqual(calmer["done"], "The Sword: effects: Knockback I, Looter I; no longer Soulstorm Enhanced.")
+        self.assertNotIn("soulstorm_enhanced", calmer["item"])
+        # Left out, it stays as it is: so the tool's listing gives it no default for a client to fill in.
+        listed = next(tool for tool in self.request("tools/list")["result"]["tools"] if tool["name"] == "set_item_effects")
+        self.assertEqual(sorted(listed["inputSchema"]["properties"]["soulstorm_enhanced"]), ["description", "type"])
         cleared = self.call("set_item_effects", hero="00000000", item=sword, effects=[])
         self.assertEqual([effect["name"] for effect in cleared["item"]["effects"]], ["Healing Smite"])
         gone = self.call("set_item_effects", hero="00000000", item=sword, enchantment="none")

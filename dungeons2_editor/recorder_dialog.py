@@ -1,8 +1,8 @@
 """The play recorder's window: start it, play, and read what the game wrote.
 
 The recording itself is ``recorder.Recorder``; this watches the save folder for it from the window's own
-timer, shows what it says as it happens, takes your notes, and at the end asks the Soul Storm check's
-questions. It reads your saves and writes only to the recordings folder.
+timer, shows what it says as it happens, and takes your notes. It reads your saves and writes only to the
+recordings folder.
 
 Share this recording… shows the copy of a recording's summary that can be sent on (``to_share.txt``: no date, no
 time of day, nothing of where the saves are), to copy or to post as a GitHub issue. The recording itself, which
@@ -178,21 +178,11 @@ class RecorderDialog(tk.Toplevel):
             self._wait(recorder.POLL, self._tick)
 
     def _wrap_up(self) -> None:
-        """Read the saves once more, write the summary, and ask what only you can say: whether the game shows
-        Soulstorm Enhanced on the items the Soul Storm check picked out."""
+        """Read the saves once more and write the summary."""
         assert self.recorder is not None
         self.recorder.look()
         self._say("\n" + self.recorder.summary())
         self._say(f"Summary written to {self.recorder.write_summary()}")
-
-        def ask(question: str) -> str | None:
-            answer = messagebox.askyesnocancel(
-                "Play recorder", f"Does the game show Soulstorm Enhanced on this item?\n\n{question.strip(' =')}\n\nCancel skips the rest.", parent=self
-            )
-            return None if answer is None else "y" if answer else "n"
-
-        if self.recorder.storm_questions() and self.recorder.ask_storm(ask):
-            self._say(f"Summary written again with your answers: {self.recorder.write_summary()}")
 
     def stop(self) -> None:
         if self.recorder is None:

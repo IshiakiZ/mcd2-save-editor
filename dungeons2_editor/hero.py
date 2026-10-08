@@ -36,6 +36,13 @@ COSMETIC_PREFIX = "SW.Item.Cosmetic."
 RARITY_PREFIX = "SW.Rarity."
 RARITIES = ("Common", "Rare", "Special", "Unique")
 UNSEEN_TAG = "SW.Item.Property.Dynamic.Unseen"
+# The mark the game puts on an item from a Soul Storm's reward chest, which it shows as Soulstorm Enhanced. A
+# player's save has it on a Special with one more rolled effect than a Special gets (/issues/33), and it was
+# checked in the game: an item the editor put the mark on showed the tag there, and the game kept the mark through
+# its own saves.
+SOULSTORM_TAG = "SW.Item.Property.StorminatorReward"
+SOULSTORM = "Soulstorm Enhanced"
+KNOWN_MARKS = (UNSEEN_TAG, SOULSTORM_TAG)  # the marks the editor has seen on an item in a save
 EMPTY_SLOT = "None"  # an entry's EquippedSlot when it isn't equipped
 MAX_STAT = 2_147_483_647
 MAX_ITEM_POWER = 1_000_000
@@ -1001,6 +1008,12 @@ class Item:
         return not self.is_cosmetic and self.kind in EFFECT_KINDS
 
     @property
+    def is_soulstorm(self) -> bool:
+        """Whether the game shows the item as Soulstorm Enhanced: it carries the mark of a Soul Storm reward."""
+        marks = self.data.get("DynamicPropertyTags")
+        return isinstance(marks, list) and SOULSTORM_TAG in marks
+
+    @property
     def archetypes(self) -> tuple[str, ...]:
         """Its archetypes (Fighter, Ranger...): with its kind, they decide which effects the game rolls on it."""
         return archetypes(self.tag)
@@ -1044,7 +1057,8 @@ class Item:
     def effect_lines(self) -> list[str]:
         """What the item's effects are, a line each. A talisman also says which level it's at and how
         strong its effect gets at the levels to come."""
-        lines = [f"Enchanted: {effect.text}" if effect.is_enchantment else effect.text for effect in self.effects]
+        lines = [SOULSTORM] if self.is_soulstorm else []
+        lines += [f"Enchanted: {effect.text}" if effect.is_enchantment else effect.text for effect in self.effects]
         levels = self.progression.get("ItemLevels")
         if self.is_talisman and isinstance(levels, list) and levels and isinstance(self.level, int) and 0 <= self.level < len(levels):
             needed = self.next_level_xp
@@ -1376,6 +1390,29 @@ class Hero:
             # Before an enchantment: the game rolls an item's effects when it makes it, and enchants it later.
             at = next((position for position, other in enumerate(batches) if other.get("TypeTag") == _ENCHANTMENT), len(batches))
             batches.insert(at, {"TypeTag": _REROLLABLE, "EffectsInThisBatch": made})
+        self._mark_unseen(item.data)
+
+    def set_soulstorm(self, index: int, on: bool) -> None:
+        """Make a weapon, armor piece or artifact Soulstorm Enhanced, or take that off.
+
+        It's the mark the game saves on an item from a Soul Storm's reward chest (SOULSTORM_TAG, among the
+        item's DynamicPropertyTags) and nothing else: such an item also has one more rolled effect than its
+        rarity usually gets, which is set_effects' to give.
+        """
+        item = self.item(index)
+        if not item.can_have_effects:
+            raise ValueError(f"The {item.name} can't be {SOULSTORM}: the game gives that to weapons, armor and artifacts.")
+        marks = item.data.get("DynamicPropertyTags")
+        if not isinstance(marks, list):
+            if not on:
+                return
+            marks = item.data["DynamicPropertyTags"] = []
+        if on == (SOULSTORM_TAG in marks):
+            return
+        if on:
+            marks.insert(0, SOULSTORM_TAG)
+        else:
+            marks.remove(SOULSTORM_TAG)
         self._mark_unseen(item.data)
 
     def set_enchantment(self, index: int, choice: EffectChoice | None) -> None:
@@ -1989,6 +2026,8 @@ def describe_changes(before: dict, after: dict) -> list[str]:
             parts.append(f"enchanted with {now.title}" if now else "enchantment taken off")
         if other.tag == item.tag and item.own_effect_missing and not other.own_effect_missing:
             parts.append("given its own effect")
+        if other.is_soulstorm != item.is_soulstorm:
+            parts.append(f"made {SOULSTORM}" if other.is_soulstorm else f"no longer {SOULSTORM}")
         if other.is_talisman and other.level != item.level and isinstance(item.level, int) and isinstance(other.level, int):
             parts.append(f"level {item.level + 1} → {other.level + 1}")
         if other.is_talisman and other.xp != item.xp:
@@ -2001,7 +2040,7 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         if key not in old_items:
             equipped = f", {item.where[0].lower() + item.where[1:]}" if item.equipped_slot else ""
             grade = "" if item.ungraded else f" ({item.rarity}, power {format_amount(item.power)})"
-            lines.append(f"Added {_listed(item)}{grade}{equipped}")
+            lines.append(f"Added {_listed(item)}{grade}{equipped}" + (f", {SOULSTORM}" if item.is_soulstorm else ""))
     return lines
 
 
