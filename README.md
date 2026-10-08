@@ -16,91 +16,27 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
 
 ## Features
 
-- **Looks like the game:** your gear on the left (weapons, armor, artifacts, talismans) as tiles in their rarity's
-  colour, the rest of your inventory in the middle, and the item card on the right, with level, gear power and your
-  currencies along the top, just like the game's inventory screen. Click a tile to change it on its card, double-click
-  an empty slot to put something in it, and right-click any tile for its actions.
-- **Two looks:** **Original**, the one it opens in, and **Liquid Glass**, with rounded glass panels and buttons
-  and bars that float clear of the window's edges. **Menu → Look** switches between them on the spot, and the
-  editor remembers your choice through updates. The colours, the lettering and the item tiles' pictures are the
-  game's in both.
-- **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the Merchant, Enchantsmith and Blacksmith
-  levels (under **Stats & town**). Click a number to change it; changes apply as you type, and mistakes show up in
-  red. The editor also tells you which of the three town vendors your hero has unlocked.
-- **Items:** change rarity, power and count, equip or unequip, turn an item into another one, make copies or
-  delete them. Every gear slot is shown, including the ones your level hasn't opened yet.
-- **Effects and enchantments:** give a weapon, armor piece or artifact the effects you pick (the game rolls a Rare
-  item one and a Special item two, and never more than four), and a weapon or armor piece an enchantment. The editor
-  writes them exactly as a real save holds them, so it offers the ones it has seen so far, plus anything on an item
-  in your own saves, which it can copy to any other item. See [what it can't do yet](#what-it-cant-do).
-- **Best for:** in the effects window, pick what you want from the item (damage, survival, mobility, loot, artifacts
-  and souls, or companions) and the editor puts its picks on, out of the effects the game can roll on that very item.
-  A Sword is Fighter gear, so for damage it gets Sharpness, Duelist, Swiftness and Critical Hit; a Ranger's boots
-  get Speed for mobility, and a Tank's chestplate is told the game rolls no mobility effect on it. See
-  [how it picks](#what-it-cant-do).
-- **Talisman levels:** an item's card shows a talisman's level, and **Level up** raises it a level, saved exactly
-  as the game saves a level-up. (A companion's talisman levels up another way, so it gets **Ready to level up**:
-  one XP short, and the game does the rest the next time you earn XP with it on.)
-- **Enchantment books:** the **Books** tab shows the books your hero carries. **Add every book** gives it all 31
-  the editor knows in one go, **Add items** adds them one at a time, and Delete takes one away. Each is saved exactly
-  as the game saves a book it hands you. See [what's known about them](#what-it-cant-do).
-- **Add items:** pick any of the game's 180 weapons, armor pieces, artifacts and talismans, with pictures, search
-  and a category filter, and tick **Equip it** to put it straight on your hero. All 116 Uniques are there too: pick
-  Unique rarity and a Sword is added as The Burning Blade, and kits come with their Uniques. A Unique comes with
-  the effect of its own, saved the way the game saves it, for 115 of the 116
-  ([the one left](#what-it-cant-do) says so). Items show their in-game names.
-- **Presets:**
-  - **Goals:** Most money, Most XP, Best loot, Upgrade my gear, Fully upgraded town and Secret talisman hunt.
-  - **Most powerful gear:** the best melee weapon, ranged weapon, armor, artifacts and talismans.
-  - **Kits:** six complete loadouts from MetaBot's data-backed builds (Melee damage, Greatbow sharpshooter,
-    Close-range crossbow, Humbler tank, Soul caster and Companion support).
+- **Looks like the game:** your gear, your inventory and the item's card, laid out like the game's own inventory
+  screen, in two looks: **Original** and **Liquid Glass**.
+- **Stats:** emeralds, Echo Shards, level, XP, enchantment points, and the town's Merchant, Enchantsmith and
+  Blacksmith levels.
+- **Items:** add any of the game's 180 items and all 116 Uniques, with pictures and search. Change rarity, power
+  and count, equip, copy or delete.
+- **Effects and enchantments:** pick them yourself, or let **Best for** pick for damage, survival, mobility, loot,
+  artifacts and souls, or companions.
+- **Talismans and enchantment books:** level a talisman up, and add any of the game's 32 books, so the Enchantsmith
+  offers their enchantments.
+- **Presets and kits:** most money, most XP, best loot, the most powerful gear, or one of six complete builds, added
+  and equipped in one click.
+- **World map and play recorder:** see the ground your hero has explored and how far it has got, and write down
+  what the game saves while you play.
+- **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
+  ask for what you want.
+- **Safe saving:** a backup before every save, one-click restore, and no saving while the game runs.
+- **And more:** Simple and Advanced modes, sorting and filters, item pictures, a **Launch game** button, and an
+  **Update** button when a newer version is out.
 
-  Pick the item power and rarity, and the preset adds and equips everything. A kit's gear comes with effects, and
-  once your hero has unlocked the Enchantsmith in the game, every weapon and armor piece gets an enchantment too:
-  the one the build names where the editor can write it, and otherwise the editor's own pick for that kind of gear,
-  a different one on each piece. The kit also adds the books of the enchantments the build names, so the
-  Enchantsmith offers those even where the editor can't write them yet. Each preset shows what it will change, and
-  lists the best enchantment for every piece, what it does and where its book drops.
-- **Let an AI do it:** connect Claude or another AI assistant over MCP, and ask it for what you want ("give my hero
-  the best melee kit at power 30"). It shows you its changes before anything is written. See
-  [Let an AI customise your hero](#let-an-ai-customise-your-hero-mcp).
-- **Sorting and filters:** items by most powerful, highest item level, most item XP, rarest, most effects,
-  newest, name or kind, and filters for each kind of item and the Village Merchant's stock; heroes by power, level,
-  XP or emeralds.
-- **Pictures:** item pictures from the Minecraft Wiki, downloaded on request, or your own. The editor cuts the item
-  out of the wiki's pictures so it sits on the game-style tiles; items without a picture get a pixel-art icon. For an
-  item the wiki doesn't have, snip its tile in the game (Windows+Shift+S), pick it in the editor and press
-  **Paste picture**: the editor cuts the item out and keeps it on your PC.
-- **Names you teach it:** when the editor doesn't know what the game calls an item, press **Name it…** on its card.
-  The name stays on your PC, and **Share item IDs…** can send it on so everyone gets it. When your saves hold
-  item IDs, effects or enchantments the editor's list doesn't have, an item the game marks some way the editor
-  hasn't seen, or parts of the game's world it doesn't know yet (quests, doors, minecart stations), a **Share item
-  IDs** button with the count appears at the top; nothing is sent unless you send it.
-- **Simple and Advanced modes:** Simple looks like the game, keeps numbers within the game's caps and opens gear
-  slots with your level, as the game does. Advanced is the technical view: every item in a sortable list, a tree of
-  every value in the save, the raw JSON, the settings save and raw item IDs.
-- **World map:** **Menu → World map…** draws the ground your hero has explored, straight from its save and the
-  same way round as the game's own map: the clearer the fog over a square, the greener, with every door you've
-  found on it. Scroll to zoom, drag to move, tick **Names** to label the dots. Beside it is how far the hero has
-  got: the story quests, every quest and its steps, minecart stations by the game's names, what you may have
-  missed, and the game's own counts (chests opened, achievements). It's a view: nothing is changed.
-- **Play recorder:** **Menu → Play recorder…** writes down what the game saves while you play: items picked up
-  and changed, stats, every quest step, minecart stations, doors, cutscenes, chests you open and the ground you
-  explored, each with where it happened. What it records puts more on the world map: where a station, a cutscene
-  or a chest turned up. **Show the map** opens the map from there. It only reads your saves, and everything it
-  writes stays on your PC.
-- **Launch game:** a button next to **Save to game** starts Minecraft Dungeons II, the Xbox app's copy or
-  Steam's, whichever your saves belong to. With unsaved changes it asks first, since the editor can't save while
-  the game runs.
-- **What's new:** the first time a new version opens, it shows what changed, and **Menu → What's new…** shows it
-  again. The notes come with the editor, so nothing is fetched.
-- **Updates itself:** when a newer version is out, an **Update** button appears. Press it and the editor downloads
-  the new version from GitHub, checks it and replaces itself; your saves, backups, pictures and settings aren't
-  touched.
-- **Safe saving:** a backup before every save, one-click restore, no saving while the game runs, a read-back check
-  after writing, and an automatic rollback if anything fails. If the game saves your hero while the editor is open,
-  the editor loads the new version, or re-applies your unsaved changes to it, so neither side's progress is lost.
-  If a game update has changed how heroes are saved since the editor was last checked, it says so before you save.
+Every feature, in detail: **[Features](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features)** in the wiki.
 
 | Add items | Kits |
 |---|---|
@@ -124,79 +60,34 @@ release. There's nothing to install, and it finds your saves automatically.
 3. Open **MCD2SaveEditor.exe**. Leave it in its folder: it needs the `_internal` folder next to it.
 4. Your hero opens (pick another at the top left), make your changes, and press **Save to game**.
 
-Windows may say **"Windows protected your PC"** because the .exe isn't code-signed. Click **More info → Run
-anyway**. The editor keeps backups, pictures and settings in `%LOCALAPPDATA%\MCD2 Save Editor`, not in its own
-folder, so a newer version can simply replace the folder. That's what the **Update** button does: when the editor
-opens it asks GitHub whether a newer version is out, and the button appears if one is.
+Good to know:
 
-**Running from source instead:** install [Python 3.10 or newer](https://www.python.org/downloads/) (its standard
-installer includes the Tkinter this uses), download this repository (**Code → Download ZIP**), unzip it and
-double-click **Start Save Editor.bat**. Run that way, backups, pictures and settings stay in the unzipped folder.
-Install [Pillow](https://pypi.org/project/pillow/) too (`py -m pip install pillow`) for smoother item pictures; the
-.exe includes it.
+- **"Windows protected your PC"?** The .exe isn't code-signed. Click **More info → Run anyway**.
+- **Try a small change first** (a few emeralds, say) and check it in the game. Every save makes a backup first, and
+  **Menu → Restore a backup…** puts one back.
+- **Steam:** the editor finds your saves by itself, as it does the Xbox app's. On **Linux** and on a **Mac** it runs
+  from its source: see [Linux and Mac](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Linux-and-Mac).
+- **Rather not run an .exe?**
+  [Run it from source](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Running-from-source) with Python 3.10 or
+  newer.
 
-**Steam version:** the editor finds your saves by itself, on Windows
-(`%LOCALAPPDATA%\Dungeons2\Saved\SaveGames`) and on Linux inside the game's Proton prefix
-(`~/.local/share/Steam/steamapps/compatdata/1912410/pfx/drive_c/users/steamuser/AppData/Local/Dungeons2/Saved/SaveGames`,
-also for Flatpak/Snap Steam and games on other Steam library drives). Hero saves are the `Character<id>.sav` files.
-If it can't find them, use **Menu → Open a save folder…** or `--profile <folder>`. On Linux, run it from source with
-**Start Save Editor.sh** (needs Python 3.10+ with Tkinter: `sudo apt install python3-tk` on Debian/Ubuntu). On a
-Mac the game runs through a Windows layer such as CrossOver or Whisky, and the editor looks in their bottles (and in
-a plain Wine prefix, `~/.wine`) for the same `SaveGames` folder; run it from source by double-clicking
-**Start Save Editor.command** (the first time, right-click it and choose **Open**; it needs Python 3.10+ from
-[python.org](https://www.python.org/downloads/macos/), whose installer includes Tkinter). Close the
-game, and let Steam finish syncing, before saving.
+More help: [Getting started](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Getting-started) ·
+[Troubleshooting](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Troubleshooting)
 
 ### Antivirus warnings, and checking the download
 
-The editor is a Python program, packaged for Windows with PyInstaller. Scanners that judge a file by its shape flag
-many PyInstaller programs, because malware gets packaged the same way: the 1.4.0 .exe was flagged by 6 of 71 engines
-on VirusTotal, all of them generic or machine-learning verdicts. To give them less to trip over, the download is now a
-plain folder (the .exe no longer unpacks itself every time it starts), its launcher is compiled during the build
-(not PyInstaller's ready-made one, which malware also carries), and the .exe says what it is and which version.
-The 1.8.1 download was flagged by none of 66 engines
-([its VirusTotal page](https://www.virustotal.com/gui/file/0164cb93bcfe47a60b77015e0722fdf7584c31f54c230220612c5bc89df2e009)).
-A scanner can still get a later version wrong, so the checks below stay worth knowing.
-
-You don't have to take anyone's word for what's in the download:
-
-- **Nobody builds it by hand.** GitHub Actions builds every release from this repository's source and attaches it
-  ([the workflow](.github/workflows/release.yml)).
-- **You can check that.** With the [GitHub CLI](https://cli.github.com),
-  `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms the zip you downloaded is the
-  one that workflow built, and from which commit. It works on the `MCD2SaveEditor.exe` inside as well.
-- **The source is all here.** The editor goes online for three things: when it opens, it asks GitHub whether a
-  newer version is out; **Update** downloads that version; and it downloads item pictures from minecraft.wiki when
-  you ask. Links open in your browser. Nothing about you or your saves is sent anywhere. The edition built for
-  Nexus Mods, which doesn't host programs that go online, does none of the three: everything that would open a
-  connection is switched off when it's built (`dungeons2_editor/edition.py`), and the build checks that it refuses.
-- **You can skip the .exe** and run it from source, as above.
-
-### Code signing
-
-**Releases are not code-signed**, which is why Windows may warn the first time you open the .exe. Free signing for
-open-source projects (the [SignPath Foundation](https://signpath.org)'s programme) is for projects that are already
-widely known, and this one isn't there yet. Until it is, the build attestation above is the way to check that a
-download is the one built from this source.
+Antivirus tools sometimes flag programs packaged the way this one is (with PyInstaller), and releases are not
+code-signed. You don't have to take anyone's word for the download: GitHub Actions builds every release from this
+repository's source, and `gh attestation verify MCD2SaveEditor.zip --repo IshiakiZ/mcd2-save-editor` confirms that
+your zip is that build. The details are in
+[Safety and privacy](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Safety-and-privacy).
 
 ### Privacy
 
-The editor never sends your saves, your hero's data or anything about you anywhere. It contacts
-other computers in three cases only. When its window opens, it asks GitHub (api.github.com) which version is the
-latest; that request carries only what any web request does, your IP address and the editor's name and version.
-When you press **Update**, it downloads that version from GitHub. When you ask for item pictures, it downloads them
-from minecraft.wiki. Links open in your own browser.
-
-**Try a small change first** (a few emeralds, say), start the game and check it before making big ones. Every
-save first copies your whole save folder into `backups\`, and **Restore a backup…** (in **Menu**) puts any of those
-back: pick one and press Restore. It writes a backup's saves over the ones in your save folder, so it can't bring
-back a hero you've since deleted in the game. Backups contain your sign-in token, so don't share them.
-
-> **Versions before 1.2.3 could lose edits and progress.** They wrote save files differently from the game (they
-> kept the old cloud ID), so the Xbox app's cloud sync could bring the old data back. Edits then didn't show up in
-> the game, and in one case the hero went back to a much older copy. 1.2.3 writes saves the way the game does. The
-> game's own cloud save (on by default) can also bring back an older copy of a hero, so check one small change in
-> the game before making more.
+The editor never sends your saves, your hero's data or anything about you anywhere. It goes online for three things
+only: when it opens, it asks GitHub whether a newer version is out; **Update** downloads that version; and it
+downloads item pictures from minecraft.wiki when you ask.
+[More](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Safety-and-privacy#privacy).
 
 ## Let an AI customise your hero (MCP)
 
@@ -226,169 +117,32 @@ your sign-in, account or device data.
 
 ## What it can't do
 
-- **Online heroes** are stored on the game's servers, so no save editor can change them. When you create a hero,
-  the game makes you pick online or offline for good; this editor works with **offline** heroes.
-- **Item IDs come from real saves.** A save stores each item under an internal name, which often isn't the
-  name you see: the Riftslasher is `SW.Item.CurvedLongsword`, the Sculk Digger set is `CaveCrawler` and the Amethyst
-  Lens is `SW.Item.Talisman.RangedBuff`. The game's list of those names is in its encrypted content files, and the
-  editor doesn't break that encryption, so it knows the names players have reported from their saves (all 180
-  items by now) and would work any other out from the in-game name. (The equipment slots are different: the game's
-  readable script cache names all 12, so equipping is exact.) In testing, the game removed items whose name was a
-  wrong guess and kept the rest of the hero. Items whose internal name has been seen in a real save are marked
-  **Confirmed**; the rest are **Unconfirmed**, and if a guess is wrong the game may drop the item. The editor asks
-  before adding an unconfirmed item, and Restore… undoes it. Items you find in the game become confirmed
-  automatically, and so does an item you added under a guess once the game has kept it. An ID only counts as seen
-  when the game itself vouches for it: it's in the game's collections, in the Village Merchant's stock, or on an
-  item the game has shown you. What the editor wrote doesn't count, or its own guesses would come back looking
-  confirmed. To help everyone else, press **Share item IDs…** on the Help page (or run
-  `python -m dungeons2_editor ids`): it lists the IDs in your saves that the editor doesn't know yet and opens a
-  GitHub issue with those IDs and what the game saved with those items (their effects, and any mark or field
-  the editor has never seen on an item; see below). Under them, unless you untick it, goes what your saves show of
-  the game's world that the editor doesn't know yet (see below). Nothing else from your save.
-- **A Unique has an ID of its own.** The Burning Blade, the Unique Sword, is `SW.Item.Sword_Unique1`, and the
-  Oracle Tights are `SW.Item.MysticLeggings_Unique`. All 116 have now been seen in real saves (the last one, the
-  Packleader Muzzle, in a player's collections), and every one is its base item's ID with `_Unique1` (weapons) or
-  `_Unique` (armor) on the end. So adding a Unique, or making an item you own Unique, gives it the ID the game uses.
-- **A talisman is added with what it does.** A talisman has no rarity or power. A save holds what it does at
-  each of its three levels instead: for the Sigil of Beeswax that's `SW.Effect.HealthBoost` at 1.2, 1.25 and 1.35,
-  and for a companion's talisman like the Tasty Bone, a tag at each level. Players have shared this for all 24
-  talismans, so the editor adds each the way the game saves it. (One oddity it keeps: the game spells the Wonderful
-  Wheat's ID with a small "sw", `sw.Item.Talisman.Llama`.) A talisman added by a version before 1.7.1, or by a
-  later one that didn't know it yet, has no effect saved and may do nothing in the game; the editor points those
-  out, and you can delete them and add them again.
-- **A talisman's level: set by the editor, except for a companion's.** A real save showed how the game saves a
-  level-up: the level goes up by one, the talisman's effect becomes the next level's (the item carries every level's
-  effect with it), and its XP carries on from where it was. **Level up** does exactly that. Done with the editor to
-  three talismans in the save from before, it gave the very entries the game had written, key for key. Level 3
-  follows the same pattern, but no save with a level-3 talisman has been seen yet. A companion's talisman (the Tasty
-  Bone and the like) levels up by tags, which hasn't been seen either: for those, **Ready to level up** puts it one
-  XP short of the next level (18,480 XP for level 2), and the next XP you earn with it equipped does the rest.
-- **Enchantment books: saved like the game's, and the Enchantsmith takes them.** The developer's own save shows
-  how the game saves a book it has just handed over: seven of them, alike in everything but the ID. A book the editor
-  adds comes out as that very entry, key for key, whatever item it borrows the layout from. A book has no rarity or
-  power, and a hero has one of each, so there's nothing on one to change: you add it or delete it. Checked in the
-  game: the developer added 17 books with the editor, the game kept every one through its own saves, and the
-  Enchantsmith offered Fire Aspect and Poison Fog on a melee weapon, two enchantments the hero had no book for
-  before. So the Enchantsmith goes by the books in your inventory, as the game's own script names suggest (its
-  `GetAllOwnedEnchantmentBooks` hands back inventory entries), and a book stays there after you've used it. When
-  the game hands you a book it also files it in its collections and counts it towards an achievement. The editor
-  leaves both alone, as it does for every item, and the game didn't add the editor's books to either afterwards, so
-  a book added here counts for neither. The editor knows all 32 of the game's books by their save ID
-  (MetaBot lists 34 enchantments, two of them built into Uniques), and 27 of them by name as well. The other five
-  came from players' collections with their IDs alone, so they go by those: Burst Bowstring, Guarding Strike, Multi
-  Potion, Shadow Strike and Soul Aspect. MetaBot's enchantments that no book has been tied to are Bottomless Brew,
-  Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot: five IDs without a name and five names without a book,
-  so they most likely pair off. Which goes with which is for someone who has the book to say, not for a guess. If
-  you have one, pick it, press **Name it…**, and **Share item IDs…** sends the name on. Four names were settled in
-  the game itself: the enchantments a save calls Blowback, Borealis, Channeling and Lingering Power, put on plain
-  items with the editor, show there as Crash Landing, Ender Mines, Lightning Surge and Power Amplifier, and the
-  one saved as Thundering is Thundering. The one saved as Soul Fire Aspect shows as Soul Blast; no book has that
-  ID, so the Soul Aspect book, most likely its own, keeps its ID until a save ties the two.
-- **Effects and enchantments: only the ones seen in a save.** The game keeps its list of effects in its encrypted
-  files, so the editor learns how each one is saved from real saves: 60 gear effects and 21 enchantments so far
-  (Ancient Alchemy at every tier; Healing Smite, Piercing and Health Synergy at tiers I and III; Ender Quiver and
-  Somersault at II and III; and at tier III Chain Reaction, Thundering, Fire Aspect, Poison Fog, Gravity Pulse,
-  Springload, Swirling, Barrier Brew, Artifact Amplifier, Cow Stampede, Crash Landing, Ender Mines, Lightning
-  Surge, Power Amplifier and Soul Blast), plus whatever is on your own items. The editor knows what the game calls all 60 effects, and the
-  game's own numbers for them are published (MetaBot's table), so it also offers the tiers nobody has sent yet; it
-  marks those as not seen and asks before adding one. An enchantment's saved strength isn't
-  the number the game shows, so each tier of each enchantment has to be seen once: enchant one item with it in the
-  game and the editor can put it on any other, and **Share item IDs…** sends it on for everyone. For some
-  enchantments even that number isn't fixed: two players' saves hold Power Amplifier at tier III with
-  two different numbers, and the editor writes the first it saw. The effects the
-  game rolls and the enchantment are what you can change. Nobody has tried every effect on every kind of item, so
-  check the result in the game.
-- **The Soulstorm Enhanced tag can't be put on an item yet.** Gear from Soul Storm reward chests carries one
-  effect more than its rarity usually gets, and that much the editor can already do: **Change effects…** lets you
-  give an item the extra one. The tag the game shows on such a piece is another matter: pieces given the extra
-  effect that way show no tag in the game, so the effect alone isn't what the game goes by. The game's readable script
-  files have a check for it (`IsSoulStormGearItem`) and nothing about where it's kept, and no save the editor has
-  seen holds a piece with it: the only mark on any item in them is the one for an item you haven't looked at. So
-  **Share item IDs…** now also lists any item saved with a mark or a field the editor has never met, whole, as the
-  save holds it (less its pickup time and random seed; a number, a yes or no or one of the game's own names is
-  passed on from a field it doesn't know, and any other text there is left out). A list from a save with a Soul
-  Storm piece will show how the tag is saved, and then the editor can write it.
-- **The world is learned from saves too, and Share item IDs… sends what yours add.** The game's quests, doors,
-  minecart stations and regions are in its encrypted files, so the editor keeps a list of the world the way it
-  keeps one of items: from saves. It starts with what the developer's own hero has seen, which is early in the
-  story: 15 quests with their 318 steps, 35 doors, 5 of the 19 minecart stations, 5 regions. A hero further along
-  shows the rest, so **Share item IDs…** now adds, under the items, what your saves show of the world that the
-  list doesn't have: each new quest with its steps and how they stand, each new door with its place, new minecart
-  stations, regions (with the save's picture of the fog over one that's new, so the editor can work out how it
-  lies), cutscenes, areas, achievements and puzzle pieces such as a cleared roadblock. If you've made play
-  recordings it adds where they saw chests opened and where stations and cutscenes turned up. All of it is in the
-  game's own names and numbers: no hero's ID or name, nothing from your inventory beyond the items' part, nothing
-  about when you played. You see every line before anything is sent, and a tick box under the list leaves the
-  world out. This is what the editor needs before it can do more with the map, and before it could ever change how
-  far a hero has got: the names and steps of the quests your hero has met and the developer's hasn't.
-  `tools/build_world_list.py` puts a list someone sent into the editor's own.
-- **The play recorder and the world map see what the game saves, and nothing else.** The recorder reads your save
-  files each time the game writes them. It doesn't read the game's memory or its screen, so neither can tell you
-  about a chest or a secret you haven't touched: the game writes those to a save only once you have, and where
-  they are is in its encrypted files. What they can say is what a save gives away. The map is the save's own
-  picture of the fog over each region, a square of it being 32 metres of ground, and a door's position is the
-  save's own; how the picture lies on the world is measured from the doors, to about a third of a square. A
-  minecart station, a cutscene or a chest is placed by the ground whose fog had just cleared when it turned up:
-  around there, within a few squares, or in a place you went into from there. Chests are counted by the game's
-  own count of chests opened; a save doesn't say which chest it was. What the game calls an area, a minecart
-  station and a quest, and how many dungeon and rift spots an area has, come from MetaBot's map. The game opens
-  only a few of those spots at a time, so the list of what you may have missed says how many you've found, not
-  that the rest are waiting. A recording holds every version of your hero save the game wrote while it ran, so
-  treat the recordings folder like the backups folder: it's yours, and not for posting whole.
-  Changing how far a hero has got isn't something the editor does yet: a save lists only the quests its hero has
-  met, so the later ones have to come from saves of heroes further along, and nobody has tried what the game does
-  with a quest marked done by hand.
-- **Best for is a recommendation, not a measurement.** Which effects an item can get is the game's rule: it
-  rolls them from the pool of the item's slot (any weapon, any artifact, all gear) and from one pool for each
-  archetype the item carries (a Greatbow is Fighter and Ranger gear). MetaBot lists every item's archetypes and
-  every effect's pools, and players' lists bear it out: of the 342 effects the game rolled on the items in them,
-  338 are in the pool this predicts, and the other four are on items their owner had changed with the editor.
-  All nine effects on the next drops in the developer's own game were in their item's pool too.
-  Which of an item's effects serve a goal best is the editor's own judgement, from what the game says each effect
-  does: a bonus that always applies comes before one that needs a critical hit or a charged shot, and that before
-  one that needs the right enemy or moment. Nobody has measured one effect against another. A pick is at the best
-  tier a real save has shown, it is never the effect a Unique already comes with, and an effect that boosts one element's attacks is only picked when your hero has an
-  artifact of that element equipped. No effect on gear gives XP: The Eye of Experience talisman does (Presets,
-  Most XP). You can still add any effect to any item by hand; the window says when the game wouldn't roll it there.
-  The game keeps such an effect (The Close Ranger wore a Ranger's Marksman through eleven of the game's own saves);
-  whether it does anything there hasn't been tested.
-- **A Unique's own effect: 115 of the 116.** In the game a Unique has an effect of its own, the one its card
-  describes (the Prime Enchanter's Gauntlets' waves of lightning and ice, say). The game saves it on the item, apart
-  from the effects it rolls, and the editor writes it exactly as a real save holds it: for the 96 Uniques that
-  players' lists showed it on, and for 19 more that the game's files describe in the very same words as one of
-  those (the Slaymore and the Humbler Greaves both deal 50% more damage to secondary targets, and wherever two
-  such Uniques have both been seen, they are saved alike: later lists held eight Uniques the editor had worked
-  out that way, each saved exactly as it wrote them). Rebuilt with the editor, all 180 items on three players'
-  lists came out the same as the game's own, key for key. And it works in the game: the Prime Enchanter's
-  Gauntlets, added with the editor, came with their effect in play. The editor works none of these out by rule (a few are
-  enchantments under another name, and the game spells two of them its own way), so the one Unique nobody has
-  sent, the Packleader Paws, is added without its own effect: the editor says so before you add it, and on its
-  card. A Unique made by an older version is without its own effect too; its card
-  has a button, **Add its own effect**. **Share item IDs…** lists the own effect of any Unique of yours that the
-  editor has none for, or would write differently. (One it writes the same way proves nothing, since the Unique
-  may be one you made with the editor.)
-- **The Mac is newer still.** The editor finds saves in CrossOver's and Whisky's bottles and can tell when the game
-  is running there. The tests of everything but the window pass on GitHub's Macs; the window's own tests can't run
-  there yet (the window comes up, but the tests wait for Tk to go quiet and on a Mac it doesn't), and nobody has
-  yet told the developer how it goes on a real one. Try a small change first, and say how it went. If your saves are somewhere else, **Menu → Open a save
-  folder…** takes any `SaveGames` folder.
-- **Steam support is new.** Players of the Steam version wrote it and tested it on a real offline hero (on Linux
-  with Proton): loading, editing, saving and restoring. The developer plays the Xbox app version, so try a small
-  change first and [report](https://github.com/IshiakiZ/mcd2-save-editor/issues) anything odd. If your Steam saves
-  are the Unreal Engine binary kind (they start with `GVAS`) instead of JSON, they show up as read-only. Steam
-  Cloud, if on, uploads the edited file when the game closes.
-- **If you're asked which save to keep.** After an edit, the game, the Xbox app or Steam may ask whether to keep the
-  cloud's save or this PC's. Keep this PC's: that's the one with your changes.
-- **Very high power may be undone.** In testing, a Unique Sword, a Heavy Crossbow at power 10 and level 10 all
-  stuck, and a hero set to level 100 has kept it since (the game went on to drop gear at power 150 for it). But in
-  an earlier save with level 100 and twelve items at power 135, the game put the level back to 1 and removed the
-  items. Most of those twelve had guessed IDs, which now looks like the likelier cause; stay close to what the game
-  gives at your level to be safe.
-- Item power caps and some other numbers come from community datamines, not from the game's own tables.
+- **Online heroes.** They're stored on the game's servers, so no save editor can change them. This editor works
+  with **offline** heroes.
+- **Anything it hasn't seen in a real save.** The game's own lists are in its encrypted files, which the editor
+  doesn't break, so it learns how things are saved from players' saves. So far: all 180 items and 116 Uniques, all
+  60 gear effects, all 32 enchantment books, and 21 of the 32 enchantments. An effect tier nobody has sent yet is
+  marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
+  add; nothing is sent unless you send it.
+- **Still missing:** the own effect of one Unique (the Packleader Paws), the names of five enchantment books, the
+  other enchantments and some tiers, the Soulstorm Enhanced tag, and levelling a companion's talisman outright
+  (**Ready to level up** leaves it one XP short, and the game does the rest).
+- **Story progress.** The world map and the play recorder show what the game has saved and change nothing. They
+  can't see a chest or a secret you haven't touched.
+- **Collections and achievements.** The editor leaves the game's own records alone, so a book added here counts
+  for neither.
+- **Very high power or level may be undone by the game.** Stay close to what the game gives at your level.
+- **If you're asked which save to keep** after an edit, keep this PC's: that's the one with your changes.
+- **Steam and Mac support are new,** and nobody has reported from a real Mac yet. Try a small change first.
+- **Best for is a recommendation, not a measurement,** and item power caps come from community datamines.
+
+The long version, with what's known and how:
+**[Known limits](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Known-limits)** in the wiki.
 
 ## How it works
 
-**Steam version:** each save is its own file, `Character<id>.sav` for a hero, in the `SaveGames` folder above. The
+**Steam version:** each save is its own file, `Character<id>.sav` for a hero, in the game's `SaveGames` folder
+(`%LOCALAPPDATA%\Dungeons2\Saved\SaveGames` on Windows). The
 content is the same plain JSON the Xbox build keeps in a blob, so the same codec reads it. The editor replaces the
 file in one step (write a temporary file, then swap it in), and numbers the game writes in an unusual form are
 written back exactly as they were, so an unedited save comes out byte for byte identical.
