@@ -986,6 +986,34 @@
    "MEa2_S02_A_E06",
    "MEa2_S02_A_I06",
    "MEa2_S02_A_Sequence01"
+  ],
+  "MEa2_S03_A": [
+   "MEa2_S03_A_E01",
+   "MEa2_S03_A_Standard01",
+   "MEa2_S03_A_Sequence01",
+   "MEa2_S03_A_E02",
+   "MEa2_S03_A_Arena01",
+   "MEa2_S03_A_I01",
+   "MEa2_S03_A_Sequence02",
+   "MEa2_S03_A_E03",
+   "MEa2_S03_A_Arena02",
+   "MEa2_S03_A_I02",
+   "MEa2_S03_A_Sequence03",
+   "MEa2_S03_A_E04",
+   "MEa2_S03_A_Arena03",
+   "MEa2_S03_A_I03",
+   "MEa2_S03_A_Sequence04",
+   "MEa2_S03_A_E05",
+   "MEa2_S03_A_Arena04",
+   "MEa2_S03_A_I04",
+   "MEa2_S03_A_E06",
+   "MEa2_S03_A_Standard02",
+   "MEa2_S03_A_I05",
+   "MEa2_S03_A_I06",
+   "MEa2_S03_A_I07",
+   "MEa2_S03_A_I08",
+   "MEa2_S03_A_I09",
+   "MEa2_S03_A_Sequence05"
   ]
  },
  "stations": [
@@ -1009,7 +1037,13 @@
   "SW.MinecartStation.MeadowA2.Hilltop",
   "SW.MinecartStation.MeadowA2.Fortress",
   "SW.MinecartStation.DesertA1.MountainX",
-  "SW.MinecartStation.DesertA1.Cliffs"
+  "SW.MinecartStation.DesertA1.Cliffs",
+  "SW.MinecartStation.ForestA1.NWPass",
+  "SW.MinecartStation.DesertA1.IceLagoon",
+  "SW.MinecartStation.MeadowA1.SouthWest",
+  "SW.MinecartStation.DesertA1.Fortress",
+  "SW.MinecartStation.CarapaceA1.Centre",
+  "SW.MinecartStation.MeadowA1.BehindPortal"
  ],
  "cutscenes": [
   "SW.UI.Cutscene.Cutscenes.CS01",
@@ -1051,7 +1085,8 @@
   "SW.Area.Forest.A1.SpiderCaves.1",
   "SW.Area.Forest.A1.SpiderCaves.3",
   "SW.Area.DeepDark.A1",
-  "SW.Area.Carapace.A1"
+  "SW.Area.Carapace.A1",
+  "SW.Area.Meadow.A1"
  ],
  "doors": {
   "SW.Doorway.Camp.Docks": {
@@ -2637,6 +2672,294 @@
     78.0
    ],
    "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.7": {
+   "at": [
+    348.0,
+    683.0,
+    38.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.SpiderCaves.Exterior.2": {
+   "at": [
+    350.0,
+    711.5,
+    42.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Rift.9": {
+   "at": [
+    238.0,
+    694.0,
+    16.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.ForestA1.Dungeon.11": {
+   "at": [
+    285.5,
+    698.5,
+    26.5
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.ForestA1.Rift.10": {
+   "at": [
+    105.0,
+    804.0,
+    18.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.SecretInteriors.Int.1": {
+   "at": [
+    -195.0,
+    1064.5,
+    -6.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.PlainsA2.Rift.7": {
+   "at": [
+    -257.0,
+    647.5,
+    6.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.PlainsA2.Rift.3": {
+   "at": [
+    -518.5,
+    872.0,
+    10.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Int.3": {
+   "at": [
+    -260.5,
+    1543.0,
+    40.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Ext.2": {
+   "at": [
+    -879.5,
+    1602.0,
+    53.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.Dungeon.2": {
+   "at": [
+    -868.5,
+    2392.5,
+    81.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.FortressExteriorEntrance.03": {
+   "at": [
+    -841.5,
+    2735.0,
+    59.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.Dungeon.5": {
+   "at": [
+    -868.5,
+    2724.5,
+    57.5
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.FortressInteriorEntrance.03": {
+   "at": [
+    -1781.5,
+    2816.0,
+    109.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.Dungeon.7": {
+   "at": [
+    -730.5,
+    2727.5,
+    57.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.FortressExteriorEntrance.04": {
+   "at": [
+    -604.5,
+    2872.0,
+    56.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.FortressInteriorEntrance.04": {
+   "at": [
+    -1954.5,
+    2824.0,
+    109.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.FortressExit": {
+   "at": [
+    -822.5,
+    2836.0,
+    73.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Dungeon.12": {
+   "at": [
+    197.5,
+    795.5,
+    20.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.15": {
+   "at": [
+    74.0,
+    1251.0,
+    -1.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.IceLagoon.IcebergEntrance": {
+   "at": [
+    33.5,
+    1205.0,
+    -3.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.16": {
+   "at": [
+    -41.0,
+    1246.0,
+    -3.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.IceLagoon.HalfShip.Stern": {
+   "at": [
+    -21.8,
+    1162.2,
+    -1.6
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.HalfShip.Bow": {
+   "at": [
+    0.2,
+    1157.2,
+    -2.6
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Interior.HalfShip.Bow": {
+   "at": [
+    -1451.5,
+    420.0,
+    -31.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.Interior.HalfShip.Stern": {
+   "at": [
+    -1564.0,
+    422.5,
+    -31.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.IceLagoon.IceCaves": {
+   "at": [
+    13.5,
+    1328.0,
+    -3.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.Dungeon.2": {
+   "at": [
+    -700.5,
+    1703.5,
+    78.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.Dungeon.3": {
+   "at": [
+    -618.5,
+    1639.5,
+    85.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Ext.4": {
+   "at": [
+    -547.0,
+    1652.5,
+    90.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.ThirdLayer2": {
+   "at": [
+    -842.5,
+    2204.1,
+    76.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.SecondLayerUp2": {
+   "at": [
+    -851.0,
+    2209.5,
+    75.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior3.Entrance": {
+   "at": [
+    -2326.5,
+    -544.5,
+    35.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.CarapaceA1.Interior3.Exit": {
+   "at": [
+    -2281.0,
+    -547.5,
+    41.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.Dungeon.CarapaceA1.Dungeons.5": {
+   "at": [
+    -811.5,
+    2209.5,
+    72.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA2.Dungeon.1": {
+   "at": [
+    -828.5,
+    2476.5,
+    99.0
+   ],
+   "marker": 8
   }
  },
  "regions": {
@@ -2869,6 +3192,26 @@
     12,
     12
    ]
+  },
+  "SW.Area.Meadow.A1.NatInteriors": {
+   "corner": [
+    -480,
+    1504
+   ],
+   "size": [
+    20,
+    20
+   ]
+  },
+  "SW.Area.Meadow.A2.MeadowFortress": {
+   "corner": [
+    -2016,
+    2592
+   ],
+   "size": [
+    12,
+    12
+   ]
   }
  },
  "achievements": {
@@ -2949,6 +3292,10 @@
     [
      1,
      2
+    ],
+    [
+     0,
+     1
     ]
    ]
   },
@@ -3147,6 +3494,159 @@
   },
   "Overworld BP_MeadowRoadblockActorStateGimmick UAID_B025AA6603152C9A02_1138924448": {
    "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/8G3X26JZ6BDUHBP63KAZQZI2S.Overworld:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025AA6603152C9A02_1138924448",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA660315C2C802_1808263080": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/BYS6BEOCNBG1JB6VK555Z7S7F.Overworld:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA660315C2C802_1808263080",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_B025AA660315C2C802_1838780081": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/BYS6BEOCNBG1JB6VK555Z7S7F.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA660315C2C802_1838780081",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA660315C2C802_1764439079": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/BYS6BEOCNBG1JB6VK555Z7S7F.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA660315C2C802_1764439079",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_ForestRoadblockActorStateGimmick UAID_B025AA660315049902_1681912727": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/3RE1D605M4FK1DCOYUVWN4SEY.Overworld:PersistentLevel.BP_ForestRoadblockActorStateGimmick_C_UAID_B025AA660315049902_1681912727",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_MA2_KeyGate UAID_D45D6404305656A302_1326242774": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/3ABFGNLPWMZM5SZ4L6HKKIP8G.Overworld:PersistentLevel.BP_MA2_KeyGate_C_UAID_D45D6404305656A302_1326242774",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D45D640431825D9802_1554914530": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EON74QXJI5VXS8SONOR8U5QCC.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D45D640431825D9802_1554914530",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_IllagerConcreteGate7WideActorStateGimmick UAID_D45D64043182F9A902_1121712908": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EM3UTIA8JI1T4O6ART3F0WAEV.Overworld:PersistentLevel.BP_IllagerConcreteGate7WideActorStateGimmick_C_UAID_D45D64043182F9A902_1121712908",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D45D64043182189D02_1170385750": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/8UELBL7K2B2MBQ3ZBMG922PRN.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D45D64043182189D02_1170385750",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_MA2_KeyGate UAID_D45D640430564FA302_1499115702": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/8UELBL7K2B2MBQ3ZBMG922PRN.Overworld:PersistentLevel.BP_MA2_KeyGate_C_UAID_D45D640430564FA302_1499115702",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_D45D64043182189D02_1210199751": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/EM3UTIA8JI1T4O6ART3F0WAEV.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_D45D64043182189D02_1210199751",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_MA2_KeyGate UAID_D45D640430564EA302_1097706448": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/2QNT4Q3FE160AN8QZDBVSYOX5.Overworld:PersistentLevel.BP_MA2_KeyGate_C_UAID_D45D640430564EA302_1097706448",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_D45D64043182189D02_1250362753": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/2QNT4Q3FE160AN8QZDBVSYOX5.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_D45D64043182189D02_1250362753",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_D45D64043182189D02_1211527752": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/8VHC6MEL29IDMHQE4HYF3SC9V.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_D45D64043182189D02_1211527752",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemLockActorStateGimmick UAID_B025AA660315C3C802_1100153260": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/9KPCSKQCIGT9B58XBXTVJYO31.Overworld:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA660315C3C802_1100153260",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_SilverKeyGateDoorActorStateGimmick UAID_B025AA660315C2C802_2115658083": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/9KPCSKQCIGT9B58XBXTVJYO31.Overworld:PersistentLevel.BP_SilverKeyGateDoorActorStateGimmick_C_UAID_B025AA660315C2C802_2115658083",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA660315C3C802_1178386262": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/43QHDV52CZA4AYYGSUVDM4XKS.Overworld:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA660315C3C802_1178386262",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "Overworld BP_MeadowRoadblockActorStateGimmick UAID_B025AA6603152A9A02_2018065857": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/3IY7ZHLU12SEWF0N73QR0D65H.Overworld:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025AA6603152A9A02_2018065857",
    "states": [
     [
      0,
