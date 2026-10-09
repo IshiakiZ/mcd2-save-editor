@@ -2103,6 +2103,28 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.Ricochet",
+   "name": "Ricochet",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 3,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.Shockwave",
+   "name": "Shockwave",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.SoulFireAspect",
    "name": "Soul Blast",
    "tiers": [

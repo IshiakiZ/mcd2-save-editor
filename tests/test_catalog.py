@@ -194,7 +194,13 @@ class RealItemListTests(unittest.TestCase):
         # the game's table gives the tier a 50% chance. It goes on weapons, melee or ranged, as its book says.
         tempo = next(choice for choice in book.enchantments if choice.title == "Tempo Theft III")
         self.assertEqual((tempo.strength, tempo.seen, tempo.template, tempo.slots), (0.5, True, "SW.Enchantment.TempoTheft.III", ("Melee", "Ranged")))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (24, 31))
+        # Ricochet and Shockwave at tier III, from a list made with a version that had neither to write (issue 37):
+        # Ricochet as 3 on a crossbow, where the game's table says tier III bounces up to 3 times, and Shockwave as 1
+        # on a melee weapon. Each goes where its book says.
+        made = {choice.title: (choice.strength, choice.seen, choice.template, choice.slots) for choice in book.enchantments}
+        self.assertEqual(made["Ricochet III"], (3, True, "SW.Enchantment.Ricochet.III", ("Ranged",)))
+        self.assertEqual(made["Shockwave III"], (1, True, "SW.Enchantment.Shockwave.III", ("Melee",)))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (26, 33))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")

@@ -2960,6 +2960,70 @@
     99.0
    ],
    "marker": 8
+  },
+  "SW.Doorway.DesertA1.Rift.14": {
+   "at": [
+    135.0,
+    1270.0,
+    8.0
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Lake.House2.Basement2": {
+   "at": [
+    249.0,
+    967.0,
+    2.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Int.2": {
+   "at": [
+    -102.0,
+    1538.5,
+    41.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.FortressExteriorEntrance.01": {
+   "at": [
+    -818.5,
+    2837.0,
+    106.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.FortressInteriorEntrance.01": {
+   "at": [
+    -1894.0,
+    2601.5,
+    135.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA2.FortressInteriorExit": {
+   "at": [
+    -1896.0,
+    2599.5,
+    106.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Interior.Mosstrosity.Entrance": {
+   "at": [
+    359.5,
+    730.5,
+    59.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.ForestA1.Rift.8": {
+   "at": [
+    320.0,
+    731.0,
+    44.0
+   ],
+   "marker": 9
   }
  },
  "regions": {
@@ -3653,6 +3717,42 @@
      1
     ]
    ]
+  },
+  "Overworld BP_LushRoadblockActorStateGimmick UAID_B025AA660315749B02_1697960852": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/1G61286XUVI8A1GZMBQKW8KX8.Overworld:PersistentLevel.BP_LushRoadblockActorStateGimmick_C_UAID_B025AA660315749B02_1697960852",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV2 BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA66031587C602_1337336998": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV2-1689800-500-500.SpiderCaveV2:PersistentLevel.BP_KeyGolemSpawnerActorStateGimmick_C_UAID_B025AA66031587C602_1337336998",
+   "states": [
+    [
+     1,
+     2
+    ]
+   ]
+  },
+  "SpiderCaveV2 BP_KeyGolemLockActorStateGimmick UAID_B025AA66031587C602_1337328996": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV2-1689800-500-500.SpiderCaveV2:PersistentLevel.BP_KeyGolemLockActorStateGimmick_C_UAID_B025AA66031587C602_1337328996",
+   "states": [
+    [
+     2,
+     1
+    ]
+   ]
+  },
+  "SpiderCaveV2 BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA66031587C602_1337333997": {
+   "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV2-1689800-500-500.SpiderCaveV2:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA66031587C602_1337333997",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
   }
  },
  "found": {
@@ -3814,11 +3914,11 @@
  ],
  "chest_counts": {
   "SW.Area.Plains.A1": 2,
-  "SW.Area.Forest.A1": 7,
+  "SW.Area.Forest.A1": 9,
   "SW.Area.Meadow.R1": 2,
   "SW.Area.DeepDark.Tutorial": 1,
   "SW.Area.Meadow.T1.Rift.5": 2,
-  "SW.Area.Forest.A1.SpiderCaves.1": 4,
+  "SW.Area.Forest.A1.SpiderCaves.1": 6,
   "SW.Area.Forest.A1.SpiderCaves.3": 5,
   "SW.Area.DeepDark.A1": 8,
   "SW.Area.Town": 3

@@ -526,6 +526,11 @@ EFFECT_GUESSES: dict[str, str] = {}
 # game's (0.5, and MetaBot's tier III is "a 50% chance to increase movement speed"). It holds 12 points there, a
 # Special's total at tier III, on a Unique: the game enchanted a Special, and the editor made the item Unique
 # afterwards (until 1.15.2 a change of rarity left an enchantment's points as they were).
+# /issues/37 was made with 1.15.1, which had neither Ricochet nor Shockwave to write, so both are the game's, each
+# at tier III with a Unique's 15 points: Ricochet as 3 on a Harp Crossbow (MetaBot's tier III bounces up to 3
+# times), and Shockwave as 1 on an Elemental Staff (1 like Fire Aspect's and Swirling's, where the game shows a
+# share of weapon damage). Three tiers on that list wait for its sender's word, being ones 1.15.1 offered from the
+# table: Precision II, SpeedBoost I and Sniper III.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -545,6 +550,8 @@ ENCHANTMENT_TIERS = {
     "PoisonFog": {"III": 1},
     "PotionBarrier": {"III": 6},
     "Radiance": {"I": 0.3, "III": 0.5},
+    "Ricochet": {"III": 3},
+    "Shockwave": {"III": 1},
     "SoulFireAspect": {"III": 3},
     "SoulInfusedPotion": {"I": 0.5, "II": 0.6, "III": 0.85},
     "SpringLoaded": {"III": 6},

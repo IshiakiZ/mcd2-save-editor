@@ -19,22 +19,28 @@ The short notes for the newest versions are on the
   preset added 22, a ride to one of them worked, and the game kept all 27 through its own saves. It didn't add the
   new ones to its list for the achievement. The game may have stations no save has shown yet, and those can't be
   added. The AI server's `apply_preset` does the same.
-- **More of the world.** Three lists since 1.15.1 hold the world's part.
+- **More of the world.** Four lists since 1.15.1 hold the world's part.
   [icicle1133](https://github.com/icicle1133)'s ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)) shares 95 doors and 13 regions
   with the first, and the two agree on the place of every one; it adds four doors, five puzzle pieces and the
   Carapace area. [gchristol](https://github.com/gchristol)'s ([issue 35](https://github.com/IshiakiZ/mcd2-save-editor/issues/35)) adds 36 doors, six
   minecart stations, a quest, two regions and 16 puzzle pieces. Three of the stations aren't on MetaBot's map:
   South West and Behind Portal in Meadow A1, and Centre in Carapace A1. [XcenZ](https://github.com/XcenZ)'s
   ([issue 36](https://github.com/IshiakiZ/mcd2-save-editor/issues/36)) adds an area and a puzzle piece, and bears out three of those doors and one of
-  the stations. The list has 44 quests with their 926 steps, 234 doors, 27 minecart stations and 25 regions now,
-  and no two lists put a door or a region in different places.
-- **Tempo Theft,** at tier III, for melee and ranged weapons. gchristol's list has it on a Paragon, saved as 0.5,
-  and the game's table gives the tier a 50% chance. That makes 24 of the 32 enchantments, 31 tiers.
+  the stations. [itamarnyg8-del](https://github.com/itamarnyg8-del)'s ([issue 37](https://github.com/IshiakiZ/mcd2-save-editor/issues/37)) adds eight
+  doors and four puzzle pieces, and bears out gchristol's quest, both regions and all six stations, and 36 doors.
+  The list has 44 quests with their 926 steps, 242 doors, 27 minecart stations and 25 regions now, and no two
+  lists put a door or a region in different places. The developer's own recordings add four chests opened in
+  Howling Woods and its Spider Caves.
+- **Three more enchantments,** each at tier III. **Tempo Theft,** for melee and ranged weapons: gchristol's list
+  has it on a Paragon, saved as 0.5, and the game's table gives the tier a 50% chance. **Ricochet,** for ranged
+  weapons, and **Shockwave,** for melee weapons: itamarnyg8-del's list has them on a Harp Crossbow and an Elemental
+  Staff, made with 1.15.1, which had neither to write. Ricochet is saved as 3, and the game's table says
+  tier III bounces up to 3 times. That makes 26 of the 32 enchantments, 33 tiers.
 - **Eleven more effect tiers count as seen.** Nine are on [regnirok](https://github.com/regnirok)'s list
   ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)): Pack Leader I, Duelist I, Aim I, Finesse I, Strength I, Ranger II and III,
   Brawler I and Vanguard III, with the numbers the game's table gives, and regnirok has since said that nothing
-  in that save had been changed with an editor. The two newer lists show seven of the nine again, with the same
-  numbers. The other two are on gchristol's list: Point Blank III on a Heavy Crossbow and Shepherd III on a
+  in that save had been changed with an editor. gchristol's and XcenZ's lists show seven of the nine again, with
+  the same numbers. The other two are on gchristol's list: Point Blank III on a Heavy Crossbow and Shepherd III on a
   Humbling Horn, which gchristol says the game rolled, on Soul Storm rewards. 173 of the 180 tiers are seen now,
   so **Best for** picks from these too, and the editor no longer asks before adding one.
 - **Changing an item's rarity recounts its enchantment's points.** The game counts more enchantment points for the
