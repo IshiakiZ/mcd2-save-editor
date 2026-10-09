@@ -10,17 +10,38 @@ The short notes for the newest versions are on the
 ## 1.15.2
 
 - **Every minecart station.** A new preset, under **Presets… → Goals**. It adds every minecart station a player's
-  save has listed as found (21 so far) to the ones your hero has found, so the game lets you ride to them. A
+  save has listed as found (27 so far) to the ones your hero has found, so the game lets you ride to them. A
   station goes in the way the game saves one it has just found: its tag at the end of the save's list, which the
   developer's play recordings show the game doing four times. At that moment the game also notes the station as
   the one you last used and adds it to its own list for the achievement for finding every station. The preset
   leaves both alone, since the hero hasn't moved and achievements are the game's to give, so a station added
   this way may not count towards that achievement. The game may have stations no save has shown yet, and those
   can't be added. The AI server's `apply_preset` does the same.
-- **A little more of the world.** [icicle1133](https://github.com/icicle1133)'s list
-  ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)) is the second with the world's part. It shares 95 doors and 13 regions with the
-  first, and the two agree on the place of every one. It adds four doors, five puzzle pieces and the Carapace
-  area: 198 doors now.
+- **More of the world.** Three lists since 1.15.1 hold the world's part.
+  [icicle1133](https://github.com/icicle1133)'s ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)) shares 95 doors and 13 regions
+  with the first, and the two agree on the place of every one; it adds four doors, five puzzle pieces and the
+  Carapace area. [gchristol](https://github.com/gchristol)'s ([issue 35](https://github.com/IshiakiZ/mcd2-save-editor/issues/35)) adds 36 doors, six
+  minecart stations, a quest, two regions and 16 puzzle pieces. Three of the stations aren't on MetaBot's map:
+  South West and Behind Portal in Meadow A1, and Centre in Carapace A1. [XcenZ](https://github.com/XcenZ)'s
+  ([issue 36](https://github.com/IshiakiZ/mcd2-save-editor/issues/36)) adds an area and a puzzle piece, and bears out three of those doors and one of
+  the stations. The list has 44 quests with their 926 steps, 234 doors, 27 minecart stations and 25 regions now,
+  and no two lists put a door or a region in different places.
+- **Tempo Theft,** at tier III, for melee and ranged weapons. gchristol's list has it on a Paragon, saved as 0.5,
+  and the game's table gives the tier a 50% chance. That makes 24 of the 32 enchantments, 31 tiers.
+- **Nine more effect tiers count as seen:** Pack Leader I, Duelist I, Aim I, Finesse I, Strength I, Ranger II and
+  III, Brawler I and Vanguard III. They are on [regnirok](https://github.com/regnirok)'s list
+  ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)) with the numbers the game's table gives, and regnirok has since said that
+  nothing in that save had been changed with an editor. The two newer lists show seven of the nine again, with
+  the same numbers. 171 of the 180 tiers are seen now, so **Best for** picks from these too, and the editor no
+  longer asks before adding one.
+- **Changing an item's rarity recounts its enchantment's points.** The game counts more enchantment points for the
+  same tier on a rarer item: 12 at tier III on a Special, 15 on a Unique. The editor used to leave the number as
+  it was, so a Special made Unique kept a Special's count, which no save the game made has shown; a player's
+  list had one. Now the enchantment gets the new rarity's count. Points that aren't the game's count for the tier
+  are left alone, and so is an item changed with an older version.
+- **The Favourite mark.** The game marks an item you've made a favourite, and gchristol's list showed how a save
+  holds that. The editor knows the mark now and keeps it when you change the item, **Share item IDs…** no longer
+  asks about it, and the AI server's item info says `favourite`. The editor doesn't set it.
 - **Stations that no map names** are shown by what a save calls them, set out to be read: Taiga Beach (Frozen
   Highlands), North (Carapace A1). One the game spells `Town.Fountain` gets its name, and the Town Fountain is no
   longer listed among the stations you haven't found: a hero starts there, and no save lists it as found.
