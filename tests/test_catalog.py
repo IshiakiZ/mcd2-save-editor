@@ -442,7 +442,7 @@ class RealItemListTests(unittest.TestCase):
         seen = {(choice.name, choice.tier): (choice.effect, choice.strength, choice.seen) for choice in gear + enchantments}
         self.assertEqual(seen[("Shackler", "III")], ("SW.Effect.Chains", 0.25, True))
         self.assertEqual(seen[("Point Blank", "I")], ("SW.Effect.PointBlank", 0.25, True))
-        self.assertEqual(seen[("Point Blank", "III")][2], False)  # from the game files' table
+        self.assertEqual(seen[("Point Blank", "III")], ("SW.Effect.PointBlank", 0.75, True))  # came later: /issues/35, below
         self.assertEqual(seen[("Chain Reaction", "III")], ("SW.Enchantment.ChainReaction", 5, True))
         self.assertEqual(seen[("Somersault", "II")], ("SW.Enchantment.MultiRoll", 2, True))
         self.assertEqual(seen[("Health Synergy", "I")], ("SW.Enchantment.HealthSynergy", 0.15, True))
@@ -473,11 +473,13 @@ class RealItemListTests(unittest.TestCase):
             ("BeastBoss", "I"): 0.2, ("Duelist", "I"): 0.2, ("EagleEye", "I"): 0.1, ("Finesse", "I"): 0.15, ("MasterStrike", "I"): 0.15,
             ("MultiShot", "II"): 0.3, ("MultiShot", "III"): 0.4, ("SweepingEdge", "I"): 0.2, ("Vanguard", "III"): 0.5,
         })
+        # /issues/35 was made with 1.15.1 and has items the editor had plainly changed, so these two waited for its
+        # sender's word: the game rolled both, on Soulstorm rewards.
+        vouched.update({("PointBlank", "III"): 0.75, ("Friendship", "III"): -0.15})
         self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
-        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 171))
-        # Tiers on other lists that wait for the same word from their senders stay as they were (/issues/35 and
-        # /issues/36: the first of those has an item the editor had plainly changed).
-        self.assertEqual([seen[key][1] for key in (("PointBlank", "III"), ("Friendship", "III"), ("Sniper", "III"))], [False] * 3)
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 173))
+        # /issues/36's Sniper III was put on with the editor, its sender said: it stays as the table has it.
+        self.assertEqual(seen[("Sniper", "III")], (0.75, False))
 
     def test_what_a_list_made_with_1_15_0_added(self):
         # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.
@@ -619,7 +621,7 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual(picks("Damage", "SW.Item.MysticHelmet"), ["Sorcerer III"])
         self.assertEqual(picks("Damage", "SW.Item.MysticHelmet", elements={"Soul"}), ["Sorcerer III", "Soulmancer III"])
         self.assertEqual(picks("Artifacts and souls", "SW.Item.MysticHelmet"), ["Cooldown III", "Spiritual III", "Reaper III", "Sorcerer III"])
-        self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader III", "Shepherd II", "Veterinarian III"])
+        self.assertEqual(picks("Companions", "SW.Item.WolfclutchChest"), ["Pack Leader III", "Shepherd III", "Veterinarian III"])
         self.assertEqual(picks("XP", "SW.Item.Sword"), [])
 
     def test_a_kit_only_gives_an_item_effects_the_game_rolls_on_it(self):

@@ -613,7 +613,7 @@
      "tier": "III",
      "strength": -0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Companions take 15% less damage."
     }
    ]
@@ -1016,7 +1016,7 @@
      "tier": "III",
      "strength": 0.75,
      "shown": "75%",
-     "seen": false,
+     "seen": true,
      "text": "Ranged attacks deal 75% more damage at close range."
     }
    ]

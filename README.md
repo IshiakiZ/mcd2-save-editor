@@ -265,7 +265,7 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   out. The first of the two also showed how the game saves the Soulstorm Enhanced tag.
   [gchristol](https://github.com/gchristol)'s ([#35](https://github.com/IshiakiZ/mcd2-save-editor/issues/35)) and
   [XcenZ](https://github.com/XcenZ)'s ([#36](https://github.com/IshiakiZ/mcd2-save-editor/issues/36)) added more of the world, and the first of
-  those the Tempo Theft enchantment.
+  those the Tempo Theft enchantment and two effect tiers.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

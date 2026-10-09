@@ -15,8 +15,10 @@ The short notes for the newest versions are on the
   developer's play recordings show the game doing four times. At that moment the game also notes the station as
   the one you last used and adds it to its own list for the achievement for finding every station. The preset
   leaves both alone, since the hero hasn't moved and achievements are the game's to give, so a station added
-  this way may not count towards that achievement. The game may have stations no save has shown yet, and those
-  can't be added. The AI server's `apply_preset` does the same.
+  this way may not count towards that achievement. Checked in the game: on a hero that had found 5 stations, the
+  preset added 22, a ride to one of them worked, and the game kept all 27 through its own saves. It didn't add the
+  new ones to its list for the achievement. The game may have stations no save has shown yet, and those can't be
+  added. The AI server's `apply_preset` does the same.
 - **More of the world.** Three lists since 1.15.1 hold the world's part.
   [icicle1133](https://github.com/icicle1133)'s ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)) shares 95 doors and 13 regions
   with the first, and the two agree on the place of every one; it adds four doors, five puzzle pieces and the
@@ -28,12 +30,13 @@ The short notes for the newest versions are on the
   and no two lists put a door or a region in different places.
 - **Tempo Theft,** at tier III, for melee and ranged weapons. gchristol's list has it on a Paragon, saved as 0.5,
   and the game's table gives the tier a 50% chance. That makes 24 of the 32 enchantments, 31 tiers.
-- **Nine more effect tiers count as seen:** Pack Leader I, Duelist I, Aim I, Finesse I, Strength I, Ranger II and
-  III, Brawler I and Vanguard III. They are on [regnirok](https://github.com/regnirok)'s list
-  ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)) with the numbers the game's table gives, and regnirok has since said that
-  nothing in that save had been changed with an editor. The two newer lists show seven of the nine again, with
-  the same numbers. 171 of the 180 tiers are seen now, so **Best for** picks from these too, and the editor no
-  longer asks before adding one.
+- **Eleven more effect tiers count as seen.** Nine are on [regnirok](https://github.com/regnirok)'s list
+  ([issue 33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)): Pack Leader I, Duelist I, Aim I, Finesse I, Strength I, Ranger II and III,
+  Brawler I and Vanguard III, with the numbers the game's table gives, and regnirok has since said that nothing
+  in that save had been changed with an editor. The two newer lists show seven of the nine again, with the same
+  numbers. The other two are on gchristol's list: Point Blank III on a Heavy Crossbow and Shepherd III on a
+  Humbling Horn, which gchristol says the game rolled, on Soul Storm rewards. 173 of the 180 tiers are seen now,
+  so **Best for** picks from these too, and the editor no longer asks before adding one.
 - **Changing an item's rarity recounts its enchantment's points.** The game counts more enchantment points for the
   same tier on a rarer item: 12 at tier III on a Special, 15 on a Unique. The editor used to leave the number as
   it was, so a Special made Unique kept a Special's count, which no save the game made has shown; a player's

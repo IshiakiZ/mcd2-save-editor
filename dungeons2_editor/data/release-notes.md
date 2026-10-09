@@ -2,7 +2,7 @@
 
 - **Every minecart station.** A new preset under Goals adds every station players' saves have shown the editor to the ones your hero has found, so you can ride to them.
 - **More of the world:** 44 quests, 234 doors and 27 minecart stations now, from [gchristol](https://github.com/gchristol)'s, [icicle1133](https://github.com/icicle1133)'s and [XcenZ](https://github.com/XcenZ)'s lists.
-- **Tempo Theft can be put on weapons,** at tier III, from gchristol's list. Nine more effect tiers count as seen, so **Best for** picks from them.
+- **Tempo Theft can be put on weapons,** at tier III, from gchristol's list. Eleven more effect tiers count as seen, so **Best for** picks from them.
 - **Change an enchanted item's rarity** and its enchantment now gets the enchantment points the game counts at the new rarity.
 - **Stations that no map names** now read like Taiga Beach (Frozen Highlands), and the Town Fountain is no longer listed as one to find.
 - **One question, once.** The editor asks whether you'd give it a star on GitHub. It doesn't ask again.

@@ -355,9 +355,10 @@ TALISMAN_LEVEL_TAGS = {
 # been changed with an editor before the list was made. So these are seen too: BeastBoss I, Duelist I, EagleEye I,
 # Finesse I, MasterStrike I, MultiShot II and III, SweepingEdge I and Vanguard III. /issues/35 and /issues/36 (both
 # made with 1.15.1) show seven of the nine again, each with the same number.
-# Still waiting for their senders' word: Friendship III and PointBlank III on /issues/35 (a list with an item on it
-# that the editor had plainly changed: a Unique with four rolled effects), Sniper III on /issues/36, and the ones
-# on /issues/26.
+# /issues/35 also holds Friendship III (-0.15, on a Humbling Horn) and PointBlank III (0.75, on a Heavy Crossbow),
+# on a list with items the editor had plainly changed (a Unique with four rolled effects), so its sender was asked:
+# the game rolled both, on Soulstorm rewards. Sniper III on /issues/36 was put on with the editor, its sender said,
+# so it stays as the table has it. The ones on /issues/26 still wait for their sender's word.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"I": 0.2, "II": 0.25, "III": 0.3}),
@@ -377,7 +378,7 @@ GEAR_EFFECTS = {
     "Finesse": ("Finesse", {"I": 0.15, "II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1, "III": -0.15}),
-    "Friendship": ("Friendship", {"I": -0.05, "II": -0.1}),
+    "Friendship": ("Friendship", {"I": -0.05, "II": -0.1, "III": -0.15}),
     "FrostFocus": ("FrostFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Gambler": ("Gambler", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "HealingFocus": ("HealingFocus", {"I": 0.25, "II": 0.35, "III": 0.5}),
@@ -390,7 +391,7 @@ GEAR_EFFECTS = {
     "MultiShot": ("MultiShot", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Opportunist": ("Opportunist", {"I": 0.25, "II": 0.35, "III": 0.5}),
     "Opulence": ("Opulence", {"I": 0.01, "II": 0.02, "III": 0.03}),
-    "PointBlank": ("PointBlank", {"I": 0.25, "II": 0.5}),
+    "PointBlank": ("PointBlank", {"I": 0.25, "II": 0.5, "III": 0.75}),
     "PoisonFocus": ("PoisonFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "PotionCooldown": ("PotionMaster", {"I": -0.05, "II": -0.1, "III": -0.2}),
     "Power": ("Power", {"I": 0.1, "II": 0.2, "III": 0.3}),
