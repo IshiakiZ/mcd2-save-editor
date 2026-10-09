@@ -940,6 +940,8 @@ def _item_info(item: Item, refs: dict[int, str], catalog: dict[str, CatalogItem]
         info["effects"] = [_effect_info(effect) for effect in item.effects]
     if item.is_soulstorm:
         info["soulstorm_enhanced"] = True
+    if item.is_favourite:
+        info["favourite"] = True  # made a favourite in the game; the editor keeps the mark and doesn't set it
     if known is not None and is_unique_version(item.tag):
         if known.unique_effect:
             info["unique_effect"] = known.unique_effect  # what the Unique does in the game

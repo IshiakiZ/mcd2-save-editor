@@ -42,7 +42,11 @@ UNSEEN_TAG = "SW.Item.Property.Dynamic.Unseen"
 # its own saves.
 SOULSTORM_TAG = "SW.Item.Property.StorminatorReward"
 SOULSTORM = "Soulstorm Enhanced"
-KNOWN_MARKS = (UNSEEN_TAG, SOULSTORM_TAG)  # the marks the editor has seen on an item in a save
+# The mark of an item its owner has made a favourite in the game (the game's own word for it: its inventory code
+# has a FavouriteItem and an IsItemFavourited). A player's save has it on a Unique, after the mark of a Soul Storm
+# reward (/issues/35). The editor knows it and keeps it, and doesn't set it: nobody has tried one it wrote.
+FAVOURITE_TAG = "SW.Item.Property.Dynamic.Favourite"
+KNOWN_MARKS = (UNSEEN_TAG, SOULSTORM_TAG, FAVOURITE_TAG)  # the marks the editor has seen on an item in a save
 EMPTY_SLOT = "None"  # an entry's EquippedSlot when it isn't equipped
 MAX_STAT = 2_147_483_647
 MAX_ITEM_POWER = 1_000_000
@@ -1015,6 +1019,12 @@ class Item:
         return isinstance(marks, list) and SOULSTORM_TAG in marks
 
     @property
+    def is_favourite(self) -> bool:
+        """Whether its owner has made the item a favourite in the game."""
+        marks = self.data.get("DynamicPropertyTags")
+        return isinstance(marks, list) and FAVOURITE_TAG in marks
+
+    @property
     def archetypes(self) -> tuple[str, ...]:
         """Its archetypes (Fighter, Ranger...): with its kind, they decide which effects the game rolls on it."""
         return archetypes(self.tag)
@@ -1293,6 +1303,7 @@ class Hero:
             else:
                 self._set_own_effect(item.data)  # a Unique's own effect goes with what the item is
         if rarity is not None and rarity != item.rarity:
+            self._count_enchantment_points(item.data, item.rarity, rarity)
             item.data["RarityTag"] = RARITY_PREFIX + rarity
         if power is not None and power != item.power:
             values = item.power_values
@@ -1301,6 +1312,24 @@ class Hero:
                     values[key] = int(power)
         if count is not None and count != item.count:
             item.entry["StackCount"] = int(count)
+
+    @staticmethod
+    def _count_enchantment_points(data: dict, old: str, new: str) -> None:
+        """Give an item's enchantment the enchantment points the game counts for its tier at a new rarity: the
+        same tier holds more on a rarer item (12 at tier III on a Special, 15 on a Unique). A player's list had a
+        Unique with a Special's 12, which no save the game made has shown: the editor had made the item Unique and
+        left the points (/issues/35). Points that aren't the game's number for the tier at the old rarity are left
+        alone."""
+        book = effect_book()
+        for batch in data.get("Effects") or []:
+            listed = batch.get("EffectsInThisBatch") if isinstance(batch, dict) and batch.get("TypeTag") == _ENCHANTMENT else None
+            for effect in listed if isinstance(listed, list) else []:
+                generator = effect.get("GeneratorData") if isinstance(effect, dict) else None
+                template = generator.get("GeneratorParentTemplate") if isinstance(generator, dict) else None
+                tier = _tier_of(template) if isinstance(template, str) else ""
+                points = book.points_for(new, tier)
+                if tier and points and effect.get("EnchantmentPointsInvested") == book.points_for(old, tier):
+                    effect["EnchantmentPointsInvested"] = points
 
     @staticmethod
     def _mark_unseen(data: dict) -> None:

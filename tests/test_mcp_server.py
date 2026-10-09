@@ -125,6 +125,15 @@ class ProtocolTests(ServerTestCase):
 
 
 class ReadingTests(ServerTestCase):
+    def test_an_item_made_a_favourite_in_the_game_says_so(self):
+        from dungeons2_editor import mcp_server
+
+        hero = Hero(hero_save())
+        sword = next(item for item in hero.items() if item.tag == "SW.Item.Sword")
+        self.assertNotIn("favourite", mcp_server._item_info(sword, {}, {}))
+        sword.data["DynamicPropertyTags"] = ["SW.Item.Property.Dynamic.Favourite"]  # the game's mark for one
+        self.assertIs(mcp_server._item_info(sword, {}, {})["favourite"], True)
+
     def test_lists_heroes_but_never_the_sign_in_token(self):
         result = self.call("list_heroes")
         heroes = {hero["hero"]: hero for hero in result["heroes"]}

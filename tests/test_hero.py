@@ -637,6 +637,45 @@ class HeroTests(unittest.TestCase):
         self.assertEqual(tag, "SW.Item.Sword")
         self.assertIn("(mark SW.Item.Property.SomethingElse)", line)
 
+    def test_a_favourite_is_a_mark_the_editor_knows_and_keeps(self):
+        # An item its owner made a favourite in the game, as a player's save holds one: after the Soul Storm mark.
+        sword = self.item_index("SW.Item.Sword")
+        marks = self.hero.item(sword).data["DynamicPropertyTags"]
+        marks[:] = []
+        self.assertFalse(self.hero.item(sword).is_favourite)
+        marks[:] = ["SW.Item.Property.StorminatorReward", "SW.Item.Property.Dynamic.Favourite"]
+        self.assertEqual((self.hero.item(sword).is_favourite, self.hero.item(sword).is_soulstorm), (True, True))
+        self.assertEqual(share_ids.marked_items([self.hero]), [])  # nothing to ask about: the editor has seen both
+        # Changing the item leaves the mark where it is, and so does taking the Soul Storm mark off.
+        self.hero.set_effects(sword, [self.choice("Knockback")])
+        self.assertEqual(marks, ["SW.Item.Property.StorminatorReward", "SW.Item.Property.Dynamic.Favourite", "SW.Item.Property.Dynamic.Unseen"])
+        self.hero.set_soulstorm(sword, False)
+        self.assertEqual(marks, ["SW.Item.Property.Dynamic.Favourite", "SW.Item.Property.Dynamic.Unseen"])
+        # A copy is the same item again; a new item takes no mark from the one its layout came from.
+        self.assertTrue(self.hero.item(self.hero.duplicate_item(sword)).is_favourite)
+        self.assertFalse(self.hero.item(self.hero.add_item("SW.Item.Mace", self.hero.item(sword).entry)).is_favourite)
+
+    def test_a_new_rarity_recounts_the_enchantment_s_points(self):
+        # The game counts more points for the same tier on a rarer item, so an item whose rarity the editor changes
+        # gets the new rarity's count: a player's list had a Unique with a Special's points, left by the editor.
+        helmet = self.item_index("SW.Item.MysticHelmet")
+        item = self.hero.item(helmet)
+        item.data["RarityTag"] = "SW.Rarity.Special"
+        self.hero.set_enchantment(helmet, self.choice("Ancient Alchemy", "II"))
+        self.assertEqual(item.enchantment.points, 6)
+        for rarity, points in (("Unique", 8), ("Common", 3), ("Rare", 4), ("Special", 6)):
+            self.hero.update_item(helmet, rarity=rarity)
+            item = self.hero.item(helmet)
+            self.assertEqual((item.rarity, item.enchantment.title, item.enchantment.points), (rarity, "Ancient Alchemy II", points))
+        # Points that aren't the game's count for the tier are something the editor doesn't understand: left alone.
+        item.data["Effects"][-1]["EffectsInThisBatch"][0]["EnchantmentPointsInvested"] = 5
+        self.hero.update_item(helmet, rarity="Unique")
+        self.assertEqual((self.hero.item(helmet).rarity, self.hero.item(helmet).enchantment.points), ("Unique", 5))
+        # The effects the game rolled hold no points at any rarity.
+        self.hero.set_effects(helmet, [self.choice("Luck")])
+        self.hero.update_item(helmet, rarity="Rare")
+        self.assertEqual([effect.points for effect in self.hero.item(helmet).effects], [0, 5])
+
     def test_the_save_format_the_editor_was_checked_against(self):
         self.assertEqual((self.hero.save_format, self.hero.format_is_tested), (("FCharacterSaveV1", 5), True))
         self.document["SerializeMeta"]["SoftVersion"] = 6  # a game update changed how heroes are saved
@@ -1034,9 +1073,11 @@ class UniqueOwnEffectTests(unittest.TestCase):
         self.assertEqual((slaymore.tag, slaymore.data["Effects"][0]["EffectsInThisBatch"][0]["TypeTag"], slaymore.data["Effects"][1:]),
                          ("SW.Item.Claymore_Unique1", "SW.Effect.SweepingEdge", kept))
         hero.update_item(sword.index, rarity="Rare")  # no longer a Unique: nothing of its own is left on it
-        self.assertEqual((hero.item(sword.index).tag, hero.item(sword.index).data["Effects"]), ("SW.Item.Claymore", kept))
+        plain = copy.deepcopy(kept)
+        plain[1]["EffectsInThisBatch"][0]["EnchantmentPointsInvested"] = 1  # the enchantment holds a Rare's points for its tier now
+        self.assertEqual((hero.item(sword.index).tag, hero.item(sword.index).data["Effects"]), ("SW.Item.Claymore", plain))
         hero.update_item(sword.index, tag="SW.Item.Bow_Unique1", rarity="Unique")  # a Unique the editor hasn't seen one for
-        self.assertEqual(hero.item(sword.index).data["Effects"], kept)
+        self.assertEqual(hero.item(sword.index).data["Effects"], kept)  # and a Unique's again
         self.assertTrue(hero.item(sword.index).own_effect_missing)
 
     def test_changing_the_other_effects_leaves_its_own_alone(self):
