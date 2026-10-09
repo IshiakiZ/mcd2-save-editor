@@ -178,9 +178,9 @@ class RealItemListTests(unittest.TestCase):
             [seen[title] for title in ("Pack Leader III", "Totem Radius III", "Momentum III", "Evasion II", "Brawler III", "Prowler III", "Prickly III")],
             [True] * 7,
         )
-        # Cooldown III was one of the two: another player's lists hold it too, and that player has since said the
-        # game rolled every effect on them (see the test for those lists, below). Vanguard III is still as it was.
-        self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (True, False))
+        # Those two were Cooldown III and Vanguard III. Other players' lists hold them too, and those players have
+        # since said the game rolled every effect on them (see the test for those lists, below).
+        self.assertEqual((seen["Cooldown III"], seen["Vanguard III"]), (True, True))
         # Two enchantments a save calls Channeling and SoulFireAspect, and Health Synergy's top tier, from the same
         # list. The developer put them on items and read the game's names for them off those.
         self.assertTrue({("Lightning Surge III", 3), ("Soul Blast III", 3), ("Health Synergy III", 0.35), ("Health Synergy I", 0.15)} <= saved_enchantments)
@@ -190,7 +190,11 @@ class RealItemListTests(unittest.TestCase):
         # Somersault's third, which no version has offered (issue 31). Poison Fog goes on melee weapons, as its book says.
         self.assertTrue({("Poison Fog III", 1), ("Somersault II", 2), ("Somersault III", 3)} <= saved_enchantments)
         self.assertEqual(next(choice for choice in book.enchantments if choice.title == "Poison Fog III").slots, ("Melee",))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (23, 30))
+        # Tempo Theft's first tier, from a list made with a version that had none of it to write (issue 35): 0.5, where
+        # the game's table gives the tier a 50% chance. It goes on weapons, melee or ranged, as its book says.
+        tempo = next(choice for choice in book.enchantments if choice.title == "Tempo Theft III")
+        self.assertEqual((tempo.strength, tempo.seen, tempo.template, tempo.slots), (0.5, True, "SW.Enchantment.TempoTheft.III", ("Melee", "Ranged")))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (24, 31))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -463,10 +467,17 @@ class RealItemListTests(unittest.TestCase):
             ("Reeling", "II"): 0.3, ("RollCooldown", "III"): 0.25, ("Saboteur", "I"): 0.4, ("Sniper", "I"): 0.25,
             ("SoulGatherMultiply", "I"): 0.25, ("Vanguard", "II"): 0.35, ("Vestige", "III"): 0.2,
         }
+        # /issues/33 was made with 1.15.0 and holds nine more of the kind. Its sender gave the same word: nothing in
+        # that save had been changed with an editor before the list was made.
+        vouched.update({
+            ("BeastBoss", "I"): 0.2, ("Duelist", "I"): 0.2, ("EagleEye", "I"): 0.1, ("Finesse", "I"): 0.15, ("MasterStrike", "I"): 0.15,
+            ("MultiShot", "II"): 0.3, ("MultiShot", "III"): 0.4, ("SweepingEdge", "I"): 0.2, ("Vanguard", "III"): 0.5,
+        })
         self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
-        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 162))
-        # Tiers on other lists that wait for the same word from their senders stay as they were.
-        self.assertEqual([seen[key][1] for key in (("Vanguard", "III"), ("MultiShot", "III"), ("Duelist", "I"), ("PointBlank", "III"))], [False] * 4)
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 171))
+        # Tiers on other lists that wait for the same word from their senders stay as they were (/issues/35 and
+        # /issues/36: the first of those has an item the editor had plainly changed).
+        self.assertEqual([seen[key][1] for key in (("PointBlank", "III"), ("Friendship", "III"), ("Sniper", "III"))], [False] * 3)
 
     def test_what_a_list_made_with_1_15_0_added(self):
         # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.
@@ -600,7 +611,7 @@ class RealItemListTests(unittest.TestCase):
             return [choice.title for choice in found[:4]]
 
         self.assertEqual(picks("Damage", "SW.Item.Sword"), ["Sharpness III", "Duelist III", "Swiftness III", "Critical Hit III"])
-        self.assertEqual(picks("Damage", "SW.Item.Greatbow_Unique1"), ["Impact III", "Ranger I", "Sharpshooter III", "Critical Hit III"])
+        self.assertEqual(picks("Damage", "SW.Item.Greatbow_Unique1"), ["Impact III", "Ranger III", "Sharpshooter III", "Critical Hit III"])
         self.assertEqual(picks("Damage", "SW.Item.Bow"), ["Impact III", "Critical Hit III", "Critical Edge III", "Persistence III"])  # no archetype
         self.assertEqual(picks("Loot", "SW.Item.Bow"), ["Looter III", "Raider III", "Luck III", "Prospector III"])
         self.assertEqual(picks("Mobility", "SW.Item.Greatbow_Unique1"), ["Speed III"])

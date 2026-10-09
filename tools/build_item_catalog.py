@@ -350,11 +350,17 @@ TALISMAN_LEVEL_TAGS = {
 # is the game's, and the editor was only used to add emeralds. On that word they are here as seen: Chains I and II,
 # Cooldown III, Deflect II, EagleEye III, ElementalProtection III, Prospector II, Expand II, Friendship I,
 # PointBlank II, Precision III, RapidStrike II, Reconstruction I, Reeling II, Acrobat III, Saboteur I, Sniper I,
-# SoulSiphon I, Vanguard II and Vestige III. /issues/26 and /issues/33 hold more of the kind, and wait for the
-# same word from their senders.
+# SoulSiphon I, Vanguard II and Vestige III.
+# /issues/33 (made with 1.15.0) holds nine more, and its sender gave the same word there: nothing in that save had
+# been changed with an editor before the list was made. So these are seen too: BeastBoss I, Duelist I, EagleEye I,
+# Finesse I, MasterStrike I, MultiShot II and III, SweepingEdge I and Vanguard III. /issues/35 and /issues/36 (both
+# made with 1.15.1) show seven of the nine again, each with the same number.
+# Still waiting for their senders' word: Friendship III and PointBlank III on /issues/35 (a list with an item on it
+# that the editor had plainly changed: a Unique with four rolled effects), Sniper III on /issues/36, and the ones
+# on /issues/26.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
-    "BeastBoss": ("BeastBoss", {"II": 0.25, "III": 0.3}),
+    "BeastBoss": ("BeastBoss", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "Chains": ("Chains", {"I": 0.1, "II": 0.15, "III": 0.25}),
     "Committed": ("Committed", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "Constitution": ("Constitution", {"I": 0.1, "II": 0.2, "III": 0.3}),
@@ -363,12 +369,12 @@ GEAR_EFFECTS = {
     "CriticalHit": ("CriticalHit", {"I": 0.05, "II": 0.1, "III": 0.15}),
     "Deflect": ("Deflect", {"II": 0.15, "III": 0.2}),
     "Desperation": ("Desperation", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "Duelist": ("Duelist", {"II": 0.25, "III": 0.3}),
-    "EagleEye": ("EagleEye", {"II": 0.15, "III": 0.2}),
+    "Duelist": ("Duelist", {"I": 0.2, "II": 0.25, "III": 0.3}),
+    "EagleEye": ("EagleEye", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "ElementalProtection": ("ElementalProtection", {"II": -0.15, "III": -0.2}),
     "EmeraldsIncrease": ("Prospector", {"I": 0.05, "II": 0.1, "III": 0.15}),
     "Expand": ("Expand", {"I": 0.2, "II": 0.3, "III": 0.4}),
-    "Finesse": ("Finesse", {"II": 0.25, "III": 0.35}),
+    "Finesse": ("Finesse", {"I": 0.15, "II": 0.25, "III": 0.35}),
     "FireFocus": ("FireFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "FriendsForever": ("FriendsForever", {"I": -0.05, "II": -0.1, "III": -0.15}),
     "Friendship": ("Friendship", {"I": -0.05, "II": -0.1}),
@@ -380,8 +386,8 @@ GEAR_EFFECTS = {
     "Looting": ("Looting", {"I": 0.2, "II": 0.4, "III": 0.6}),
     "Lucky": ("Lucky", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "MasterMarksman": ("MasterMarksman", {"I": 0.15, "II": 0.2, "III": 0.25}),
-    "MasterStrike": ("MasterStrike", {"II": 0.2, "III": 0.25}),
-    "MultiShot": ("MultiShot", {"I": 0.2}),
+    "MasterStrike": ("MasterStrike", {"I": 0.15, "II": 0.2, "III": 0.25}),
+    "MultiShot": ("MultiShot", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Opportunist": ("Opportunist", {"I": 0.25, "II": 0.35, "III": 0.5}),
     "Opulence": ("Opulence", {"I": 0.01, "II": 0.02, "III": 0.03}),
     "PointBlank": ("PointBlank", {"I": 0.25, "II": 0.5}),
@@ -407,10 +413,10 @@ GEAR_EFFECTS = {
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
     "SpeedBoost": ("SpeedBoost", {"II": 0.1, "III": 0.15}),
     "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
-    "SweepingEdge": ("SweepingEdge", {"II": 0.3, "III": 0.4}),
+    "SweepingEdge": ("SweepingEdge", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2, "III": 0.3}),
     "Thorns": ("Thorns", {"II": 0.65, "III": 0.8}),
-    "Vanguard": ("Vanguard", {"I": 0.2, "II": 0.35}),
+    "Vanguard": ("Vanguard", {"I": 0.2, "II": 0.35, "III": 0.5}),
     "Vestige": ("Vestige", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Vivify": ("Vivify", {"I": 0.15, "II": 0.3, "III": 0.5}),
 }
@@ -515,6 +521,10 @@ EFFECT_GUESSES: dict[str, str] = {}
 # neither number is the game's 40%, so nothing says which to prefer, and the first stays.
 # /issues/33 was made with 1.15.0, which had no MultiPotion to write, so the MultiPotion III on its Dreamruler Cover
 # is the game's (3, with 15 points). What the game calls it isn't known: its book is one of UNNAMED_BOOKS.
+# /issues/35 was made with 1.15.1, which had no Tempo Theft to write, so the TempoTheft III on its Paragon is the
+# game's (0.5, and MetaBot's tier III is "a 50% chance to increase movement speed"). It holds 12 points there, a
+# Special's total at tier III, on a Unique: the game enchanted a Special, and the editor made the item Unique
+# afterwards (until 1.15.2 a change of rarity left an enchantment's points as they were).
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -538,6 +548,7 @@ ENCHANTMENT_TIERS = {
     "SoulInfusedPotion": {"I": 0.5, "II": 0.6, "III": 0.85},
     "SpringLoaded": {"III": 6},
     "Swirling": {"III": 1},
+    "TempoTheft": {"III": 0.5},
     "Thundering": {"III": 0.5},
     "Unstoppable": {"III": 0.3},
 }
