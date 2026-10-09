@@ -7,6 +7,28 @@ The short notes for the newest versions are on the
 **Menu → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.15.2
+
+- **Every minecart station.** A new preset, under **Presets… → Goals**. It adds every minecart station a player's
+  save has listed as found (21 so far) to the ones your hero has found, so the game lets you ride to them. A
+  station goes in the way the game saves one it has just found: its tag at the end of the save's list, which the
+  developer's play recordings show the game doing four times. At that moment the game also notes the station as
+  the one you last used and adds it to its own list for the achievement for finding every station. The preset
+  leaves both alone, since the hero hasn't moved and achievements are the game's to give, so a station added
+  this way may not count towards that achievement. The game may have stations no save has shown yet, and those
+  can't be added. The AI server's `apply_preset` does the same.
+- **A little more of the world.** [icicle1133](https://github.com/icicle1133)'s list
+  ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)) is the second with the world's part. It shares 95 doors and 13 regions with the
+  first, and the two agree on the place of every one. It adds four doors, five puzzle pieces and the Carapace
+  area: 198 doors now.
+- **Stations that no map names** are shown by what a save calls them, set out to be read: Taiga Beach (Frozen
+  Highlands), North (Carapace A1). One the game spells `Town.Fountain` gets its name, and the Town Fountain is no
+  longer listed among the stations you haven't found: a hero starts there, and no save lists it as found.
+- **One question, once.** In this version only, the editor asks whether you'd give it a star on GitHub, which is
+  how other players come across it. It asks once you've opened the editor before, after the What's new window
+  if that's showing. **Star it on GitHub** opens the project's page in your own browser; **No thanks** closes
+  the question. Either way it isn't asked again. The edition for Nexus Mods doesn't ask.
+
 ## 1.15.1
 
 - **Soulstorm Enhanced.** **Change effects…** has a tick box for it, for a weapon, an armor piece or an artifact.

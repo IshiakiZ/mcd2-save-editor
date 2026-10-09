@@ -1,3 +1,10 @@
+## What's new in 1.15.2
+
+- **Every minecart station.** A new preset under Goals adds every station players' saves have shown the editor to the ones your hero has found, so you can ride to them.
+- **A little more of the world:** four doors and five puzzle pieces from [icicle1133](https://github.com/icicle1133)'s list, which agrees with the last one wherever the two overlap.
+- **Stations that no map names** now read like Taiga Beach (Frozen Highlands), and the Town Fountain is no longer listed as one to find.
+- **One question, once.** The editor asks whether you'd give it a star on GitHub. It doesn't ask again.
+
 ## What's new in 1.15.1
 
 - **Soulstorm Enhanced.** Tick it in **Change effects…** and the game shows the item as a Soul Storm reward. Found in [regnirok](https://github.com/regnirok)'s list, and checked in the game.
@@ -19,11 +26,6 @@
 - **Five enchantments go by the game's names:** Crash Landing, Ender Mines, Lightning Surge, Power Amplifier and Soul Blast.
 - **Share item IDs…** also lists what your saves show of the game's world (quests, doors, minecart stations). A tick box leaves that out.
 - **What's new.** The first time a new version opens, it shows what changed. **Menu → What's new…** shows it again.
-
-## What's new in 1.14.2
-
-- **All 32 enchantment books can be added.** The last one's ID was in lists players had already sent.
-- **Poison Fog** can be put on an item, and **Somersault** at tier III. Thanks to [Armagedon13](https://github.com/Armagedon13) and [icicle1133](https://github.com/icicle1133) for their lists.
 
 ## Earlier versions, and the details
 
