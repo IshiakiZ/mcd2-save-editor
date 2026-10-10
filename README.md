@@ -121,11 +121,11 @@ your sign-in, account or device data.
   with **offline** heroes.
 - **Anything it hasn't seen in a real save.** The game's own lists are in its encrypted files, which the editor
   doesn't break, so it learns how things are saved from players' saves. So far: all 180 items and 116 Uniques, all
-  60 gear effects, all 32 enchantment books, and 26 of the 32 enchantments. An effect tier nobody has sent yet is
+  60 gear effects, all 32 enchantment books, and 27 of the 32 enchantments. An effect tier nobody has sent yet is
   marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
   add; nothing is sent unless you send it.
-- **Still missing:** the names of five enchantment books, the other enchantments and some tiers, and levelling a
-  companion's talisman outright (**Ready to level up** leaves it one XP short, and the game does the rest).
+- **Still missing:** five enchantments and some tiers of the others, and levelling a companion's talisman outright
+  (**Ready to level up** leaves it one XP short, and the game does the rest).
 - **Story progress.** A preset adds minecart stations, and that is all the editor changes of it: quests and the
   map stay as the game saved them. The world map and the play recorder only show what's there, and can't see a
   chest or a secret you haven't touched.
@@ -266,7 +266,11 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [gchristol](https://github.com/gchristol)'s ([#35](https://github.com/IshiakiZ/mcd2-save-editor/issues/35)),
   [XcenZ](https://github.com/XcenZ)'s ([#36](https://github.com/IshiakiZ/mcd2-save-editor/issues/36)) and
   [itamarnyg8-del](https://github.com/itamarnyg8-del)'s ([#37](https://github.com/IshiakiZ/mcd2-save-editor/issues/37)) added more of the world;
-  the first of those the Tempo Theft enchantment and two effect tiers, and the last Ricochet and Shockwave.
+  the first of those the Tempo Theft enchantment and two effect tiers, and the last Ricochet, Shockwave and three
+  effect tiers.
+- The last enchantment books got their names from [icicle1133](https://github.com/icicle1133), who has them
+  ([#34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)), and Critical Quiver came in a second list from
+  [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

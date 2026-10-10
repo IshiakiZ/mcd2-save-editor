@@ -7,6 +7,36 @@ The short notes for the newest versions are on the
 **Menu → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.15.3
+
+- **Every enchantment book goes by the game's name.** The last five went by the names a save gives them.
+  [icicle1133](https://github.com/icicle1133), who has the books, put names to four ([issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)): the book
+  a save calls Multi Potion is **Bottomless Brew**, Shadow Strike is **Shadowcloak**, Guarding Strike is
+  **Shielding Smite** and Soul Aspect is **Soul Blast**. Each is borne out another way. Multi Potion is saved as 3
+  at tier III on a chest piece, and Bottomless Brew is the chestplate enchantment that gives 3 more potions there.
+  The enchantment the game shows as Soul Blast is saved as Soul Fire Aspect, which no book is called, and Soul
+  Aspect was the one book with a soul in its name. The three names left only fit the three books one way round.
+  The fifth, Burst Bowstring, is **Tumbleshot** by what remained: the last book without a name and the last
+  enchantment without a book. A book's card now says what its enchantment does and what it goes on. If the game
+  shows one of these under another name, say so in an issue.
+- **Bottomless Brew goes on chestplates only,** as in the game. Under its old name the editor didn't know where it
+  goes, and offered it for every weapon and armor piece.
+- **Critical Quiver,** at tier III, for armor. [darklynkttv](https://github.com/darklynkttv)'s second list
+  ([issue 20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)) has it on Ranger Leggings, saved as 5, and the game's table says critical hits restore 5
+  arrows at that tier. That makes 27 of the 32 enchantments, 34 tiers.
+- **Kits follow their builds more closely.** The Greatbow sharpshooter's and the Close-range crossbow's chest
+  pieces get Critical Quiver and the Humbler tank's gets Bottomless Brew, which are what those builds name. A kit
+  also adds the book of every enchantment its build names, so the Close-range crossbow now comes with the
+  Tumbleshot book, the Humbler tank with Bottomless Brew's and the Soul caster with Soul Blast's.
+- **Three more effect tiers count as seen:** Precision II, Speed I and Sniper III. They are on
+  [itamarnyg8-del](https://github.com/itamarnyg8-del)'s list ([issue 37](https://github.com/IshiakiZ/mcd2-save-editor/issues/37)) with the numbers the game's
+  table gives, and its sender has said the game rolled them. 176 of the 180 tiers are seen now. The four left are
+  Deflection I, Elemental Protection I, Swiftness I and Prickly I.
+- **A little more of the world.** darklynkttv's list adds three doors in Meadow A1 and five roadblocks cleared, and
+  icicle1133's adds an area, the Fort Halls of the Frozen Highlands. 245 doors and 53 puzzle pieces now.
+- **The star question is gone.** 1.15.2 asked once whether you'd give the editor a star on GitHub. That was for
+  one version, and this one doesn't ask.
+
 ## 1.15.2
 
 - **Every minecart station.** A new preset, under **Presets… → Goals**. It adds every minecart station a player's

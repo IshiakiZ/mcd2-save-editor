@@ -1,3 +1,11 @@
+## What's new in 1.15.3
+
+- **Every enchantment book goes by its name in the game.** The last five are Bottomless Brew, Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot, thanks to [icicle1133](https://github.com/icicle1133).
+- **Critical Quiver can be put on armor,** at tier III, from [darklynkttv](https://github.com/darklynkttv)'s list.
+- **Kits follow their builds more closely:** Critical Quiver and Bottomless Brew go on where a build names them, and their books come with the kit.
+- **Three more effect tiers count as seen,** on [itamarnyg8-del](https://github.com/itamarnyg8-del)'s word: Precision II, Speed I and Sniper III. Four of the 180 are left.
+- **A little more of the world:** three doors, five puzzle pieces and an area, from darklynkttv's and icicle1133's lists.
+
 ## What's new in 1.15.2
 
 - **Every minecart station.** A new preset under Goals adds every station players' saves have shown the editor to the ones your hero has found, so you can ride to them.
@@ -5,7 +13,6 @@
 - **Tempo Theft, Ricochet and Shockwave can be put on weapons,** at tier III, from gchristol's and itamarnyg8-del's lists. Eleven more effect tiers count as seen, so **Best for** picks from them.
 - **Change an enchanted item's rarity** and its enchantment now gets the enchantment points the game counts at the new rarity.
 - **Stations that no map names** now read like Taiga Beach (Frozen Highlands), and the Town Fountain is no longer listed as one to find.
-- **One question, once.** The editor asks whether you'd give it a star on GitHub. It doesn't ask again.
 
 ## What's new in 1.15.1
 
@@ -17,17 +24,6 @@
 - **The editor knows much more of the world:** 43 quests, 194 doors and 21 minecart stations, from [regnirok](https://github.com/regnirok)'s list.
 - **A new enchantment,** the one a save calls Multi Potion, at tier III. Twenty more effect tiers count as seen, so **Best for** picks from them.
 - **Shorter notes.** These keep to the main things, for the newest version and the two before it. Every version, in full, is in the changelog.
-
-## What's new in 1.15.0
-
-- **World map.** **Menu → World map…** shows the ground your hero has explored, the doors it has found, and how far it has got in the story.
-- **Play recorder.** **Menu → Play recorder…** writes down what the game saves while you play, and puts what it sees on the map.
-- **A second look: Liquid Glass.** **Menu → Look** switches between it and Original, the look the editor still opens in.
-- **Launch game.** A button next to **Save to game** starts the game for you.
-- **Kits enchant every piece** they add, once your hero has unlocked the Enchantsmith.
-- **Five enchantments go by the game's names:** Crash Landing, Ender Mines, Lightning Surge, Power Amplifier and Soul Blast.
-- **Share item IDs…** also lists what your saves show of the game's world (quests, doors, minecart stations). A tick box leaves that out.
-- **What's new.** The first time a new version opens, it shows what changed. **Menu → What's new…** shows it again.
 
 ## Earlier versions, and the details
 
