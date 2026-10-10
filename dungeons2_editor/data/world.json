@@ -1086,7 +1086,8 @@
   "SW.Area.Forest.A1.SpiderCaves.3",
   "SW.Area.DeepDark.A1",
   "SW.Area.Carapace.A1",
-  "SW.Area.Meadow.A1"
+  "SW.Area.Meadow.A1",
+  "SW.Area.Desert.A1.FortHalls"
  ],
  "doors": {
   "SW.Doorway.Camp.Docks": {
@@ -3024,6 +3025,30 @@
     44.0
    ],
    "marker": 9
+  },
+  "SW.Doorway.MeadowA1.Dungeon.9": {
+   "at": [
+    -841.5,
+    1897.5,
+    38.0
+   ],
+   "marker": 8
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Ext.1": {
+   "at": [
+    -941.5,
+    1934.0,
+    52.0
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.MeadowA1.NatInteriors.Int.1": {
+   "at": [
+    63.0,
+    1540.5,
+    41.0
+   ],
+   "marker": 7
   }
  },
  "regions": {
@@ -3747,6 +3772,51 @@
   },
   "SpiderCaveV2 BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA66031587C602_1337333997": {
    "path": "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV2-1689800-500-500.SpiderCaveV2:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_B025AA66031587C602_1337333997",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_MeadowRoadblockActorStateGimmick UAID_B025AA6603152B9A02_1945501231": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/5VPRLV1KNHMIJUNZ10WECAXJH.Overworld:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025AA6603152B9A02_1945501231",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_MeadowRoadblockActorStateGimmick UAID_B025AA6603152B9A02_1380257130": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/2XVSKGZRDFGD263VZLZIT8XV8.Overworld:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025AA6603152B9A02_1380257130",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_CarapaceRoadblockActorStateGimmick UAID_B025AA660315749B02_2052985896": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/0GZMXNX2SNGIE98AHT14MACWA.Overworld:PersistentLevel.BP_CarapaceRoadblockActorStateGimmick_C_UAID_B025AA660315749B02_2052985896",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_MeadowA2RoadblockActorStateGimmick UAID_B025AA660315759B02_1258114091": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/A7X82C6VIRUCXDLXPEQ1VWP2J.Overworld:PersistentLevel.BP_MeadowA2RoadblockActorStateGimmick_C_UAID_B025AA660315759B02_1258114091",
+   "states": [
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  "Overworld BP_DesertA1RoadblockActorStateGimmick UAID_B025AA660315749B02_1348186851": {
+   "path": "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/B9ZFDSSE5952DFSE3ZNQJ85OI.Overworld:PersistentLevel.BP_DesertA1RoadblockActorStateGimmick_C_UAID_B025AA660315749B02_1348186851",
    "states": [
     [
      0,
