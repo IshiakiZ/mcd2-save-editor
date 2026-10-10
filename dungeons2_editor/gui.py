@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, edition, game_launch, game_style, merge, paths, saves, share_ids, star, updater, whats_new, wgs, wiki
+from . import __version__, codec, edition, game_launch, game_style, merge, paths, saves, share_ids, updater, whats_new, wgs, wiki
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -319,7 +319,6 @@ class EditorApp:
         self.container: saves.Container | None = None
         self.original: Any = None  # document as loaded from disk
         self.world_map: WorldDialog | None = None  # the World map window, while one is open
-        self.whats_new_window: whats_new.WhatsNewDialog | None = None  # the notes a launch showed by itself, if it did
         self.document: Any = None  # document being edited
         self.change_count = 0
         self.changed_paths: set[tuple] = set()
@@ -1505,33 +1504,8 @@ class EditorApp:
         _save_settings(self.settings_file, self.settings)
         if not versions:
             return False
-        self.whats_new_window = whats_new.WhatsNewDialog(self.root, versions)
+        whats_new.WhatsNewDialog(self.root, versions)
         return True
-
-    def welcome(self) -> None:
-        """What a launch shows by itself, once the window is up: what's new, the first time a version opens, and
-        then, in the one version that asks (star.py), whether you'd give the editor a star. Someone opening the
-        editor for the first time hasn't used it yet, so they are asked the next time they open it."""
-        used_before = isinstance(self.settings.get("seen_version"), str)
-        if not self.greet_new_version():
-            self.ask_for_a_star(used_before)
-            return
-        notes = self.whats_new_window
-
-        def closed(event: tk.Event) -> None:  # one thing at a time: the question waits for the notes to be closed
-            if event.widget is notes:
-                self.root.after(200, lambda: self.ask_for_a_star(used_before))
-
-        notes.bind("<Destroy>", closed, add="+")
-
-    def ask_for_a_star(self, used_before: bool = True) -> "star.StarDialog | None":
-        """Ask, once, whether you'd give the editor a star on GitHub. It's remembered as asked the moment the
-        window is shown, whatever the answer, so it never comes up a second time."""
-        if not star.should_ask(self.settings, __version__, edition.ONLINE, used_before):
-            return None
-        self.settings[star.SETTING] = True
-        _save_settings(self.settings_file, self.settings)
-        return star.StarDialog(self.root)
 
     def _confirm_discard(self) -> bool:
         self._hero_editor().commit_pending()
@@ -2027,7 +2001,7 @@ def run(
     try:
         app = EditorApp(root, profile, backup_root, icon_root, look=look)
         if close_after is None:
-            root.after(300, app.welcome)  # once the window is up: what's new, the first time a version opens
+            root.after(300, app.greet_new_version)  # once the window is up: what's new, the first time a version opens
         if close_after is None and edition.ONLINE:  # a build check stays offline, and so does the offline edition
             app.check_for_updates()
             threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()

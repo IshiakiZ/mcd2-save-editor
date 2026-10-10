@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
-from dungeons2_editor import __version__, edition, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, star, updater, wgs, whats_new, world_dialog
+from dungeons2_editor import __version__, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, updater, wgs, whats_new, world_dialog
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -1697,79 +1697,6 @@ class SimpleModeTests(WindowTestCase):
         with mock.patch.object(gui.whats_new, "load", return_value=[]):
             self.assertFalse(app.greet_new_version())
         self.assertEqual((dialogs(), app.settings["seen_version"]), ([], __version__))
-
-    def test_the_editor_asks_for_a_star_once_in_the_one_version_that_asks(self):
-        app = self.app
-
-        def asking():
-            return [child for child in self.root.winfo_children() if isinstance(child, star.StarDialog)]
-
-        def notes_shown():
-            return [child for child in self.root.winfo_children() if isinstance(child, whats_new.WhatsNewDialog)]
-
-        def saved():
-            return json.loads(self.settings_file.read_text(encoding="utf-8"))
-
-        self.assertEqual(asking(), [])  # opening the editor in a test, or to check a build, asks nothing
-        with mock.patch.object(star, "ASK_IN", __version__), mock.patch.object(edition, "ONLINE", True), mock.patch("webbrowser.open") as browser:
-            # The first time the editor opens on a PC, its owner hasn't used it yet: the notes, and no question.
-            self.assertNotIn("seen_version", app.settings)
-            app.welcome()
-            (notes,) = notes_shown()
-            notes.destroy()
-            self.root.update()
-            self.root.after(250, self.root.quit)
-            self.root.mainloop()
-            self.assertEqual((asking(), star.SETTING in saved()), ([], False))
-            # The next time it opens: the question, over the editor's window, and remembered as asked at once.
-            app.welcome()
-            self.root.update()
-            (dialog,) = asking()
-            self.assertEqual(notes_shown(), [])
-            self.assertEqual((dialog.title(), str(dialog.star_button.cget("text")), str(dialog.no_button.cget("text"))),
-                             ("Enjoying the editor?", "★  Star it on GitHub", "No thanks"))
-            self.assertTrue(saved()[star.SETTING])
-            self.assertEqual(str(dialog.grab_current()), str(dialog))  # it waits for an answer
-            # Star it opens the project's page in the browser, and that's all it does.
-            dialog.star_button.invoke()
-            browser.assert_called_once_with("https://github.com/IshiakiZ/mcd2-save-editor")
-            self.assertTrue(dialog.starred)
-            self.assertEqual(asking(), [])
-            # It never comes up again, whichever answer it got.
-            app.welcome()
-            self.root.update()
-            self.assertEqual(asking(), [])
-            app.settings.pop(star.SETTING)
-            no = app.ask_for_a_star()
-            no.no_button.invoke()
-            self.assertFalse(no.starred)
-            self.assertIsNone(app.ask_for_a_star())
-            browser.assert_called_once()
-            # After an update the notes come first, and the question once they're closed.
-            app.settings.pop(star.SETTING)
-            app.settings["seen_version"] = "0.9.0"
-            app.welcome()
-            (notes,) = notes_shown()
-            self.root.update()
-            self.assertEqual(asking(), [])
-            notes.close_button.invoke()
-            self.root.after(300, self.root.quit)
-            self.root.mainloop()
-            (dialog,) = asking()
-            dialog.destroy()
-            # The edition that never goes online doesn't point its users at another site.
-            app.settings.pop(star.SETTING)
-            with mock.patch.object(edition, "ONLINE", False):
-                self.assertIsNone(app.ask_for_a_star())
-            self.assertNotIn(star.SETTING, app.settings)
-        # In any other version there is no question at all.
-        with mock.patch.object(star, "ASK_IN", "0.0.1"), mock.patch.object(edition, "ONLINE", True):
-            self.assertIsNone(app.ask_for_a_star())
-        self.assertFalse(star.should_ask({}, "9.9.9", True))
-        self.assertEqual(
-            [star.should_ask(*case) for case in (({}, star.ASK_IN, True), ({}, star.ASK_IN, False), ({}, star.ASK_IN, True, False), ({star.SETTING: True}, star.ASK_IN, True))],
-            [True, False, False, False],
-        )
 
     def test_enchantment_books_have_a_tab_of_their_own(self):
         button, bar = self.screen.books_button, self.screen.books_bar
