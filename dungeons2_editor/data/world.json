@@ -3049,6 +3049,22 @@
     41.0
    ],
    "marker": 7
+  },
+  "SW.Doorway.DesertA1.Lake.Interior.Basement1.House1": {
+   "at": [
+    -1794.5,
+    396.5,
+    -27.5
+   ],
+   "marker": 7
+  },
+  "SW.Doorway.DesertA1.Lake.Interior.Basement4.House4": {
+   "at": [
+    -1947.5,
+    389.5,
+    -29.5
+   ],
+   "marker": 7
   }
  },
  "regions": {
