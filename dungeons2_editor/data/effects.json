@@ -1133,7 +1133,7 @@
      "tier": "II",
      "strength": 0.15,
      "shown": "15%",
-     "seen": false,
+     "seen": true,
      "text": "Increases chance of critical hits with melee attacks by 15%."
     },
     {
@@ -1541,7 +1541,7 @@
      "tier": "III",
      "strength": 0.75,
      "shown": "75%",
-     "seen": false,
+     "seen": true,
      "text": "Ranged attacks deal 75% more damage from far away."
     }
    ]
@@ -1651,7 +1651,7 @@
      "tier": "I",
      "strength": 0.05,
      "shown": "5%",
-     "seen": false,
+     "seen": true,
      "text": "Increases movement speed by 5%."
     },
     {
@@ -1945,6 +1945,17 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.CriticalQuiver",
+   "name": "Critical Quiver",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 5,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.Dynamo",
    "name": "Dynamo",
    "tiers": [
@@ -2022,8 +2033,7 @@
   },
   {
    "effect": "SW.Enchantment.MultiPotion",
-   "name": "Multi Potion",
-   "name_from_id": true,
+   "name": "Bottomless Brew",
    "tiers": [
     {
      "tier": "III",

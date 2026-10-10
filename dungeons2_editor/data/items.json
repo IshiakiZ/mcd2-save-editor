@@ -3698,17 +3698,16 @@
    "confirmed": true
   },
   {
+   "name": "Bottomless Brew",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.MultiPotion",
+   "confirmed": true
+  },
+  {
    "name": "Buddy Brew",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.PotionSharing",
    "confirmed": true
-  },
-  {
-   "name": "Burst Bowstring",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.BurstBowstring",
-   "confirmed": true,
-   "name_from_id": true
   },
   {
    "name": "Chain Reaction",
@@ -3771,13 +3770,6 @@
    "confirmed": true
   },
   {
-   "name": "Guarding Strike",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.GuardingStrike",
-   "confirmed": true,
-   "name_from_id": true
-  },
-  {
    "name": "Healing Smite",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Radiance",
@@ -3794,13 +3786,6 @@
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Channeling",
    "confirmed": true
-  },
-  {
-   "name": "Multi Potion",
-   "kind": "Enchantment Book",
-   "id": "SW.Item.EnchantmentBook.MultiPotion",
-   "confirmed": true,
-   "name_from_id": true
   },
   {
    "name": "Piercing",
@@ -3827,11 +3812,16 @@
    "confirmed": true
   },
   {
-   "name": "Shadow Strike",
+   "name": "Shadowcloak",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.ShadowStrike",
-   "confirmed": true,
-   "name_from_id": true
+   "confirmed": true
+  },
+  {
+   "name": "Shielding Smite",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.GuardingStrike",
+   "confirmed": true
   },
   {
    "name": "Shockwave",
@@ -3846,11 +3836,10 @@
    "confirmed": true
   },
   {
-   "name": "Soul Aspect",
+   "name": "Soul Blast",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.SoulAspect",
-   "confirmed": true,
-   "name_from_id": true
+   "confirmed": true
   },
   {
    "name": "Springload",
@@ -3874,6 +3863,12 @@
    "name": "Thundering",
    "kind": "Enchantment Book",
    "id": "SW.Item.EnchantmentBook.Thundering",
+   "confirmed": true
+  },
+  {
+   "name": "Tumbleshot",
+   "kind": "Enchantment Book",
+   "id": "SW.Item.EnchantmentBook.BurstBowstring",
    "confirmed": true
   }
  ]

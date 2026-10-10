@@ -257,6 +257,16 @@ BOOK_IDS = {
     # whose potion makes a Fortifying well for 2, 4 and 6 seconds (the other brew with those numbers, Buddy Brew,
     # is PotionSharing).
     "Barrier Brew": "PotionBarrier",
+    # Bottomless Brew, Shadowcloak, Shielding Smite and Soul Blast by a player's word: the sender of /issues/34 put
+    # those names to the books a save calls MultiPotion, ShadowStrike, GuardingStrike and SoulAspect (their hero
+    # carries two of them and has the other two in its collections). Each is borne out another way as well.
+    # MultiPotion is saved as 3 at tier III on a chest piece (/issues/33), and Bottomless Brew is the chestplate
+    # enchantment that gives 3 more potions there. The enchantment the game calls Soul Blast is saved as
+    # SoulFireAspect (ENCHANTMENT_NAMES), no book has that ID, and SoulAspect is the one book with a soul in its
+    # name. That leaves three IDs and three of MetaBot's names, and they only fit one way round: a guarding strike
+    # for the smite that shields, a shadow strike for the cloak of shadows, a burst bowstring for the roll that
+    # fires arrows.
+    "Bottomless Brew": "MultiPotion",
     "Buddy Brew": "PotionSharing",
     "Chain Reaction": "ChainReaction",
     # Unstoppable by its owner's word: the player whose Monstrosity Horns carry it read its name off the game
@@ -285,24 +295,27 @@ BOOK_IDS = {
     "Poison Fog": "PoisonFog",
     "Power Amplifier": "LingeringPower",
     "Ricochet": "Ricochet",
+    "Shadowcloak": "ShadowStrike",
+    "Shielding Smite": "GuardingStrike",
     "Shockwave": "Shockwave",
     "Somersault": "MultiRoll",
+    "Soul Blast": "SoulAspect",
     "Springload": "SpringLoaded",
     "Swirling": "Swirling",
     "Tempo Theft": "TempoTheft",
     "Thundering": "Thundering",
+    # Tumbleshot is the one name nobody has put to its book: BurstBowstring was the last book without a name, and
+    # Tumbleshot the last of MetaBot's enchantments without a book (the two it has beyond the 32 books are built
+    # into Uniques).
+    "Tumbleshot": "BurstBowstring",
 }
-# Books in a save's collections that nobody has put a name to yet (/issues/28; GuardingStrike is in the developer's
-# own save as well; MultiPotion is in the collections of /issues/17, /issues/20 and /issues/23). The game files a
-# book there when it hands it over, so the IDs are the game's own, and the editor lists each under a name made from
-# its ID. Every book has an ID now, and MetaBot has five enchantments without one (Bottomless Brew, Shadowcloak,
-# Shielding Smite, Soul Blast and Tumbleshot): five IDs and five names, so they most likely pair off, and which is
-# which is for someone who has the book to say, not for a guess. One is close to certain: the enchantment the
-# game calls Soul Blast is saved as SoulFireAspect (ENCHANTMENT_NAMES), no book has that ID, and SoulAspect is the
-# one book left with a soul in its name.
-UNNAMED_BOOKS = ("BurstBowstring", "GuardingStrike", "MultiPotion", "ShadowStrike", "SoulAspect")
-# What the game calls an enchantment whose book hasn't been tied to it, by how a save names the enchantment. The
-# developer read Soul Blast off an item in the game (see BOOK_IDS, Crash Landing).
+# Books in a save's collections that nobody has put a name to yet: the editor lists each under a name made from
+# its ID. The game files a book in the collections when it hands it over, so such an ID is the game's own. There
+# are none now: the last five (BurstBowstring, GuardingStrike, MultiPotion, ShadowStrike, SoulAspect; /issues/28
+# and others) have the names above, and all 32 books go by what the game calls them.
+UNNAMED_BOOKS: tuple[str, ...] = ()
+# What the game calls an enchantment that a save names differently from its book. The developer read Soul Blast off
+# an item in the game (see BOOK_IDS, Crash Landing): the enchantment is SoulFireAspect, and its book SoulAspect.
 ENCHANTMENT_NAMES = {"SoulFireAspect": "Soul Blast"}
 # What a talisman does at each of its three levels, as real saves store it: (effect, template, strengths). The
 # effect is SW.Effect.<effect>, its level templates are SW.EffectTemplate.<template>.I to .III, and the strengths are
@@ -357,8 +370,15 @@ TALISMAN_LEVEL_TAGS = {
 # made with 1.15.1) show seven of the nine again, each with the same number.
 # /issues/35 also holds Friendship III (-0.15, on a Humbling Horn) and PointBlank III (0.75, on a Heavy Crossbow),
 # on a list with items the editor had plainly changed (a Unique with four rolled effects), so its sender was asked:
-# the game rolled both, on Soulstorm rewards. Sniper III on /issues/36 was put on with the editor, its sender said,
-# so it stays as the table has it. The ones on /issues/26 still wait for their sender's word.
+# the game rolled both, on Soulstorm rewards. The Sniper III on /issues/36 was put on with the editor, its sender
+# said, so that one didn't count.
+# /issues/37 (made with 1.15.1) holds Precision II (0.15, on Prime Enchanter's Gauntlets), SpeedBoost I (0.05, on a
+# Sharpshooter Fedora) and Sniper III (0.75, on a Powerbow). Its sender was asked about the three by name, and said
+# the game rolled them.
+# Still waiting: Deflect I (0.1, on a Disciple Robe) on the second list of /issues/20, which has an item beside it
+# that the editor had changed (a Unique Greatsword under the plain item's ID), and the ones on /issues/26. Nothing
+# was taken from the items on /issues/34: its sender said every item with effects there had been changed with the
+# editor.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"I": 0.2, "II": 0.25, "III": 0.3}),
@@ -395,7 +415,7 @@ GEAR_EFFECTS = {
     "PoisonFocus": ("PoisonFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "PotionCooldown": ("PotionMaster", {"I": -0.05, "II": -0.1, "III": -0.2}),
     "Power": ("Power", {"I": 0.1, "II": 0.2, "III": 0.3}),
-    "Precision": ("Precision", {"I": 0.1, "III": 0.2}),
+    "Precision": ("Precision", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "ProjectileProtection": ("ProjectileProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "RapidStrike": ("RapidStrike", {"II": 0.15, "III": 0.2}),
@@ -408,11 +428,11 @@ GEAR_EFFECTS = {
     "ShadowWalk": ("ShadowWalk", {"I": 0.2, "II": 0.25, "III": 0.35}),
     "Sharpness": ("Sharpness", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "Sidestep": ("Sidestep", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "Sniper": ("Sniper", {"I": 0.25, "II": 0.5}),
+    "Sniper": ("Sniper", {"I": 0.25, "II": 0.5, "III": 0.75}),
     "SoulFocus": ("SoulFocus", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "SoulGatherMultiply": ("SoulSiphon", {"I": 0.25, "II": 0.35, "III": 0.45}),
     "SoulMax": ("BagOfSouls", {"I": 1.25, "II": 1.3, "III": 1.35}),
-    "SpeedBoost": ("SpeedBoost", {"II": 0.1, "III": 0.15}),
+    "SpeedBoost": ("SpeedBoost", {"I": 0.05, "II": 0.1, "III": 0.15}),
     "Supercharge": ("Supercharge", {"I": 0.3, "II": 0.35, "III": 0.4}),
     "SweepingEdge": ("SweepingEdge", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "SwiftSneak": ("SwiftSneak", {"I": 0.15, "II": 0.2, "III": 0.3}),
@@ -521,7 +541,7 @@ EFFECT_GUESSES: dict[str, str] = {}
 # (MetaBot: "a 50% chance for 50% of weapon damage"), so that is what the editor writes now. For LingeringPower
 # neither number is the game's 40%, so nothing says which to prefer, and the first stays.
 # /issues/33 was made with 1.15.0, which had no MultiPotion to write, so the MultiPotion III on its Dreamruler Cover
-# is the game's (3, with 15 points). What the game calls it isn't known: its book is one of UNNAMED_BOOKS.
+# is the game's (3, with 15 points). The game calls it Bottomless Brew (see BOOK_IDS).
 # /issues/35 was made with 1.15.1, which had no Tempo Theft to write, so the TempoTheft III on its Paragon is the
 # game's (0.5, and MetaBot's tier III is "a 50% chance to increase movement speed"). It holds 12 points there, a
 # Special's total at tier III, on a Unique: the game enchanted a Special, and the editor made the item Unique
@@ -529,8 +549,15 @@ EFFECT_GUESSES: dict[str, str] = {}
 # /issues/37 was made with 1.15.1, which had neither Ricochet nor Shockwave to write, so both are the game's, each
 # at tier III with a Unique's 15 points: Ricochet as 3 on a Harp Crossbow (MetaBot's tier III bounces up to 3
 # times), and Shockwave as 1 on an Elemental Staff (1 like Fire Aspect's and Swirling's, where the game shows a
-# share of weapon damage). Three tiers on that list wait for its sender's word, being ones 1.15.1 offered from the
-# table: Precision II, SpeedBoost I and Sniper III.
+# share of weapon damage). Three tiers on that list were ones 1.15.1 offered from the table (Precision II,
+# SpeedBoost I and Sniper III): its sender has since said the game rolled them (GEAR_EFFECTS).
+# A second list on /issues/20 (2026-10-10; made with 1.15.2, by what its world part leaves out) has CriticalQuiver
+# III as 5 on Ranger Leggings, with a Special's 12 points. No version has had a tier of Critical Quiver to write,
+# and MetaBot's tier III restores 5 arrows.
+# Not taken yet: PotionSharing III as 6 (Buddy Brew, whose tier III lasts 6 seconds) on Monstrosity Horns in a
+# comment on /issues/34. No release has had it to write either, but its sender works from a build of their own
+# and says every item with effects on their lists was changed with the editor, and one Unique there has an own
+# effect with a number no other save holds. Asked whether the Enchantsmith put it on.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -538,6 +565,7 @@ ENCHANTMENT_TIERS = {
     "Borealis": {"III": 0.287547},
     "ChainReaction": {"III": 5},
     "Channeling": {"III": 3},
+    "CriticalQuiver": {"III": 5},
     "Dynamo": {"III": 0.4},
     "ExpandedQuiver": {"II": 3, "III": 4},
     "FireAspect": {"III": 1},

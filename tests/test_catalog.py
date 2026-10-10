@@ -53,12 +53,9 @@ class RealItemListTests(unittest.TestCase):
         self.assertEqual([ids[name].id for name in ("Picnic Basket", "Blizzard Bangle", "Tempo Truffle")],
                          ["SW.Item.Artifact.PicnicBlanket", "SW.Item.Artifact.FrostBracelet", "SW.Item.Artifact.HasteMushroom"])
         self.assertEqual((ids["Mob Mallet"].id, ids["Mob Mallet"].confirmed), ("SW.Item.GiantMallet", True))
-        # Every item goes by the game's name, but for five books whose IDs players' collections showed and nobody
-        # has put a name to: they go by their IDs.
-        self.assertEqual(
-            [item.name for item in self.items if item.name_from_id],
-            ["Burst Bowstring", "Guarding Strike", "Multi Potion", "Shadow Strike", "Soul Aspect"],
-        )
+        # Every item goes by the game's name. The last to go by their IDs were five books, until players put names to
+        # them (see the test of the books, below).
+        self.assertEqual([item.name for item in self.items if item.name_from_id], [])
         # A talisman is saved by what it does, and its effect can go by another name than its level templates.
         fist = ids["Fist of Iron"]
         self.assertEqual((fist.id, [(level["effect"], level["intensity"], level["template"]) for level in fist.levels]),
@@ -200,7 +197,10 @@ class RealItemListTests(unittest.TestCase):
         made = {choice.title: (choice.strength, choice.seen, choice.template, choice.slots) for choice in book.enchantments}
         self.assertEqual(made["Ricochet III"], (3, True, "SW.Enchantment.Ricochet.III", ("Ranged",)))
         self.assertEqual(made["Shockwave III"], (1, True, "SW.Enchantment.Shockwave.III", ("Melee",)))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (26, 33))
+        # Critical Quiver at tier III, from a second list on issue 20: 5 on leggings, where the game's table says
+        # critical hits restore 5 arrows. No version had a tier of it to write. It goes on armor, as its book says.
+        self.assertEqual(made["Critical Quiver III"], (5, True, "SW.Enchantment.CriticalQuiver.III", ("Armor",)))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (27, 34))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -233,11 +233,11 @@ class RealItemListTests(unittest.TestCase):
         piercing = next(choice for choice in heroes.effect_choices([])[1] if choice.title == "Piercing III")
         hero.set_enchantment(heartstring.index, piercing)
         self.assertEqual(hero.item(heartstring.index).effect_lines(), ["Its own: Piercing", "Enchanted: Piercing III, 15 enchantment points"])
-        # The build names nothing for the Hunter's Hatchet, and Critical Quiver (its pick for the Duster) hasn't been
-        # seen saved yet: those get the editor's own pick for their kind of gear, and so do the leggings and boots.
+        # The build names nothing for the Hunter's Hatchet: it gets the editor's own pick for its kind of gear, and so
+        # do the leggings and boots. The Duster gets the build's pick, Critical Quiver, now that a save has shown it.
         self.assertEqual(made["Hunter's Hatchet"], ("Fire Aspect III", ["Critical Edge III"]))
         self.assertEqual(made["Sharpshooter Fedora"], ("Ender Quiver III", ["Projectile Protection III"]))
-        self.assertEqual(made["Sharpshooter Duster"], ("Health Synergy III", ["Projectile Protection III"]))
+        self.assertEqual(made["Sharpshooter Duster"], ("Critical Quiver III", ["Projectile Protection III"]))
         self.assertEqual(made["Flaming Quiver"], (None, ["Cooldown III", "Spiritual III"]))  # an artifact tops out at Special: two effects
         # Every weapon and armor piece of every kit gets an enchantment, and no two pieces of a kit the same one.
         for kit in (preset for preset in presets.PRESETS if preset.group == presets.KITS):
@@ -400,12 +400,12 @@ class RealItemListTests(unittest.TestCase):
 
     def test_books_are_named_after_enchantments(self):
         books = [item for item in self.items if item.kind == heroes.BOOK_KIND]
-        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (32, 5))
-        # That is every book there is: MetaBot's enchantments, less the two that are built into a Unique. And as
-        # many enchantments are without a book here as books are without a name.
+        self.assertEqual((len(books), len([book for book in books if book.name_from_id])), (32, 0))
+        # That is every book there is: MetaBot's enchantments, less the two that are built into a Unique. Every book
+        # has its name, so every other enchantment has its book.
         bookless = set(heroes.enchantments()) - {book.name for book in books}
         self.assertEqual(len(books), len(heroes.enchantments()) - 2)
-        self.assertEqual(bookless - {"Ichor Blast", "Primed Enchantment"}, {"Bottomless Brew", "Shadowcloak", "Shielding Smite", "Soul Blast", "Tumbleshot"})
+        self.assertEqual(bookless, {"Ichor Blast", "Primed Enchantment"})
         # Four books the developer named by putting their enchantments on items and reading the game's word for each.
         # An enchantment is saved under its book's ID, so the book takes the name.
         self.assertEqual(
@@ -413,21 +413,26 @@ class RealItemListTests(unittest.TestCase):
             ["Crash Landing", "Ender Mines", "Lightning Surge", "Power Amplifier", "Thundering"],
         )
         self.assertEqual(heroes.book_enchantment("SW.Item.EnchantmentBook.Channeling").slots, ("Melee",))
-        # The fifth, Soul Blast, is saved as SoulFireAspect, which no book is called: the enchantment has its name,
-        # and the book most likely to be its own (SoulAspect) keeps its ID until a save ties the two.
+        # The fifth, Soul Blast, is saved as SoulFireAspect, which no book is called: the enchantment has its name by
+        # the game's word, and its book is the one a save calls SoulAspect, by the word of a player who has it.
         by_effect = {choice.effect: choice for choice in heroes.effect_choices()[1]}
         self.assertEqual((by_effect["SW.Enchantment.SoulFireAspect"].title, by_effect["SW.Enchantment.SoulFireAspect"].slots), ("Soul Blast III", ("Melee",)))
-        self.assertEqual((heroes.display_name("SW.Item.EnchantmentBook.SoulAspect"), heroes.book_enchantment("SW.Item.EnchantmentBook.SoulAspect")), ("Soul Aspect", None))
+        blast = heroes.book_enchantment("SW.Item.EnchantmentBook.SoulAspect")
+        self.assertEqual((heroes.display_name("SW.Item.EnchantmentBook.SoulAspect"), blast.name, blast.slots), ("Soul Blast", "Soul Blast", ("Melee",)))
+        # The last five books to get their names (issue 34): four by that player's word, each borne out another way,
+        # and Tumbleshot as the one book and the one name that were left.
+        self.assertEqual(
+            [heroes.display_name(f"SW.Item.EnchantmentBook.{book}") for book in ("MultiPotion", "ShadowStrike", "GuardingStrike", "SoulAspect", "BurstBowstring")],
+            ["Bottomless Brew", "Shadowcloak", "Shielding Smite", "Soul Blast", "Tumbleshot"],
+        )
         for book in books:
             self.assertTrue(book.id.startswith("SW.Item.EnchantmentBook.") and book.confirmed, book.id)
-            if book.name_from_id:  # seen in a save's collections, but nobody has said what the game calls it
-                self.assertEqual(book.name, heroes.words(book.id.rsplit(".", 1)[1]))
-                self.assertNotIn(book.name, heroes.enchantments(), book.id)  # a name the game uses would be a claim
-                self.assertIsNone(heroes.book_enchantment(book.id))
-                self.assertFalse(heroes.name_is_known(book.id))
-            else:
-                self.assertIn(book.name, heroes.enchantments(), book.id)
-        self.assertEqual(heroes.book_text("SW.Item.EnchantmentBook.GuardingStrike"), "An enchantment book. The editor doesn't know what the game calls its enchantment yet.")
+            self.assertIn(book.name, heroes.enchantments(), book.id)
+            self.assertTrue(heroes.name_is_known(book.id) and heroes.book_enchantment(book.id) is not None, book.id)
+        self.assertEqual(
+            heroes.book_text("SW.Item.EnchantmentBook.GuardingStrike"),
+            "The book of an enchantment for weapons. Kills can create a Fortifying well: 10% / 20% / 40% chance at tiers I, II and III.",
+        )
         # A hero with none of them is offered all thirty-two, and gets them in one go.
         hero = Hero(hero_save())
         catalog = build_catalog([hero])
@@ -482,20 +487,29 @@ class RealItemListTests(unittest.TestCase):
         # /issues/35 was made with 1.15.1 and has items the editor had plainly changed, so these two waited for its
         # sender's word: the game rolled both, on Soulstorm rewards.
         vouched.update({("PointBlank", "III"): 0.75, ("Friendship", "III"): -0.15})
+        # /issues/37 was made with 1.15.1 and holds three more. Its sender was asked about each by name: the game
+        # rolled them. (The Sniper III on /issues/36 had been put on with the editor, its sender said, so that one
+        # didn't count.)
+        vouched.update({("Precision", "II"): 0.15, ("SpeedBoost", "I"): 0.05, ("Sniper", "III"): 0.75})
         self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
-        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 173))
-        # /issues/36's Sniper III was put on with the editor, its sender said: it stays as the table has it.
-        self.assertEqual(seen[("Sniper", "III")], (0.75, False))
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 176))
+        # The four nobody has vouched for stay as the table has them. Deflection I is on a list whose sender hasn't
+        # said yet (a second one on /issues/20); Elemental Protection I is on one whose items were the editor's work.
+        unseen = {key: value for key, value in seen.items() if not value[1]}
+        self.assertEqual(unseen, {("Deflect", "I"): (0.1, False), ("ElementalProtection", "I"): (-0.1, False), ("RapidStrike", "I"): (0.1, False), ("Thorns", "I"): (0.5, False)})
 
     def test_what_a_list_made_with_1_15_0_added(self):
         # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.
-        # What the game calls it isn't known yet: it goes by what a save calls it, like its book.
+        # It went by what a save calls it, like its book, until a player put the game's name to the book: Bottomless
+        # Brew, the chestplate enchantment that gives 3 more potions at tier III, which is the 3 a save holds.
         _gear, enchantments = heroes.effect_choices()
         potion = next(choice for choice in enchantments if choice.effect == "SW.Enchantment.MultiPotion")
-        self.assertEqual((potion.title, potion.strength, potion.seen), ("Multi Potion III", 3, True))
-        self.assertIn("Multi Potion", {book.name for book in self.items if book.kind == heroes.BOOK_KIND})
+        self.assertEqual((potion.title, potion.strength, potion.seen, potion.slots, potion.levels), ("Bottomless Brew III", 3, True, ("Chestplate",), "+1 / +2 / +3 potions"))
+        self.assertEqual(heroes.display_name("SW.Item.EnchantmentBook.MultiPotion"), "Bottomless Brew")
         cover = next(item for item in self.items if item.unique == "Dreamruler Cover")
         self.assertTrue(potion.fits(cover.kind, cover.slot))  # the piece it was on: a chestplate
+        helmet = next(item for item in self.items if item.unique == "Dreamruler Crown")
+        self.assertFalse(potion.fits(helmet.kind, helmet.slot))  # and the only kind of piece the game puts it on
 
     def test_a_soul_storm_reward_is_rebuilt_as_the_game_saved_it(self):
         # /issues/33 holds a Special Clobberer from a Soul Storm's reward chest, as saved (less its pickup time and
