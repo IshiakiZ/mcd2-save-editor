@@ -105,22 +105,23 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
 
 def cmd_pictures(args: argparse.Namespace) -> int:
-    from . import edition, icons, wiki
+    from . import edition, icons, picture_pack
 
     if not edition.ONLINE:
         print(edition.offline_note("download pictures") + " Put your own in the icons folder, or paste them in the editor.")
         return 1
-    pictures = wiki.list_pictures()
-    folder = icons.IconLibrary(args.icons).ensure_folder() / "wiki"
+    source = picture_pack.best_source()  # the editor's picture pack when the site has one, else the Minecraft Wiki
+    pictures = source.pictures
+    folder = icons.IconLibrary(args.icons).ensure_folder() / source.folder
     size = sum(picture.size for picture in pictures) / 1e6
-    if not _confirm(f"Download {len(pictures)} item pictures ({size:.1f} MB) from minecraft.wiki into {folder}?", args.yes):
+    if not _confirm(f"Download {len(pictures)} item pictures ({size:.1f} MB) from {source.site} into {folder}?", args.yes):
         print("Cancelled.")
         return 1
 
     def progress(number: int, total: int, name: str) -> None:
         print(f"\r  {number}/{total}  {name[:40]:<40}", end="", flush=True)
 
-    downloaded, skipped = wiki.download_pictures(pictures, folder, progress)
+    downloaded, skipped = source.download(pictures, folder, progress)
     print(f"\nDownloaded {downloaded} pictures; {skipped} were already there.")
     return 0
 

@@ -939,6 +939,79 @@ class HeroTabTests(WindowTestCase):
         hero = self.saved_hero()
         self.assertEqual((hero.attribute("Emeralds"), hero.attribute("XP")), (5000, 3000))  # yours and the game's
 
+    def test_the_editor_gets_its_item_pictures_by_itself_unless_told_not_to(self):
+        import hashlib
+
+        from dungeons2_editor import edition, picture_pack
+
+        app, pack = self.app, self.dir / "icons" / "pack"
+        drawn = tk.PhotoImage(master=self.root, width=32, height=32)
+        drawn.put("#e8702a", to=(0, 0, 32, 32))
+        drawn.write(str(self.dir / "one.png"), format="png")
+        sword = (self.dir / "one.png").read_bytes()
+        listed = [{"name": "Sword", "file": "Sword.png", "size": len(sword), "sha256": hashlib.sha256(sword).hexdigest()}]
+        asked: list[str] = []
+
+        def site(url, most, timeout=30):
+            asked.append(url[len(picture_pack.PACK_URL):])
+            return json.dumps({"version": 1, "pictures": listed}).encode() if url.endswith("index.json") else sword
+
+        def settled():
+            return not app._pictures_busy
+
+        # Nobody is asked anything, whatever happens: this runs by itself when the editor opens.
+        quiet = [mock.patch(f"tkinter.messagebox.{box}", side_effect=AssertionError(f"it asked with {box}")) for box in ("askyesno", "showinfo", "showerror")]
+        for box in quiet:
+            box.start()
+            self.addCleanup(box.stop)
+        with mock.patch.object(picture_pack, "_get", site):
+            # The first time: the list, then the picture it names, into the icons folder's pack folder.
+            app.get_pictures_automatically()
+            self.wait_until(settled)
+            self.assertEqual(asked, ["index.json", "Sword.png"])
+            self.assertEqual((pack / "Sword.png").read_bytes(), sword)
+            self.assertEqual(app.status_var.get(), "Got 1 item picture from batch-ly.com.")
+            self.assertEqual(app.icons.find("Sword"), pack / "Sword.png")  # and it's what the Sword is drawn with
+            # The next time there is nothing to get: the list is read, and nothing is said.
+            app.status_var.set("Something else.")
+            app.get_pictures_automatically()
+            self.wait_until(settled)
+            self.assertEqual((asked, app.status_var.get()), (["index.json", "Sword.png", "index.json"], "Something else."))
+            # The menu has a box that stops it, remembered with the editor's other settings.
+            del asked[:]
+            app.app_menu.invoke(app.app_menu.index("Don't get item pictures automatically"))
+            self.assertTrue(json.loads(self.settings_file.read_text(encoding="utf-8"))["no_auto_pictures"])
+            (pack / "Sword.png").unlink()
+            app.get_pictures_automatically()
+            self.assertTrue(settled())
+            app.app_menu.invoke(app.app_menu.index("Don't get item pictures automatically"))
+            self.assertFalse(json.loads(self.settings_file.read_text(encoding="utf-8"))["no_auto_pictures"])
+            # The edition that never goes online asks no site.
+            with mock.patch.object(edition, "ONLINE", False):
+                app.get_pictures_automatically()
+            self.assertTrue(settled())
+            self.assertEqual(asked, [])
+        # A site out of reach, or with no set on it: nothing happens, and nothing is said.
+        for trouble in (OSError("offline"), picture_pack.NoPack("none"), ValueError("not a list")):
+            with mock.patch.object(picture_pack, "_get", side_effect=trouble):
+                app.get_pictures_automatically()
+                self.wait_until(settled)
+            self.assertEqual((app.status_var.get(), pack.exists() and sorted(path.name for path in pack.iterdir())), ("Something else.", []))
+        # It stops part of the way: what it was saying goes, and the rest waits for the next time.
+        calls = iter([json.dumps({"version": 1, "pictures": listed}).encode()])
+
+        def falters(url, most, timeout=30):
+            try:
+                return next(calls)
+            except StopIteration:
+                raise OSError("the site went away") from None
+
+        with mock.patch.object(picture_pack, "_get", falters):
+            app.get_pictures_automatically()
+            app.status_var.set("Getting item pictures 1/2…")  # as the status line reads while they arrive
+            self.wait_until(settled)
+        self.assertEqual(app.status_var.get(), "")
+
     def wait_until(self, done):
         """Let the window's background work finish (it reports back through Tk's event loop)."""
         for _ in range(400):
@@ -972,7 +1045,7 @@ class HeroTabTests(WindowTestCase):
 
         offline = (mock.patch.object(edition, "ONLINE", False), mock.patch.object(edition, "NAME", "Nexus Mods"))
         with offline[0], offline[1], mock.patch.object(updater, "latest_release", side_effect=AssertionError("it asked GitHub")) as asked, \
-                mock.patch.object(gui.wiki, "list_pictures", side_effect=AssertionError("it asked the wiki")) as listed:
+                mock.patch.object(gui.picture_pack, "best_source", side_effect=AssertionError("it asked for pictures")) as listed:
             self.app.check_for_updates()  # at start-up: nothing happens, and nothing is said
             with mock.patch("tkinter.messagebox.showinfo") as info:
                 self.app.check_for_updates(announce=True)  # Check for updates in the menu
@@ -1675,8 +1748,10 @@ class SimpleModeTests(WindowTestCase):
             (dialog,) = dialogs()
             self.assertEqual(dialog.shown_text(), "•  A new thing. With code.\n–  A point under it.")
             self.assertEqual(json.loads(self.settings_file.read_text(encoding="utf-8"))["seen_version"], __version__)
+            self.assertEqual(str(dialog.grab_current()), str(dialog))  # it waits to be closed, so the news isn't missed
             dialog.close_button.invoke()
             self.assertEqual(dialogs(), [])
+            self.assertIsNone(self.root.grab_current())
             self.assertFalse(app.greet_new_version())
             self.assertEqual(dialogs(), [])
             # After an update: everything since the version that was here before.
@@ -1691,6 +1766,29 @@ class SimpleModeTests(WindowTestCase):
             app.app_menu.invoke(app.app_menu.index("What's new…"))
             (dialog,) = dialogs()
             self.assertIn("The first.", dialog.shown_text())
+            self.assertIsNone(dialog.grab_current())  # asked for, it doesn't hold the editor up
+            dialog.destroy()
+        # A change with a picture under it: the window shows the file of that name that came with the editor, no
+        # wider than the notes, and a picture that isn't there costs nothing but the picture.
+        pictured = whats_new.parse(
+            f"## What's new in {__version__}\n\n- **Shown.** A change.\n\n  ![What it looks like](https://example.com/{__version__}-shown.png)\n"
+            f"- Told.\n\n  ![Lost](https://example.com/{__version__}-lost.png)\n"
+        )
+        folder = self.dir / "whats-new"
+        folder.mkdir()
+        wide = tk.PhotoImage(master=self.root, width=1600, height=400)
+        wide.put("#3fcf52", to=(0, 0, 1600, 400))
+        wide.write(str(folder / f"{__version__}-shown.png"), format="png")
+        app.settings["seen_version"] = "0.9.1"
+        with mock.patch.object(gui.whats_new, "load", return_value=pictured), mock.patch.object(whats_new, "PICTURES_FOLDER", folder):
+            self.assertTrue(app.greet_new_version())
+            (dialog,) = dialogs()
+            self.root.update()
+            self.assertEqual(dialog.shown_pictures(), [f"{__version__}-shown.png"])
+            self.assertEqual(dialog.shown_text(), "•  Shown. A change.\n\n•  Told.")
+            (_name, image), = dialog.pictures
+            room = max(dialog.text.winfo_reqwidth(), dialog.winfo_reqwidth())
+            self.assertTrue(300 < image.width() <= room and image.height() * 4 in range(image.width() - 8, image.width() + 9), (image.width(), image.height(), room))
             dialog.destroy()
         # Nothing to show (the notes didn't come with this copy): the version is remembered all the same.
         app.settings.pop("seen_version")

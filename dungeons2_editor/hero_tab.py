@@ -27,7 +27,7 @@ from .hero import (
     sort_items,
 )
 from .hero_editing import SAVE_REMINDER, HeroEditing, book_hint, effects_action, number_text, power_text, talisman_hint, vendors_text
-from .icons import IconLibrary
+from .icons import PACK_FOLDER, WIKI_FOLDER, IconLibrary
 from .item_picker import slot_open
 
 _HEADINGS = {
@@ -481,7 +481,8 @@ class HeroTab(HeroEditing, ttk.Frame):
             subtitle += "\n" + item.own_effect_note
         self.item_subtitle_var.set(subtitle)
         self.preview.configure(image=self.icons.item_image(item.tag, item.rarity, PREVIEW_SIZE, item.name))
-        self.preview_source_var.set("Picture: minecraft.wiki" if self.icons.is_from_wiki(item.name, item.tag) else "")
+        site = {WIKI_FOLDER: "minecraft.wiki", PACK_FOLDER: "batch-ly.com"}.get(self.icons.downloaded_from(item.name, item.tag), "")
+        self.preview_source_var.set(f"Picture: {site}" if site else "")
         if self.advanced:
             self.type_box["values"] = [entry.tag for entry in self._catalog()]
         self.type_var.set(item.tag)

@@ -8,6 +8,8 @@ from dungeons2_editor import __version__, whats_new
 CHANGELOG = Path(__file__).resolve().parent.parent / "CHANGELOG.md"
 MOST_NOTES = 10  # changes listed for one version in the notes that ship
 LONGEST_NOTE = 200  # letters in one of them, as the window shows it
+BIGGEST_PICTURE = 400_000  # bytes of a picture in them: it rides in every download
+WIDEST_PICTURE = 1000  # pixels: more than the window ever shows across
 
 NOTES = """## What's new in 2.1.0
 
@@ -50,6 +52,73 @@ class WhatsNewTests(unittest.TestCase):
         ))
         self.assertEqual((fix.notes, first.notes), ((whats_new.Note("A fix."),), (whats_new.Note("The first."),)))
         self.assertEqual(whats_new.parse("Nothing here.\n"), [])
+
+    def test_a_picture_under_a_change_is_read_by_its_files_name(self):
+        # The address is for a release's page. The window shows the file of that name that came with the editor,
+        # so nothing of the address but the name is kept, and a name that isn't a picture's is no picture.
+        notes = whats_new.parse(
+            "## What's new in 3.0.0\n\n- **Pictures.** A change.\n\n  ![What it shows](https://example.com/any/where/3.0.0-pictures.png)\n"
+            "- Another.\n  ![A program](https://example.com/3.0.0-setup.exe)\n  ![Up a folder](../../3.0.0-other.png)\nA paragraph.\n"
+        )[0].notes
+        self.assertEqual(notes, (
+            whats_new.Note("**Pictures.** A change."),
+            whats_new.Note("What it shows", False, 0, "3.0.0-pictures.png"),
+            whats_new.Note("Another."),
+            whats_new.Note("Up a folder", False, 0, "3.0.0-other.png"),
+            whats_new.Note("A paragraph.", bullet=False),
+        ))
+        self.assertEqual(
+            whats_new.picture_address("3.0.0", "3.0.0-pictures.png"),
+            "https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v3.0.0/dungeons2_editor/data/whats-new/3.0.0-pictures.png",
+        )
+
+    def test_the_edition_that_never_goes_online_leaves_out_what_only_the_other_one_does(self):
+        # Such a change ends with a mark that a release's page doesn't show. The window doesn't show the mark
+        # either, and in the edition that never goes online it shows neither the change nor its picture.
+        notes = (
+            "## What's new in 3.1.0\n\n- **Fetched.** It downloads them. <!-- online -->\n\n  ![Them](https://example.com/3.1.0-them.png)\n- Both do this.\n\n"
+            "## What's new in 3.0.0\n\n- Only this, which it\n  fetches. <!-- online -->\n"
+        )
+        fetched, picture, both = whats_new.parse(notes)[0].notes
+        self.assertEqual((fetched, picture, both), (
+            whats_new.Note("**Fetched.** It downloads them.", online=True),
+            whats_new.Note("Them", False, 0, "3.1.0-them.png", online=True),
+            whats_new.Note("Both do this."),
+        ))
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "notes.md"
+            path.write_text(notes, encoding="utf-8")
+            self.assertEqual([(version.version, len(version.notes)) for version in whats_new.load(path, online=True)], [("3.1.0", 3), ("3.0.0", 1)])
+            offline = whats_new.load(path, online=False)
+            self.assertEqual([(version.version, version.notes) for version in offline], [("3.1.0", (whats_new.Note("Both do this."),))])
+        # In the notes that ship, every version has something to say in that edition too, and nothing left in it
+        # speaks of getting or downloading.
+        shipped = whats_new.load(online=False)
+        self.assertEqual([version.version for version in shipped], [version.version for version in whats_new.load(online=True)])
+        for version in shipped:
+            for note in version.notes:
+                self.assertFalse(note.picture and note.online, note)
+                self.assertNotRegex(note.text.lower(), r"\bdownload|\bgets? (them|it) by itself|batch-ly", (version.version, note.text))
+
+    def test_the_pictures_the_notes_show_ship_with_the_editor(self):
+        # A picture is named after its version, is in the folder that ships, and is written in the notes with the
+        # address a release's page finds it at: the file in the repository at that version's tag. Nothing else is
+        # in the folder, so a version's pictures go when its notes do.
+        text = whats_new.NOTES_FILE.read_text(encoding="utf-8")
+        used = []
+        for version in whats_new.load(online=True):
+            for note in version.notes:
+                if not note.picture:
+                    continue
+                used.append(note.picture)
+                self.assertTrue(note.picture.startswith(version.version + "-"), note.picture)
+                self.assertIn(f"![{note.text}]({whats_new.picture_address(version.version, note.picture)})", text)
+                data = (whats_new.PICTURES_FOLDER / note.picture).read_bytes()
+                self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) <= BIGGEST_PICTURE, (note.picture, len(data)))
+                self.assertLessEqual(int.from_bytes(data[16:20], "big"), WIDEST_PICTURE, note.picture)
+        self.assertEqual(text.count("!["), len(used))  # every picture written in the notes was read as one
+        kept = sorted(path.name for path in whats_new.PICTURES_FOLDER.iterdir()) if whats_new.PICTURES_FOLDER.is_dir() else []
+        self.assertEqual(kept, sorted(used))
 
     def test_bold_and_code_are_shown_and_a_link_by_its_words(self):
         self.assertEqual(

@@ -19,6 +19,7 @@ from .paths import data_dir
 
 DEFAULT_ICON_ROOT = data_dir() / "icons"
 WIKI_FOLDER = "wiki"  # pictures downloaded from minecraft.wiki; your own pictures take priority
+PACK_FOLDER = "pack"  # the editor's picture pack, downloaded from batch-ly.com: ahead of the wiki's, behind your own
 CAPTURED_FOLDER = "captured"  # pictures you pasted from the game (PASTE PICTURE); they're yours, like any other
 ALIASES_FILE = "aliases.txt"
 EXTENSIONS = (".png", ".gif", ".jpg", ".jpeg", ".webp", ".bmp")
@@ -47,11 +48,13 @@ Reload in the editor. Any of these names work for the Mystic Helmet:
 Stats use their save name (Emeralds.png, SpringStone.png, EnchantmentPoints.png)
 and heroes use their skin (RangerDeluxe.png).
 
-Pictures in the "wiki" folder come from minecraft.wiki (the editor's "Get
-item pictures" or `python -m dungeons2_editor pictures`). Pictures in the
-"captured" folder are ones you pasted from the game (snip an item's tile with
-Windows+Shift+S, pick the item in the editor and press PASTE PICTURE). Your
-own pictures win over the wiki's.
+Pictures in the "pack" folder are the editor's own set, from batch-ly.com, and
+the ones in the "wiki" folder come from minecraft.wiki (the editor's "Get item
+pictures" or `python -m dungeons2_editor pictures` downloads them). Pictures
+in the "captured" folder are ones you pasted from the game (snip an item's
+tile with Windows+Shift+S, pick the item in the editor and press PASTE
+PICTURE). Your own pictures win over the pack's, and the pack's over the
+wiki's.
 
 If an item's save name differs from the picture's name, add a line to
 aliases.txt in this folder:
@@ -253,13 +256,14 @@ class IconLibrary:
     def _index(self) -> dict[str, Path]:
         if self._files is None:
             downloaded: dict[str, Path] = {}
+            packed: dict[str, Path] = {}
             own: dict[str, Path] = {}
             if self.folder.is_dir():
                 for path in sorted(self.folder.rglob("*")):
                     if path.suffix.lower() in EXTENSIONS:
-                        from_wiki = path.relative_to(self.folder).parts[0] == WIKI_FOLDER
-                        (downloaded if from_wiki else own).setdefault(normalize(path.stem), path)
-            self._files = {**downloaded, **own}
+                        top = path.relative_to(self.folder).parts[0]
+                        (downloaded if top == WIKI_FOLDER else packed if top == PACK_FOLDER else own).setdefault(normalize(path.stem), path)
+            self._files = {**downloaded, **packed, **own}
         return self._files
 
     def aliases(self) -> dict[str, str]:
@@ -292,8 +296,14 @@ class IconLibrary:
         return bool(self._index())
 
     def is_from_wiki(self, *names: str) -> bool:
+        return self.downloaded_from(*names) == WIKI_FOLDER
+
+    def downloaded_from(self, *names: str) -> str:
+        """The folder a downloaded picture is in (WIKI_FOLDER or PACK_FOLDER) for the first of ``names`` with a
+        picture; '' for a picture of your own, and for none."""
         path = next((found for found in (self.find(name) for name in names if name) if found), None)
-        return path is not None and path.relative_to(self.folder).parts[0] == WIKI_FOLDER
+        top = path.relative_to(self.folder).parts[0] if path is not None else ""
+        return top if top in (WIKI_FOLDER, PACK_FOLDER) else ""
 
     def image_for(self, names: tuple[str, ...], size: int) -> tk.PhotoImage | None:
         """The picture for the first of ``names`` that has one (e.g. an in-game name, then an item ID)."""

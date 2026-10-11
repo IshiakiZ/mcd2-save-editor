@@ -18,14 +18,14 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, edition, game_launch, game_style, merge, paths, saves, share_ids, updater, whats_new, wgs, wiki
+from . import __version__, codec, edition, game_launch, game_style, merge, paths, picture_pack, saves, share_ids, updater, whats_new, wgs
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
 from .game_style import GameFonts
 from .hero import HERO_SORTS, Hero, describe_changes, format_amount, format_caution, is_hero_document, use_local_names
 from .hero_tab import HeroTab
-from .icons import DEFAULT_ICON_ROOT, WIKI_FOLDER, IconLibrary
+from .icons import DEFAULT_ICON_ROOT, PACK_FOLDER, IconLibrary
 from .inventory_screen import InventoryScreen
 from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
@@ -79,6 +79,10 @@ _SAFE_TEXT = (
     "Your recordings add where stations, cutscenes and chests turned up. It can't show what the hero hasn't found: the "
     "game writes a chest or a secret to a save only once you've been to it. Nothing is changed by looking."
 )
+# The setting, and the menu's words for it, that stop the editor getting its item pictures by itself when it opens.
+NO_AUTO_PICTURES = "no_auto_pictures"
+NO_AUTO_PICTURES_LABEL = "Don't get item pictures automatically"
+_GETTING_PICTURES = "Getting item pictures"  # how the status line starts while they arrive
 # What the edition that never goes online says where the other one downloads the Minecraft Wiki's pictures.
 _NO_PICTURES = (
     edition.offline_note("download pictures")
@@ -163,8 +167,9 @@ SIMPLE_HELP_SECTIONS = [
         "Items show their picture when the icons folder has one, and an icon in their rarity's colour when it "
         "doesn't. "
         + (
-            "Get item pictures… in MENU downloads the Minecraft Wiki's item pictures (run it again now and then "
-            "for new ones). For an item it doesn't have, take your own: "
+            "The editor gets its own set of item pictures from batch-ly.com by itself when it opens; tick Don't get "
+            "item pictures automatically in MENU to stop that. Get item pictures… in MENU gets them when you ask, or "
+            "the Minecraft Wiki's if that set isn't there. For an item without one, take your own: "
             if edition.ONLINE
             else "This edition never goes online, so it doesn't download pictures. Take your own: "
         )
@@ -241,7 +246,9 @@ HELP_SECTIONS = [
         "Items show their picture when the icons folder has one, and a square in their rarity's colour when it "
         "doesn't. "
         + (
-            "Get pictures… (on the Hero tab) downloads the Minecraft Wiki's item pictures. You can also add your "
+            "The editor gets its own set of item pictures from batch-ly.com by itself when it opens (Menu has a box "
+            "to stop that), and Get pictures… on the Hero tab gets them when you ask, or the Minecraft Wiki's if "
+            "that set isn't there. You can also add your "
             if edition.ONLINE
             else "This edition never goes online, so it doesn't download pictures. Add your "
         )
@@ -313,6 +320,7 @@ class EditorApp:
         self.names_file = Path(names_file)
         use_local_names(load_names(self.names_file))  # names you gave items the editor doesn't know
         self._pictures_busy = False
+        self._picture_site = ""  # where the pictures being downloaded come from
         self.update: updater.Release | None = None  # a newer version on GitHub, once the check has found one
         self._update_busy = False
         self.profile: saves.SaveProfile | None = None
@@ -541,6 +549,9 @@ class EditorApp:
             self.look_menu.add_radiobutton(label=name, value=key, variable=self.look_var, command=self._on_look_changed)
         menu.add_cascade(label="Look", menu=self.look_menu)
         menu.add_command(label="Get item pictures…", command=self._get_pictures)
+        if edition.ONLINE:  # the edition that never goes online gets nothing by itself, so it has nothing to turn off
+            self.no_auto_pictures_var = tk.BooleanVar(value=bool(self.settings.get(NO_AUTO_PICTURES)))
+            menu.add_checkbutton(label=NO_AUTO_PICTURES_LABEL, variable=self.no_auto_pictures_var, command=self._on_auto_pictures_changed)
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
         menu.add_command(label="World map…", command=self.open_world_map)
@@ -633,6 +644,11 @@ class EditorApp:
             line.configure(height=2 if glass else 3)
             line.grid_configure(padx=px(14) if glass else 6)
         self.inventory.apply_look(glass)
+
+    def _on_auto_pictures_changed(self) -> None:
+        """Menu > Don't get item pictures automatically: remembered with the editor's other settings."""
+        self.settings[NO_AUTO_PICTURES] = bool(self.no_auto_pictures_var.get())
+        _save_settings(self.settings_file, self.settings)
 
     def _on_look_changed(self) -> None:
         """Menu > Look: switch Simple mode between the original look and Liquid Glass, and remember which. The
@@ -1504,7 +1520,8 @@ class EditorApp:
         _save_settings(self.settings_file, self.settings)
         if not versions:
             return False
-        whats_new.WhatsNewDialog(self.root, versions)
+        # It waits to be closed: a new version's news isn't missed.
+        whats_new.WhatsNewDialog(self.root, versions, modal=True)
         return True
 
     def _confirm_discard(self) -> bool:
@@ -1845,38 +1862,73 @@ class EditorApp:
 
     # ---------------------------------------------------------------- pictures
 
+    def get_pictures_automatically(self) -> None:
+        """When the editor opens: get its set of item pictures from batch-ly.com, off the UI thread and without
+        asking, if this PC hasn't got them all (the first time, or when the set has grown). The menu's Don't get
+        item pictures automatically turns this off, and the edition that never goes online doesn't do it. Only
+        the editor's own set is fetched this way, never the Minecraft Wiki's. It says nothing when there is
+        nothing to get or the site can't be reached: Get item pictures… is there to ask with."""
+        if not edition.ONLINE or self.settings.get(NO_AUTO_PICTURES) or self._pictures_busy:
+            return
+        self._pictures_busy = True
+        folder = self.icons.folder / PACK_FOLDER
+        progress: queue.Queue = queue.Queue()
+
+        def get() -> int:
+            wanted = picture_pack.missing(picture_pack.list_pictures(), folder)
+            return picture_pack.download_pictures(wanted, folder, lambda *step: progress.put(step))[0] if wanted else 0
+
+        def done(ok: bool, result: Any) -> None:
+            self._pictures_busy = False
+            if ok and result:
+                self.icons.ensure_folder()
+                self.icons.reload()
+                self.hero_tab.refresh()
+                self.inventory.refresh()
+                self._resort_heroes()
+                self.status_var.set(f"Got {result} item picture{'' if result == 1 else 's'} from {picture_pack.PACK_HOST}.")
+            elif self.status_var.get().startswith(_GETTING_PICTURES):
+                # It stopped part of the way (the site went out of reach): what arrived shows the next time the
+                # editor opens, when it gets the rest. Nothing else is said: nobody asked for this.
+                self.status_var.set("")
+
+        self._in_background(get, done, progress, say=lambda number, total, name: f"{_GETTING_PICTURES} {number}/{total}…")
+
     def _get_pictures(self) -> None:
-        """Download item pictures from minecraft.wiki, after asking."""
+        """Download item pictures, after asking: the editor's picture pack from batch-ly.com when there is one,
+        else the Minecraft Wiki's."""
         if not edition.ONLINE:
             messagebox.showinfo(APP_TITLE, _NO_PICTURES, parent=self.root)
             return
         if self._pictures_busy:
             return
         self._pictures_busy = True
-        self.status_var.set("Asking minecraft.wiki which item pictures it has…")
-        self._in_background(wiki.list_pictures, self._on_pictures_listed)
+        self.status_var.set("Asking which item pictures there are…")
+        self._in_background(picture_pack.best_source, self._on_pictures_listed)
 
     def _on_pictures_listed(self, ok: bool, result: Any) -> None:
         if not ok:
             self._pictures_busy = False
             self.status_var.set("")
-            messagebox.showerror(APP_TITLE, f"Couldn't get the picture list from minecraft.wiki:\n{result}", parent=self.root)
+            messagebox.showerror(APP_TITLE, f"Couldn't get the list of item pictures:\n{result}", parent=self.root)
             return
-        folder = self.icons.ensure_folder() / WIKI_FOLDER
+        source: picture_pack.Source = result
+        self._picture_site = source.site
+        folder = self.icons.ensure_folder() / source.folder
         missing = []
-        for picture in result:
-            target = folder / wiki.file_name(picture)
+        for picture in source.pictures:
+            target = folder / source.file_name(picture)
             if not (target.exists() and target.stat().st_size == picture.size):
                 missing.append(picture)
         if not missing:
             self._pictures_busy = False
             self.status_var.set("")
-            messagebox.showinfo(APP_TITLE, f"You already have all {len(result)} pictures minecraft.wiki has.", parent=self.root)
+            messagebox.showinfo(APP_TITLE, f"You already have all {len(source.pictures)} pictures {source.site} has.", parent=self.root)
             return
         size = sum(picture.size for picture in missing) / 1e6
         question = (
-            f"Download {len(missing)} item pictures ({size:.1f} MB) from minecraft.wiki into\n{folder}?\n\n"
-            "They're Mojang's artwork from the Minecraft Wiki, kept on your PC for your own use."
+            f"Download {len(missing)} item pictures ({size:.1f} MB) from {source.site} into\n{folder}?\n\n"
+            "They're Mojang's artwork, kept on your PC for your own use."
         )
         if not messagebox.askyesno(APP_TITLE, question, parent=self.root):
             self._pictures_busy = False
@@ -1885,7 +1937,7 @@ class EditorApp:
         progress: queue.Queue = queue.Queue()
 
         def download() -> tuple[int, int]:
-            return wiki.download_pictures(missing, folder, lambda *step: progress.put(step))
+            return source.download(missing, folder, lambda *step: progress.put(step))
 
         self._in_background(download, self._on_pictures_downloaded, progress)
 
@@ -1896,7 +1948,7 @@ class EditorApp:
         self.inventory.refresh()
         self._resort_heroes()
         if ok:
-            self.status_var.set(f"Downloaded {result[0]} pictures from minecraft.wiki.")
+            self.status_var.set(f"Downloaded {result[0]} pictures from {self._picture_site}.")
         else:
             self.status_var.set("")
             messagebox.showerror(APP_TITLE, f"Downloading pictures stopped:\n{result}", parent=self.root)
@@ -2004,6 +2056,7 @@ def run(
             root.after(300, app.greet_new_version)  # once the window is up: what's new, the first time a version opens
         if close_after is None and edition.ONLINE:  # a build check stays offline, and so does the offline edition
             app.check_for_updates()
+            app.get_pictures_automatically()
             threading.Thread(target=updater.clean_up, name="update clean-up", daemon=True).start()
     except Exception:
         if close_after is None:

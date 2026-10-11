@@ -7,6 +7,15 @@ fetched: an edition that never goes online shows the same notes.
 
 They are short on purpose, the main things in a line each, for the newest version and the two before it.
 Every version, with the detail, is in ``CHANGELOG.md``.
+
+A change that is easier to show than to tell has a picture under it: a line of its own in the notes,
+``![what it shows](address)``. The address is where a release's page finds the picture (``picture_address``);
+the window never asks for it, and shows the file of the same name that ships with the editor
+(``dungeons2_editor/data/whats-new``).
+
+A change that is only true of the edition that goes online (it downloads something, say) ends with
+``<!-- online -->``, which a release's page doesn't show. The edition that never goes online leaves that change
+out, and the picture under it.
 """
 
 from __future__ import annotations
@@ -18,24 +27,36 @@ from pathlib import Path
 from tkinter import font as tkfont
 from tkinter import ttk
 
-from . import paths
+from . import edition, paths
 from .game_style import match_title_bar
 from .layout import fit_to_contents, scaled_size
 
 NOTES_FILE = paths.resource("dungeons2_editor/data/release-notes.md")
+PICTURES_FOLDER = paths.resource("dungeons2_editor/data/whats-new")  # the pictures the notes show, each named after its version
+# Where a release's page finds a picture: the file as it is in the repository at that version's tag.
+PICTURES_AT = "https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v{version}/dungeons2_editor/data/whats-new/{name}"
 MOST_VERSIONS = 3  # versions the notes hold, and so the most shown at once; someone who skipped more gets the newest
+WINDOW = (760, 520)  # the window as it opens, before a bigger font or longer notes ask for more
+MOST_LINES = 44  # the notes' height at the most, in lines of writing: past that they scroll
+_EDGE, _INSET = 14, 12  # pixels around the window's contents, and between the notes' own edge and their words
 _HEADING = re.compile(r"^## What's new in (\d+(?:\.\d+)*)\b(.*)$")
 _LINK = re.compile(r"\[([^\]]+)\]\((?:[^()\s]|\([^()\s]*\))+\)")  # [text](address): the text is kept
 _MARKED = re.compile(r"(\*\*.+?\*\*|`[^`]+`)")
+_PICTURE = re.compile(r"^!\[([^\]]+)\]\(([^()\s]+)\)$")  # ![what it shows](address), on a line of its own
+_PICTURE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\.png")
+_ONLINE = "<!-- online -->"  # ends a change that only the edition that goes online makes
 
 
 @dataclass(frozen=True)
 class Note:
-    """One change: a paragraph, or an entry in a list (``depth`` 1 for an entry under another entry)."""
+    """One change: a paragraph, or an entry in a list (``depth`` 1 for an entry under another entry). Or a
+    picture of one: ``picture`` is its file's name, and ``text`` says what it shows."""
 
     text: str
     bullet: bool = True
     depth: int = 0
+    picture: str = ""
+    online: bool = False  # only true of the edition that goes online
 
 
 @dataclass(frozen=True)
@@ -60,7 +81,8 @@ def parse(text: str) -> list[Version]:
     def close() -> None:
         nonlocal open_note
         if open_note and notes is not None:
-            notes.append(Note(" ".join(open_note), *shape))
+            words = " ".join(open_note)
+            notes.append(Note(" ".join(words.replace(_ONLINE, "").split()), *shape, online=_ONLINE in words))
         open_note = None
 
     for line in text.splitlines():
@@ -76,8 +98,14 @@ def parse(text: str) -> list[Version]:
         if notes is None:
             continue
         stripped = line.strip()
+        shown = _PICTURE.match(stripped)
         if not stripped:
             close()
+        elif shown:  # a picture, under the change it shows: only its file's name is used, never the address
+            close()
+            name = shown.group(2).rsplit("/", 1)[-1]
+            if _PICTURE_NAME.fullmatch(name):
+                notes.append(Note(shown.group(1).strip(), False, 0, name, online=bool(notes) and notes[-1].online))
         elif stripped.startswith("- "):
             close()
             shape = (True, min(1, (len(line) - len(line.lstrip())) // 2))
@@ -92,12 +120,20 @@ def parse(text: str) -> list[Version]:
     return [Version(version.version, version.title, tuple(found)) for version, found in versions]  # type: ignore[misc]
 
 
-def load(path: Path = NOTES_FILE) -> list[Version]:
-    """The notes that came with this copy of the editor; none if the file isn't there."""
+def load(path: Path = NOTES_FILE, online: bool | None = None) -> list[Version]:
+    """The notes that came with this copy of the editor; none if the file isn't there. The edition that never
+    goes online (``online`` False; by default, whichever this copy is) gets them without the changes that are
+    only true of the other one."""
     try:
-        return parse(Path(path).read_text(encoding="utf-8"))
+        versions = parse(Path(path).read_text(encoding="utf-8"))
     except OSError:
         return []
+    if online is None:
+        online = edition.ONLINE
+    if not online:
+        kept = [Version(version.version, version.title, tuple(note for note in version.notes if not note.online)) for version in versions]
+        versions = [version for version in kept if version.notes]
+    return versions
 
 
 def unseen(versions: list[Version], seen: str | None, current: str, most: int = MOST_VERSIONS) -> list[Version]:
@@ -113,6 +149,11 @@ def unseen(versions: list[Version], seen: str | None, current: str, most: int = 
         return [version for version in reached if _order(version.version) > _order(seen)][:most]
     except ValueError:  # a version that isn't numbers, in the settings or the notes: show the newest notes there are
         return versions[:1]
+
+
+def picture_address(version: str, name: str) -> str:
+    """Where a release's page finds a picture of that version's notes."""
+    return PICTURES_AT.format(version=version, name=name)
 
 
 def runs(text: str) -> list[tuple[str, str]]:
@@ -139,14 +180,17 @@ def heading_for(versions: list[Version]) -> str:
 
 
 class WhatsNewDialog(tk.Toplevel):
-    """The notes of one version or a few, to read and close. It doesn't stop you using the editor meanwhile."""
+    """The notes of one version or a few, to read and close. Opened from the menu it doesn't stop you using the
+    editor meanwhile. The one a new version opens by itself (``modal``) waits to be closed first, so that it
+    isn't lost behind the editor's window before it has been read."""
 
-    def __init__(self, parent: tk.Misc, versions: list[Version]):
+    def __init__(self, parent: tk.Misc, versions: list[Version], modal: bool = False):
         super().__init__(parent)
+        self.pictures: list[tuple[str, tk.PhotoImage]] = []  # the pictures shown, kept so that Tk keeps them too
         self.title("What's new")
         self.transient(parent)
         match_title_bar(self)
-        frame = ttk.Frame(self, padding=14)
+        frame = ttk.Frame(self, padding=_EDGE)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
@@ -157,49 +201,106 @@ class WhatsNewDialog(tk.Toplevel):
             "version": tkfont.Font(self, family=base.cget("family"), size=size + 2, weight="bold"),
             "bold": tkfont.Font(self, family=base.cget("family"), size=size, weight="bold"),
             "code": tkfont.Font(self, family=tkfont.nametofont("TkFixedFont", root=self).cget("family"), size=size),
+            "plain": base,
         }
         ttk.Label(frame, text=heading_for(versions), font=self.fonts["title"]).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
         self.text = tk.Text(
-            frame, wrap="word", width=92, height=22, relief="flat", borderwidth=0, highlightthickness=0, padx=12, pady=8, cursor="arrow", takefocus=False,
+            frame, wrap="word", width=92, height=22, relief="flat", borderwidth=0, highlightthickness=0, padx=_INSET, pady=8, cursor="arrow", takefocus=False,
             font=base,  # a Text widget writes in a typewriter's letters unless told otherwise
         )
         scroll = ttk.Scrollbar(frame, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=scroll.set)
         self.text.grid(row=1, column=0, sticky="nsew")
         scroll.grid(row=1, column=1, sticky="ns")
-        self._write(versions)
-        self.text.configure(state="disabled")
+        # How wide the notes are in the window as it opens: a picture is made to fit across that.
+        across = max(self.text.winfo_reqwidth(), scaled_size(self, *WINDOW)[0] - 2 * _EDGE - scroll.winfo_reqwidth())
+        tall = self._write(versions, across - 2 * _INSET)
+        # Tall enough to show them all where the screen has the room (fit_to_contents keeps to the screen).
+        lines = -(-tall // base.metrics("linespace")) + 1
+        self.text.configure(height=max(22, min(lines, MOST_LINES)), state="disabled")
         buttons = ttk.Frame(frame)
         buttons.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(12, 0))
         self.close_button = ttk.Button(buttons, text="Close", style="Accent.TButton", command=self.destroy)
         self.close_button.pack(side="right")
-        fit_to_contents(self, *scaled_size(self, 760, 520))
+        fit_to_contents(self, *scaled_size(self, *WINDOW))
         self.bind("<Escape>", lambda _event: self.destroy())
         self.bind("<Return>", lambda _event: self.destroy())
         self.close_button.focus_set()
+        if modal:
+            try:
+                self.grab_set()
+            except tk.TclError:
+                pass  # not on the screen yet (the editor's window is minimised, say): still there to read
 
-    def _write(self, versions: list[Version]) -> None:
+    def _picture(self, name: str, most: int) -> tk.PhotoImage | None:
+        """A picture of the notes, no wider than ``most`` pixels. None when it can't be shown: the words under
+        which it stands say what was new either way."""
+        path = PICTURES_FOLDER / name
+        try:
+            from PIL import Image, ImageTk
+        except ImportError:
+            Image = None
+        try:
+            if Image is not None:
+                with Image.open(path) as picture:
+                    picture = picture.convert("RGBA")
+                    if picture.width > most:
+                        picture = picture.resize((most, max(1, round(picture.height * most / picture.width))), Image.LANCZOS)
+                    return ImageTk.PhotoImage(picture, master=self)
+            image = tk.PhotoImage(master=self, file=str(path))
+            shrink = -(-image.width() // most)  # without Pillow: by a whole number of times
+            return image.subsample(shrink) if shrink > 1 else image
+        except (OSError, ValueError, ImportError, tk.TclError):
+            return None
+
+    def _write(self, versions: list[Version], across: int) -> int:
+        """Write the notes, ``across`` pixels wide, and say about how many pixels tall they come to: a guess from
+        each note's width in its own letters, which is near enough to size the window by."""
         text, gap = self.text, self.fonts["bold"].metrics("linespace")
+        tall = 0
         hang = self.fonts["bold"].measure("•  ")
         text.tag_configure("version", font=self.fonts["version"], spacing1=gap, spacing3=gap // 3)
         text.tag_configure("first", spacing1=0)
         text.tag_configure("bold", font=self.fonts["bold"])
         text.tag_configure("code", font=self.fonts["code"])
         text.tag_configure("para", spacing3=gap // 3)
+        text.tag_configure("picture", lmargin1=hang, spacing1=gap // 4, spacing3=gap // 2)
+        room = max(120, across - 2 * hang)
         for depth in (0, 1):
             text.tag_configure(f"bullet{depth}", lmargin1=hang * depth * 2, lmargin2=hang * (depth * 2 + 1), spacing3=gap // 3)
         if not versions:
             text.insert("end", "The notes that come with the editor weren't found.", ("para",))
+            tall += gap
         for number, version in enumerate(versions):
             if len(versions) > 1:  # a single version is named by the window's own heading
                 text.insert("end", f"Version {version.version}\n", ("version",) + (("first",) if number == 0 else ()))
+                tall += self.fonts["version"].metrics("linespace") + (gap if number else 0) + gap // 3
             for note in version.notes:
+                if note.picture:
+                    image = self._picture(note.picture, room)
+                    if image is not None:
+                        self.pictures.append((note.picture, image))
+                        at = text.index("end-1c")
+                        text.image_create(at, image=image)
+                        text.insert("end", "\n")
+                        text.tag_add("picture", at, "end-1c")
+                        tall += image.height() + gap // 4 + gap // 2
+                    continue
                 shape = f"bullet{note.depth}" if note.bullet else "para"
                 if note.bullet:
                     text.insert("end", "•  " if note.depth == 0 else "–  ", (shape,))
+                wide = hang * (note.depth * 2 + 1) if note.bullet else 0
                 for piece, how in runs(note.text):
                     text.insert("end", piece, (shape, how) if how else (shape,))
+                    wide += self.fonts[how or "plain"].measure(piece)
                 text.insert("end", "\n", (shape,))
+                # A line breaks between words, so it holds a little less than its width in letters.
+                tall += -(-int(wide * 1.1) // max(1, across)) * gap + gap // 3
+        return tall
 
     def shown_text(self) -> str:
         return self.text.get("1.0", "end").strip()
+
+    def shown_pictures(self) -> list[str]:
+        """The names of the pictures the window shows, in order."""
+        return [name for name, _image in self.pictures]
