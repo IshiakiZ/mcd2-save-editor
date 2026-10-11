@@ -34,22 +34,60 @@ The short notes for the newest versions are on the
   reaches the game only with **Save to game**. It finds nothing for you: doors, minecart stations and chests
   stay as they are. The World map window now shows the hero with the changes you've made, not the save as it
   was loaded, so what the button did is there to see before you save.
+- **Open the shortcuts, and open the key gates.** Two more buttons in the World map window. A save keeps a list of
+  the things in the world that stay as the hero left them, each with the state it was in and the state it's in:
+  a rock that moved out of the way once the hero came round to its far side, a bridge, a gate that a key opens,
+  the key's lock, and the key. The overworld's are named the same in every player's save (33 of the 45 in
+  players' lists are in more than one list), so the editor can write them. **Open the shortcuts** marks the
+  rocks and the bridge it knows as moved, 13 of them, and **Open the key gates** the 11 gates, each the way a
+  save holds an open one. Both ask first, and the window says how many of each are open. What's inside a dungeon
+  is left alone: a dungeon's things are named after where that dungeon was put.
+- **A gate's lock and key go with it.** Tried in the game with the gates alone, a gate stood open with its
+  keyhole and its key still there. So the lock is marked as having its key, and the key as taken, the way a save
+  holds them once a gate has been opened by playing, for each lock and key the editor can tell to be a gate's
+  own. A lock stands in the same piece of the map as its gate (nine of the ten the editor knows; the tenth was
+  caught by a play recording, changing in the same save as its gate), and a key was put there with its lock
+  (all seven). A lock or a key it can't tie to a gate is left alone: a lock marked as used beside a gate that
+  isn't open would leave that gate shut for good. A hero whose gates stand open with their keyholes still
+  there finds the button ready again, to mark what's left.
+- **The map shows more.** With **Not found yet** ticked, which it is to begin with, the World map also draws
+  what the editor knows from other players' saves and this hero hasn't found, as hollow dots: doors, exactly
+  where those saves have them (247 are known), minecart stations and cutscenes around where a play recording
+  saw them turn up, and the spots where recordings saw chests opened. A new colour is for a shortcut, a key, a
+  lock or a gate, and pointing at one says how it stands for the hero. The legend has a line of its own.
+- **Where a rock or a gate is.** A save names it and says how it stands, never where it is: only doors come
+  with a place. So one is on the map where a play recording saw it change, by the fog that lifted in that same
+  save. Six have a place so far. The editor's list keeps such places, **Share item IDs…** tells them with the
+  rest of what your recordings saw, and a rock or a gate the editor has opened for you never changes in a
+  recording, so it's a hero that opens them by playing that teaches the editor where they are.
+- **The play recorder says when a rock, a key, a lock or a gate changes,** out loud as it happens and in a part
+  of its summary, with the two states the save holds. It wrote them down before, among the quieter changes.
+- **What discovering the whole map costs.** The recorder tells where a chest was opened by the fog that lifts
+  as you explore. With the whole map discovered none lifts, and it can only tell the area. The question before
+  **Discover the whole map** now says so.
 - **Checked in the game** (1.1.2.0). A hero went in with all 44 quests the editor knows finished and the whole
   map discovered, 8,080 squares in 25 regions, nineteen of those regions added by the editor. The game loaded it,
-  changed nothing in its quests, kept every picture of the fog and showed the whole map.
+  changed nothing in its quests, kept every picture of the fog and showed the whole map. With the key gates
+  opened as well, they stood open, and once their locks and keys were marked too, nothing of them was left as
+  if unopened.
 - **Four quests come back.** With everything finished, four side quests were still marked on the game's map as
   new ones to take, two in Howling Woods and two in the Sift. They are the game's golem quests (an echo golem to
   rescue, in five steps; The Trembling Golem is one), which the game offers again once they're finished. Players
   say the same of golem quests they finished by playing, and other heroes' saves hold them as finished exactly
   as the editor writes them, so there is nothing in a save to change. The Story progress window says so on each
   of the four, and `list_quests` tells an AI assistant.
-- **For an AI assistant:** two new tools. `finish_quests` finishes a group of quests or the whole game, and
-  `discover_map` lifts the fog. `list_quests` says which finished quests are to be finished again, and
-  `change_quest` does that for one.
+- **For an AI assistant:** three new tools. `finish_quests` finishes a group of quests or the whole game,
+  `discover_map` lifts the fog, and `open_shortcuts_and_gates` opens the shortcuts, the key gates or both.
+  `list_quests` says which finished quests are to be finished again, and `change_quest` does that for one.
+- **The editor's own numbers aren't news.** Now that the editor gives a finished interact step its 1, a save it
+  has written, and a list made from one, hold numbers that only say what the editor did. They are no longer
+  taken as something a save has shown: **Share item IDs…** doesn't offer them, and the editor's list doesn't
+  take them in. Any other number, and any number with another kind of step, still counts.
 - **The Story progress window keeps its word.** The line that says what a button just did was wiped a moment
   after it was written. It stays now until you pick another quest.
-- **A little more of the world,** from the developer's newest recording: Rainy Plains as an area, and two spots
-  where chests were opened.
+- **A little more of the world,** from the developer's newest recordings: two areas (Rainy Plains and a second
+  meadow), two spots where chests were opened, how many chests were seen opened in four areas, and where six
+  rocks, keys, locks and gates were when they changed.
 
 ## 1.16.0
 

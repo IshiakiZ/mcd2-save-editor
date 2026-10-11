@@ -28,8 +28,8 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   offers their enchantments.
 - **Presets and kits:** most money, most XP, best loot, every minecart station, the most powerful gear, or one of
   six complete builds, in one click.
-- **World map and play recorder:** see the ground your hero has explored and how far it has got, discover the
-  whole map in one click, and write down what the game saves while you play.
+- **World map and play recorder:** see the ground your hero has explored and what it hasn't found yet, discover
+  the whole map, open the shortcuts and the key gates, and write down what the game saves while you play.
 - **Story progress:** every quest with its steps. Finish a quest, a whole group or the whole game, start a quest
   over or add one, and start your hero at any minecart station it has found.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
@@ -117,7 +117,7 @@ the exact setup for your PC, with Copy buttons. In short:
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
 set stats, add, change, equip, copy and delete items, add enchantment books, give an item effects and an
-enchantment, set a talisman's level, apply presets, list and change quests, and discover the map. Its changes collect in a draft, like unsaved
+enchantment, set a talisman's level, apply presets, list and change quests, discover the map, and open shortcuts and key gates. Its changes collect in a draft, like unsaved
 changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
 and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
 game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
@@ -138,9 +138,9 @@ your sign-in, account or device data.
   one step, and it gives none of what the game gives for a quest (items, XP). The game opens the quests that
   follow a finished one by itself, and it offers its four golem quests again once they're finished, so those
   stay marked on its map.
-- **The map.** A preset adds minecart stations and **Discover the whole map** lifts the fog; doors and chests
-  stay as the game saved them. The world map and the play recorder can't see a chest or a secret you haven't
-  touched.
+- **The map.** A preset adds minecart stations, **Discover the whole map** lifts the fog, and the shortcuts and
+  key gates the editor knows can be opened; doors and chests stay as the game saved them. A save says where a
+  door is and nothing else: a rock, a gate or a chest is on the map only where a play recording has placed it.
 - **Collections and achievements.** The editor leaves the game's own records alone: a book added here counts for
   neither, and it writes no achievement for a quest it finishes.
 - **Very high power or level may be undone by the game.** Stay close to what the game gives at your level.

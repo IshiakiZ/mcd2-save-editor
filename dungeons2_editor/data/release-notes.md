@@ -4,11 +4,14 @@
 
   ![Story progress: Finish all on a group's line, and Finish the whole game at the bottom](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-finish-all.png)
 - **A finished quest gets its steps' numbers.** 1.16.0 left out some of the numbers a save holds with finished steps. Such a quest now reads **finish again**: finish it once more, or use Finish all.
-- **Discover the whole map.** A new button in **Menu → World → World map…** lifts the fog from every region the editor knows, the ones your hero hasn't been to as well. It finds no door or chest for you.
+- **Discover the whole map.** A new button in **Menu → World → World map…** lifts the fog from every region the editor knows, the ones your hero hasn't been to as well.
+- **Open the shortcuts and the key gates.** Two more buttons there: one moves the rocks that block a way round, the other opens the gates a key opens, with their locks and keys.
 
-  ![The world map with the whole map discovered](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
-- **Checked in the game.** It loaded a hero with every quest finished and the whole map discovered just as saved. Its four golem quests stay marked on its map: it offers them again once finished.
-- **An AI assistant can do both,** with two new tools: `finish_quests` and `discover_map`.
+  ![The world map: its three new buttons, and what the hero hasn't found as hollow dots](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
+- **The map shows more.** Doors, stations and chest spots your hero hasn't found are on it as hollow dots, and rocks, keys and gates where a play recording has placed them.
+- **The play recorder says when a rock, a key, a lock or a gate changes,** and lists them in its summary.
+- **Checked in the game.** It took a hero with every quest finished, the whole map discovered and the key gates opened just as saved. Its four golem quests come back on its map: it offers them again.
+- **An AI assistant can do these too,** with three new tools: `finish_quests`, `discover_map` and `open_shortcuts_and_gates`.
 
 ## What's new in 1.16.0
 
