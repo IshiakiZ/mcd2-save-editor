@@ -1,3 +1,13 @@
+## What's new in 1.16.0
+
+- **Story progress.** A new window, **Menu → Story progress…**, lists every quest with its steps. Finish a quest, start one over, add one your hero hasn't met, or pick the quest the game tracks.
+
+  ![Story progress: a hero's quests and steps, with the buttons that change them](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.0/dungeons2_editor/data/whats-new/1.16.0-story.png)
+- **It writes a quest the way a save holds one,** and none of what the game gives for it: no items, no XP, no achievement.
+- **Where your hero starts.** The same window sets the minecart station the save says your hero was last at, out of the ones it has found.
+- **The editor learns what a quest opens.** **Share item IDs…** now tells which quests your recordings saw the game open after one, and the number saved with a finished step.
+- **An AI assistant can do the same,** with three new tools: `list_quests`, `change_quest` and `start_at_station`.
+
 ## What's new in 1.15.4
 
 - **The game's own item pictures.** The editor now gets them by itself when it opens, for every item but one. **Menu → Don't get item pictures automatically** turns that off. <!-- online -->
@@ -14,14 +24,6 @@
 - **Kits follow their builds more closely:** Critical Quiver and Bottomless Brew go on where a build names them, and their books come with the kit.
 - **Three more effect tiers count as seen,** on [itamarnyg8-del](https://github.com/itamarnyg8-del)'s word: Precision II, Speed I and Sniper III. Four of the 180 are left.
 - **A little more of the world:** three doors, five puzzle pieces and an area, from darklynkttv's and icicle1133's lists.
-
-## What's new in 1.15.2
-
-- **Every minecart station.** A new preset under Goals adds every station players' saves have shown the editor to the ones your hero has found, so you can ride to them.
-- **More of the world:** 44 quests, 242 doors and 27 minecart stations now, from [gchristol](https://github.com/gchristol)'s, [icicle1133](https://github.com/icicle1133)'s, [XcenZ](https://github.com/XcenZ)'s and [itamarnyg8-del](https://github.com/itamarnyg8-del)'s lists.
-- **Tempo Theft, Ricochet and Shockwave can be put on weapons,** at tier III, from gchristol's and itamarnyg8-del's lists. Eleven more effect tiers count as seen, so **Best for** picks from them.
-- **Change an enchanted item's rarity** and its enchantment now gets the enchantment points the game counts at the new rarity.
-- **Stations that no map names** now read like Taiga Beach (Frozen Highlands), and the Town Fountain is no longer listed as one to find.
 
 ## Earlier versions, and the details
 

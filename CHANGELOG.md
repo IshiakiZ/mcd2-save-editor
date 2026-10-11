@@ -7,6 +7,46 @@ The short notes for the newest versions are on the
 **Menu → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.16.0
+
+- **Story progress.** **Menu → Story progress…** (and a button on Advanced mode's Help page) opens a window with
+  every quest of the hero on screen, group by group: the main story, each area's side quests, and the rest. It
+  shows how each quest stands (not open yet, available, active, finished), how many of its steps are done, the
+  quest the game tracks on screen, and every step of the quest you pick with what it's about where its name says
+  so. Under them are the quests the hero hasn't met, which the editor knows from other heroes' saves. Four
+  buttons change a quest:
+  - **Finish it:** the quest and every one of its steps are marked done, a step that counts with the number the
+    game saved with it, and the game stops tracking it. That is how a save holds a finished quest: of the 26
+    finished quests in the saves the editor has been shown, from five heroes, not one has a step left over.
+  - **Start it over:** the quest is available again with every step unset, the way a quest stands before it's
+    begun.
+  - **Add it:** a quest the hero hasn't met is listed as available with every step unset, the way the game lists
+    a quest it has just opened. Its steps are the ones another hero's save listed.
+  - **Track it:** an active quest becomes the one the game tracks on screen.
+- **What it writes and what it doesn't.** Only the quest's own part of the save. What the game gives for a quest
+  (items, XP, an achievement) the game gives when it finishes the quest itself, and the editor writes none of
+  it. The editor can't move a quest on by a single step: steps come in groups that run in order, side by side
+  or by choice, a save lists them flat, and which step follows which is in the game's own files.
+- **What follows a quest.** When the game finishes a quest it lists the quests that open next. The developer's
+  play recordings caught it doing that six times (The Illagers from the Rift opens three quests, for one), and
+  where the editor has seen it, **Finish it** lists those quests too. Replayed against those recordings, the
+  editor's finished quest is the same as the game's in all six. For every other quest the editor doesn't know
+  yet what the game opens after it, and says so: if the game doesn't open the next quest by itself, **Add it**
+  does.
+- **Where the hero starts.** A save keeps no position for a hero, only the minecart station it was last at and
+  the area it's in. The same window sets both, to a station the hero has found or to the town's fountain.
+- **The editor learns more from recordings and lists.** The play recorder now notes which quests the game made
+  available in the save that finished a quest, and **Share item IDs…** tells that with the rest of what your
+  recordings saw. It notes that only for a save the game itself wrote: the editor finishes and adds quests too,
+  and it saves only while the game is closed. A list also tells the number the game saved with a finished step
+  where the editor doesn't have it. The editor's list of the world now has 171 such numbers and what follows
+  six quests.
+- **For an AI assistant:** three new tools. `list_quests` shows the story, `change_quest` finishes a quest, starts
+  one over, adds one or tracks one, and `start_at_station` sets where the hero starts. They collect in the draft
+  like every other change.
+- **The list of changes before saving** says what was done to the story in plain words: a quest finished, started
+  over or added, the quest tracked, and where the hero starts.
+
 ## 1.15.4
 
 - **The game's own item pictures.** The editor now has a set of its own: the game's pictures of every weapon, armor

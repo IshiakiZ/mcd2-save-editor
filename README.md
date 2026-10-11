@@ -30,6 +30,8 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   six complete builds, in one click.
 - **World map and play recorder:** see the ground your hero has explored and how far it has got, and write down
   what the game saves while you play.
+- **Story progress:** every quest with its steps. Finish a quest, start one over or add one, and set the minecart
+  station your hero starts at.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
   ask for what you want.
 - **Safe saving:** a backup before every save, one-click restore, and no saving while the game runs.
@@ -49,6 +51,10 @@ Every feature, in detail: **[Features](https://github.com/IshiakiZ/mcd2-save-edi
 | The world map (Menu → World map…) | The play recorder (Menu → Play recorder…) |
 |---|---|
 | ![The world map: the ground a hero has explored, its doors, and how far it has got](docs/screenshots/world-map.png) | ![The play recorder writing down what the game saved](docs/screenshots/play-recorder.png) |
+
+| Story progress (Menu → Story progress…) |
+|---|
+| ![Story progress: a hero's quests and steps, with the buttons that change them](docs/screenshots/story-progress.png) |
 
 ## Download
 
@@ -111,7 +117,7 @@ the exact setup for your PC, with Copy buttons. In short:
 
 The assistant gets tools to list your heroes, show a hero's stats, gear and inventory, search every item in the game,
 set stats, add, change, equip, copy and delete items, add enchantment books, give an item effects and an
-enchantment, set a talisman's level, and apply presets. Its changes collect in a draft, like unsaved
+enchantment, set a talisman's level, apply presets, and list and change quests. Its changes collect in a draft, like unsaved
 changes in the editor window: nothing is written until it calls **save_changes**, which needs the game to be closed
 and backs up your saves first, exactly like **Save to game**. It plays by Simple mode's rules (offline heroes only, the
 game's caps, slots that open with your level, and best-guess item IDs only if it asks for them), and it never sees
@@ -128,11 +134,13 @@ your sign-in, account or device data.
   add; nothing is sent unless you send it.
 - **Still missing:** five enchantments and some tiers of the others, and levelling a companion's talisman outright
   (**Ready to level up** leaves it one XP short, and the game does the rest).
-- **Story progress.** A preset adds minecart stations, and that is all the editor changes of it: quests and the
-  map stay as the game saved them. The world map and the play recorder only show what's there, and can't see a
-  chest or a secret you haven't touched.
-- **Collections and achievements.** The editor leaves the game's own records alone, so a book added here counts
-  for neither.
+- **A quest step by step.** The editor finishes, starts over and adds whole quests. It can't move a quest on by
+  one step, it gives none of what the game gives for a quest (items, XP), and for most quests it doesn't know yet
+  which quests the game opens next: **Add it** lists those by hand.
+- **The map.** A preset adds minecart stations; the rest of the map stays as the game saved it. The world map and
+  the play recorder only show what's there, and can't see a chest or a secret you haven't touched.
+- **Collections and achievements.** The editor leaves the game's own records alone: a book added here counts for
+  neither, and it writes no achievement for a quest it finishes.
 - **Very high power or level may be undone by the game.** Stay close to what the game gives at your level.
 - **If you're asked which save to keep** after an edit, keep this PC's: that's the one with your changes.
 - **Steam and Mac support are new,** and nobody has reported from a real Mac yet. Try a small change first.
