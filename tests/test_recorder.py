@@ -501,6 +501,40 @@ def a_save(hero="hero-1", where="SW.Area.Town", chests=None, regions=(), doors=(
         body["Achievements"] = {"CountAchievements": {"SW.Achievements.Open100Chests": {"Count": chests}}}
     return {"CharacterSaveV1": body}
 
+    def test_says_when_a_rock_a_key_a_lock_or_a_gate_changes(self):
+        from .helpers import KEY_GATE, KEY_LOCK, LIFT_BUTTON, ROCK_OPENED, THE_KEY, as_saved
+
+        def a_world(document):
+            body = document["CharacterSaveV1"]
+            body["MetaData"]["CurrentLocation"] = "SW.Area.Meadow.A1"
+            body["WorldExploration"] = {"SavedActorStates": [as_saved(THE_KEY, 0, 1)]}
+
+        self.game_saves(a_world)
+        self.recorder.begin()
+        self.assertEqual(self.events("piece"), [])  # what was there to begin with is where the hero stands, not a step
+
+        def the_key_goes_in(document):
+            actors = document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]
+            actors[0].update(PreviousState=1, CurrentState=2)
+            actors += [as_saved(KEY_LOCK, 2, 1), as_saved(KEY_GATE), as_saved(ROCK_OPENED), as_saved(LIFT_BUTTON)]
+
+        self.game_saves(the_key_goes_in)
+        self.recorder.look()
+        told = {(event["piece"], event["name"]): (event["old"], event["new"], event["area"]) for event in self.events("piece")}
+        self.assertEqual(told, {
+            ("key", "Key Golem Spawner"): ("0 then 1", "1 then 2", "SW.Area.Meadow.A1"), ("key lock", "Key Golem Lock"): ("(not there)", "2 then 1", "SW.Area.Meadow.A1"),
+            ("key gate", "Gold Key Gate Door"): ("(not there)", "0 then 1", "SW.Area.Meadow.A1"), ("shortcut", "Meadow Roadblock"): ("(not there)", "0 then 1", "SW.Area.Meadow.A1"),
+        })
+        # Every one of the five is in the file with the quieter steps, the lift's button too, which the editor has no word for.
+        self.assertEqual(len([event for event in self.events("progress") if event["what"].startswith("actor ")]), 5)
+        self.assertTrue(any("SHORTCUT: Meadow Roadblock: (not there) -> 0 then 1  [in SW.Area.Meadow.A1]" in line for line in self.said))
+        self.assertTrue(any("KEY GATE: Gold Key Gate Door: (not there) -> 0 then 1" in line for line in self.said))
+        self.assertTrue(any("KEY: Key Golem Spawner: 0 then 1 -> 1 then 2" in line for line in self.said))
+        self.assertFalse(any("Lift Button" in line for line in self.said))
+        text = self.recorder.summary()
+        self.assertIn("Shortcuts, keys, locks and gates while recording (4; the two numbers are the state it was in and the state it's in):", text)
+        self.assertIn('key lock: Key Golem Lock: "(not there)" -> "2 then 1"  [in SW.Area.Meadow.A1]', text)
+
 
 class MapTests(unittest.TestCase):
     """How a save's pictures of the fog lie on the world, and what the recordings' atlas makes of them."""

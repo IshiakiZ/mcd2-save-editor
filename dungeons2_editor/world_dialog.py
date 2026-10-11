@@ -41,6 +41,8 @@ HINT = "Point at a dot to see what it is. Scroll to zoom in and out, and drag to
 NO_MAP = "This save has no map yet: the game draws one as the hero explores."
 DISCOVER = "Discover the whole map"
 DISCOVERED = "The whole map is discovered. Press Save to game when you're done."
+OPEN = {story.SHORTCUTS: "Open the shortcuts", story.GATES: "Open the key gates"}
+ALL_OPEN = {story.SHORTCUTS: "Every shortcut the editor knows is open already.", story.GATES: "Every key gate the editor knows is open already."}
 NO_RECORDINGS = (
     "Nothing yet for this hero. Play with the play recorder on (Menu > World > Play recorder), and the minecart stations, cutscenes "
     "and chests you find get a place on this map."
@@ -108,15 +110,15 @@ def sections(document: Any, atlas: dict[str, Any] | None = None) -> list[tuple[s
         where.append(f"Last minecart station: {recorder.station_name(str(progress['last minecart station']))}")
     found.append(("Where the hero is", where))
 
-    story = [(story_name(name), bool(entry.get("bCompleted"))) for name, entry in (achievements.get("QuestAchievements") or {}).items() if isinstance(entry, dict)]
+    achieved = [(story_name(name), bool(entry.get("bCompleted"))) for name, entry in (achievements.get("QuestAchievements") or {}).items() if isinstance(entry, dict)]
     steps = recorder.quest_tasks(progress)
     quests = {name: str(progress[f"quest {name}"]) for name in steps}
     states: dict[str, int] = {}
     for state in quests.values():
         states[state] = states.get(state, 0) + 1
     so_far = []
-    if story:
-        so_far.append(f"Story quests done: {sum(1 for _name, done in story if done)} of {len(story)}")
+    if achieved:
+        so_far.append(f"Story quests done: {sum(1 for _name, done in achieved if done)} of {len(achieved)}")
     if quests:
         every = [value for values in steps.values() for value in values]
         so_far.append("Quests met: " + ", ".join(f"{states[state]} {state.lower()}" for state in sorted(states, key=lambda state: (STATES.index(state) if state in STATES else len(STATES), state))))
@@ -125,11 +127,15 @@ def sections(document: Any, atlas: dict[str, Any] | None = None) -> list[tuple[s
     so_far.append(f"Minecart stations found: {stations} of at least {recorder.stations_at_least(stations)}")
     so_far.append(f"Doors found: {len(labelled('door'))}")
     so_far.append(f"Cutscenes seen: {len(labelled('cutscene'))}")
+    for kind, words in ((story.SHORTCUTS, "Shortcuts open"), (story.GATES, "Key gates open")):
+        done, known = story.pieces_open(document, kind)
+        if known:
+            so_far.append(f"{words}: {done} of the {known} the editor knows")
     if isinstance(progress.get(recorder.CHESTS), int):
         so_far.append(f"Chests opened: {progress[recorder.CHESTS]}, by the game's own count")
     found.append(("So far", so_far))
 
-    found.append(("The story, by the game's achievements for it", [("✓  " if done else "·  ") + name for name, done in story]))
+    found.append(("The story, by the game's achievements for it", [("✓  " if done else "·  ") + name for name, done in achieved]))
     found.append(("What you may have missed, as far as the save shows", [short(line).replace(" (marked on the map)", "") for line in recorder.might_be_missing(progress, regions)]))
     found.append(("Ground explored", [
         f"{short(tag)}: {sum(1 for cell in region['cells'] if cell)} of {len(region['cells'])} squares" for tag, region in regions.items()
@@ -165,6 +171,28 @@ def discover_question(left: int, more: list[str]) -> str:
             f"The editor also adds the map{'' if len(more) == 1 else 's'} of {len(more)} place{'' if len(more) == 1 else 's'} this hero hasn't been to yet, "
             "explored too, the way other players' saves hold them."
         )
+    # The recorder places what happens by the fog that cleared between two saves (recorder.newly_explored).
+    told.append("The play recorder tells where a chest was opened by the fog that lifts as you explore. With the whole map discovered it can only tell the area.")
+    told.append("It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back.")
+    return "\n\n".join(told)
+
+
+def open_question(kind: str, count: int, known: int) -> str:
+    """What to ask before opening the shortcuts, or the key gates."""
+    them = "It isn't" if known == 1 else "None of them is" if count == known else "One of them isn't" if count == 1 else f"{count} of them aren't"
+    marked = "it will be marked open" if count == 1 else "they will be marked open"
+    if kind == story.SHORTCUTS:
+        told = [
+            f"{OPEN[kind]}?",
+            f"The editor knows {known} shortcut{'' if known == 1 else 's'}: rocks that move out of the way once you've come round to their far side, and "
+            f"a bridge. {them} open for this hero yet, and {marked}, the way a save holds one that is.",
+        ]
+    else:
+        told = [
+            f"{OPEN[kind]}?",
+            f"The editor knows {known} gate{'' if known == 1 else 's'} that a key opens. {them} open for this hero yet, and {marked}, the way a save "
+            "holds a gate once its key is in. The keys and their locks are left as they are.",
+        ]
     told.append("It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back.")
     return "\n\n".join(told)
 
@@ -172,11 +200,15 @@ def discover_question(left: int, more: list[str]) -> str:
 class WorldDialog(tk.Toplevel):
     """A hero's map and its progress, to look at. It doesn't stop you using the editor meanwhile. With
     ``on_discover`` (which lifts the fog in the save it's given and says whether it did), it has a button for
-    that, and is drawn again afterwards."""
+    that, and is drawn again afterwards. With ``on_open`` (which opens the shortcuts or the key gates in the
+    save it's given, and says whether it did), it has a button for each of those."""
 
-    def __init__(self, parent: tk.Misc, document: Any, atlas: dict[str, Any] | None = None, hero: str = "", on_discover: Callable[[Any], bool] | None = None):
+    def __init__(
+        self, parent: tk.Misc, document: Any, atlas: dict[str, Any] | None = None, hero: str = "", on_discover: Callable[[Any], bool] | None = None,
+        on_open: Callable[[Any, str], bool] | None = None,
+    ):
         super().__init__(parent)
-        self.document, self.atlas, self.on_discover = document, atlas, on_discover
+        self.document, self.atlas, self.on_discover, self.on_open = document, atlas, on_discover, on_open
         self.regions = recorder.map_regions(document)
         self.doors = recorder.door_places(document)
         self.mine = ((atlas or {}).get("heroes") or {}).get(recorder.hero_id(document)) or {}
@@ -254,10 +286,15 @@ class WorldDialog(tk.Toplevel):
         if on_discover is not None:
             self.discover_button.grid(row=0, column=1, padx=(8, 0))
             self._update_discover()
+        self.piece_buttons = {kind: ttk.Button(bottom, text=OPEN[kind], command=lambda kind=kind: self.open_pieces(kind)) for kind in (story.SHORTCUTS, story.GATES)}
+        if on_open is not None:
+            for column, button in enumerate(self.piece_buttons.values(), start=2):
+                button.grid(row=0, column=column, padx=(8, 0))
+            self._update_pieces()
         self.copy_button = ttk.Button(bottom, text="Copy the list", command=self.copy_list)
-        self.copy_button.grid(row=0, column=2, padx=(8, 8))
+        self.copy_button.grid(row=0, column=4, padx=(8, 8))
         self.close_button = ttk.Button(bottom, text="Close", style="Accent.TButton", command=self.destroy)
-        self.close_button.grid(row=0, column=3)
+        self.close_button.grid(row=0, column=5)
         self._write()
         self.draw()
         fit_to_contents(self, *scaled_size(self, 1120, 700))
@@ -431,6 +468,29 @@ class WorldDialog(tk.Toplevel):
         self.show_region()
         self._update_discover()
         self.hover_var.set(DISCOVERED)
+
+    def _update_pieces(self) -> None:
+        """Each of the two buttons is there to press while the editor knows a shortcut, or a gate, that isn't open."""
+        for kind, button in self.piece_buttons.items():
+            button.state(["!disabled"] if story.pieces_to_open(self.document, kind) else ["disabled"])
+
+    def open_pieces(self, kind: str) -> None:
+        """Open the shortcuts, or the key gates, once the user has said yes, and write the list again."""
+        if self.on_open is None:
+            return
+        todo, known = len(story.pieces_to_open(self.document, kind)), len(story.pieces(self.document, kind))
+        if not todo:
+            self.hover_var.set(ALL_OPEN[kind] if known else "The editor doesn't know any yet.")
+            return
+        if not messagebox.askyesno(OPEN[kind], open_question(kind, todo, known), default="no", parent=self):
+            return
+        if not self.on_open(self.document, kind):
+            return
+        self.listed = sections(self.document, self.atlas)
+        self._write()
+        self._update_pieces()
+        what = ("shortcut" if kind == story.SHORTCUTS else "key gate") + ("" if todo == 1 else "s")
+        self.hover_var.set(f"{todo} {what} opened. Press Save to game when you're done.")
 
     def _write(self) -> None:
         text, gap = self.text, self.fonts["bold"].metrics("linespace")

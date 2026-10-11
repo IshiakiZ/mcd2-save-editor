@@ -154,6 +154,28 @@ class StoryToolsTests(ServerTestCase):
         self.assertEqual(done["done"], "The Illagers from the Rift (CA01) was finished without the number 1 of its steps carry in a save: they have it now.")
         self.assertEqual((done["quest"].get("finish_again"), done["unsaved_changes"]), (None, ["Quest The Illagers from the Rift (CA01): 1 finished step given its number"]))
 
+    def test_opens_the_shortcuts_and_the_key_gates(self):
+        from . import helpers
+
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps({"pieces": helpers.PIECES}), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+        self.assertIn('what is "shortcuts", "key_gates" or "both"', self.call("open_shortcuts_and_gates", hero="00000000", what="doors"))
+        done = self.call("open_shortcuts_and_gates", hero="00000000", what="shortcuts")
+        self.assertEqual((done["done"], done["shortcuts_opened"], done["key_gates_opened"], done["shortcuts_open"], done["key_gates_open"]), ("Opened 3 shortcuts.", 3, 0, [3, 3], [0, 2]))
+        self.assertEqual(done["unsaved_changes"], ["Shortcuts: 3 of the 3 the editor knows open (it was 0)"])
+        done = self.call("open_shortcuts_and_gates", hero="00000000")
+        self.assertEqual((done["done"], done["shortcuts_opened"], done["key_gates_opened"]), ("Opened 2 key gates.", 0, 2))
+        self.assertIn("Every one the editor knows is open already", self.call("open_shortcuts_and_gates", hero="00000000"))
+        self.call("save_changes", hero="00000000")
+        saved = self.saved_hero().document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]
+        self.assertEqual([actor["SoftObjectPath"] for actor in saved], [helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE])
+        self.assertTrue(all((actor["PreviousState"], actor["CurrentState"], actor["Version"]) == (0, 1, 0) for actor in saved))
+        saves.SaveProfile(self.profile).save(HERO, hero_save(), self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        self.assertIn("keeps no list of the world's rocks and gates yet", self.call("open_shortcuts_and_gates", hero="00000000"))
+
     def test_discovers_the_whole_map(self):
         done = self.call("discover_map", hero="00000000")
         self.assertEqual((done["done"], done["squares"], done["regions"], done["regions_added"]), ("The whole map is discovered: 16 squares in 2 regions.", 16, 2, []))
@@ -187,7 +209,7 @@ class ProtocolTests(ServerTestCase):
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
             "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
-            "add_enchantment_books", "list_quests", "change_quest", "start_at_station", "finish_quests", "discover_map",
+            "add_enchantment_books", "list_quests", "change_quest", "start_at_station", "finish_quests", "discover_map", "open_shortcuts_and_gates",
         })
         self.assertTrue(tools["list_quests"]["annotations"]["readOnlyHint"])
         self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "start_over", "add", "track"])

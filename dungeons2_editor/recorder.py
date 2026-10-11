@@ -169,6 +169,34 @@ def storm_mentions(document: Any) -> dict[str, Any]:
 
 LOUD_PROGRESS = ("quest ", "task ", "minecart station ", "door ", "cutscene ", "gimmick ", "progression ")  # said out loud as they happen
 PLACED = ("quest ", "task ", "minecart station ", "cutscene ", "gimmick ", "actor ")  # what the atlas keeps a place for (doors have their own)
+# A thing in the world that stays as the hero left it: a save keeps the state it was in and the state it's in now
+# (WorldExploration.SavedActorStates). What kind of thing it is is read off the game's own name for it: a rock that
+# moves out of the way once the hero has come round to its far side, or a bridge, is a shortcut; then there's a key,
+# the lock it goes in, and the gate that opens.
+SHORTCUT, GATE, LOCK, KEY = "shortcut", "key gate", "key lock", "key"
+_PIECE_NAME = re.compile(r"BP_(\w+?)(?:ActorStateGimmick)?_C_UAID_")
+_PIECE_WORDS = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|_")
+
+
+def piece_name(path: str) -> str:
+    """What the game's files call a saved actor, in words: Forest Roadblock, Key Golem Lock. Nothing for one that
+    isn't named the way they are."""
+    found = _PIECE_NAME.search(path)
+    return " ".join(_PIECE_WORDS.sub(" ", found.group(1)).split()) if found else ""
+
+
+def piece_kind(path: str) -> str:
+    """Which of the kinds above a saved actor is, or nothing for one the editor has no word for (a lift's button)."""
+    name = piece_name(path).replace(" ", "")
+    if "Roadblock" in name or "Bridge" in name:
+        return SHORTCUT
+    if "KeyGolemLock" in name:
+        return LOCK
+    if "KeyGolemSpawner" in name:
+        return KEY
+    if "KeyGate" in name or "ConcreteGate" in name:
+        return GATE
+    return ""
 ATLAS_FORMAT = 4  # goes up when the atlas is laid out differently, so that one written down the old way is read again
 CHESTS = "achievement Open100Chests"  # the game's own count of chests opened, the one thing a save says about chests
 # A save keeps, for each region, a picture of the fog over it: Size.X values to a line and Size.Y lines, each value
@@ -1013,6 +1041,10 @@ class Recorder:
                 where = f"at {at[0]:.0f}, {at[1]:.0f}" if at else f"in {area}" + (f", near {near['x']}, {near['y']}" if near else "")
                 line = f"PROGRESS: {label}: {was} -> {'(gone)' if new is doc.MISSING else new}  [{where}]" if label.startswith(LOUD_PROGRESS) else None
                 self.event("progress", line, container=container, what=label, old=compact(old), new=compact(new), area=area, near=near, at=at)
+                kind = piece_kind(label) if label.startswith("actor ") else ""
+                if kind:  # a rock, a bridge, a key, a lock or a gate: said out loud, with the two states the save holds
+                    said = f"{kind.upper()}: {piece_name(label)}: {was} -> {'(gone)' if new is doc.MISSING else new}  [{where}]"
+                    self.event("piece", said, container=container, what=label, piece=kind, name=piece_name(label), old=compact(old), new=compact(new), area=area, near=near)
                 if label == CHESTS and isinstance(old, int) and isinstance(new, int) and new > old:
                     more = new - old
                     self.event("chest", f"CHEST OPENED: {more} more, {new} by the game's count  [{where}]", container=container, opened=more, count=new, area=area, near=near)
@@ -1151,6 +1183,11 @@ class Recorder:
             if r["kind"] == "chest":
                 chests[str(r.get("area"))] = chests.get(str(r.get("area")), 0) + r["opened"]
         lines.append(f"  Chests opened while recording: {sum(chests.values())}" + (f" ({', '.join(f'{count} in {area}' for area, count in sorted(chests.items()))})" if chests else ""))
+        pieces = [r for r in self.log if r["kind"] == "piece"]
+        lines.append(f"  Shortcuts, keys, locks and gates while recording ({len(pieces)}; the two numbers are the state it was in and the state it's in):")
+        for r in pieces[: MOST * 3]:
+            where = f"in {r.get('area')}" + (f", near {r['near']['x']}, {r['near']['y']}" if r.get("near") else "")
+            lines.append(f"    {when(r)}  {r['piece']}: {r['name']}: {json.dumps(r['old'], ensure_ascii=False)} -> {json.dumps(r['new'], ensure_ascii=False)}  [{where}]")
         steps = [r for r in self.log if r["kind"] == "progress"]
         loud = [r for r in steps if r["what"].startswith(LOUD_PROGRESS)]
         lines.append(f"  Steps while recording ({len(loud)}, and {len(steps) - len(loud)} quieter changes in events.jsonl):")

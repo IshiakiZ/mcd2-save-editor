@@ -168,6 +168,33 @@ def hero_save(online=False, emeralds=55, level=1):
     }
 
 
+# Things in the world as a save names them, and the editor's list of them as its tests write it: two rocks and a
+# bridge, two gates a key opens with a lock and a key, and four the editor leaves alone (a gate inside a dungeon, a
+# rock that saves have shown held two ways, a lift's button, the lock and the key).
+_CELL = "/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/{}.Overworld:PersistentLevel.{}"
+ROCK = _CELL.format("CELL1", "BP_ForestRoadblockActorStateGimmick_C_UAID_AA01_1")
+ROCK_OPENED = _CELL.format("CELL2", "BP_MeadowRoadblockActorStateGimmick_C_UAID_AA02_2")
+BRIDGE = _CELL.format("CELL3", "BP_FarmBridgeActorStateGimmick_C_UAID_AA03_3")
+KEY_GATE = _CELL.format("CELL4", "BP_GoldKeyGateDoorActorStateGimmick_C_UAID_AA04_4")
+CAMP_GATE = _CELL.format("CELL5", "BP_MA2_KeyGate_C_UAID_AA05_5")
+KEY_LOCK = _CELL.format("CELL4", "BP_KeyGolemLockActorStateGimmick_C_UAID_AA04_6")
+THE_KEY = _CELL.format("CELL6", "BP_KeyGolemSpawnerActorStateGimmick_C_UAID_AA04_7")
+CAVE_GATE = "/Game/Spicewood/Maps/Procedural/foresta1_spidercaves/SpiderCaveV1-1-2-3.SpiderCaveV1:PersistentLevel.BP_GoldKeyGateDoorActorStateGimmick_C_UAID_AA08_8"
+ROCK_TWO_WAYS = _CELL.format("CELL7", "BP_LushRoadblockActorStateGimmick_C_UAID_AA09_9")
+LIFT_BUTTON = _CELL.format("CELL8", "BP_IllagerLiftButtonActorStateGimmick_C_UAID_AA10_10")
+PIECES = {
+    f"piece {number}": {"path": path, "states": states} for number, (path, states) in enumerate((
+        (ROCK, [[0, 1]]), (ROCK_OPENED, [[0, 1]]), (BRIDGE, [[0, 1]]), (KEY_GATE, [[0, 1]]), (CAMP_GATE, [[0, 1]]), (KEY_LOCK, [[2, 1]]),
+        (THE_KEY, [[1, 2], [0, 1]]), (CAVE_GATE, [[0, 1]]), (ROCK_TWO_WAYS, [[0, 1], [1, 2]]), (LIFT_BUTTON, [[0, 1]]),
+    ))
+}
+
+
+def as_saved(path: str, was: int = 0, now: int = 1) -> dict:
+    """A thing in the world as a save holds it: its name, the state it was in, the state it's in, and a version."""
+    return {"SoftObjectPath": path, "PreviousState": was, "CurrentState": now, "Version": 0}
+
+
 def hero_with_a_world() -> dict:
     """A hero that has been somewhere: a camp four squares across and three down, a meadow, three doors, two
     minecart stations, quests at every stage and the game's counts."""

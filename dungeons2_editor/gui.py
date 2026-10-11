@@ -1531,8 +1531,24 @@ class EditorApp:
             self.world_map.destroy()  # one map at a time: this one is drawn from the save as it is now
         hero = Hero(document)
         # The map is the save's own: recordings that can't be read only leave it with less on it.
-        self.world_map = WorldDialog(self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}", on_discover=self._discover_map)
+        self.world_map = WorldDialog(
+            self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}", on_discover=self._discover_map, on_open=self._open_pieces,
+        )
         return self.world_map
+
+    def _open_pieces(self, shown: Any, kind: str) -> bool:
+        """The World map's Open the shortcuts and Open the key gates: in the hero's unsaved changes. False if it
+        didn't, which it doesn't when the map on screen is no longer of the hero the editor has open."""
+        if shown is not self.document:
+            messagebox.showinfo(APP_TITLE, "The hero on screen has changed since this map was opened. Open the World map again.", parent=self.root)
+            return False
+        try:
+            story.open_pieces(self.document, kind)
+        except ValueError as exc:
+            messagebox.showinfo(APP_TITLE, str(exc), parent=self.root)
+            return False
+        self._on_story_changed()
+        return True
 
     def _discover_map(self, shown: Any) -> bool:
         """The World map's Discover the whole map: lift the fog in the hero's unsaved changes. False if it didn't,

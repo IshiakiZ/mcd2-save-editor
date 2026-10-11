@@ -1,7 +1,12 @@
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from dungeons2_editor import world_dialog
+import tests
+from dungeons2_editor import story, world_dialog
 
+from . import helpers
 from .helpers import hero_save, hero_with_a_world, recordings_of_a_world
 
 
@@ -42,6 +47,31 @@ class WorldMapListTests(unittest.TestCase):
         self.assertEqual(listed["Chests your recordings saw opened, by area"], ["Howling Woods: 2", "While nothing was recording: 1"])
         self.assertEqual(listed["Other achievements, as the save counts them"], ["Equip A Unique Item: done", "Discover All Minecart Stations: 2 collected", "Open 100 Chests: 5"])
         self.assertEqual(listed["From your recordings"], ["3 saves of this hero read"])
+
+    def test_says_how_many_shortcuts_and_key_gates_are_open_and_asks_before_opening_them(self):
+        with tempfile.TemporaryDirectory() as folder:
+            listed = Path(folder) / "world.json"
+            listed.write_text(json.dumps({"pieces": helpers.PIECES}), encoding="utf-8")
+            tests.use_world_list(listed)
+            self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+            hero = hero_with_a_world()
+            hero["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"] = [helpers.as_saved(helpers.ROCK_OPENED)]
+            so_far = dict(world_dialog.sections(hero))["So far"]
+            self.assertEqual(so_far[5:8], ["Cutscenes seen: 1", "Shortcuts open: 1 of the 3 the editor knows", "Key gates open: 0 of the 2 the editor knows"])
+        # With the list the tests are pinned to, which knows none, the two lines aren't there.
+        tests.use_world_list(tests.PINNED_WORLD_FILE)
+        self.assertFalse(any("the editor knows" in line for line in dict(world_dialog.sections(hero_with_a_world()))["So far"]))
+        # Discovering the whole map costs the recorder its way of telling where things happen, and the question says so.
+        self.assertIn("With the whole map discovered it can only tell the area.", world_dialog.discover_question(15, []))
+        question = world_dialog.open_question(story.SHORTCUTS, 2, 3)
+        self.assertTrue(question.startswith("Open the shortcuts?\n\nThe editor knows 3 shortcuts: rocks that move out of the way once you've come round to their far side, and a bridge. "), question)
+        self.assertIn("2 of them aren't open for this hero yet, and they will be marked open, the way a save holds one that is.", question)
+        self.assertTrue(question.endswith("nothing reaches the game until Save to game, and Discard changes takes it back."))
+        question = world_dialog.open_question(story.GATES, 2, 2)
+        self.assertIn("The editor knows 2 gates that a key opens. None of them is open for this hero yet, and they will be marked open, the way a save holds a gate once its key is in. "
+                      "The keys and their locks are left as they are.", question)
+        self.assertIn("One of them isn't open for this hero yet, and it will be marked open", world_dialog.open_question(story.GATES, 1, 4))
+        self.assertIn("The editor knows 1 gate that a key opens. It isn't open for this hero yet, and it will be marked open", world_dialog.open_question(story.GATES, 1, 1))
 
     def test_a_hero_with_no_recordings_and_one_that_has_been_nowhere(self):
         listed = dict(world_dialog.sections(hero_with_a_world()))

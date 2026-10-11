@@ -501,6 +501,86 @@ def discover_map(document: Any) -> tuple[int, list[str]]:
     return left, more
 
 
+# ------------------------------------------------------------------ shortcuts and key gates
+
+SHORTCUTS, GATES = recorder.SHORTCUT, recorder.GATE
+OVERWORLD = "/Maps/Overworld/"  # the one world every hero walks: what stands in it is named the same in every save
+NO_PIECES = "This hero's save keeps no list of the world's rocks and gates yet. Play until the game has saved it once."
+
+
+@dataclass(frozen=True)
+class Piece:
+    """A thing in the overworld that stays as the hero left it and that the editor can open: a rock that moves out
+    of the way or a bridge (a shortcut), or a gate that a key opens."""
+
+    path: str  # as a save names it
+    kind: str  # SHORTCUTS or GATES
+    name: str  # what the game's files call it, in words: Forest Roadblock
+    opened: tuple[int, int]  # the two numbers a save holds with it once it's open: the state it was in, the state it's in
+    state: tuple[int, int] | None  # the two this hero's save holds with it; None when the save doesn't list it, which is how one stands that nobody has touched
+
+    @property
+    def open(self) -> bool:
+        return self.state is not None and self.state[1] == self.opened[1]
+
+
+def _actors(document: Any) -> list | None:
+    """The list a save keeps of the things in the world that have changed, or None where it keeps none."""
+    place = _body(document).get("WorldExploration")
+    actors = place.get("SavedActorStates") if isinstance(place, dict) else None
+    return actors if isinstance(actors, list) else None
+
+
+def _whole(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def pieces(document: Any, kind: str | None = None) -> list[Piece]:
+    """The shortcuts and the key gates of the overworld that the editor knows from other heroes' saves (of one kind,
+    or both), each with how it stands for this hero. Only the ones every save that showed them held the same way:
+    one state before, one state now. A key and its lock aren't among them: the editor leaves those alone."""
+    mine = {}
+    for actor in _actors(document) or []:
+        if isinstance(actor, dict) and _whole(actor.get("PreviousState")) and _whole(actor.get("CurrentState")):
+            mine[actor.get("SoftObjectPath")] = (actor["PreviousState"], actor["CurrentState"])
+    found = []
+    for piece in world.known()["pieces"].values():
+        path, states = (piece.get("path"), piece.get("states")) if isinstance(piece, dict) else (None, None)
+        what = recorder.piece_kind(path) if isinstance(path, str) else ""
+        one = isinstance(states, list) and len(states) == 1 and isinstance(states[0], list) and len(states[0]) == 2 and all(map(_whole, states[0]))
+        if what in (SHORTCUTS, GATES) and kind in (None, what) and OVERWORLD in path and one:
+            found.append(Piece(path, what, recorder.piece_name(path), (states[0][0], states[0][1]), mine.get(path)))
+    return sorted(found, key=lambda piece: (piece.kind != SHORTCUTS, piece.name, piece.path))
+
+
+def pieces_open(document: Any, kind: str) -> tuple[int, int]:
+    """How many of the shortcuts, or of the key gates, the editor knows are open for this hero, and how many it knows."""
+    known = pieces(document, kind)
+    return sum(1 for piece in known if piece.open), len(known)
+
+
+def pieces_to_open(document: Any, kind: str) -> list[Piece]:
+    """The shortcuts, or the key gates, that opening them all would open: the ones this hero hasn't opened."""
+    return [piece for piece in pieces(document, kind) if not piece.open]
+
+
+def open_pieces(document: Any, kind: str) -> int:
+    """Open every shortcut, or every key gate, the editor knows: each is listed with the two states a save holds
+    with it once it's open, where the game lists one (after the ones the save has). Returns how many it opened.
+    An error if the save keeps no such list."""
+    actors = _actors(document)
+    if actors is None:
+        raise ValueError(NO_PIECES)
+    todo = pieces_to_open(document, kind)
+    for piece in todo:
+        mine = next((actor for actor in actors if isinstance(actor, dict) and actor.get("SoftObjectPath") == piece.path), None)
+        if mine is None:
+            actors.append({"SoftObjectPath": piece.path, "PreviousState": piece.opened[0], "CurrentState": piece.opened[1], "Version": 0})
+        else:
+            mine["PreviousState"], mine["CurrentState"] = piece.opened
+    return len(todo)
+
+
 # ------------------------------------------------------------------ what changed
 
 def changes(before: Any, after: Any) -> list[str]:
@@ -531,4 +611,8 @@ def changes(before: Any, after: Any) -> list[str]:
     was, now = map_explored(before), map_explored(after)
     if was != now:
         lines.append(f"Map: {now[0]:,} of {now[1]:,} squares explored in {now[2]} region{'' if now[2] == 1 else 's'} (it was {was[0]:,} of {was[1]:,} in {was[2]})")
+    for kind, words in ((SHORTCUTS, "Shortcuts"), (GATES, "Key gates")):
+        was, now = pieces_open(before, kind), pieces_open(after, kind)
+        if was != now:
+            lines.append(f"{words}: {now[0]} of the {now[1]} the editor knows open (it was {was[0]})")
     return lines

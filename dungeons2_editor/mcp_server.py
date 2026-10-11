@@ -90,7 +90,8 @@ INSTRUCTIONS = (
     "gives for a quest (items, XP, an achievement): say so if asked. The game opens the quests that follow a finished one by "
     "itself, the next time it loads the hero (checked in the game). finish_quests finishes a whole part of the game at once, or "
     "every quest the editor knows: get the user's word first, it's a lot at once. discover_map lifts the fog from every map and "
-    "adds the maps of places the hero hasn't been to. start_at_station sets the minecart station and the area "
+    "adds the maps of places the hero hasn't been to. open_shortcuts_and_gates opens the overworld's shortcuts (rocks that move out "
+    "of the way, a bridge) and the gates a key opens, the ones the editor knows. start_at_station sets the minecart station and the area "
     "the save says the hero is at, to a station the hero has found: a save keeps no other position, and the game starts the "
     "hero at that station the next time it loads it (checked in the game)."
 )
@@ -726,6 +727,27 @@ class EditorServer:
 
         return self._edit(args["hero"], change)
 
+    def open_shortcuts_and_gates(self, args: dict) -> dict:
+        kinds = {"shortcuts": (story.SHORTCUTS,), "key_gates": (story.GATES,), "both": (story.SHORTCUTS, story.GATES)}.get(args.get("what") or "both")
+        if kinds is None:
+            raise ToolError('what is "shortcuts", "key_gates" or "both".')
+
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            document = hero.document
+            try:
+                opened = {kind: story.open_pieces(document, kind) for kind in kinds}
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            if not any(opened.values()):
+                raise ToolError("Every one the editor knows is open already.")
+            told = [f"{count} {kind}{'' if count == 1 else 's'}" for kind, count in opened.items() if count]
+            return f"Opened {' and '.join(told)}.", {
+                "shortcuts_opened": opened.get(story.SHORTCUTS, 0), "key_gates_opened": opened.get(story.GATES, 0),
+                "shortcuts_open": list(story.pieces_open(document, story.SHORTCUTS)), "key_gates_open": list(story.pieces_open(document, story.GATES)),
+            }
+
+        return self._edit(args["hero"], change)
+
     def start_at_station(self, args: dict) -> dict:
         def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
             document, wanted = hero.document, str(args["station"]).lower()
@@ -965,6 +987,12 @@ class EditorServer:
                  "keeps is marked as explored, and the maps of places the hero hasn't been to are added, explored too, the way "
                  "other players' saves hold them. Doors, chests and secrets are not found by it.",
                  {"hero": HERO}, self.discover_map, ("hero",)),
+            Tool("open_shortcuts_and_gates", "Open shortcuts and key gates", "Open the overworld's shortcuts (rocks that move out of the way once "
+                 "the hero has come round to their far side, and a bridge), the gates that a key opens, or both: every one the editor knows "
+                 "from players' saves is marked open, the way a save holds an open one. Keys and their locks are left as they are, and so is "
+                 "everything inside a dungeon.",
+                 {"hero": HERO, "what": _string("Which to open. Leave out for both.", enum=["shortcuts", "key_gates", "both"])},
+                 self.open_shortcuts_and_gates, ("hero",)),
             Tool("start_at_station", "Start at a minecart station", "Have the hero start at a minecart station it has found (start_points in "
                  "list_quests): sets the station the save says the hero was last at, and its area. A save keeps no other position for a hero, "
                  "and the game starts it there the next time it loads it.",

@@ -9,6 +9,7 @@ import tests
 from dungeons2_editor import story, world
 from dungeons2_editor.hero import describe_changes
 
+from . import helpers
 from .helpers import hero_save, hero_with_a_world
 
 # What the editor's list of the world says in these tests: three quests with their steps, the number saved with two
@@ -27,6 +28,7 @@ LIST = {
         # Two saves put this one in two places, so nothing says which is right: it isn't one to add.
         "SW.Region.Twice": {"corner": [0, 0], "size": [2, 2], "also": [{"corner": [64, 64], "size": [2, 2]}]},
     },
+    "pieces": helpers.PIECES,
 }
 # A quest as the game saved it just before it finished it, just after, and the quest it listed with that, from one of
 # the developer's play recordings, written the way a shared list writes a quest (+ done, ~ active, a number after it
@@ -226,6 +228,43 @@ class StoryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "keeps no map yet"):
                 change(hero_save())
 
+    def test_opens_the_shortcuts_and_the_key_gates(self):
+        place = self.document["CharacterSaveV1"]["WorldExploration"]
+        # The hero has moved one rock out of the way and put a key in its lock: the lock is not the editor's to touch.
+        place["SavedActorStates"] = [helpers.as_saved(helpers.ROCK_OPENED), helpers.as_saved(helpers.KEY_LOCK, 2, 1)]
+        self.assertEqual([(piece.kind, piece.name, piece.open) for piece in story.pieces(self.document)], [
+            ("shortcut", "Farm Bridge", False), ("shortcut", "Forest Roadblock", False), ("shortcut", "Meadow Roadblock", True),
+            ("key gate", "Gold Key Gate Door", False), ("key gate", "MA2 Key Gate", False),
+        ])  # no lock, no key, nothing inside a dungeon, nothing saves have shown held two ways, nothing the editor has no word for
+        self.assertEqual((story.pieces_open(self.document, story.SHORTCUTS), story.pieces_open(self.document, story.GATES)), ((1, 3), (0, 2)))
+        before = copy.deepcopy(self.document)
+        untouched = copy.deepcopy({key: value for key, value in place.items() if key != "SavedActorStates"})
+        self.assertEqual(story.open_pieces(self.document, story.SHORTCUTS), 2)
+        # Each as a save holds an open one, after the ones the save had: its name, the state it was in, the state it's in, a version.
+        self.assertEqual(place["SavedActorStates"], [
+            helpers.as_saved(helpers.ROCK_OPENED), helpers.as_saved(helpers.KEY_LOCK, 2, 1), helpers.as_saved(helpers.BRIDGE), helpers.as_saved(helpers.ROCK),
+        ])
+        self.assertEqual(list(place["SavedActorStates"][2]), ["SoftObjectPath", "PreviousState", "CurrentState", "Version"])
+        self.assertEqual((story.pieces_open(self.document, story.SHORTCUTS), story.pieces_open(self.document, story.GATES)), ((3, 3), (0, 2)))
+        self.assertEqual((story.open_pieces(self.document, story.SHORTCUTS), len(place["SavedActorStates"])), (0, 4))  # nothing left to open
+        line = "Shortcuts: 3 of the 3 the editor knows open (it was 1)"
+        self.assertEqual((story.changes(before, self.document), describe_changes(before, self.document)), ([line], [line]))
+        self.assertEqual(story.open_pieces(self.document, story.GATES), 2)
+        self.assertEqual(place["SavedActorStates"][4:], [helpers.as_saved(helpers.KEY_GATE), helpers.as_saved(helpers.CAMP_GATE)])
+        self.assertEqual(story.changes(before, self.document), [line, "Key gates: 2 of the 2 the editor knows open (it was 0)"])
+        # The key in its lock is as it was, and so is everything else of the world.
+        self.assertEqual(place["SavedActorStates"][1], helpers.as_saved(helpers.KEY_LOCK, 2, 1))
+        self.assertEqual({key: value for key, value in place.items() if key != "SavedActorStates"}, untouched)
+        # One the save holds some other way is set to the open one, where it stands in the save.
+        odd = hero_with_a_world()
+        odd["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"] = [helpers.as_saved(helpers.ROCK, 1, 0)]
+        self.assertEqual(story.open_pieces(odd, story.SHORTCUTS), 3)
+        self.assertEqual(odd["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"][0], helpers.as_saved(helpers.ROCK))
+        # A save that keeps no such list has none open, and none can be added to it.
+        self.assertEqual(story.pieces_open(hero_save(), story.SHORTCUTS), (0, 3))
+        with self.assertRaisesRegex(ValueError, "keeps no list of the world's rocks and gates yet"):
+            story.open_pieces(hero_save(), story.SHORTCUTS)
+
     def test_starts_a_quest_over(self):
         self.quests["Quests"][1]["TaskData"][1]["PartialProgress"] = 2
         story.start_over(self.document, "CA04")
@@ -354,6 +393,22 @@ class RealListStoryTests(unittest.TestCase):
         other = story.Quest("CA03_BR", story.DONE, tuple(story.Step(step, story.DONE, 0, "CA03_BR") for step in self.world["quests"]["CA03_BR"]), False)
         self.assertIn("offers again once they're finished", story_dialog.what_it_does(golem, {}))
         self.assertNotIn("offers again", story_dialog.what_it_does(other, {}))
+
+    def test_the_real_list_has_shortcuts_and_key_gates_to_open(self):
+        from dungeons2_editor import recorder
+
+        shortcuts, gates = story.pieces(hero_with_a_world(), story.SHORTCUTS), story.pieces(hero_with_a_world(), story.GATES)
+        self.assertGreaterEqual(len(shortcuts), 13)
+        self.assertGreaterEqual(len(gates), 11)
+        for piece in shortcuts + gates:
+            # Each is of the overworld, named the way a save names one, and held one way in every save that showed it.
+            self.assertRegex(piece.path, r"^/Game/Spicewood/Maps/Overworld/Overworld/_Generated_/\w+\.Overworld:PersistentLevel\.BP_\w+_C_UAID_\w+$")
+            self.assertEqual((piece.opened, piece.state, recorder.piece_kind(piece.path)), ((0, 1), None, piece.kind))
+        self.assertEqual({piece.name for piece in gates}, {"Gold Key Gate Door", "Silver Key Gate Door", "Illager Concrete Gate7 Wide", "MA2 Key Gate"})
+        self.assertTrue(all("Roadblock" in piece.name or "Bridge" in piece.name for piece in shortcuts))
+        # The keys and their locks are in the list, and are not the editor's to write.
+        kinds = [recorder.piece_kind(piece["path"]) for piece in self.world["pieces"].values()]
+        self.assertTrue(kinds.count(recorder.LOCK) >= 10 and kinds.count(recorder.KEY) >= 7)
 
     def test_a_count_is_of_a_step_it_knows(self):
         steps = {step for listed in self.world["quests"].values() for step in listed}

@@ -2707,6 +2707,74 @@ class WorldMapTests(WindowTestCase):
         self.assertEqual(story.map_explored(saved), (20, 20, 3))
         dialog.destroy()
 
+    def test_opens_the_shortcuts_and_the_key_gates(self):
+        from dungeons2_editor import world_dialog
+
+        from . import helpers
+
+        # The editor's list knows three shortcuts and two gates a key opens, and a few things it leaves alone.
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps({"regions": {"SW.Region.Camp": {"corner": [0, 0], "size": [4, 3]}}, "pieces": helpers.PIECES}), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+        before = snapshot_of(self.profile_path)
+        dialog = self.open_map(recordings_of_a_world())
+        shortcuts, gates = dialog.piece_buttons[story.SHORTCUTS], dialog.piece_buttons[story.GATES]
+        self.assertEqual((shortcuts.cget("text"), gates.cget("text")), ("Open the shortcuts", "Open the key gates"))
+        self.assertTrue(shortcuts.winfo_manager() and gates.winfo_manager() and shortcuts.instate(["!disabled"]) and gates.instate(["!disabled"]))
+        self.assertIn("Shortcuts open: 0 of the 3 the editor knows", dialog.shown_text())
+        self.assertIn("Key gates open: 0 of the 2 the editor knows", dialog.shown_text())
+        # It asks first, and No changes nothing.
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            shortcuts.invoke()
+        self.assertTrue(ask.call_args.args[1].startswith("Open the shortcuts?\n\nThe editor knows 3 shortcuts"), ask.call_args.args[1])
+        self.assertEqual(ask.call_args.kwargs["default"], "no")
+        self.assertEqual((self.app.change_count, dialog.hover_var.get()), (0, world_dialog.HINT))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            shortcuts.invoke()
+        self.assertEqual(dialog.hover_var.get(), "3 shortcuts opened. Press Save to game when you're done.")
+        self.assertIn("Shortcuts open: 3 of the 3 the editor knows", dialog.shown_text())
+        self.assertEqual(dialog.shown_text().count("Where the hero is"), 1)  # the list is written again, not added to
+        self.assertTrue(shortcuts.instate(["disabled"]) and gates.instate(["!disabled"]))
+        self.assertTrue(self.app.change_count and self.app.simple_save_button.instate(["!disabled"]))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            gates.invoke()
+        self.assertIn("The keys and their locks are left as they are.", ask.call_args.args[1])
+        self.assertEqual(dialog.hover_var.get(), "2 key gates opened. Press Save to game when you're done.")
+        self.assertTrue(gates.instate(["disabled"]))
+        # Asked again all the same, it says they're open and asks nothing.
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            dialog.open_pieces(story.SHORTCUTS)
+        ask.assert_not_called()
+        self.assertEqual(dialog.hover_var.get(), "Every shortcut the editor knows is open already.")
+        actors = self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]
+        self.assertEqual(actors, [helpers.as_saved(path) for path in (helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE)])
+        # Nothing reached the game yet; Save to game writes it, and says so in plain words first.
+        self.assertEqual(snapshot_of(self.profile_path), before)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertIn("• Shortcuts: 3 of the 3 the editor knows open (it was 0)", ask.call_args.args[1])
+        self.assertIn("• Key gates: 2 of the 2 the editor knows open (it was 0)", ask.call_args.args[1])
+        saved = saves.SaveProfile(self.profile_path).get(HERO).decoded.document
+        self.assertEqual((story.pieces_open(saved, story.SHORTCUTS), story.pieces_open(saved, story.GATES)), ((3, 3), (2, 2)))
+        dialog.destroy()
+        # A map that's only to look at has neither button, and the map of a hero no longer on screen opens nothing.
+        plain = gui.WorldDialog(self.root, hero_with_a_world())
+        self.assertFalse(any(button.winfo_manager() for button in plain.piece_buttons.values()))
+        plain.open_pieces(story.SHORTCUTS)
+        self.assertEqual(plain.hover_var.get(), world_dialog.HINT)
+        plain.destroy()
+        dialog = self.open_map()
+        self.app.document = copy.deepcopy(self.app.document)
+        self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"].clear()
+        dialog.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"].clear()
+        changes = self.app.change_count
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo") as told:
+            dialog.open_pieces(story.GATES)
+        self.assertIn("Open the World map again", told.call_args.args[1])
+        self.assertEqual((self.app.change_count, dialog.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]), (changes, []))
+        dialog.destroy()
+
     def test_the_map_of_a_hero_no_longer_on_screen_discovers_nothing(self):
         dialog = self.open_map()
         self.app.document = copy.deepcopy(self.app.document)  # as after Discard changes, or the game saving: another copy is the one in hand now
