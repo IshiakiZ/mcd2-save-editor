@@ -200,7 +200,10 @@ class RealItemListTests(unittest.TestCase):
         # Critical Quiver at tier III, from a second list on issue 20: 5 on leggings, where the game's table says
         # critical hits restore 5 arrows. No version had a tier of it to write. It goes on armor, as its book says.
         self.assertEqual(made["Critical Quiver III"], (5, True, "SW.Enchantment.CriticalQuiver.III", ("Armor",)))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (27, 34))
+        # Buddy Brew at tier III, from a list whose sender works from a build of their own: taken once they said the
+        # Enchantsmith put it on (issue 34). 6, where the game's table says the brew lasts 6 seconds; it goes on armor.
+        self.assertEqual(made["Buddy Brew III"], (6, True, "SW.Enchantment.PotionSharing.III", ("Armor",)))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (28, 35))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")

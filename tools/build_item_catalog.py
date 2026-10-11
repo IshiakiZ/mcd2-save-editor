@@ -557,10 +557,10 @@ EFFECT_GUESSES: dict[str, str] = {}
 # A second list on /issues/20 (2026-10-10; made with 1.15.2, by what its world part leaves out) has CriticalQuiver
 # III as 5 on Ranger Leggings, with a Special's 12 points. No version has had a tier of Critical Quiver to write,
 # and MetaBot's tier III restores 5 arrows.
-# Not taken yet: PotionSharing III as 6 (Buddy Brew, whose tier III lasts 6 seconds) on Monstrosity Horns in a
-# comment on /issues/34. No release has had it to write either, but its sender works from a build of their own
-# and says every item with effects on their lists was changed with the editor, and one Unique there has an own
-# effect with a number no other save holds. Asked whether the Enchantsmith put it on.
+# A comment on /issues/34 has PotionSharing III as 6 (Buddy Brew, whose tier III lasts 6 seconds in MetaBot's
+# table) on Monstrosity Horns, with a Unique's 15 points. No release has had it to write, but its sender works
+# from a build of their own and says every item with effects on their lists was changed with the editor, so it
+# waited for their word: asked whether the Enchantsmith put it on, they said it did (2026-10-11).
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
@@ -580,6 +580,7 @@ ENCHANTMENT_TIERS = {
     "Piercing": {"I": 1, "III": 5},
     "PoisonFog": {"III": 1},
     "PotionBarrier": {"III": 6},
+    "PotionSharing": {"III": 6},
     "Radiance": {"I": 0.3, "III": 0.5},
     "Ricochet": {"III": 3},
     "Shockwave": {"III": 1},

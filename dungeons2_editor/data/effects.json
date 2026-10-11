@@ -2097,6 +2097,17 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.PotionSharing",
+   "name": "Buddy Brew",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 6,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.Radiance",
    "name": "Healing Smite",
    "tiers": [
