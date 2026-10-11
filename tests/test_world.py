@@ -140,6 +140,17 @@ class WorldListTests(unittest.TestCase):
         # A list keeps the highest number it was told for a step, and adds to what follows a quest without repeating.
         world.merge(have, {"counts": {"CA01_E01": 3, "CA04_E01": 4}, "follows": {"CA01": ["FOa1_S10_A", "CA05"]}})
         self.assertEqual((have["counts"], have["follows"]), ({"CA04_E01": 4, "CA01_E01": 5}, {"CA01": ["CA04", "FOa1_S10_A", "CA05"]}))
+        # A 1 with a finished interact step is the number the editor itself writes there since 1.16.1, so it's no news
+        # from a save, nor from a quest's line in a list; any other number is, and so is any number with another kind of step.
+        by_rule = hero_with_a_world()
+        by_rule["CharacterSaveV1"]["quest"]["Quests"][0]["TaskData"] = [
+            {"TaskName": "CA01_I01", "State": "Completed", "PartialProgress": 1}, {"TaskName": "CA01_I02", "State": "Completed", "PartialProgress": 2},
+            {"TaskName": "CA01_K01", "State": "Completed", "PartialProgress": 1},
+        ]
+        self.assertEqual(world.of_saves([by_rule])["counts"], {"CA01_I02": 2, "CA01_K01": 1})
+        self.assertEqual((world.count_is_news("CA04_I03", 1), world.count_is_news("CA04_I03", 3), world.count_is_news("CA04_K03", 1), world.count_is_news("CA04_E03", 0)), (False, True, True, False))
+        self.assertEqual(world.read_list("quest CA09 - Completed; steps: I01+1, I02+4, K01+1, E01+")["counts"], {"CA09_I02": 4, "CA09_K01": 1})
+        self.assertEqual(world.read_list("count CA09_I01 - 1")["counts"], {"CA09_I01": 1})  # a line of its own is how the editor's own list is told
         # Only a whole number above nothing is a count, and only the game's own names follow a quest.
         odd = world.read_list("count CA01_E01 - five\ncount CA01_E02 - 0\ncount CA01_E03 - 7\nfollows CA01 - CA02, not a name!\nfollows - CA02")
         self.assertEqual((odd["counts"], odd["follows"]), ({"CA01_E03": 7}, {"CA01": ["CA02"]}))

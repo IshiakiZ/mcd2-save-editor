@@ -1289,7 +1289,8 @@
   "SW.Area.Desert.A1.FortHalls",
   "SW.Area.Meadow.T1.Rift.8",
   "SW.Area.Desert.A1",
-  "SW.Area.Plains.A2"
+  "SW.Area.Plains.A2",
+  "SW.Area.Meadow.A2"
  ],
  "doors": {
   "SW.Doorway.Camp.Docks": {
@@ -4247,7 +4248,7 @@
  ],
  "chest_counts": {
   "SW.Area.Plains.A1": 5,
-  "SW.Area.Forest.A1": 10,
+  "SW.Area.Forest.A1": 12,
   "SW.Area.Meadow.R1": 2,
   "SW.Area.DeepDark.Tutorial": 1,
   "SW.Area.Meadow.T1.Rift.5": 2,
@@ -4257,6 +4258,8 @@
   "SW.Area.Town": 3,
   "SW.Area.Meadow.T1.Rift.8": 3,
   "SW.Area.Desert.A1": 1,
-  "SW.Area.Plains.A2": 1
+  "SW.Area.Plains.A2": 1,
+  "SW.Area.Meadow.A1": 5,
+  "SW.Area.Meadow.A2": 4
  }
 }

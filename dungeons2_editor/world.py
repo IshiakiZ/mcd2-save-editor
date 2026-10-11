@@ -34,6 +34,15 @@ _STEP = re.compile(r"^(=)?([A-Za-z0-9_.\-]+)((?:[+~][0-9.]*|\?[A-Za-z]+)?)$")
 _DOOR = re.compile(r"at (-?[\d.]+), (-?[\d.]+), (-?[\d.]+); marker (-?\d+)")
 _REGION = re.compile(r"corner (-?[\d.]+), (-?[\d.]+); (\d+) across, (\d+) down(?:; fog (\S+))?")
 _AROUND = re.compile(r"around (-?\d+), (-?\d+) in (\S+)$")
+_INTERACT = re.compile(r"_I\d+$")  # a step to interact with something, by its name: CA04_I03
+
+
+def count_is_news(step: str, count: int) -> bool:
+    """Whether the number saved with a finished step tells the editor something it didn't write itself. Since
+    1.16.1 the editor gives every finished interact step the number 1 (story.Step.number_when_done), so a 1 on such
+    a step may be its own doing, in a save and in a list made from one. Any other number, and any number on another
+    kind of step, the editor writes only where a save had shown it first."""
+    return count > 0 and not (count == 1 and bool(_INTERACT.search(step)))
 _OPENED = re.compile(r"^(\d+) opened in ([^,\s]+)(?:, around (-?\d+), (-?\d+) in (\S+))?$")
 _PIECE = re.compile(r"([^/.:]+):PersistentLevel\.(.+?)_C_(UAID_[0-9A-Za-z_]+)$")
 _TAG = re.compile(r"[A-Za-z0-9_.\-]{1,120}")  # one of the game's own names
@@ -110,7 +119,7 @@ def of_save(document: Any) -> dict[str, Any]:
                 partial = task.get("PartialProgress")
                 count = json.dumps(partial) if isinstance(partial, (int, float)) and not isinstance(partial, bool) and partial else ""
                 state = task.get("State")
-                if state == "Completed" and isinstance(partial, int) and not isinstance(partial, bool) and partial > 0:
+                if state == "Completed" and isinstance(partial, int) and not isinstance(partial, bool) and count_is_news(step, partial):
                     shown["counts"][step] = partial
                 shown["states"][f"{name} {step}"] = "+" + count if state == "Completed" else "~" + count if state == "Active" else "" if state == "NotSet" else f"?{_tag(state) or 'Other'}"
     world = _dict(body.get("WorldExploration"))
@@ -374,9 +383,9 @@ def read_list(text: str) -> dict[str, Any]:
                     step = match.group(2) if match.group(1) else f"{name}_{match.group(2)}"
                     if step not in steps:
                         steps.append(step)
-                    if re.fullmatch(r"\+[1-9][0-9]*", match.group(3)):  # done, with the number saved with it
+                    if re.fullmatch(r"\+[1-9][0-9]*", match.group(3)) and count_is_news(step, int(match.group(3)[1:])):  # done, with the number saved with it
                         found["counts"][step] = max(found["counts"].get(step, 0), int(match.group(3)[1:]))
-        elif word == "count" and _tag(name) and re.fullmatch(r"[1-9][0-9]{0,5}", rest):
+        elif word == "count" and _tag(name) and re.fullmatch(r"[1-9][0-9]{0,5}", rest):  # a line of its own: only a save's news is told that way
             found["counts"][name] = max(found["counts"].get(name, 0), int(rest))
         elif word == "follows" and _tag(name) and rest:
             came = [quest for quest in map(_tag, rest.split(", ")) if quest]
