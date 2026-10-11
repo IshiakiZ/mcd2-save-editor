@@ -3,7 +3,8 @@
 The game keeps its quests, doors, minecart stations and regions in its encrypted files, so the editor learns them
 the way it learns items: from saves. data/world.json is what it has so far: every quest with its steps, every door
 with its place, the stations, regions, cutscenes, areas and puzzle pieces that any save sent to it has shown, and,
-from play recordings, where chests were opened and where stations and cutscenes turned up.
+from play recordings, where chests were opened, where stations and cutscenes turned up, and which quests the game
+made available as it finished one.
 
 Share item IDs… adds what your saves show that this list doesn't have (``lines``), and tools/build_world_list.py
 puts a list someone sent into it (``read_list``, ``merge``). Only the game's own names and numbers go into a list:
@@ -29,7 +30,7 @@ LEFT_OUT = "more lines were left out to keep this short enough to post: share ag
 # What a list holds, in the order a shared list tells it.
 SIMPLE = ("stations", "cutscenes", "gimmicks", "areas")  # plain lists of the game's own tags
 WORD = {"stations": "station", "cutscenes": "cutscene", "gimmicks": "gimmick", "areas": "area"}
-_STEP = re.compile(r"^(=)?([A-Za-z0-9_.\-]+)(?:[+~][0-9.]*|\?[A-Za-z]+)?$")
+_STEP = re.compile(r"^(=)?([A-Za-z0-9_.\-]+)((?:[+~][0-9.]*|\?[A-Za-z]+)?)$")
 _DOOR = re.compile(r"at (-?[\d.]+), (-?[\d.]+), (-?[\d.]+); marker (-?\d+)")
 _REGION = re.compile(r"corner (-?[\d.]+), (-?[\d.]+); (\d+) across, (\d+) down(?:; fog (\S+))?")
 _AROUND = re.compile(r"around (-?\d+), (-?\d+) in (\S+)$")
@@ -41,6 +42,8 @@ _TAG = re.compile(r"[A-Za-z0-9_.\-]{1,120}")  # one of the game's own names
 def empty() -> dict[str, Any]:
     return {
         "quests": {},  # a quest, as a save names it: its steps, in the order of the save that first showed it
+        "counts": {},  # a step that counts something: the number the game saved with it once it was done (5, for five to defeat)
+        "follows": {},  # from recordings: a quest: the quests the game made available in the save that finished it
         "stations": [], "cutscenes": [], "gimmicks": [], "areas": [],
         "doors": {},  # a door: {"at": [x, y, z] in metres, "marker": the kind of marker the map gives it}
         "regions": {},  # a region with a picture of its fog: {"corner": [x, y] in metres, "size": [squares across, down]}
@@ -107,6 +110,8 @@ def of_save(document: Any) -> dict[str, Any]:
                 partial = task.get("PartialProgress")
                 count = json.dumps(partial) if isinstance(partial, (int, float)) and not isinstance(partial, bool) and partial else ""
                 state = task.get("State")
+                if state == "Completed" and isinstance(partial, int) and not isinstance(partial, bool) and partial > 0:
+                    shown["counts"][step] = partial
                 shown["states"][f"{name} {step}"] = "+" + count if state == "Completed" else "~" + count if state == "Active" else "" if state == "NotSet" else f"?{_tag(state) or 'Other'}"
     world = _dict(body.get("WorldExploration"))
     for kind, field in (("stations", "DiscoveredMinecartStationTags"), ("cutscenes", "SavedCutsceneTags"), ("gimmicks", "ActivatedGimmickTags")):
@@ -147,7 +152,8 @@ def _spot(value: object) -> list | None:
 
 def of_recordings(atlas: dict[str, Any] | None) -> dict[str, Any]:
     """What the play recorder's recordings add (recorder.fresh_atlas), laid out like the editor's list: the areas
-    the hero was saved in, where a minecart station or a cutscene turned up, and the chests opened."""
+    the hero was saved in, where a minecart station or a cutscene turned up, the chests opened, and the quests the
+    game made available as it finished one."""
     shown = empty()
     if not isinstance(atlas, dict):
         return shown
@@ -156,6 +162,10 @@ def of_recordings(atlas: dict[str, Any] | None) -> dict[str, Any]:
         near = _spot(place.get("near")) if isinstance(place, dict) else None
         if label.startswith(("minecart station ", "cutscene ")) and _tag(label.rsplit(" ", 1)[-1]) and near and _tag(place.get("region")):
             shown["found"].setdefault(label, []).append({"region": place["region"], "at": [round(near[0]), round(near[1])]})
+    for name, quests in _dict(atlas.get("follows")).items():
+        came = [quest for quest in map(_tag, _list(quests)) if quest]
+        if _tag(name) and came:
+            shown["follows"][name] = came
     for chest in _list(atlas.get("chests")):
         area, opened = (_tag(chest.get("area")), chest.get("opened")) if isinstance(chest, dict) else (None, None)
         if not area or not isinstance(opened, int) or isinstance(opened, bool) or opened < 1:
@@ -174,6 +184,11 @@ def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
     for name, steps in (more.get("quests") or {}).items():
         mine = into["quests"].setdefault(name, [])
         mine += [step for step in steps if step not in mine]
+    for step, count in (more.get("counts") or {}).items():
+        into["counts"][step] = max(into["counts"].get(step, 0), count)
+    for name, quests in (more.get("follows") or {}).items():
+        mine = into["follows"].setdefault(name, [])
+        mine += [quest for quest in quests if quest not in mine]
     for kind in SIMPLE:
         into[kind] += [tag for tag in more.get(kind) or [] if tag not in into[kind]]
     for kind in ("doors", "regions"):
@@ -214,6 +229,11 @@ def news(shown: dict[str, Any], have: dict[str, Any] | None = None) -> dict[str,
     for name, steps in shown["quests"].items():
         if name not in have["quests"] or any(step not in have["quests"][name] for step in steps):
             new["quests"][name] = list(steps)
+    new["counts"] = {step: count for step, count in shown["counts"].items() if count > have["counts"].get(step, 0)}
+    for name, quests in shown["follows"].items():
+        fresh = [quest for quest in quests if quest not in have["follows"].get(name, [])]
+        if fresh:
+            new["follows"][name] = fresh
     for kind in SIMPLE:
         new[kind] = [tag for tag in shown[kind] if tag not in have[kind]]
     for kind in ("doors", "regions"):
@@ -256,7 +276,7 @@ def keys(documents: list[Any]) -> set[str]:
     """A key for each thing these saves show of the world that the editor's list doesn't have: what the editor
     remembers having shown you, so that it can tell when your saves hold something more."""
     new = news(of_saves(documents))
-    found = {f"world quest {name}" for name in new["quests"]}
+    found = {f"world quest {name}" for name in new["quests"]} | {f"world count {step}" for step in new["counts"]}
     for kind in SIMPLE + ("doors", "regions", "achievements"):
         found |= {f"world {WORD.get(kind, kind[:-1])} {name}" for name in new[kind]}
     found |= {f"world progression {key} {tag}" for key, tags in new["progression"].items() for tag in tags}
@@ -280,10 +300,13 @@ def lines_of(new: dict[str, Any], states: dict[str, str] | None = None, pictures
     a save adds for a shared list (``of_save``); ``have`` is the list it's compared with, for saying what differs."""
     have = known() if have is None else have
     states, pictures, told = states or {}, pictures or {}, []
+    counted = set()  # the steps whose number a quest's own line tells
     for name, steps in new["quests"].items():
         note = "more steps than the editor's list has; " if name in have["quests"] else ""
         how = f"{states[name]}; " if name in states else ""
         told.append(f"quest {name} - {how}{note}steps: {', '.join(_step(name, step, states) for step in steps)}")
+        counted |= {step for step in steps if re.fullmatch(r"\+[1-9][0-9]*", states.get(f"{name} {step}", ""))}
+    told += [f"count {step} - {count}" for step, count in new["counts"].items() if step not in counted]
     for name, door in new["doors"].items():
         there = have["doors"].get(name)
         note = f"; the editor's list has it at {', '.join(_number(value) for value in there['at'])}" if there else ""
@@ -304,6 +327,7 @@ def lines_of(new: dict[str, Any], states: dict[str, str] | None = None, pictures
     told += [f"progression {key} {tag}" for key, tags in new["progression"].items() for tag in tags]
     for key, piece in new["pieces"].items():
         told.append(f"piece {key} - {'; '.join(f'{before} then {now}' for before, now in piece['states'])}; as saved: {piece['path']}")
+    told += [f"follows {name} - {', '.join(quests)}" for name, quests in new["follows"].items()]
     for label, places in new["found"].items():
         told += [f"found {label} - around {place['at'][0]}, {place['at'][1]} in {place['region']}" for place in places]
     told += [f"chest - {chest['opened']} opened in {chest['area']}, around {chest['at'][0]}, {chest['at'][1]} in {chest['region']}" for chest in new["chests"]]
@@ -350,6 +374,14 @@ def read_list(text: str) -> dict[str, Any]:
                     step = match.group(2) if match.group(1) else f"{name}_{match.group(2)}"
                     if step not in steps:
                         steps.append(step)
+                    if re.fullmatch(r"\+[1-9][0-9]*", match.group(3)):  # done, with the number saved with it
+                        found["counts"][step] = max(found["counts"].get(step, 0), int(match.group(3)[1:]))
+        elif word == "count" and _tag(name) and re.fullmatch(r"[1-9][0-9]{0,5}", rest):
+            found["counts"][name] = max(found["counts"].get(name, 0), int(rest))
+        elif word == "follows" and _tag(name) and rest:
+            came = [quest for quest in map(_tag, rest.split(", ")) if quest]
+            mine = found["follows"].setdefault(name, [])
+            mine += [quest for quest in came if quest not in mine]
         elif word == "door" and _DOOR.search(rest):
             x, y, z, marker = _DOOR.search(rest).groups()
             found["doors"][name] = {"at": [float(x), float(y), float(z)], "marker": int(marker)}
@@ -392,5 +424,6 @@ def counts(world: dict[str, Any]) -> str:
     return (
         f"{len(world['quests'])} quests ({steps} steps), {len(world['doors'])} doors, {len(world['stations'])} minecart stations, {len(world['regions'])} regions, "
         f"{len(world['cutscenes'])} cutscenes, {len(world['areas'])} areas, {len(world['achievements'])} achievements, {len(world['pieces'])} puzzle pieces, "
-        f"{sum(len(places) for places in world['found'].values())} places things turned up, {len(world['chests'])} chest spots"
+        f"{sum(len(places) for places in world['found'].values())} places things turned up, {len(world['chests'])} chest spots, "
+        f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them"
     )

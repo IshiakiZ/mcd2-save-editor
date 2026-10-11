@@ -169,7 +169,7 @@ def storm_mentions(document: Any) -> dict[str, Any]:
 
 LOUD_PROGRESS = ("quest ", "task ", "minecart station ", "door ", "cutscene ", "gimmick ", "progression ")  # said out loud as they happen
 PLACED = ("quest ", "task ", "minecart station ", "cutscene ", "gimmick ", "actor ")  # what the atlas keeps a place for (doors have their own)
-ATLAS_FORMAT = 3  # goes up when the atlas is laid out differently, so that one written down the old way is read again
+ATLAS_FORMAT = 4  # goes up when the atlas is laid out differently, so that one written down the old way is read again
 CHESTS = "achievement Open100Chests"  # the game's own count of chests opened, the one thing a save says about chests
 # A save keeps, for each region, a picture of the fog over it: Size.X values to a line and Size.Y lines, each value
 # from 0 (never seen) to 255 (clear), a square of the picture being 32 metres of ground. The picture lies the way
@@ -333,6 +333,43 @@ def world_progress(document: Any) -> dict[str, Any]:
     return found
 
 
+def quests_opened(before: dict[str, Any], now: dict[str, Any]) -> tuple[str, list[str]] | None:
+    """The quest finished between two saves of a hero that follow each other (as world_progress has them), and the
+    quests the second has that the first didn't: what the game made available with it. None if no quest was
+    finished, if more than one was (nothing says which the new ones came with), or if none came."""
+    names = [label for label in now if label.startswith("quest ") and label != "quest in focus"]
+    finished = [label[6:] for label in names if now[label] == "Completed" and before.get(label) not in (None, "Completed")]
+    came = [label[6:] for label in names if label not in before]
+    return (finished[0], came) if len(finished) == 1 and came else None
+
+
+OPENED_SINCE = (1, 16, 0)  # the first version whose recordings say what a finished quest opened, as it happens
+
+
+def _notes_what_opened(folder: Path) -> list[tuple[str, list[str]]] | None:
+    """What a recording noted the game opening as it finished a quest: (quest, the quests that came with it), in
+    order. None for a recording that doesn't note that (made before the recorder did, or with no events kept),
+    which is read from its saves instead."""
+    noted, since = [], None
+    try:
+        with open(folder / "events.jsonl", encoding="utf-8") as events:
+            for line in events:
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                if event.get("kind") == "session_start" and since is None:
+                    parts = re.findall(r"\d+", str(event.get("editor")))[:3]
+                    since = tuple(int(part) for part in parts) if len(parts) == 3 else (0, 0, 0)
+                elif event.get("kind") == "opened" and isinstance(event.get("quest"), str) and isinstance(event.get("came"), list):
+                    noted.append((event["quest"], [quest for quest in event["came"] if isinstance(quest, str)]))
+    except OSError:
+        return None
+    return noted if since is not None and since >= OPENED_SINCE else None
+
+
 def hero_id(document: Any) -> str:
     """The ID the game gave the hero a save is of."""
     body = document.get("CharacterSaveV1") if isinstance(document, dict) else None
@@ -380,6 +417,7 @@ def build_atlas(play: Path) -> dict[str, Any]:
         # found, by the ground cleared in the save it first appeared in (things there from the first save have no place).
         "map": {"metres_per_square": CELL, "regions": {}}, "found_at": {},
         "chests": [],  # each time the count of chests opened went up: how many, where the hero was, and the spot if new ground was explored
+        "follows": {},  # a quest: the quests the game made available in the save that finished it
         # The same, hero by hero (by its ID), for a hero's own map: only what its own saves showed, and of what
         # it found only what has a spot. Above, a thing two heroes found is where the first of them found it.
         "heroes": {},
@@ -389,6 +427,17 @@ def build_atlas(play: Path) -> dict[str, Any]:
     def add(where: list, value: Any) -> None:
         if value is not None and value not in where:
             where.append(value)
+
+    # What a finished quest opened: as each recording noted it while it ran, which is only ever for a save the
+    # game wrote. A recording that doesn't note it is from before the editor could save a quest itself, so there
+    # every save's quests are the game's own, and two saves that follow each other say it (below).
+    noting: dict[str, bool] = {}
+    for folder in sorted(found for found in Path(play).iterdir() if found.is_dir()) if Path(play).is_dir() else []:
+        noted = _notes_what_opened(folder)
+        noting[folder.name] = noted is not None
+        for quest, came in noted or []:
+            for name in came:
+                add(atlas["follows"].setdefault(quest, []), name)
 
     for path in sorted(Path(play).glob("*/snapshots/*.json"), key=lambda found: (found.parent.parent.name, found.name)):
         try:
@@ -421,6 +470,9 @@ def build_atlas(play: Path) -> dict[str, Any]:
                 chest = {"opened": now - was, "count": now, **where}
                 atlas["chests"].append(chest)
                 mine["chests"].append(chest)
+            opened = quests_opened(earlier[0], progress) if together and not noting.get(recording) else None
+            for name in opened[1] if opened else []:
+                add(atlas["follows"].setdefault(opened[0], []), name)
             for label in progress:
                 first = label not in earlier[0] or (label.startswith(("quest ", "task ")) and str(progress[label]).startswith("Completed") and not str(earlier[0][label]).startswith("Completed"))
                 if first and label.startswith(PLACED) and label != "quest in focus":
@@ -944,6 +996,12 @@ class Recorder:
         if before is None:
             self.event("progress_baseline", f"World progress: {progress_counts(now)}", container=container, progress=now, doors=door_places(document))
             return
+        # What the game opened as it finished a quest. Only a save the game wrote says that: the editor finishes and
+        # adds quests too, and it saves only while the game is closed. The game may have closed since it was last
+        # looked for, so it's looked for again, the few times this comes up.
+        opened = quests_opened(before, now)
+        if opened and self.game and saves.running_game_processes():
+            self.event("opened", f"QUESTS OPENED as {quest_name(opened[0])} was finished: {', '.join(quest_name(name) for name in opened[1])}", container=container, quest=opened[0], came=opened[1])
         # Where it happened: the area the hero is in, and the middle of the ground explored since the last save.
         # A door has its own position in the save, to the metre.
         area, near, doors = now.get("where CurrentLocation"), newly_explored(grids, regions), door_places(document)

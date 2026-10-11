@@ -64,6 +64,50 @@ class PlayRecorderTests(unittest.TestCase):
         self.assertIn("CharacterSaveV1", saved)
         self.assertEqual(len((self.dir / "play" / "events.jsonl").read_text(encoding="utf-8").splitlines()), 4)
 
+    def test_notes_what_the_game_opens_as_it_finishes_a_quest_and_never_the_editors_own_work(self):
+        def quest(name, state):
+            return {"QuestName": name, "State": state, "TaskData": [{"TaskName": f"{name}_E01", "State": "NotSet", "PartialProgress": 0}]}
+
+        def story(*quests):
+            def change(document):
+                document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": "", "Quests": [quest(name, state) for name, state in quests]}
+            return change
+
+        self.game_saves(story(("CA01", "Active")))
+        self.recorder.begin()
+        running = mock.patch.object(saves, "running_game_processes", return_value=["Dungeons-WinGDK-Shipping.exe"])
+        # The game is running, and saves the quest finished with two more: it opened those.
+        self.recorder.check_game(["Dungeons-WinGDK-Shipping.exe"])
+        self.game_saves(story(("CA01", "Completed"), ("CA01_B", "Available"), ("PLa1_S04_A", "Available")))
+        with running as looked:
+            self.recorder.look()
+        looked.assert_called_once_with()
+        self.assertEqual([(event["quest"], event["came"]) for event in self.events("opened")], [("CA01", ["CA01_B", "PLa1_S04_A"])])
+        self.assertTrue(any(line.endswith("QUESTS OPENED as CA01 (The Illagers from the Rift) was finished: CA01_B, PLa1_S04_A (Keeper of the Bees)") for line in self.said))
+        # A quest moving on with none finished, or none new, isn't that; and the game isn't looked for again.
+        self.game_saves(story(("CA01", "Completed"), ("CA01_B", "Active"), ("PLa1_S04_A", "Available")))
+        with running as looked:
+            self.recorder.look()
+        looked.assert_not_called()
+        # The game closed since it was last looked for, and the editor finished a quest and added one: not the game's doing.
+        self.game_saves(story(("CA01", "Completed"), ("CA01_B", "Completed"), ("PLa1_S04_A", "Available"), ("CA09", "Available")))
+        with mock.patch.object(saves, "running_game_processes", return_value=[]):
+            self.recorder.look()
+        # Nor is it with the game known to be closed, which is the only time the editor saves.
+        self.recorder.check_game([])
+        self.game_saves(story(("CA01", "Completed"), ("CA01_B", "Completed"), ("PLa1_S04_A", "Completed"), ("CA09", "Available"), ("CA10", "Available")))
+        with running as looked:
+            self.recorder.look()
+        looked.assert_not_called()
+        self.assertEqual(len(self.events("opened")), 1)
+        self.recorder.close()
+        # The atlas has what was noted, and nothing read off the saves of a recording that notes it.
+        self.assertEqual(play_recorder.build_atlas(self.dir)["follows"], {"CA01": ["CA01_B", "PLa1_S04_A"]})
+        # A recording from before the recorder noted it is read from its saves: no editor could save a quest then.
+        events = self.dir / "play" / "events.jsonl"
+        events.write_text(events.read_text(encoding="utf-8").replace(f'"editor": "{__version__}"', '"editor": "1.15.4"'), encoding="utf-8")
+        self.assertEqual(play_recorder.build_atlas(self.dir)["follows"], {"CA01": ["CA01_B", "PLa1_S04_A"], "CA01_B": ["CA09"], "PLa1_S04_A": ["CA10"]})
+
     def test_nothing_new_nothing_written(self):
         self.recorder.begin()
         self.assertTrue(self.recorder.look())
@@ -549,6 +593,28 @@ class MapTests(unittest.TestCase):
         self.assertEqual((play_recorder.station_name("SW.MinecartStation.ForestA1.Outpost"), play_recorder.station_name("SW.MinecartStation.Moon.Base")), ("Little Howl Hamlet", "Base (Moon)"))
         self.assertEqual((play_recorder.quest_name("CA04"), play_recorder.quest_name("XX09")), ("CA04 (The Missing Note Blocks)", "XX09"))
         self.assertEqual(play_recorder.hero_id(document), "hero-1")
+
+    def test_the_atlas_keeps_what_the_game_made_available_as_it_finished_a_quest(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        out = Path(temp.name)
+
+        def recorded(recording, name, *quests):
+            folder = out / recording / "snapshots"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / name).write_text(json.dumps(a_save("A", quests=[(quest, state, [(f"{quest}_E01", "NotSet")]) for quest, state in quests])), encoding="utf-8")
+
+        recorded("2026-10-01_10-00-00", "0001_A.json", ("CA01", "Active"), ("PLa1_S04_A", "Active"))
+        # The game finishes CA01, and two quests are there that weren't: those came with it.
+        recorded("2026-10-01_10-00-00", "0002_A.json", ("CA01", "Completed"), ("PLa1_S04_A", "Active"), ("CA01_B", "Available"), ("PLa1_S08_A", "Available"))
+        # A quest that turns up with nothing finished follows nothing, and so does one that turns up with two finished at once.
+        recorded("2026-10-01_10-00-00", "0003_A.json", ("CA01", "Completed"), ("PLa1_S04_A", "Active"), ("CA01_B", "Active"), ("PLa1_S08_A", "Active"), ("TOa1_S01_A", "Unavailable"))
+        recorded("2026-10-01_10-00-00", "0004_A.json", ("CA01", "Completed"), ("PLa1_S04_A", "Completed"), ("CA01_B", "Completed"), ("PLa1_S08_A", "Active"), ("TOa1_S01_A", "Unavailable"), ("CA02", "Available"))
+        # Across the gap between two recordings nothing says what came with what.
+        recorded("2026-10-02_10-00-00", "0001_A.json", ("CA01", "Completed"), ("PLa1_S04_A", "Completed"), ("CA01_B", "Completed"), ("PLa1_S08_A", "Completed"), ("TOa1_S01_A", "Unavailable"), ("CA02", "Available"), ("CA03", "Available"))
+        recorded("2026-10-02_10-00-00", "0002_A.json", ("CA01", "Completed"), ("PLa1_S04_A", "Completed"), ("CA01_B", "Completed"), ("PLa1_S08_A", "Completed"), ("TOa1_S01_A", "Unavailable"), ("CA02", "Completed"), ("CA03", "Available"), ("CA02_C", "Available"))
+        atlas = play_recorder.build_atlas(out)
+        self.assertEqual(atlas["follows"], {"CA01": ["CA01_B", "PLa1_S08_A"], "CA02": ["CA02_C"]})
 
     def test_the_atlas_keeps_each_heros_finds_apart_and_gives_no_place_across_a_gap(self):
         temp = tempfile.TemporaryDirectory()

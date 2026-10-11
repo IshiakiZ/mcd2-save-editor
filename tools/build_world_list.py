@@ -9,7 +9,8 @@ from saves, the way it learns items. This adds to the list it has:
 
     every hero save in the recordings: each quest with its steps, each door with its place, the stations,
     regions, cutscenes, areas, achievements and puzzle pieces it shows
-    the recordings themselves: where a minecart station or a cutscene turned up, and where chests were opened
+    the recordings themselves: where a minecart station or a cutscene turned up, where chests were opened, and
+    which quests the game made available in the save that finished a quest
     each list given: the world's part of a Share item IDs list, as a player posted it (a text file with the
     lines; the item IDs and the headings in it are passed over)
 
@@ -34,7 +35,8 @@ from dungeons2_editor import recorder, world  # noqa: E402
 TARGET = ROOT / "dungeons2_editor" / "data" / "world.json"
 ABOUT = (
     "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save "
-    "keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, and from play recordings where things turned up and chests were opened. "
+    "keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where "
+    "things turned up, where chests were opened and which quests the game made available as it finished one. "
     "Built by tools/build_world_list.py; added to from players' Share item IDs lists."
 )
 

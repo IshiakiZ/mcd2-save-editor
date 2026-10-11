@@ -118,6 +118,32 @@ class WorldListTests(unittest.TestCase):
         more["chests"][2]["opened"] = 5
         self.assertEqual(world.lines_of(world.news(world.of_recordings(more), have), have=have), ["chests - 5 opened in SW.Area.DeepDark.A1"])
 
+    def test_tells_the_number_saved_with_a_finished_step_and_what_a_recording_saw_follow_a_quest(self):
+        document = hero_with_a_world()
+        quests = document["CharacterSaveV1"]["quest"]["Quests"]
+        quests[0]["TaskData"][0]["PartialProgress"] = 5  # CA01, which the editor's list has: finished, with a step that counted to five
+        quests[1]["TaskData"][0]["PartialProgress"] = 2  # CA04, new to the list: its own line tells the number
+        quests[1]["TaskData"][1]["PartialProgress"] = 1  # a step still under way: its number says nothing yet
+        shown = world.of_saves([document])
+        self.assertEqual(shown["counts"], {"CA01_E01": 5, "CA04_E01": 2})
+        places = {**recordings(), "follows": {"CA01": ["CA04", "FOa1_S10_A"], "Not a quest!": ["CA04"], "CA04": []}}
+        told = world.lines([document], places)
+        self.assertEqual(told[1:4], ["quest CA04 - Active; steps: E01+2, E02~1", "quest FOa1_S10_A - Available; steps: E01", "count CA01_E01 - 5"])
+        self.assertIn("follows CA01 - CA04, FOa1_S10_A", told[told.index(world.PLACES_HEADER):])
+        self.assertIn("world count CA01_E01", world.keys([document]))  # news of the saves, like a quest
+        self.assertNotIn("world count CA04_E02", world.keys([document]))
+        # Read back, the list has both; told again, there's nothing new in either.
+        read = world.read_list("\n".join(told))
+        self.assertEqual((read["counts"], read["follows"]), ({"CA04_E01": 2, "CA01_E01": 5}, {"CA01": ["CA04", "FOa1_S10_A"]}))
+        have = world.merge(copy.deepcopy(world.known()), read)
+        self.assertEqual((world.news(shown, have)["counts"], world.news(world.of_recordings(places), have)["follows"]), ({}, {}))
+        # A list keeps the highest number it was told for a step, and adds to what follows a quest without repeating.
+        world.merge(have, {"counts": {"CA01_E01": 3, "CA04_E01": 4}, "follows": {"CA01": ["FOa1_S10_A", "CA05"]}})
+        self.assertEqual((have["counts"], have["follows"]), ({"CA04_E01": 4, "CA01_E01": 5}, {"CA01": ["CA04", "FOa1_S10_A", "CA05"]}))
+        # Only a whole number above nothing is a count, and only the game's own names follow a quest.
+        odd = world.read_list("count CA01_E01 - five\ncount CA01_E02 - 0\ncount CA01_E03 - 7\nfollows CA01 - CA02, not a name!\nfollows - CA02")
+        self.assertEqual((odd["counts"], odd["follows"]), ({"CA01_E03": 7}, {"CA01": ["CA02"]}))
+
     def test_a_list_told_reads_back_as_it_was(self):
         shown = world.of_saves([hero_with_a_world()])
         new = world.news(world.merge(shown, world.of_recordings(recordings())))
