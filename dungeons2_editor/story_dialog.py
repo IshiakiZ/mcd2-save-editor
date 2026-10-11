@@ -39,15 +39,22 @@ MARKS = {story.DONE: "✓", story.ACTIVE: "▶", story.NOT_SET: "·"}
 AGAIN = "finish again"  # how a quest stands that was finished without the number its steps carry in a save
 WHY_AGAIN = (
     "This quest is finished, but {count} of its steps {are} without the number a save holds with such a step once it's done. Version "
-    "1.16.0 of the editor finished quests that way, and the game may go on marking such a quest on its map. Finish it gives {them} {their} number."
+    "1.16.0 of the editor left it out. Finish it gives {them} {their} number."
 )
+OFFERED_AGAIN = "This is one of the game's golem quests, which it offers again once they're finished: it stays marked on the game's map as a new side quest."
 
 
 station_label = story.station_label
 
 
 def what_it_does(quest: story.Quest, document: Any) -> str:
-    """What the buttons do for the quest picked, in a few plain sentences."""
+    """What the buttons do for the quest picked, in a few plain sentences, and what the game does with such a quest
+    where that isn't what one would expect."""
+    told = _what_the_buttons_do(quest, document)
+    return f"{told} {OFFERED_AGAIN}" if quest.name in story.COMES_BACK else told
+
+
+def _what_the_buttons_do(quest: story.Quest, document: Any) -> str:
     if not quest.met:
         return "Add it lists this quest as available with every step unset, the way the game lists a quest it has just opened. Its steps are as another hero's save listed them."
     if quest.state == story.DONE:

@@ -16,9 +16,9 @@ A finished step carries a number where it counts something. In the saves the edi
 quest into (players' lists made before 1.16.0, and the developer's recordings up to then): a step to defeat
 enemies carries how many (1 to 10), a step to interact with something carries 1 (153 of them; two carry none,
 NO_NUMBER), and every other kind carries none (476 of them). 1.16.0 wrote a number only where a save had shown it
-for that very step, and so left interact steps of quests nobody had sent finished without theirs: the game then
-went on marking those quests on its map. Since 1.16.1 a finished interact step gets its 1, and a quest finished
-without can be finished again to be given it.
+for that very step, and so left interact steps of quests nobody had sent finished without theirs. Since 1.16.1 a
+finished interact step gets its 1, and a quest finished without can be finished again to be given it. Nothing has
+shown the game to mind the difference: the number is written because that is how a save holds a finished step.
 
 So the editor finishes a quest (every step done, with the number a save holds with a finished step), starts one
 over (available again, every step unset), adds one the hero hasn't met (available, every step
@@ -31,7 +31,10 @@ writes none of that.
 
 Checked in the game (1.1.2.0, October 2026): with The Missing Note Blocks finished this way, the game loaded the
 hero, opened the four quests that follow it by itself (the next main quest active, three more available), gave no
-item, XP or achievement for the quest, and played on from there.
+item, XP or achievement for the quest, and played on from there. And with every quest the editor knows finished
+(44) and the whole map discovered, the game loaded the hero, changed nothing in its quests, kept every picture of
+the fog (the nineteen added ones too) and showed the whole map. Four side quests stayed marked on that map as new
+ones to take: the game's golem quests (COMES_BACK), which it offers again once they're finished.
 
 The map: for each region a hero has been in, a save keeps a picture of the fog over it
 (WorldExploration.SavedFogOfWarExploration.Items: the region's tag, where its corner is, how many squares it is
@@ -66,6 +69,13 @@ CLEAR = 255  # a square the fog is all gone from, as a save has it
 # Interact steps the game has saved as finished with no number: CA07_I12 in two heroes' lists (issues 33 and 34) and
 # CA09_I17 in one (issue 33). Every other finished interact step in the saves the editor couldn't have written has 1.
 NO_NUMBER = frozenset({"CA07_I12", "CA09_I17"})
+# The game's golem quests: an echo golem to rescue, in five steps (The Trembling Golem, in Howling Woods, is one).
+# The game offers them again once they're finished, so a finished one stays marked on its map as a new side quest
+# to take. Seen in the game (1.1.2.0) on a hero with every quest finished: four such marks, two in Howling Woods
+# and two in the Sift, and the stand at one of them offered The Trembling Golem, whose five steps are these four
+# quests' steps. Players say the same of golem quests they finished by playing. Nothing in a save tells them from a
+# quest that is finished for good: other heroes' saves hold them as Completed too.
+COMES_BACK = frozenset({"CT_S01_A", "CT_S02_A", "CT_S03_A", "CT_S04_A"})
 MOST_SQUARES = 20_000  # more than any region has: a size beyond this isn't one to write
 STEP_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat): the editor's reading, not the game's words."
 # What a step's name says it's about: the letters after its quest's name, as the game's own goals are called
@@ -159,7 +169,7 @@ class Quest:
     @property
     def unnumbered(self) -> int:
         """How many of a finished quest's steps are without the number a save holds with them: a quest finished
-        by version 1.16.0, which the game may still mark on its map. Finishing it again gives them theirs."""
+        by version 1.16.0. Finishing it again gives them theirs."""
         return sum(1 for step in self.steps if step.lacks_its_number) if self.state == DONE else 0
 
     @property

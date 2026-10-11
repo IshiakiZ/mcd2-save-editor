@@ -136,7 +136,8 @@ your sign-in, account or device data.
   (**Ready to level up** leaves it one XP short, and the game does the rest).
 - **A quest step by step.** The editor finishes, starts over and adds whole quests. It can't move a quest on by
   one step, and it gives none of what the game gives for a quest (items, XP). The game opens the quests that
-  follow a finished one by itself.
+  follow a finished one by itself, and it offers its four golem quests again once they're finished, so those
+  stay marked on its map.
 - **The map.** A preset adds minecart stations and **Discover the whole map** lifts the fog; doors and chests
   stay as the game saved them. The world map and the play recorder can't see a chest or a secret you haven't
   touched.

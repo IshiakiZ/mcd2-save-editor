@@ -1039,6 +1039,8 @@ def _quest_info(quest: story.Quest, steps: bool = False) -> dict:
         "steps_done": quest.done, "steps": len(quest.steps), "tracked": quest.tracked,
         # A quest finished by version 1.16.0 without the number its steps carry: change_quest finish gives them theirs.
         **({"finish_again": True} if quest.unnumbered else {}),
+        # One of the game's golem quests: finished, it stays marked on the game's map, because the game offers it again.
+        **({"the_game_offers_it_again": True} if quest.name in story.COMES_BACK else {}),
         "opens_after_it": story.follows(quest.name) or None,
     }
     if steps:

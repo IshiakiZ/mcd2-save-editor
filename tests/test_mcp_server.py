@@ -149,6 +149,7 @@ class StoryToolsTests(ServerTestCase):
         self.server = EditorServer(self.profile, self.dir / "backups")
         told = self.call("list_quests", hero="00000000")["quests"]
         self.assertEqual([quest.get("finish_again") for quest in told], [True, None, None, None])
+        self.assertEqual([quest.get("the_game_offers_it_again") for quest in told], [None, None, None, None])  # none of these is a golem quest
         done = self.call("change_quest", hero="00000000", quest="CA01", action="finish")
         self.assertEqual(done["done"], "The Illagers from the Rift (CA01) was finished without the number 1 of its steps carry in a save: they have it now.")
         self.assertEqual((done["quest"].get("finish_again"), done["unsaved_changes"]), (None, ["Quest The Illagers from the Rift (CA01): 1 finished step given its number"]))

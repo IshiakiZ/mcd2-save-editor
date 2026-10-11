@@ -7,6 +7,7 @@
 - **Discover the whole map.** A new button in **Menu → World → World map…** lifts the fog from every region the editor knows, the ones your hero hasn't been to as well. It finds no door or chest for you.
 
   ![The world map with the whole map discovered](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
+- **Checked in the game.** It loaded a hero with every quest finished and the whole map discovered just as saved. Its four golem quests stay marked on its map: it offers them again once finished.
 - **An AI assistant can do both,** with two new tools: `finish_quests` and `discover_map`.
 
 ## What's new in 1.16.0

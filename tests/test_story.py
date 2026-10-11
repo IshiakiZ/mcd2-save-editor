@@ -339,6 +339,22 @@ class RealListStoryTests(unittest.TestCase):
                 self.assertTrue(quests.get(quest), f"{name} is followed by {quest}, whose steps aren't known")
         self.assertEqual(self.world["follows"]["CA03"], ["CA04", "CA03_BR"])
 
+    def test_the_quests_the_game_offers_again_are_quests_it_knows(self):
+        from dungeons2_editor import story_dialog
+
+        self.assertEqual(len(story.COMES_BACK), 4)
+        shapes = set()
+        for name in story.COMES_BACK:
+            steps = self.world["quests"].get(name)
+            self.assertTrue(steps, name)
+            shapes.add(tuple(re.sub(r"\d+$", "", step.removeprefix(name + "_")) for step in steps))
+        # Each is the same five steps and the quest's own: a place, a fight, a thing to pick up, a place, a thing to put down.
+        self.assertEqual(shapes, {("E", "Arena", "I", "E", "I", "Sequence")})
+        golem = story.Quest("CT_S01_A", story.DONE, tuple(story.Step(step, story.DONE, 0, "CT_S01_A") for step in self.world["quests"]["CT_S01_A"]), False)
+        other = story.Quest("CA03_BR", story.DONE, tuple(story.Step(step, story.DONE, 0, "CA03_BR") for step in self.world["quests"]["CA03_BR"]), False)
+        self.assertIn("offers again once they're finished", story_dialog.what_it_does(golem, {}))
+        self.assertNotIn("offers again", story_dialog.what_it_does(other, {}))
+
     def test_a_count_is_of_a_step_it_knows(self):
         steps = {step for listed in self.world["quests"].values() for step in listed}
         self.assertGreaterEqual(len(self.world["counts"]), 150)

@@ -34,6 +34,15 @@ The short notes for the newest versions are on the
   reaches the game only with **Save to game**. It finds nothing for you: doors, minecart stations and chests
   stay as they are. The World map window now shows the hero with the changes you've made, not the save as it
   was loaded, so what the button did is there to see before you save.
+- **Checked in the game** (1.1.2.0). A hero went in with all 44 quests the editor knows finished and the whole
+  map discovered, 8,080 squares in 25 regions, nineteen of those regions added by the editor. The game loaded it,
+  changed nothing in its quests, kept every picture of the fog and showed the whole map.
+- **Four quests come back.** With everything finished, four side quests were still marked on the game's map as
+  new ones to take, two in Howling Woods and two in the Sift. They are the game's golem quests (an echo golem to
+  rescue, in five steps; The Trembling Golem is one), which the game offers again once they're finished. Players
+  say the same of golem quests they finished by playing, and other heroes' saves hold them as finished exactly
+  as the editor writes them, so there is nothing in a save to change. The Story progress window says so on each
+  of the four, and `list_quests` tells an AI assistant.
 - **For an AI assistant:** two new tools. `finish_quests` finishes a group of quests or the whole game, and
   `discover_map` lifts the fog. `list_quests` says which finished quests are to be finished again, and
   `change_quest` does that for one.
