@@ -21,9 +21,9 @@ The short notes for the newest versions are on the
   - They go into the icons folder's `pack` folder. Your own pictures still win over them, and they win over the
     Minecraft Wiki's. Each download is checked against the size and the SHA-256 that the set's list gives for
     it, and only a PNG picture is kept.
-  - The pictures are Mojang's artwork. They are not in the repository or the download, apart from one screenshot
-    in the What's new window that shows the editor with them, and the edition that never goes online doesn't
-    fetch them. The README's privacy list says what the editor now contacts.
+  - The pictures are Mojang's artwork. The pictures themselves are not in the repository or the download; the
+    screenshots in the README and in the What's new window show the editor with them. The edition that never
+    goes online doesn't fetch them. The README's privacy list says what the editor now contacts.
 - **What's new can show a picture, and waits to be closed after an update.** A change that is easier to show than
   to tell has a picture under it. The pictures ship with the editor, so nothing is fetched to show them. The
   window that a new version opens by itself now stays in front until you close it; **Menu → What's new…** opens

@@ -298,11 +298,11 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
 - Item pictures are Mojang's artwork. The editor downloads the game's own to your PC from the developer's site,
   batch-ly.com, and **Get item pictures…** gets the [Minecraft Wiki](https://minecraft.wiki)'s if those aren't
-  there. None of them is in this repository or in the download; one screenshot in the What's new window shows the
-  editor with them. The other screenshots use a made-up demo save and the editor's own drawings.
+  there. The pictures themselves are not in this repository or in the download. The screenshots, here and in the
+  What's new window, show the editor with them, on a made-up demo save.
 - Simple mode follows the idea of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit), the save editor for the
   first Minecraft Dungeons, which is laid out like that game's inventory. Its colours and layout follow Minecraft
-  Dungeons II's own inventory screen; the fonts are Windows' own and the icons are drawn by the editor.
+  Dungeons II's own inventory screen; the fonts are Windows' own, and the interface's own icons are drawn by the editor.
 - The Liquid Glass look follows Apple's design of that name (capsule buttons, rounded panels with a bright rim, one
   tinted button for the main action, glass for the controls and not for the content). Every shape in it is drawn by
   the editor itself, the first time you pick the look (`dungeons2_editor/glass.py`); no picture files are involved.
