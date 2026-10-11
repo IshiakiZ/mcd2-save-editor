@@ -7,6 +7,41 @@ The short notes for the newest versions are on the
 **Menu → Updates → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.16.1
+
+- **Finish all.** In **Menu → World → Story progress…** every group of quests (the main story, each area's side
+  quests, the rest) now says on its own line how many of its quests are done, with **Finish all** beside it. A
+  press there, or on **Finish all in …** beside the quest you've picked, finishes every quest of that group: the
+  ones the hero is in the middle of, the ones it has only met, and the ones it hasn't met, which are added first.
+  **Finish the whole game…**, at the bottom, does it for every quest the editor knows. Both say what they're
+  about to do and ask first, with No as the answer Enter gives, and either all of it is done or none of it.
+  Picking a group's line shows the group; it used to jump to the group's first quest.
+- **A finished quest gets its steps' numbers.** A save holds a number with some finished steps: 1 with a step to
+  interact with something, and how many with a step to defeat enemies. In the saves the editor could not have
+  written a quest into, 153 of 155 finished interact steps carry 1 (the two that carry none, CA07_I12 and
+  CA09_I17, do so in every save that has them), and a step of any kind but those two carries none. 1.16.0 wrote a number
+  only where a save had shown it for that very step, so a quest nobody had sent finished got its interact steps
+  with none. Now an interact step gets its 1 whether or not a save has shown it, and a defeat step gets its
+  number where a save has (18 of the 32 the editor knows; the others stay as they are, because their numbers
+  aren't known).
+- **Finish again.** A quest that was finished without those numbers reads **finish again** in the list. Finishing
+  it once more gives the steps their numbers and changes nothing else; Finish all takes such quests along. The
+  list of changes before saving says so: "3 finished steps given their numbers".
+- **Discover the whole map.** **Menu → World → World map…** has a new button that lifts the fog of the whole
+  map: every square of every region the save has a picture for is marked explored, and a picture, all explored,
+  is added for each region the editor knows that the hero hasn't been to (25 regions in all, from players'
+  saves; a region that two saves put in two places is left out). It asks first, and like every other change it
+  reaches the game only with **Save to game**. It finds nothing for you: doors, minecart stations and chests
+  stay as they are. The World map window now shows the hero with the changes you've made, not the save as it
+  was loaded, so what the button did is there to see before you save.
+- **For an AI assistant:** two new tools. `finish_quests` finishes a group of quests or the whole game, and
+  `discover_map` lifts the fog. `list_quests` says which finished quests are to be finished again, and
+  `change_quest` does that for one.
+- **The Story progress window keeps its word.** The line that says what a button just did was wiped a moment
+  after it was written. It stays now until you pick another quest.
+- **A little more of the world,** from the developer's newest recording: Rainy Plains as an area, and two spots
+  where chests were opened.
+
 ## 1.16.0
 
 - **Story progress.** **Menu → World → Story progress…** (and a button on Advanced mode's Help page) opens a window with

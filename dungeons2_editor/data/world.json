@@ -1288,7 +1288,8 @@
   "SW.Area.Meadow.A1",
   "SW.Area.Desert.A1.FortHalls",
   "SW.Area.Meadow.T1.Rift.8",
-  "SW.Area.Desert.A1"
+  "SW.Area.Desert.A1",
+  "SW.Area.Plains.A2"
  ],
  "doors": {
   "SW.Doorway.Camp.Docks": {
@@ -4224,10 +4225,28 @@
     1127
    ],
    "opened": 1
+  },
+  {
+   "area": "SW.Area.Plains.A1",
+   "region": "SW.Region.Overworld",
+   "at": [
+    272,
+    163
+   ],
+   "opened": 5
+  },
+  {
+   "area": "SW.Area.Plains.A2",
+   "region": "SW.Region.Overworld",
+   "at": [
+    -111,
+    755
+   ],
+   "opened": 1
   }
  ],
  "chest_counts": {
-  "SW.Area.Plains.A1": 2,
+  "SW.Area.Plains.A1": 5,
   "SW.Area.Forest.A1": 10,
   "SW.Area.Meadow.R1": 2,
   "SW.Area.DeepDark.Tutorial": 1,
@@ -4237,6 +4256,7 @@
   "SW.Area.DeepDark.A1": 8,
   "SW.Area.Town": 3,
   "SW.Area.Meadow.T1.Rift.8": 3,
-  "SW.Area.Desert.A1": 1
+  "SW.Area.Desert.A1": 1,
+  "SW.Area.Plains.A2": 1
  }
 }

@@ -1,3 +1,14 @@
+## What's new in 1.16.1
+
+- **Finish all.** In **Menu → World → Story progress…**, every group of quests has **Finish all** on its own line, and **Finish the whole game…** finishes every quest the editor knows. Both ask first.
+
+  ![Story progress: Finish all on a group's line, and Finish the whole game at the bottom](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-finish-all.png)
+- **A finished quest gets its steps' numbers.** 1.16.0 left out some of the numbers a save holds with finished steps. Such a quest now reads **finish again**: finish it once more, or use Finish all.
+- **Discover the whole map.** A new button in **Menu → World → World map…** lifts the fog from every region the editor knows, the ones your hero hasn't been to as well. It finds no door or chest for you.
+
+  ![The world map with the whole map discovered](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
+- **An AI assistant can do both,** with two new tools: `finish_quests` and `discover_map`.
+
 ## What's new in 1.16.0
 
 - **Story progress.** A new window, **Menu → World → Story progress…**, lists every quest with its steps. Finish a quest, start one over, add one your hero hasn't met, or pick the quest the game tracks.
@@ -19,14 +30,6 @@
 - **What's new can show pictures.** After an update it waits for you to close it, so the news isn't missed.
 - **Two more effect tiers count as seen,** on [darklynkttv](https://github.com/darklynkttv)'s and [hayden-xyz](https://github.com/hayden-xyz)'s word: Deflection I and Swiftness I. Two of the 180 are left.
 - **Two more doors** in the Frozen Highlands, from hayden-xyz's list.
-
-## What's new in 1.15.3
-
-- **Every enchantment book goes by its name in the game.** The last five are Bottomless Brew, Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot, thanks to [icicle1133](https://github.com/icicle1133).
-- **Critical Quiver can be put on armor,** at tier III, from [darklynkttv](https://github.com/darklynkttv)'s list.
-- **Kits follow their builds more closely:** Critical Quiver and Bottomless Brew go on where a build names them, and their books come with the kit.
-- **Three more effect tiers count as seen,** on [itamarnyg8-del](https://github.com/itamarnyg8-del)'s word: Precision II, Speed I and Sniper III. Four of the 180 are left.
-- **A little more of the world:** three doors, five puzzle pieces and an area, from darklynkttv's and icicle1133's lists.
 
 ## Earlier versions, and the details
 
