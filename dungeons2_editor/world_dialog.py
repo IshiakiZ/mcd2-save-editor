@@ -4,7 +4,10 @@ The map is the hero's own, from its save: for each region the game keeps a pictu
 door with its position. It's drawn the way round the game's own map is. The list beside it is the save's too: the
 story quests, every quest and its steps, minecart stations, doors, the game's counts. The play recorder's
 recordings add what a save can't place by itself: where a station, a cutscene or a chest turned up, by the
-ground whose fog cleared in the save it turned up in. Nothing is changed here; it's a view.
+ground whose fog cleared in the save it turned up in.
+
+It's a view, with one thing to press: Discover the whole map lifts the fog from every map (story.discover_map).
+That joins the hero's unsaved changes, like any other change, and the window is drawn again from them.
 """
 
 from __future__ import annotations
@@ -12,10 +15,10 @@ from __future__ import annotations
 import re
 import tkinter as tk
 from tkinter import font as tkfont
-from tkinter import ttk
-from typing import Any
+from tkinter import messagebox, ttk
+from typing import Any, Callable
 
-from . import recorder
+from . import recorder, story
 from .game_style import match_title_bar
 from .layout import fit_to_contents, scaled_size
 
@@ -36,6 +39,8 @@ MOST_ZOOMED = 72  # and at most when zoomed in
 ZOOM_STEP = 1.25
 HINT = "Point at a dot to see what it is. Scroll to zoom in and out, and drag to move the map."
 NO_MAP = "This save has no map yet: the game draws one as the hero explores."
+DISCOVER = "Discover the whole map"
+DISCOVERED = "The whole map is discovered. Press Save to game when you're done."
 NO_RECORDINGS = (
     "Nothing yet for this hero. Play with the play recorder on (Menu > World > Play recorder), and the minecart stations, cutscenes "
     "and chests you find get a place on this map."
@@ -148,11 +153,30 @@ def sections(document: Any, atlas: dict[str, Any] | None = None) -> list[tuple[s
     return [(heading, lines) for heading, lines in found if lines]
 
 
-class WorldDialog(tk.Toplevel):
-    """A hero's map and its progress, to look at. It doesn't stop you using the editor meanwhile."""
+def discover_question(left: int, more: list[str]) -> str:
+    """What to ask before lifting the fog from the whole map."""
+    told = [f"{DISCOVER}?"]
+    told.append(
+        f"Every square of every map this hero has is marked as explored ({left:,} {'is' if left == 1 else 'are'}n't yet)."
+        if left else "Every square of the maps this hero has is explored already."
+    )
+    if more:
+        told.append(
+            f"The editor also adds the map{'' if len(more) == 1 else 's'} of {len(more)} place{'' if len(more) == 1 else 's'} this hero hasn't been to yet, "
+            "explored too, the way other players' saves hold them."
+        )
+    told.append("It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back.")
+    return "\n\n".join(told)
 
-    def __init__(self, parent: tk.Misc, document: Any, atlas: dict[str, Any] | None = None, hero: str = ""):
+
+class WorldDialog(tk.Toplevel):
+    """A hero's map and its progress, to look at. It doesn't stop you using the editor meanwhile. With
+    ``on_discover`` (which lifts the fog in the save it's given and says whether it did), it has a button for
+    that, and is drawn again afterwards."""
+
+    def __init__(self, parent: tk.Misc, document: Any, atlas: dict[str, Any] | None = None, hero: str = "", on_discover: Callable[[Any], bool] | None = None):
         super().__init__(parent)
+        self.document, self.atlas, self.on_discover = document, atlas, on_discover
         self.regions = recorder.map_regions(document)
         self.doors = recorder.door_places(document)
         self.mine = ((atlas or {}).get("heroes") or {}).get(recorder.hero_id(document)) or {}
@@ -226,10 +250,14 @@ class WorldDialog(tk.Toplevel):
         bottom.columnconfigure(0, weight=1)
         self.hover_var = tk.StringVar(value=HINT)
         ttk.Label(bottom, textvariable=self.hover_var, style="Muted.TLabel", anchor="w").grid(row=0, column=0, sticky="ew")
+        self.discover_button = ttk.Button(bottom, text=DISCOVER, command=self.discover)
+        if on_discover is not None:
+            self.discover_button.grid(row=0, column=1, padx=(8, 0))
+            self._update_discover()
         self.copy_button = ttk.Button(bottom, text="Copy the list", command=self.copy_list)
-        self.copy_button.grid(row=0, column=1, padx=(8, 8))
+        self.copy_button.grid(row=0, column=2, padx=(8, 8))
         self.close_button = ttk.Button(bottom, text="Close", style="Accent.TButton", command=self.destroy)
-        self.close_button.grid(row=0, column=2)
+        self.close_button.grid(row=0, column=3)
         self._write()
         self.draw()
         fit_to_contents(self, *scaled_size(self, 1120, 700))
@@ -369,8 +397,45 @@ class WorldDialog(tk.Toplevel):
 
     # ------------------------------------------------------------------ the list beside it
 
+    def _update_discover(self) -> None:
+        """The button is there to press while there's fog left to lift, or a map to add."""
+        try:
+            left, more = story.map_to_discover(self.document)
+        except ValueError:
+            left, more = 1, []  # no map at all: pressing it says so
+        self.discover_button.state(["!disabled"] if left or more else ["disabled"])
+
+    def discover(self) -> None:
+        """Lift the fog from the whole map, once the user has said yes, and draw the window again."""
+        if self.on_discover is None:
+            return
+        try:
+            left, more = story.map_to_discover(self.document)
+        except ValueError as exc:
+            self.hover_var.set(str(exc))
+            return
+        if not left and not more:
+            self.hover_var.set("The whole map is discovered already.")
+            return
+        if not messagebox.askyesno(DISCOVER, discover_question(left, more), default="no", parent=self):
+            return
+        if not self.on_discover(self.document):
+            return
+        picked = self.region_tag()
+        self.regions = recorder.map_regions(self.document)
+        self.listed = sections(self.document, self.atlas)
+        self.tags = sorted(self.regions, key=lambda tag: -self.regions[tag]["across"] * self.regions[tag]["down"])
+        self.region_box.configure(values=[short(tag) for tag in self.tags])
+        self.region_var.set(short(picked if picked in self.regions else self.tags[0]) if self.tags else "")
+        self._write()
+        self.show_region()
+        self._update_discover()
+        self.hover_var.set(DISCOVERED)
+
     def _write(self) -> None:
         text, gap = self.text, self.fonts["bold"].metrics("linespace")
+        text.configure(state="normal")
+        text.delete("1.0", "end")
         text.tag_configure("heading", font=self.fonts["bold"], spacing1=gap * 2 // 3, spacing3=gap // 4)
         text.tag_configure("first", spacing1=0)
         # A line that starts with a tick or a dot has its words start where the others' do.

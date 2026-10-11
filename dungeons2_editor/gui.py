@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, edition, game_launch, game_style, merge, paths, picture_pack, saves, share_ids, updater, whats_new, wgs
+from . import __version__, codec, edition, game_launch, game_style, merge, paths, picture_pack, saves, share_ids, story, updater, whats_new, wgs
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -79,11 +79,14 @@ _SAFE_TEXT = (
     "\n• World map… (in the same two places) draws the ground the hero on screen has explored, from its save, with every "
     "door it has found, and lists how far it has got: the story, quests, minecart stations, what it may have missed. "
     "Your recordings add where stations, cutscenes and chests turned up. It can't show what the hero hasn't found: the "
-    "game writes a chest or a secret to a save only once you've been to it. Nothing is changed by looking."
+    "game writes a chest or a secret to a save only once you've been to it. Nothing is changed by looking. Discover the whole "
+    "map, in its window, lifts the fog from every map, and adds the maps of places the hero hasn't been to yet as other "
+    "players' saves hold them."
     "\n• Story progress… (in the same two places) lists the quests of the hero on screen with every step, and changes "
     "how far the hero has got: finish a quest, start one over, add one the hero hasn't met, pick the quest the game "
     "tracks, and say which minecart station the hero was last at. It writes a quest the way a save holds one, and nothing "
-    "of what the game gives for a quest: no items, no XP, no achievement. Like every change, it waits for Save to game."
+    "of what the game gives for a quest: no items, no XP, no achievement. Finish all, on a category's line, finishes the whole "
+    "category, and Finish the whole game… every quest the editor knows; both ask first. Like every change, it waits for Save to game."
     "\n• Suggest something… (in Simple mode's menu under Share and suggest, and on Advanced mode's Help page) is where to leave "
     "an idea for the editor, or to say what it gets wrong. "
     "It opens a GitHub issue in your browser with what you wrote, for you to send, or copies it. The editor sends nothing itself."
@@ -1518,8 +1521,9 @@ class EditorApp:
 
     def open_world_map(self) -> WorldDialog | None:
         """Menu > World > World map: the ground the hero on screen has explored and what it found there, from its save, with
-        what the play recorder's recordings add. It shows the hero as saved: the editor changes nothing of this."""
-        document = self.original if is_hero_document(self.original) else None
+        what the play recorder's recordings add. It shows the hero as the editor has it now, unsaved changes and all,
+        and one of those it can make itself: Discover the whole map."""
+        document = self.document if is_hero_document(self.document) else None
         if document is None:
             messagebox.showinfo(APP_TITLE, "Pick a hero first: the world map is drawn from a hero's save.", parent=self.root)
             return None
@@ -1527,8 +1531,22 @@ class EditorApp:
             self.world_map.destroy()  # one map at a time: this one is drawn from the save as it is now
         hero = Hero(document)
         # The map is the save's own: recordings that can't be read only leave it with less on it.
-        self.world_map = WorldDialog(self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}")
+        self.world_map = WorldDialog(self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}", on_discover=self._discover_map)
         return self.world_map
+
+    def _discover_map(self, shown: Any) -> bool:
+        """The World map's Discover the whole map: lift the fog in the hero's unsaved changes. False if it didn't,
+        which it doesn't when the map on screen is no longer of the hero the editor has open."""
+        if shown is not self.document:
+            messagebox.showinfo(APP_TITLE, "The hero on screen has changed since this map was opened. Open the World map again.", parent=self.root)
+            return False
+        try:
+            story.discover_map(self.document)
+        except ValueError as exc:
+            messagebox.showinfo(APP_TITLE, str(exc), parent=self.root)
+            return False
+        self._on_story_changed()
+        return True
 
     # ------------------------------------------------------------------ the story
 

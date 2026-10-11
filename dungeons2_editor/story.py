@@ -12,8 +12,16 @@ Three things hold in every one of those saves, and they are all the editor write
     a quest that's available and not begun has every step unset
     when the game finishes a quest it stops tracking it, and lists the quests it opens next as available
 
-So the editor finishes a quest (every step done, with the number the game saved with a step where a save has shown
-it), starts one over (available again, every step unset), adds one the hero hasn't met (available, every step
+A finished step carries a number where it counts something. In the saves the editor could not have written a
+quest into (players' lists made before 1.16.0, and the developer's recordings up to then): a step to defeat
+enemies carries how many (1 to 10), a step to interact with something carries 1 (153 of them; two carry none,
+NO_NUMBER), and every other kind carries none (476 of them). 1.16.0 wrote a number only where a save had shown it
+for that very step, and so left interact steps of quests nobody had sent finished without theirs: the game then
+went on marking those quests on its map. Since 1.16.1 a finished interact step gets its 1, and a quest finished
+without can be finished again to be given it.
+
+So the editor finishes a quest (every step done, with the number a save holds with a finished step), starts one
+over (available again, every step unset), adds one the hero hasn't met (available, every step
 unset, its steps as another hero's save listed them) and picks the quest the game tracks. It doesn't move a quest
 on by a single step: steps come in groups that run in order, side by side or by choice, a save lists them flat,
 and which step follows which is in the game's own files.
@@ -25,6 +33,12 @@ Checked in the game (1.1.2.0, October 2026): with The Missing Note Blocks finish
 hero, opened the four quests that follow it by itself (the next main quest active, three more available), gave no
 item, XP or achievement for the quest, and played on from there.
 
+The map: for each region a hero has been in, a save keeps a picture of the fog over it
+(WorldExploration.SavedFogOfWarExploration.Items: the region's tag, where its corner is, how many squares it is
+across and down, and a number from 0 to 255 for each square, 255 where the fog is all gone). ``discover_map`` sets
+every square of every one of them to 255, and adds the regions the hero hasn't been in that another hero's save
+has shown, each with its corner and size as that save had them and every square at 255.
+
 Where a hero starts: a save keeps no position, only the minecart station the hero was last at
 (WorldExploration.LastMinecartStation) and the area it was in (MetaData.CurrentLocation). ``start_at`` writes the
 two the way a save has them for a hero standing at that station. Checked in the game the same day: a hero saved
@@ -33,9 +47,10 @@ in Howling Woods and set to the Frozen Fortress station was standing in Frozen H
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterable
 
 from . import recorder, world
 
@@ -46,6 +61,12 @@ TOWN_FOUNTAIN = "SW.MinecartStation.Town.Fountain"  # where a hero starts out: a
 MAIN, OTHER = "Main story", "Other quests"
 NO_QUESTS = "This hero's save keeps no quests yet. Play until the game has given you the first one."
 NO_STATION = "This hero's save doesn't say where the hero was last. Play until the game has saved it once."
+NO_MAP = "This hero's save keeps no map yet. Play until the game has drawn one."
+CLEAR = 255  # a square the fog is all gone from, as a save has it
+# Interact steps the game has saved as finished with no number: CA07_I12 in two heroes' lists (issues 33 and 34) and
+# CA09_I17 in one (issue 33). Every other finished interact step in the saves the editor couldn't have written has 1.
+NO_NUMBER = frozenset({"CA07_I12", "CA09_I17"})
+MOST_SQUARES = 20_000  # more than any region has: a size beyond this isn't one to write
 STEP_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat): the editor's reading, not the game's words."
 # What a step's name says it's about: the letters after its quest's name, as the game's own goals are called
 # (ExploreGoal, InteractGoal, KillGoal and so on, in its readable scripts). The editor's reading, not the game's words.
@@ -83,6 +104,24 @@ class Step:
     def is_group(self) -> bool:
         return self.kind.startswith(("a group", "a choice"))
 
+    @property
+    def number_when_done(self) -> int | None:
+        """The number a save holds with this step once it's finished: the one a save has shown for this very
+        step, or 1 for a step to interact with something, as all but two of those have had. None when it isn't
+        known (a step to defeat enemies that no save has shown finished), and nothing counted for the rest."""
+        seen = world.known()["counts"].get(self.name)
+        if seen:
+            return seen
+        letters = _STEP.match(self.short)
+        if letters and letters.group(1) == "I":
+            return 0 if self.name in NO_NUMBER else 1
+        return None if letters and letters.group(1) == "K" else 0
+
+    @property
+    def lacks_its_number(self) -> bool:
+        """Finished, and without the number a save holds with it once it is."""
+        return self.state == DONE and bool(self.number_when_done) and self.count < self.number_when_done
+
 
 @dataclass(frozen=True)
 class Quest:
@@ -116,6 +155,17 @@ class Quest:
     def standing(self) -> str:
         """How it stands, in a word or two."""
         return "not met yet" if self.state is None else STATE_WORDS.get(self.state, self.state)
+
+    @property
+    def unnumbered(self) -> int:
+        """How many of a finished quest's steps are without the number a save holds with them: a quest finished
+        by version 1.16.0, which the game may still mark on its map. Finishing it again gives them theirs."""
+        return sum(1 for step in self.steps if step.lacks_its_number) if self.state == DONE else 0
+
+    @property
+    def to_finish(self) -> bool:
+        """Whether there's anything for Finish it to do: it isn't finished, or it is and steps lack their number."""
+        return self.state != DONE or bool(self.unnumbered)
 
 
 def label(name: str) -> str:
@@ -215,17 +265,22 @@ def finish(document: Any, name: str) -> list[str]:
     """Finish a quest the hero has met, the way a save holds a finished one: the quest and every one of its steps
     Completed, a step that counts with the number the game saved with it where a save has shown that, and the
     quest no longer the one tracked. Where a recording has shown which quests the game makes available as it
-    finishes this one, the ones the hero hasn't met are added too. Returns the quests added."""
+    finishes this one, the ones the hero hasn't met are added too. Returns the quests added.
+
+    A quest that's finished already, with steps that lack the number a save holds with them (version 1.16.0
+    finished quests that way), is given those numbers and nothing else."""
     section = _section(document)
     entry = _entry(section, name)
-    if entry.get("State") == DONE:
+    if entry.get("State") == DONE and not _quest(entry, None).unnumbered:
         raise ValueError(f"{label(name)} is finished already.")
-    counts = world.known()["counts"]
     for task in entry["TaskData"]:
         task["State"] = DONE
-        count, had = counts.get(task.get("TaskName")), task.get("PartialProgress")
+        had = task.get("PartialProgress")
+        count = Step(str(task.get("TaskName")), DONE, 0, name).number_when_done
         if count and not (isinstance(had, int) and not isinstance(had, bool) and had >= count):
             task["PartialProgress"] = count
+    if entry.get("State") == DONE:
+        return []
     entry["State"] = DONE
     if section.get("FocusedQuestId") == name:
         section["FocusedQuestId"] = ""
@@ -234,6 +289,48 @@ def finish(document: Any, name: str) -> list[str]:
     for quest in added:
         add(document, quest)
     return added
+
+
+@dataclass(frozen=True)
+class Finished:
+    """What finishing several quests at once did."""
+
+    finished: tuple[str, ...]  # the quests finished, in the order they were
+    added: tuple[str, ...]  # the ones among them that the hero hadn't met, and that were added to be finished
+    opened: tuple[str, ...]  # quests left available that the hero hadn't met: what the game opens after one of those finished
+
+
+def to_finish(document: Any, part: str | None = None) -> list[Quest]:
+    """The quests that finishing all of a part of the game would finish: the ones in it that aren't finished,
+    the hero's own and the ones it hasn't met, and the finished ones whose steps lack their number, in the order
+    ``every`` lists them. With no part, the whole game: every quest the editor knows."""
+    return [quest for quest in every(document) if quest.to_finish and (part is None or quest.group == part)]
+
+
+def finish_all(document: Any, names: Iterable[str]) -> Finished:
+    """Finish several quests at once, each the way ``finish`` does it; one the hero hasn't met is added first.
+    Quests that are finished already are passed over. All of it or none: if any one of them can't be finished,
+    the save is left as it was."""
+    section = _section(document)
+    before = {quest.name for quest in quests(document)}
+    # On a copy of the quests, which is all that finishing touches, and put in place only once every one has worked.
+    trial = {"CharacterSaveV1": {"quest": copy.deepcopy(section)}}
+    finished = []
+    for name in names:
+        standing = {quest.name: quest for quest in quests(trial)}
+        if name in standing and not standing[name].to_finish:
+            continue
+        if name not in standing:
+            add(trial, name)
+        finish(trial, name)
+        finished.append(name)
+    added = [name for name in finished if name not in before]  # met for the first time here, by being added or by following one
+    done = trial["CharacterSaveV1"]["quest"]
+    section["Quests"][:] = done["Quests"]
+    if "FocusedQuestId" in done:
+        section["FocusedQuestId"] = done["FocusedQuestId"]
+    opened = [quest.name for quest in quests(document) if quest.name not in before and quest.state != DONE]
+    return Finished(tuple(finished), tuple(added), tuple(opened))
 
 
 def start_over(document: Any, name: str) -> None:
@@ -325,6 +422,75 @@ def start_at(document: Any, station: str) -> None:
         meta["CurrentLocation"] = there
 
 
+# ------------------------------------------------------------------ the map
+
+def _maps(document: Any) -> list:
+    """The pictures of the fog a save keeps, one to a region. An error if it keeps none."""
+    place = _body(document).get("WorldExploration")
+    fog = place.get("SavedFogOfWarExploration") if isinstance(place, dict) else None
+    items = fog.get("Items") if isinstance(fog, dict) else None
+    if not isinstance(items, list):
+        raise ValueError(NO_MAP)
+    return items
+
+
+def _squares(item: Any) -> int:
+    """How many squares a region's picture has, by the size saved with it. None for one that isn't laid out as a save's are."""
+    size = item.get("Size") if isinstance(item, dict) else None
+    across, down = (size.get("X"), size.get("Y")) if isinstance(size, dict) else (None, None)
+    whole = all(isinstance(side, int) and not isinstance(side, bool) and side > 0 for side in (across, down))
+    return across * down if whole and across * down <= MOST_SQUARES and isinstance(item.get("Data"), list) else 0
+
+
+def map_explored(document: Any) -> tuple[int, int, int]:
+    """How much of the map a hero has seen: (squares the fog has lifted from at all, squares in all, regions),
+    over the regions its save keeps a picture for. Nothing of each for a save that keeps none."""
+    try:
+        items = _maps(document)
+    except ValueError:
+        return 0, 0, 0
+    seen = sum(1 for item in items if _squares(item) for cell in item["Data"][: _squares(item)] if isinstance(cell, int) and cell > 0)
+    return seen, sum(_squares(item) for item in items), sum(1 for item in items if _squares(item))
+
+
+def _regions_to_add(document: Any) -> dict[str, dict]:
+    """The regions the editor knows from other heroes' saves that this hero's save has no picture for: each with
+    one corner and one size in every save that showed it."""
+    have = {item.get("Tag") for item in _maps(document) if isinstance(item, dict)}
+    found = {}
+    for tag, region in world.known()["regions"].items():
+        corner, size = region.get("corner"), region.get("size")
+        exact = (
+            isinstance(corner, list) and len(corner) == 2 and all(isinstance(part, (int, float)) and not isinstance(part, bool) for part in corner)
+            and isinstance(size, list) and len(size) == 2 and all(isinstance(side, int) and not isinstance(side, bool) and side > 0 for side in size)
+        )
+        if tag not in have and exact and not region.get("also") and size[0] * size[1] <= MOST_SQUARES:
+            found[tag] = region
+    return found
+
+
+def map_to_discover(document: Any) -> tuple[int, list[str]]:
+    """What discovering the whole map would change: how many squares of the save's own pictures aren't all clear
+    yet, and the regions it would add. An error if the save keeps no map."""
+    left = sum(1 for item in _maps(document) for cell in (item["Data"][: _squares(item)] + [0] * max(0, _squares(item) - len(item["Data"])) if _squares(item) else []) if cell != CLEAR)
+    return left, list(_regions_to_add(document))
+
+
+def discover_map(document: Any) -> tuple[int, list[str]]:
+    """Lift the fog from the whole map: every square of every region's picture all clear, and a picture, all
+    clear too, for each region the hero hasn't been in that another hero's save has shown. Returns what
+    ``map_to_discover`` said it would change."""
+    left, more = map_to_discover(document)
+    items = _maps(document)
+    for item in items:
+        if _squares(item):
+            item["Data"] = [CLEAR] * _squares(item)
+    for tag, region in _regions_to_add(document).items():
+        (x, y), (across, down) = region["corner"], region["size"]
+        items.append({"Tag": tag, "Data": [CLEAR] * (across * down), "WorldPosition": {"X": x, "Y": y}, "Size": {"X": across, "Y": down}})
+    return left, more
+
+
 # ------------------------------------------------------------------ what changed
 
 def changes(before: Any, after: Any) -> list[str]:
@@ -341,6 +507,9 @@ def changes(before: Any, after: Any) -> list[str]:
                 how = "started over"
             elif was.state != quest.state:
                 how = f"{was.standing} → {quest.standing}"
+            elif quest.state == DONE and was.unnumbered > quest.unnumbered:
+                given = was.unnumbered - quest.unnumbered
+                how = f"{given} finished step{'' if given == 1 else 's'} given {'its number' if given == 1 else 'their numbers'}"
             else:
                 how = f"{quest.done} of {len(quest.steps)} steps done (it was {was.done})"
             lines.append(f"Quest {quest.label}: {how}")
@@ -349,4 +518,7 @@ def changes(before: Any, after: Any) -> list[str]:
         lines.append(f"Quest tracked: {label(tracked(after)) if tracked(after) else 'none'}")
     if (last_station(before), area(before)) != (last_station(after), area(after)):
         lines.append(f"Starts at: {recorder.station_name(last_station(after))}, in {recorder.area_name(area(after))}")
+    was, now = map_explored(before), map_explored(after)
+    if was != now:
+        lines.append(f"Map: {now[0]:,} of {now[1]:,} squares explored in {now[2]} region{'' if now[2] == 1 else 's'} (it was {was[0]:,} of {was[1]:,} in {was[2]})")
     return lines

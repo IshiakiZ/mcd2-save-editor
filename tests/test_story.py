@@ -21,7 +21,12 @@ LIST = {
     "counts": {"CA04_E02": 3, "CA05_K01": 5},
     "follows": {"CA04": ["CA05", "CA04_BR", "FOa1_S10_A", "Unseen"]},
     "areas": ["SW.Area.Town", "SW.Area.Forest.A1"],
-    "regions": {"SW.Area.Plains.A2.BossTower": {"corner": [0, 0], "size": [2, 2]}},
+    "regions": {
+        "SW.Region.Camp": {"corner": [0, 0], "size": [4, 3]},  # the hero has this one
+        "SW.Area.Plains.A2.BossTower": {"corner": [-256, 128], "size": [2, 2]},
+        # Two saves put this one in two places, so nothing says which is right: it isn't one to add.
+        "SW.Region.Twice": {"corner": [0, 0], "size": [2, 2], "also": [{"corner": [64, 64], "size": [2, 2]}]},
+    },
 }
 # A quest as the game saved it just before it finished it, just after, and the quest it listed with that, from one of
 # the developer's play recordings, written the way a shared list writes a quest (+ done, ~ active, a number after it
@@ -135,6 +140,91 @@ class StoryTests(unittest.TestCase):
             self.assertEqual(quests, {"FocusedQuestId": "", "Quests": [as_saved(AFTER), as_saved(CAME)]})
         finally:
             tests.use_world_list(Path(self.folder.name) / "world.json")
+
+    def quest_with(self, name, state, *steps):
+        """Give the hero a quest whose steps are (name, how it stands, its number)."""
+        self.quests["Quests"].append({"QuestName": name, "State": state, "TaskData": [{"TaskName": f"{name}_{step}", "State": how, "PartialProgress": count} for step, how, count in steps]})
+
+    def test_a_finished_step_carries_the_number_a_save_holds_with_it(self):
+        # What a save holds with a finished step: 1 for one to interact with something (all but two of those the game
+        # has saved), the number a save has shown for a step to defeat enemies, and none for the rest.
+        self.quest_with("CA05", "Active", ("I01", "Completed", 1), ("I02", "Active", 0), ("K01", "Active", 2), ("K02", "NotSet", 0), ("E01", "NotSet", 0), ("Sequence01", "Active", 0))
+        self.quest_with("CA07", "Active", ("I12", "NotSet", 0), ("I13", "NotSet", 0))
+        story.finish(self.document, "CA05")
+        story.finish(self.document, "CA07")
+        self.assertEqual([(step.short, step.count) for step in self.quest("CA05").steps], [("I01", 1), ("I02", 1), ("K01", 5), ("K02", 0), ("E01", 0), ("Sequence01", 0)])
+        self.assertEqual([step.number_when_done for step in self.quest("CA05").steps], [1, 1, 5, None, 0, 0])  # nobody has sent K02 finished
+        # CA07_I12 is one of the two the game finishes with no number: two heroes' lists have it so.
+        self.assertEqual([(step.short, step.count) for step in self.quest("CA07").steps], [("I12", 0), ("I13", 1)])
+        self.assertEqual((self.quest("CA05").unnumbered, self.quest("CA07").unnumbered, self.quest("CA05").to_finish), (0, 0, False))
+
+    def test_a_quest_finished_without_its_numbers_is_finished_again(self):
+        # As version 1.16.0 left a quest nobody had sent finished: done, its interact steps at nothing.
+        self.quest_with("FOa1_S08_A", "Completed", ("E01", "Completed", 0), ("I01", "Completed", 0), ("I02", "Completed", 0), ("K01", "Completed", 0))
+        self.quests["FocusedQuestId"] = "CA04"
+        before = copy.deepcopy(self.document)
+        quest = self.quest("FOa1_S08_A")
+        self.assertEqual((quest.state, quest.unnumbered, quest.to_finish, [step.lacks_its_number for step in quest.steps]), ("Completed", 2, True, [False, True, True, False]))
+        self.assertIn("FOa1_S08_A", [found.name for found in story.to_finish(self.document)])
+        self.assertEqual(story.finish(self.document, "FOa1_S08_A"), [])  # nothing opens: it was finished already
+        quest = self.quest("FOa1_S08_A")
+        self.assertEqual(([step.count for step in quest.steps], quest.unnumbered, quest.to_finish, story.tracked(self.document)), ([0, 1, 1, 0], 0, False, "CA04"))
+        self.assertEqual(story.changes(before, self.document), ["Quest FOa1_S08_A: 2 finished steps given their numbers"])
+        with self.assertRaisesRegex(ValueError, "FOa1_S08_A is finished already"):
+            story.finish(self.document, "FOa1_S08_A")
+
+    def test_finishes_all_of_a_part_of_the_game_or_the_whole_of_it(self):
+        self.assertEqual([quest.name for quest in story.to_finish(self.document, "Main story")], ["CA04", "CA04_BR", "CA05"])
+        self.assertEqual([quest.name for quest in story.to_finish(self.document)], ["CA04", "CA04_BR", "CA05", "FOa1_S10_A", "PLa2_S15_A", "CT_S01_A"])
+        self.assertEqual(story.to_finish(self.document, "Side quests: Nowhere"), [])
+        done = story.finish_all(self.document, [quest.name for quest in story.to_finish(self.document, "Main story")])
+        # CA04's finishing opens CA05 and CA04_BR, which are then finished in their turn; neither had been met.
+        self.assertEqual((done.finished, done.added, done.opened), (("CA04", "CA04_BR", "CA05"), ("CA04_BR", "CA05"), ()))
+        self.assertEqual([(quest.name, quest.state) for quest in story.quests(self.document)],
+                         [("CA01", "Completed"), ("CA04", "Completed"), ("FOa1_S10_A", "Available"), ("CA05", "Completed"), ("CA04_BR", "Completed")])
+        self.assertEqual((story.to_finish(self.document, "Main story"), story.tracked(self.document)), ([], ""))
+        # The whole game: what's left, with the ones the hero hasn't met added first. A finished quest is passed over.
+        done = story.finish_all(self.document, ["CA01"] + [quest.name for quest in story.to_finish(self.document)])
+        self.assertEqual((done.finished, done.added), (("FOa1_S10_A", "PLa2_S15_A", "CT_S01_A"), ("PLa2_S15_A", "CT_S01_A")))
+        self.assertTrue(all(quest.state == "Completed" for quest in story.every(self.document)))
+        self.assertEqual(story.finish_all(self.document, [quest.name for quest in story.every(self.document)]), story.Finished((), (), ()))
+
+    def test_finishing_several_is_all_or_nothing(self):
+        before = copy.deepcopy(self.document)
+        with self.assertRaisesRegex(ValueError, "doesn't know its steps"):
+            story.finish_all(self.document, ["CA04", "PLa2_S15_A", "CA09"])  # the last is one the editor has never seen
+        self.assertEqual(self.document, before)
+        with self.assertRaisesRegex(ValueError, "keeps no quests yet"):
+            story.finish_all(hero_save(), ["CA04"])
+        # One that opens a quest outside the ones asked for leaves that one available, as the game would.
+        done = story.finish_all(self.document, ["CA04"])
+        self.assertEqual((done.finished, done.added, done.opened), (("CA04",), (), ("CA05", "CA04_BR")))
+
+    def test_discovers_the_whole_map(self):
+        fog = self.document["CharacterSaveV1"]["WorldExploration"]["SavedFogOfWarExploration"]["Items"]
+        self.assertEqual(story.map_explored(self.document), (5, 16, 2))  # five squares seen at all, of the camp's twelve and the meadow's four
+        self.assertEqual(story.map_to_discover(self.document), (15, ["SW.Area.Plains.A2.BossTower"]))  # one square is all clear already
+        before = copy.deepcopy(self.document)
+        untouched = copy.deepcopy({key: value for key, value in self.document["CharacterSaveV1"]["WorldExploration"].items() if key != "SavedFogOfWarExploration"})
+        self.assertEqual(story.discover_map(self.document), (15, ["SW.Area.Plains.A2.BossTower"]))
+        self.assertEqual([(item["Tag"], item["Data"]) for item in fog[:2]], [("SW.Region.Camp", [255] * 12), ("SW.Area.Meadow.R1", [255] * 4)])
+        # A region the hero hasn't been in, as another hero's save holds it: its tag, its squares, its corner, its size.
+        self.assertEqual(fog[2:], [{"Tag": "SW.Area.Plains.A2.BossTower", "Data": [255] * 4, "WorldPosition": {"X": -256, "Y": 128}, "Size": {"X": 2, "Y": 2}}])
+        self.assertEqual(list(fog[2]), ["Tag", "Data", "WorldPosition", "Size"])
+        self.assertEqual((story.map_explored(self.document), story.map_to_discover(self.document)), ((20, 20, 3), (0, [])))
+        # Nothing else of the world: no door, no station, no chest is found by it.
+        self.assertEqual({key: value for key, value in self.document["CharacterSaveV1"]["WorldExploration"].items() if key != "SavedFogOfWarExploration"}, untouched)
+        line = "Map: 20 of 20 squares explored in 3 regions (it was 5 of 16 in 2)"
+        self.assertEqual((story.changes(before, self.document), describe_changes(before, self.document)), ([line], [line]))
+        # A picture that isn't laid out the way a save's are is left alone, and a save with no map has none to discover.
+        odd = hero_with_a_world()
+        odd["CharacterSaveV1"]["WorldExploration"]["SavedFogOfWarExploration"]["Items"][1]["Size"] = {"X": "two", "Y": 2}
+        story.discover_map(odd)
+        self.assertEqual(odd["CharacterSaveV1"]["WorldExploration"]["SavedFogOfWarExploration"]["Items"][1]["Data"], [0, 7, 0, 0])
+        self.assertEqual(story.map_explored(hero_save()), (0, 0, 0))
+        for change in (story.discover_map, story.map_to_discover):
+            with self.assertRaisesRegex(ValueError, "keeps no map yet"):
+                change(hero_save())
 
     def test_starts_a_quest_over(self):
         self.quests["Quests"][1]["TaskData"][1]["PartialProgress"] = 2

@@ -130,6 +130,38 @@ class StoryToolsTests(ServerTestCase):
         self.assertEqual((story.last_station(saved), story.area(saved)), ("SW.MinecartStation.Town", "SW.Area.Town"))
         self.assertEqual(saved["CharacterSaveV1"]["Achievements"], hero_with_a_world()["CharacterSaveV1"]["Achievements"])
 
+    def test_finishes_a_part_of_the_game_or_all_of_it(self):
+        done = self.call("finish_quests", hero="00000000", part="main story")
+        self.assertEqual((done["done"], done["finished"], done["added_first"], done["left_available"]),
+                         ("Finished 2 quests in Main story. 1 of them the hero hadn't met: added first.", ["CA04", "CA05"], ["CA05"], []))
+        self.assertIn("Every quest in Main story is finished already", self.call("finish_quests", hero="00000000", part="Main story"))
+        self.assertIn("There's no part 'The moon'. The parts are: Main story, Side quests: Howling Woods.", self.call("finish_quests", hero="00000000", part="The moon"))
+        everything = self.call("finish_quests", hero="00000000")
+        self.assertEqual((everything["done"], everything["finished"]), ("Finished the whole game: 1 quest.", ["FOa1_S10_A"]))
+        self.assertIn("Every quest the editor knows is finished already", self.call("finish_quests", hero="00000000"))
+        self.call("save_changes", hero="00000000")
+        self.assertTrue(all(quest.state == "Completed" for quest in story.quests(self.saved_hero().document)))
+
+    def test_a_quest_finished_without_its_numbers_says_so_and_is_finished_again(self):
+        document = hero_with_a_world()
+        document["CharacterSaveV1"]["quest"]["Quests"][0]["TaskData"] = [{"TaskName": "CA01_I01", "State": "Completed", "PartialProgress": 0}]
+        saves.SaveProfile(self.profile).save(HERO, document, self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        told = self.call("list_quests", hero="00000000")["quests"]
+        self.assertEqual([quest.get("finish_again") for quest in told], [True, None, None, None])
+        done = self.call("change_quest", hero="00000000", quest="CA01", action="finish")
+        self.assertEqual(done["done"], "The Illagers from the Rift (CA01) was finished without the number 1 of its steps carry in a save: they have it now.")
+        self.assertEqual((done["quest"].get("finish_again"), done["unsaved_changes"]), (None, ["Quest The Illagers from the Rift (CA01): 1 finished step given its number"]))
+
+    def test_discovers_the_whole_map(self):
+        done = self.call("discover_map", hero="00000000")
+        self.assertEqual((done["done"], done["squares"], done["regions"], done["regions_added"]), ("The whole map is discovered: 16 squares in 2 regions.", 16, 2, []))
+        self.assertEqual(done["unsaved_changes"], ["Map: 16 of 16 squares explored in 2 regions (it was 5 of 16 in 2)"])
+        self.assertIn("The whole map is discovered already", self.call("discover_map", hero="00000000"))
+        saves.SaveProfile(self.profile).save(HERO, hero_save(), self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        self.assertIn("keeps no map yet", self.call("discover_map", hero="00000000"))
+
     def test_a_hero_with_no_story_yet(self):
         saves.SaveProfile(self.profile).save(HERO, hero_save(), self.dir / "backups", check_game=lambda: [])
         self.server = EditorServer(self.profile, self.dir / "backups")
@@ -154,7 +186,7 @@ class ProtocolTests(ServerTestCase):
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
             "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
-            "add_enchantment_books", "list_quests", "change_quest", "start_at_station",
+            "add_enchantment_books", "list_quests", "change_quest", "start_at_station", "finish_quests", "discover_map",
         })
         self.assertTrue(tools["list_quests"]["annotations"]["readOnlyHint"])
         self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "start_over", "add", "track"])

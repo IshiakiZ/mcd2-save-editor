@@ -88,7 +88,9 @@ INSTRUCTIONS = (
     "finishes a quest (every step done, the way a save holds a finished quest), starts one over, adds one the hero hasn't met, "
     "or makes an active one the quest the game tracks. It can't move a quest on by one step, and it gives none of what the game "
     "gives for a quest (items, XP, an achievement): say so if asked. The game opens the quests that follow a finished one by "
-    "itself, the next time it loads the hero (checked in the game). start_at_station sets the minecart station and the area "
+    "itself, the next time it loads the hero (checked in the game). finish_quests finishes a whole part of the game at once, or "
+    "every quest the editor knows: get the user's word first, it's a lot at once. discover_map lifts the fog from every map and "
+    "adds the maps of places the hero hasn't been to. start_at_station sets the minecart station and the area "
     "the save says the hero is at, to a station the hero has found: a save keeps no other position, and the game starts the "
     "hero at that station the next time it loads it (checked in the game)."
 )
@@ -658,7 +660,10 @@ class EditorServer:
             if quest is None:
                 raise ToolError(f"There's no quest {wanted!r}. list_quests lists them all.")
             try:
-                if action == "finish":
+                if action == "finish" and quest.state == story.DONE and quest.unnumbered:
+                    story.finish(document, quest.name)
+                    text = f"{quest.label} was finished without the number {quest.unnumbered} of its steps carry in a save: they have it now."
+                elif action == "finish":
                     added = story.finish(document, quest.name)
                     text = f"Finished {quest.label}." + (f" Added what the game opens after it: {', '.join(story.label(name) for name in added)}." if added else "")
                     if not story.follows(quest.name):
@@ -678,6 +683,46 @@ class EditorServer:
                 raise ToolError(str(exc)) from exc
             now = next(found for found in story.quests(document) if found.name == quest.name)
             return text, {"quest": _quest_info(now)}
+
+        return self._edit(args["hero"], change)
+
+    def finish_quests(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            document, wanted = hero.document, args.get("part")
+            parts = sorted({quest.group for quest in story.every(document)}, key=story.group_order)
+            part = next((name for name in parts if name.lower() == str(wanted).lower()), None) if wanted else None
+            if wanted and part is None:
+                raise ToolError(f"There's no part {wanted!r}. The parts are: {', '.join(parts)}.")
+            left = story.to_finish(document, part)
+            if not left:
+                raise ToolError(f"Every quest in {part} is finished already." if part else "Every quest the editor knows is finished already.")
+            try:
+                done = story.finish_all(document, [quest.name for quest in left])
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            count = f"{len(done.finished)} quest{'' if len(done.finished) == 1 else 's'}"
+            text = f"Finished {count} in {part}." if part else f"Finished the whole game: {count}."
+            if done.added:
+                text += f" {len(done.added)} of them the hero hadn't met: added first."
+            return text, {"finished": list(done.finished), "added_first": list(done.added), "left_available": list(done.opened)}
+
+        return self._edit(args["hero"], change)
+
+    def discover_map(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            document = hero.document
+            try:
+                left, more = story.map_to_discover(document)
+                if not left and not more:
+                    raise ValueError("The whole map is discovered already.")
+                story.discover_map(document)
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            seen, squares, regions = story.map_explored(document)
+            text = f"The whole map is discovered: {squares:,} squares in {regions} region{'' if regions == 1 else 's'}."
+            if more:
+                text += f" {len(more)} of the regions are places the hero hasn't been to, added as other players' saves hold them."
+            return text, {"squares": squares, "regions": regions, "regions_added": more}
 
         return self._edit(args["hero"], change)
 
@@ -910,6 +955,16 @@ class EditorServer:
                  "achievement), and a quest can't be moved on by a single step.",
                  {"hero": HERO, "quest": QUEST, "action": _string("What to do with it.", enum=["finish", "start_over", "add", "track"])},
                  self.change_quest, ("hero", "quest", "action")),
+            Tool("finish_quests", "Finish a part of the game", "Finish every quest of a part of the game at once (part: Main story, "
+                 "Side quests: Rainy Plains and so on, the part values in list_quests), or with no part every quest the editor "
+                 "knows. A quest the hero hasn't met is added first. Each is finished the way change_quest finishes one, and "
+                 "nothing the game gives for a quest is added. It's a lot at once: get the user's word first.",
+                 {"hero": HERO, "part": _string("A part of the game from list_quests. Leave out for the whole game.")},
+                 self.finish_quests, ("hero",)),
+            Tool("discover_map", "Discover the whole map", "Lift the fog from the whole map: every square of every map the hero's save "
+                 "keeps is marked as explored, and the maps of places the hero hasn't been to are added, explored too, the way "
+                 "other players' saves hold them. Doors, chests and secrets are not found by it.",
+                 {"hero": HERO}, self.discover_map, ("hero",)),
             Tool("start_at_station", "Start at a minecart station", "Have the hero start at a minecart station it has found (start_points in "
                  "list_quests): sets the station the save says the hero was last at, and its area. A save keeps no other position for a hero, "
                  "and the game starts it there the next time it loads it.",
@@ -982,6 +1037,8 @@ def _quest_info(quest: story.Quest, steps: bool = False) -> dict:
     info = {
         "quest": quest.name, "name": quest.title or None, "part": quest.group, "met": quest.met, "stands": quest.standing,
         "steps_done": quest.done, "steps": len(quest.steps), "tracked": quest.tracked,
+        # A quest finished by version 1.16.0 without the number its steps carry: change_quest finish gives them theirs.
+        **({"finish_again": True} if quest.unnumbered else {}),
         "opens_after_it": story.follows(quest.name) or None,
     }
     if steps:

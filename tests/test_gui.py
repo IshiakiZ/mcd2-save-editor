@@ -2657,10 +2657,77 @@ class WorldMapTests(WindowTestCase):
             self.assertEqual(self.app.open_world_map().shown("door"), 2)
         self.assertEqual(self.root.cget("cursor"), "")
         # With something other than a hero on screen there's no map to draw.
-        self.app.original = None
+        self.app.document = None
         with mock.patch("tkinter.messagebox.showinfo") as told:
             self.assertIsNone(self.app.open_world_map())
         self.assertIn("Pick a hero first", told.call_args.args[1])
+
+    def test_discovers_the_whole_map(self):
+        from dungeons2_editor import world_dialog
+
+        # The editor's list knows one more region than this hero has been in.
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps({"regions": {"SW.Region.Camp": {"corner": [0, 0], "size": [4, 3]}, "SW.Area.Plains.A2.BossTower": {"corner": [-256, 128], "size": [2, 2]}}}), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+        before = snapshot_of(self.profile_path)
+        dialog = self.open_map(recordings_of_a_world())
+        self.assertEqual((dialog.discover_button.cget("text"), bool(dialog.discover_button.winfo_manager())), ("Discover the whole map", True))
+        self.assertEqual((dialog.shown("explored"), dialog.shown("edge")), (4, 6))
+        # It asks first, and No leaves the map as it was.
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            dialog.discover_button.invoke()
+        question = ask.call_args.args[1]
+        self.assertTrue(question.startswith("Discover the whole map?\n\nEvery square of every map this hero has is marked as explored (15 aren't yet).\n\n"), question)
+        self.assertIn("The editor also adds the map of 1 place this hero hasn't been to yet, explored too, the way other players' saves hold them.", question)
+        self.assertEqual((self.app.change_count, dialog.shown("explored")), (0, 4))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            dialog.discover_button.invoke()
+        # The map on screen is the whole camp now, with nothing left at its edge, and the place added is in the list of regions.
+        self.assertEqual((dialog.shown("explored"), dialog.shown("edge"), dialog.hover_var.get()), (12, 0, world_dialog.DISCOVERED))
+        self.assertEqual(dialog.heading_var.get(), "Camp: 12 of 12 squares explored. One square is 32 metres across.")
+        self.assertEqual(list(dialog.region_box.cget("values")), ["Camp", "Meadow.R1", "Plains.A2.BossTower"])
+        self.assertIn("Camp: 12 of 12 squares", dialog.shown_text())
+        self.assertEqual(dialog.shown_text().count("Where the hero is"), 1)  # the list is written again, not added to
+        fog = self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedFogOfWarExploration"]["Items"]
+        self.assertEqual([(item["Tag"], set(item["Data"])) for item in fog], [("SW.Region.Camp", {255}), ("SW.Area.Meadow.R1", {255}), ("SW.Area.Plains.A2.BossTower", {255})])
+        self.assertTrue(self.app.change_count and self.app.simple_save_button.instate(["!disabled"]))
+        # Nothing left to discover: the button is greyed out, and asked all the same it says so and asks nothing.
+        self.assertTrue(dialog.discover_button.instate(["disabled"]))
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            dialog.discover()
+        ask.assert_not_called()
+        self.assertEqual(dialog.hover_var.get(), "The whole map is discovered already.")
+        # Nothing reached the game yet; Save to game writes it, and says so in plain words first.
+        self.assertEqual(snapshot_of(self.profile_path), before)
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertIn("• Map: 20 of 20 squares explored in 3 regions (it was 5 of 16 in 2)", ask.call_args.args[1])
+        saved = saves.SaveProfile(self.profile_path).get(HERO).decoded.document
+        self.assertEqual(story.map_explored(saved), (20, 20, 3))
+        dialog.destroy()
+
+    def test_the_map_of_a_hero_no_longer_on_screen_discovers_nothing(self):
+        dialog = self.open_map()
+        self.app.document = copy.deepcopy(self.app.document)  # as after Discard changes, or the game saving: another copy is the one in hand now
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo") as told:
+            dialog.discover_button.invoke()
+        self.assertIn("Open the World map again", told.call_args.args[1])
+        self.assertEqual((self.app.change_count, dialog.shown("explored")), (0, 4))
+        dialog.destroy()
+        # A map that's only to look at (the recorder's own, of whatever it recorded) has no such button; nor has one to press it for.
+        plain = gui.WorldDialog(self.root, hero_with_a_world())
+        self.assertFalse(plain.discover_button.winfo_manager())
+        plain.discover()
+        self.assertEqual(plain.shown("explored"), 4)
+        plain.destroy()
+        # A hero whose save keeps no map has none to discover.
+        nowhere = gui.WorldDialog(self.root, hero_save(), on_discover=lambda _document: True)
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            nowhere.discover()
+        ask.assert_not_called()
+        self.assertEqual(nowhere.hover_var.get(), "This hero's save keeps no map yet. Play until the game has drawn one.")
+        nowhere.destroy()
 
 
 class WorldMapInLiquidGlassTests(WorldMapTests):
@@ -2826,10 +2893,24 @@ class StoryProgressTests(WindowTestCase):
             self.assertEqual((self.buttons(dialog), dialog.stands_var.get()), (buttons, stands), name)
             self.assertIn(said, dialog.note_var.get())
         self.assertEqual(dialog.steps_text().splitlines(), ["·\tK01\tdefeat enemies", "·\tSequence01\ta group of steps, one after the other"])
-        # A group's heading isn't a quest: picking it picks its first one.
-        dialog.tree.selection_set(story_dialog.GROUP_PREFIX + "Side quests: Rainy Plains")
+        # A category's own line says how many of its quests are done, and Finish all while any is left.
+        tree = dialog.tree
+        self.assertEqual([(tree.item(group, "text"), *tree.item(group, "values")) for group in tree.get_children()], [
+            ("Main story", "1 of 4 done", "Finish all"), ("Side quests: Howling Woods", "0 of 1 done", "Finish all"), ("Side quests: Rainy Plains", "0 of 1 done", "Finish all"),
+        ])
+        # Picked, it shows the category: how its quests stand, each of them, and the one button that's for all of it.
+        tree.selection_set(story_dialog.GROUP_PREFIX + "Main story")
         dialog.update()
-        self.assertEqual(dialog.quest.name, "PLa2_S15_A")
+        self.assertEqual((dialog.quest, dialog.category, dialog.title_var.get()), (None, "Main story", "Main story"))
+        self.assertEqual(dialog.stands_var.get(), "4 quests: 1 finished, 1 active, 2 not met yet.")
+        self.assertEqual((self.buttons(dialog), dialog.category_button.cget("text"), dialog.category_button.instate(["!disabled"])), ([], "Finish all in Main story", True))
+        self.assertIn("Finish all finishes the 3 quests here that aren't finished yet, the 2 this hero hasn't met included.", dialog.note_var.get())
+        self.assertEqual(dialog.steps_text().splitlines(), ["✓\tThe Illagers from the Rift (CA01)", "▶\tThe Missing Note Blocks (CA04)", "·\tCA04_BR", "·\tHiking Frozen Highlands (CA05)"])
+        self.assertEqual(dialog.list_note_var.get(), story_dialog.QUESTS_NOTE)
+        # With a quest picked, the button is for that quest's category.
+        dialog.pick("FOa1_S10_A")
+        self.assertEqual((dialog.category, dialog.category_button.cget("text"), dialog.list_note_var.get()), ("Side quests: Howling Woods", "Finish all in Side quests: Howling Woods", story_dialog.STEPS_NOTE))
+        self.assertTrue(dialog.all_button.instate(["!disabled"]))
         # Looking changes nothing.
         dialog.destroy()
         self.assertEqual((self.app.change_count, snapshot_of(self.profile_path)), (0, before))
@@ -2837,7 +2918,10 @@ class StoryProgressTests(WindowTestCase):
     def test_finishes_starts_over_adds_and_tracks(self):
         dialog = self.open_story()
         dialog.finish_button.invoke()
-        self.assertEqual(dialog.message_var.get(), "Finished The Missing Note Blocks (CA04). Added what the game opens after it: Hiking Frozen Highlands (CA05) and CA04_BR. Press Save to game when you're done.")
+        said = "Finished The Missing Note Blocks (CA04). Added what the game opens after it: Hiking Frozen Highlands (CA05) and CA04_BR. Press Save to game when you're done."
+        self.assertEqual(dialog.message_var.get(), said)
+        dialog.update()  # the list is written again and its line picked again: what was said stays until another line is picked
+        self.assertEqual(dialog.message_var.get(), said)
         self.assertEqual(str(dialog.message.cget("style")), "Success.TLabel")
         self.assertEqual((dialog.quest.name, dialog.quest.state, self.buttons(dialog)), ("CA04", "Completed", ["Start it over"]))
         self.assertEqual(self.rows(dialog)[0][1], [
@@ -2874,6 +2958,79 @@ class StoryProgressTests(WindowTestCase):
         # Nothing but the quests: the achievements are as the game left them.
         self.assertEqual(saved["CharacterSaveV1"]["Achievements"], hero_with_a_world()["CharacterSaveV1"]["Achievements"])
 
+    def test_finishes_a_whole_category_and_then_the_whole_game(self):
+        dialog = self.open_story()
+        tree = dialog.tree
+        dialog.pick_category("Main story")
+        # It asks first, and No leaves everything as it was.
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            dialog.category_button.invoke()
+        title, question = ask.call_args.args[:2]
+        self.assertEqual((title, ask.call_args.kwargs["default"]), ("Finish all in Main story", "no"))
+        self.assertTrue(question.startswith("Finish all of Main story?\n\nThat's 3 quests. 2 of them this hero hasn't met yet: they are added first, then finished.\n\n"), question)
+        self.assertIn("isn't added", question)
+        self.assertIn("Discard changes takes it back", question)
+        self.assertEqual((self.app.change_count, dialog.message_var.get()), (0, ""))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True):
+            dialog.category_button.invoke()
+        self.assertEqual(dialog.message_var.get(), "Finished 3 quests in Main story. 2 of them were added first. Press Save to game when you're done.")
+        self.assertEqual((tree.item(story_dialog.GROUP_PREFIX + "Main story", "values"), dialog.category, dialog.category_button.instate(["disabled"])), (("4 of 4 done", ""), "Main story", True))
+        self.assertEqual(dialog.stands_var.get(), "4 quests: 4 finished.")
+        self.assertEqual(dialog.note_var.get(), "Every quest here is finished.")
+        self.assertTrue(self.app.change_count)
+        # A category with nothing left says so when asked all the same, and asks nothing.
+        with mock.patch("tkinter.messagebox.askyesno") as ask:
+            dialog.finish_category("Main story")
+        ask.assert_not_called()
+        self.assertEqual(dialog.message_var.get(), "Every quest in Main story is finished already.")
+        # A press on Finish all, on a category's own line, is for that category.
+        self.show_on_screen(dialog)
+        x, y, wide, tall = tree.bbox(story_dialog.GROUP_PREFIX + "Side quests: Howling Woods", "steps")
+        self.assertEqual(dialog._finish_all_at(x + wide // 2, y + tall // 2), "Side quests: Howling Woods")
+        self.assertIsNone(dialog._finish_all_at(*[at + 4 for at in tree.bbox(story_dialog.GROUP_PREFIX + "Side quests: Howling Woods", "#0")[:2]]))  # its name isn't the button
+        self.assertIsNone(dialog._finish_all_at(*[at + 4 for at in tree.bbox(story_dialog.GROUP_PREFIX + "Main story", "steps")[:2]]))  # nothing left there
+        self.assertIsNone(dialog._finish_all_at(*[at + 4 for at in tree.bbox(story_dialog.QUEST_PREFIX + "FOa1_S10_A", "steps")[:2]]))  # a quest's line has its steps there
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            tree.event_generate("<Button-1>", x=x + wide // 2, y=y + tall // 2)
+            dialog.update()
+        self.assertEqual(ask.call_args.args[0], "Finish all in Side quests: Howling Woods")
+        self.assertEqual(dialog.message_var.get(), "Finished 1 quest in Side quests: Howling Woods. Press Save to game when you're done.")
+        # The whole game: what's left anywhere, here one quest the hero hasn't met.
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            dialog.all_button.invoke()
+        self.assertEqual(ask.call_args.args[0], "Finish the whole game")
+        self.assertTrue(ask.call_args.args[1].startswith("Finish the whole game?\n\nThat's 1 quest: every one the editor knows that isn't finished, the main story and the side quests. 1 of them this hero hasn't met yet: it is added first, then finished."))
+        self.assertEqual(dialog.message_var.get(), "Finished the whole game: 1 quest. 1 of them was added first. Press Save to game when you're done.")
+        self.assertTrue(dialog.all_button.instate(["disabled"]))
+        self.assertEqual([tree.item(group, "values") for group in tree.get_children()], [("4 of 4 done", ""), ("1 of 1 done", ""), ("1 of 1 done", "")])
+        dialog.destroy()
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True), mock.patch("tkinter.messagebox.showinfo"):
+            self.app.save_to_game()
+        self.assertTrue(all(quest.state == "Completed" for quest in story.quests(self.saved())))
+        self.assertEqual(len(story.quests(self.saved())), 6)
+
+    def test_a_quest_finished_without_its_numbers_is_finished_again(self):
+        # As version 1.16.0 left a quest nobody had sent finished: done, with its interact step at nothing.
+        self.app.document["CharacterSaveV1"]["quest"]["Quests"][0]["TaskData"] = [{"TaskName": "CA01_I01", "State": "Completed", "PartialProgress": 0}]
+        dialog = self.open_story()
+        tree = dialog.tree
+        self.assertEqual(tree.item(story_dialog.QUEST_PREFIX + "CA01", "values"), ("finish again", "1 of 1"))
+        self.assertEqual(tree.item(story_dialog.GROUP_PREFIX + "Main story", "values"), ("0 of 4 done", "Finish all"))
+        dialog.pick("CA01")
+        self.assertEqual(self.buttons(dialog), ["Finish it", "Start it over"])
+        self.assertIn("This quest is finished, but one of its steps is without the number a save holds with such a step once it's done.", dialog.note_var.get())
+        self.assertIn("Finish it gives it its number.", dialog.note_var.get())
+        dialog.pick_category("Main story")
+        self.assertEqual(dialog.stands_var.get(), "4 quests: 1 to finish again, 1 active, 2 not met yet.")
+        with mock.patch("tkinter.messagebox.askyesno", return_value=False) as ask:
+            dialog.all_button.invoke()
+        self.assertIn("1 of them is finished already, without the number its steps carry in a save: it gets that.", ask.call_args.args[1])
+        dialog.pick("CA01")
+        dialog.finish_button.invoke()
+        self.assertEqual(dialog.message_var.get(), "The Illagers from the Rift (CA01): one finished step given its number. Press Save to game when you're done.")
+        self.assertEqual((tree.item(story_dialog.QUEST_PREFIX + "CA01", "values"), self.buttons(dialog)), (("finished", "1 of 1"), ["Start it over"]))
+        self.assertEqual(self.app.document["CharacterSaveV1"]["quest"]["Quests"][0]["TaskData"][0]["PartialProgress"], 1)
+
     def test_has_the_hero_start_at_a_station_it_has_found(self):
         dialog = self.open_story()
         self.assertEqual(list(dialog.station_box.cget("values")), ["Town Fountain (Brave Haven)", "Haven Station (Brave Haven)", "Little Howl Hamlet (Howling Woods)"])
@@ -2898,7 +3055,7 @@ class StoryProgressTests(WindowTestCase):
         dialog = self.open_story()
         self.show_on_screen(dialog)
         self.needs_room_for(dialog)
-        for button in (dialog.finish_button, dialog.track_button, dialog.start_button, dialog.close_button):
+        for button in (dialog.finish_button, dialog.track_button, dialog.category_button, dialog.start_button, dialog.all_button, dialog.close_button):
             self.assert_in_view(button, dialog)
         dialog.destroy()
         # A hero whose save keeps no quests and no place: the window says so, and offers what the editor's list has.
