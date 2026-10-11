@@ -998,17 +998,22 @@ class HeroTabTests(WindowTestCase):
                 self.wait_until(settled)
             self.assertEqual((app.status_var.get(), pack.exists() and sorted(path.name for path in pack.iterdir())), ("Something else.", []))
         # It stops part of the way: what it was saying goes, and the rest waits for the next time.
+        import threading
+
         calls = iter([json.dumps({"version": 1, "pictures": listed}).encode()])
+        under_way = threading.Event()  # the site fails only once the status line reads as it does while they arrive
 
         def falters(url, most, timeout=30):
             try:
                 return next(calls)
             except StopIteration:
+                under_way.wait(10)
                 raise OSError("the site went away") from None
 
         with mock.patch.object(picture_pack, "_get", falters):
             app.get_pictures_automatically()
-            app.status_var.set("Getting item pictures 1/2…")  # as the status line reads while they arrive
+            app.status_var.set("Getting item pictures 1/2…")
+            under_way.set()
             self.wait_until(settled)
         self.assertEqual(app.status_var.get(), "")
 
