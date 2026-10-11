@@ -375,10 +375,13 @@ TALISMAN_LEVEL_TAGS = {
 # /issues/37 (made with 1.15.1) holds Precision II (0.15, on Prime Enchanter's Gauntlets), SpeedBoost I (0.05, on a
 # Sharpshooter Fedora) and Sniper III (0.75, on a Powerbow). Its sender was asked about the three by name, and said
 # the game rolled them.
-# Still waiting: Deflect I (0.1, on a Disciple Robe) on the second list of /issues/20, which has an item beside it
-# that the editor had changed (a Unique Greatsword under the plain item's ID), and the ones on /issues/26. Nothing
-# was taken from the items on /issues/34: its sender said every item with effects there had been changed with the
-# editor.
+# The second list on /issues/20 (made with 1.15.2) holds Deflect I (0.1, on a Disciple Robe), and /issues/38 (made
+# with 1.15.2) holds RapidStrike I (0.1, on Rover Pauldrons). Each sender was asked about the tier by name: the game
+# rolled it. (The first of those lists has a Greatsword saved as Unique under the plain item's ID, which no other
+# save has shown; its sender says nothing on it was edited, so what makes one isn't known.)
+# Still waiting: the ones on /issues/26. Nothing was taken from the items on /issues/34: its sender said every item
+# with effects there had been changed with the editor. Two tiers are left that no list has vouched for:
+# ElementalProtection I and Thorns I.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"I": 0.2, "II": 0.25, "III": 0.3}),
@@ -388,7 +391,7 @@ GEAR_EFFECTS = {
     "Cooldown": ("Cooldown", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "CriticalEdge": ("CriticalEdge", {"I": 0.1, "II": 0.2, "III": 0.3}),
     "CriticalHit": ("CriticalHit", {"I": 0.05, "II": 0.1, "III": 0.15}),
-    "Deflect": ("Deflect", {"II": 0.15, "III": 0.2}),
+    "Deflect": ("Deflect", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Desperation": ("Desperation", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Duelist": ("Duelist", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "EagleEye": ("EagleEye", {"I": 0.1, "II": 0.15, "III": 0.2}),
@@ -418,7 +421,7 @@ GEAR_EFFECTS = {
     "Precision": ("Precision", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "ProjectileProtection": ("ProjectileProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "Protection": ("Protection", {"I": -0.1, "II": -0.15, "III": -0.2}),
-    "RapidStrike": ("RapidStrike", {"II": 0.15, "III": 0.2}),
+    "RapidStrike": ("RapidStrike", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Reconstruction": ("Reconstruction", {"I": -0.15, "II": -0.2, "III": -0.25}),
     "Reeling": ("Reeling", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Regeneration": ("Regeneration", {"I": 0.05, "II": 0.075, "III": 0.1}),

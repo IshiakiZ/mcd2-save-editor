@@ -491,12 +491,15 @@ class RealItemListTests(unittest.TestCase):
         # rolled them. (The Sniper III on /issues/36 had been put on with the editor, its sender said, so that one
         # didn't count.)
         vouched.update({("Precision", "II"): 0.15, ("SpeedBoost", "I"): 0.05, ("Sniper", "III"): 0.75})
+        # A second list on /issues/20 and the one on /issues/38, both made with 1.15.2, hold one each. Each sender was
+        # asked about the tier by name: the game rolled it.
+        vouched.update({("Deflect", "I"): 0.1, ("RapidStrike", "I"): 0.1})
         self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
-        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 176))
-        # The four nobody has vouched for stay as the table has them. Deflection I is on a list whose sender hasn't
-        # said yet (a second one on /issues/20); Elemental Protection I is on one whose items were the editor's work.
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 178))
+        # The two nobody has vouched for stay as the table has them. Elemental Protection I is on a list whose items
+        # were the editor's work, its sender said; no list has shown Prickly I.
         unseen = {key: value for key, value in seen.items() if not value[1]}
-        self.assertEqual(unseen, {("Deflect", "I"): (0.1, False), ("ElementalProtection", "I"): (-0.1, False), ("RapidStrike", "I"): (0.1, False), ("Thorns", "I"): (0.5, False)})
+        self.assertEqual(unseen, {("ElementalProtection", "I"): (-0.1, False), ("Thorns", "I"): (0.5, False)})
 
     def test_what_a_list_made_with_1_15_0_added(self):
         # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.

@@ -290,7 +290,7 @@
      "tier": "I",
      "strength": 0.1,
      "shown": "10%",
-     "seen": false,
+     "seen": true,
      "text": "Grants a 10% chance to deflect enemy projectiles."
     },
     {
@@ -1219,7 +1219,7 @@
      "tier": "I",
      "strength": 0.1,
      "shown": "10%",
-     "seen": false,
+     "seen": true,
      "text": "Increases melee attack speed by 10%."
     },
     {
