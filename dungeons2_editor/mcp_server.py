@@ -734,15 +734,20 @@ class EditorServer:
 
         def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
             document = hero.document
+            opened = {kind: len(story.pieces_to_open(document, kind)) for kind in kinds}
+            parts = len(story.gate_parts_to_use(document)) if story.GATES in kinds else 0
             try:
-                opened = {kind: story.open_pieces(document, kind) for kind in kinds}
+                changed = sum(story.open_pieces(document, kind) for kind in kinds)
             except ValueError as exc:
                 raise ToolError(str(exc)) from exc
-            if not any(opened.values()):
+            if not changed:
                 raise ToolError("Every one the editor knows is open already.")
             told = [f"{count} {kind}{'' if count == 1 else 's'}" for kind, count in opened.items() if count]
-            return f"Opened {' and '.join(told)}.", {
-                "shortcuts_opened": opened.get(story.SHORTCUTS, 0), "key_gates_opened": opened.get(story.GATES, 0),
+            text = f"Opened {' and '.join(told)}." if told else "Every key gate was open already."
+            if parts:
+                text += f" {parts} of the gates' locks and keys {'is' if parts == 1 else 'are'} now as a save holds them once a key is in."
+            return text, {
+                "shortcuts_opened": opened.get(story.SHORTCUTS, 0), "key_gates_opened": opened.get(story.GATES, 0), "locks_and_keys_used": parts,
                 "shortcuts_open": list(story.pieces_open(document, story.SHORTCUTS)), "key_gates_open": list(story.pieces_open(document, story.GATES)),
             }
 
@@ -989,8 +994,8 @@ class EditorServer:
                  {"hero": HERO}, self.discover_map, ("hero",)),
             Tool("open_shortcuts_and_gates", "Open shortcuts and key gates", "Open the overworld's shortcuts (rocks that move out of the way once "
                  "the hero has come round to their far side, and a bridge), the gates that a key opens, or both: every one the editor knows "
-                 "from players' saves is marked open, the way a save holds an open one. Keys and their locks are left as they are, and so is "
-                 "everything inside a dungeon.",
+                 "from players' saves is marked open, the way a save holds an open one. With a gate, the lock and the key the editor can tell "
+                 "to be its own are marked as they are once the key is in. Everything inside a dungeon is left as it is.",
                  {"hero": HERO, "what": _string("Which to open. Leave out for both.", enum=["shortcuts", "key_gates", "both"])},
                  self.open_shortcuts_and_gates, ("hero",)),
             Tool("start_at_station", "Start at a minecart station", "Have the hero start at a minecart station it has found (start_points in "

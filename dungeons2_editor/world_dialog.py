@@ -241,8 +241,17 @@ def discover_question(left: int, more: list[str]) -> str:
     return "\n\n".join(told)
 
 
-def open_question(kind: str, count: int, known: int) -> str:
-    """What to ask before opening the shortcuts, or the key gates."""
+def open_question(kind: str, count: int, known: int, parts: int = 0) -> str:
+    """What to ask before opening the shortcuts, or the key gates. ``parts`` is how many locks and keys of those
+    gates aren't yet as a save holds them once a key is in."""
+    if kind == story.GATES and not count:
+        return "\n\n".join((
+            f"{OPEN[kind]}?",
+            f"Every key gate the editor knows is open for this hero, but {parts} of their locks and keys {'is' if parts == 1 else 'are'} as before a key was "
+            f"put in: the gate stands open with its keyhole still there. {'It' if parts == 1 else 'They'} will be marked the way a save holds "
+            f"{'it' if parts == 1 else 'them'} once the key is in: the key in its lock, and the key taken.",
+            "It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back.",
+        ))
     them = "It isn't" if known == 1 else "None of them is" if count == known else "One of them isn't" if count == 1 else f"{count} of them aren't"
     marked = "it will be marked open" if count == 1 else "they will be marked open"
     if kind == story.SHORTCUTS:
@@ -255,7 +264,8 @@ def open_question(kind: str, count: int, known: int) -> str:
         told = [
             f"{OPEN[kind]}?",
             f"The editor knows {known} gate{'' if known == 1 else 's'} that a key opens. {them} open for this hero yet, and {marked}, the way a save "
-            "holds a gate once its key is in. The keys and their locks are left as they are.",
+            "holds a gate once its key is in: the gate open, the key in its lock, and the key taken, for each lock and key the editor can tell to be a "
+            "gate's own.",
         ]
     told.append("It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back.")
     return "\n\n".join(told)
@@ -552,25 +562,30 @@ class WorldDialog(tk.Toplevel):
     def _update_pieces(self) -> None:
         """Each of the two buttons is there to press while the editor knows a shortcut, or a gate, that isn't open."""
         for kind, button in self.piece_buttons.items():
-            button.state(["!disabled"] if story.pieces_to_open(self.document, kind) else ["disabled"])
+            left = story.pieces_to_open(self.document, kind) or (kind == story.GATES and story.gate_parts_to_use(self.document))
+            button.state(["!disabled"] if left else ["disabled"])
 
     def open_pieces(self, kind: str) -> None:
         """Open the shortcuts, or the key gates, once the user has said yes, and write the list again."""
         if self.on_open is None:
             return
         todo, known = len(story.pieces_to_open(self.document, kind)), len(story.pieces(self.document, kind))
-        if not todo:
+        parts = len(story.gate_parts_to_use(self.document)) if kind == story.GATES else 0
+        if not todo and not parts:
             self.hover_var.set(ALL_OPEN[kind] if known else "The editor doesn't know any yet.")
             return
-        if not messagebox.askyesno(OPEN[kind], open_question(kind, todo, known), default="no", parent=self):
+        if not messagebox.askyesno(OPEN[kind], open_question(kind, todo, known, parts), default="no", parent=self):
             return
         if not self.on_open(self.document, kind):
             return
         self.listed = sections(self.document, self.atlas)
         self._write()
         self._update_pieces()
-        what = ("shortcut" if kind == story.SHORTCUTS else "key gate") + ("" if todo == 1 else "s")
-        self.hover_var.set(f"{todo} {what} opened. Press Save to game when you're done.")
+        if todo:
+            what = ("shortcut" if kind == story.SHORTCUTS else "key gate") + ("" if todo == 1 else "s")
+            self.hover_var.set(f"{todo} {what} opened. Press Save to game when you're done.")
+        else:
+            self.hover_var.set(f"{parts} lock{'' if parts == 1 else 's'} and key{'' if parts == 1 else 's'} marked as used. Press Save to game when you're done.")
 
     def _write(self) -> None:
         text, gap = self.text, self.fonts["bold"].metrics("linespace")

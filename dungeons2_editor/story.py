@@ -505,6 +505,14 @@ def discover_map(document: Any) -> tuple[int, list[str]]:
 
 SHORTCUTS, GATES = recorder.SHORTCUT, recorder.GATE
 OVERWORLD = "/Maps/Overworld/"  # the one world every hero walks: what stands in it is named the same in every save
+# Which lock is a gate's, and which key is a lock's, is in the game's own files. What a save shows of it: a lock
+# stands in the same part of the map as its gate (its name has the same piece of the map in it: nine of the ten
+# locks the editor knows), and a key was put there with its lock (its ID starts the same: all seven). The tenth
+# lock is across the line from its gate, and one of the developer's recordings saw the two change in one save, as
+# a key was put in (Meadow A2, 2026-10-11): that pair is written here.
+SEEN_TOGETHER = {"BP_KeyGolemLockActorStateGimmick UAID_D45D640431825D9802_1554914530": "BP_MA2_KeyGate UAID_D45D6404305656A302_1326242774"}
+_PART_OF_MAP = re.compile(r"/_Generated_/([^./]+)\.")
+_PUT_WITH = re.compile(r"_C_UAID_([0-9A-Za-z]+)_\d+$")
 NO_PIECES = "This hero's save keeps no list of the world's rocks and gates yet. Play until the game has saved it once."
 
 
@@ -514,7 +522,7 @@ class Piece:
     of the way or a bridge (a shortcut), or a gate that a key opens."""
 
     path: str  # as a save names it
-    kind: str  # SHORTCUTS or GATES
+    kind: str  # SHORTCUTS or GATES; recorder.LOCK or recorder.KEY for what goes with a gate (gate_parts)
     name: str  # what the game's files call it, in words: Forest Roadblock
     opened: tuple[int, int]  # the two numbers a save holds with it once it's open: the state it was in, the state it's in
     state: tuple[int, int] | None  # the two this hero's save holds with it; None when the save doesn't list it, which is how one stands that nobody has touched
@@ -553,6 +561,47 @@ def pieces(document: Any, kind: str | None = None) -> list[Piece]:
     return sorted(found, key=lambda piece: (piece.kind != SHORTCUTS, piece.name, piece.path))
 
 
+def _found(pattern: re.Pattern, path: str) -> str:
+    match = pattern.search(path)
+    return match.group(1) if match else ""
+
+
+def gate_parts(document: Any) -> list[Piece]:
+    """The locks and the keys that go with the key gates the editor knows, each with how it stands for this hero
+    and the two states a save holds with it once the gate has been opened by playing: the key in its lock (2 then
+    1), the key taken (1 then 2). Only a lock the editor can tell to be one of those gates' own, and a key it can
+    tell to be one of those locks': anything else it leaves alone, since a lock marked as used beside a gate that
+    isn't open would leave that gate shut for good."""
+    mine = {}
+    for actor in _actors(document) or []:
+        if isinstance(actor, dict) and _whole(actor.get("PreviousState")) and _whole(actor.get("CurrentState")):
+            mine[actor.get("SoftObjectPath")] = (actor["PreviousState"], actor["CurrentState"])
+    gates = [piece.path for piece in pieces(document, GATES)]
+    by_the_gates, gate_names = {_found(_PART_OF_MAP, path) for path in gates} - {""}, {world.piece_id(path) for path in gates}
+    listed = []
+    for piece in world.known()["pieces"].values():
+        path, states = (piece.get("path"), piece.get("states")) if isinstance(piece, dict) else (None, None)
+        if isinstance(path, str) and OVERWORLD in path and isinstance(states, list) and states and all(isinstance(pair, list) and len(pair) == 2 and all(map(_whole, pair)) for pair in states):
+            listed.append((path, recorder.piece_kind(path), max(states, key=lambda pair: pair[1])))  # the furthest a save has shown it
+    locks = [
+        (path, used) for path, kind, used in listed
+        if kind == recorder.LOCK and (_found(_PART_OF_MAP, path) in by_the_gates or SEEN_TOGETHER.get(world.piece_id(path)) in gate_names)
+    ]
+    put_with = {_found(_PUT_WITH, path) for path, _used in locks} - {""}
+    by_the_locks = by_the_gates | ({_found(_PART_OF_MAP, path) for path, _used in locks} - {""})
+    keys = [
+        (path, used) for path, kind, used in listed
+        if kind == recorder.KEY and (_found(_PUT_WITH, path) in put_with or _found(_PART_OF_MAP, path) in by_the_locks)
+    ]
+    found = [Piece(path, kind, recorder.piece_name(path), (used[0], used[1]), mine.get(path)) for kind, group in ((recorder.LOCK, locks), (recorder.KEY, keys)) for path, used in group]
+    return sorted(found, key=lambda piece: (piece.kind != recorder.LOCK, piece.path))
+
+
+def gate_parts_to_use(document: Any) -> list[Piece]:
+    """The locks and keys of the key gates that aren't yet as a save holds them once the gate is open."""
+    return [piece for piece in gate_parts(document) if not piece.open]
+
+
 def pieces_open(document: Any, kind: str) -> tuple[int, int]:
     """How many of the shortcuts, or of the key gates, the editor knows are open for this hero, and how many it knows."""
     known = pieces(document, kind)
@@ -566,12 +615,13 @@ def pieces_to_open(document: Any, kind: str) -> list[Piece]:
 
 def open_pieces(document: Any, kind: str) -> int:
     """Open every shortcut, or every key gate, the editor knows: each is listed with the two states a save holds
-    with it once it's open, where the game lists one (after the ones the save has). Returns how many it opened.
+    with it once it's open, where the game lists one (after the ones the save has). With the key gates go their
+    locks and keys (gate_parts), each as a save holds it once the key is in. Returns how many things it changed.
     An error if the save keeps no such list."""
     actors = _actors(document)
     if actors is None:
         raise ValueError(NO_PIECES)
-    todo = pieces_to_open(document, kind)
+    todo = pieces_to_open(document, kind) + (gate_parts_to_use(document) if kind == GATES else [])
     for piece in todo:
         mine = next((actor for actor in actors if isinstance(actor, dict) and actor.get("SoftObjectPath") == piece.path), None)
         if mine is None:
@@ -615,4 +665,7 @@ def changes(before: Any, after: Any) -> list[str]:
         was, now = pieces_open(before, kind), pieces_open(after, kind)
         if was != now:
             lines.append(f"{words}: {now[0]} of the {now[1]} the editor knows open (it was {was[0]})")
+    was, now = [sum(1 for piece in gate_parts(version) if piece.open) for version in (before, after)]
+    if was != now:
+        lines.append(f"Locks and keys of those gates: {now} of {len(gate_parts(after))} as they are once a key is in (it was {was})")
     return lines

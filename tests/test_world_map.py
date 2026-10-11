@@ -68,8 +68,13 @@ class WorldMapListTests(unittest.TestCase):
         self.assertIn("2 of them aren't open for this hero yet, and they will be marked open, the way a save holds one that is.", question)
         self.assertTrue(question.endswith("nothing reaches the game until Save to game, and Discard changes takes it back."))
         question = world_dialog.open_question(story.GATES, 2, 2)
-        self.assertIn("The editor knows 2 gates that a key opens. None of them is open for this hero yet, and they will be marked open, the way a save holds a gate once its key is in. "
-                      "The keys and their locks are left as they are.", question)
+        self.assertIn("The editor knows 2 gates that a key opens. None of them is open for this hero yet, and they will be marked open, the way a save holds a gate once its key is in: "
+                      "the gate open, the key in its lock, and the key taken, for each lock and key the editor can tell to be a gate's own.", question)
+        # Every gate open, and locks and keys still as before a key went in: the question says what's left to do.
+        left = world_dialog.open_question(story.GATES, 0, 2, 3)
+        self.assertIn("Every key gate the editor knows is open for this hero, but 3 of their locks and keys are as before a key was put in: the gate stands open with its keyhole still there. "
+                      "They will be marked the way a save holds them once the key is in: the key in its lock, and the key taken.", left)
+        self.assertIn("1 of their locks and keys is as before", world_dialog.open_question(story.GATES, 0, 2, 1))
         self.assertIn("One of them isn't open for this hero yet, and it will be marked open", world_dialog.open_question(story.GATES, 1, 4))
         self.assertIn("The editor knows 1 gate that a key opens. It isn't open for this hero yet, and it will be marked open", world_dialog.open_question(story.GATES, 1, 1))
 

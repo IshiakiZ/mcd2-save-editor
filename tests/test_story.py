@@ -249,9 +249,22 @@ class StoryTests(unittest.TestCase):
         self.assertEqual((story.open_pieces(self.document, story.SHORTCUTS), len(place["SavedActorStates"])), (0, 4))  # nothing left to open
         line = "Shortcuts: 3 of the 3 the editor knows open (it was 1)"
         self.assertEqual((story.changes(before, self.document), describe_changes(before, self.document)), ([line], [line]))
-        self.assertEqual(story.open_pieces(self.document, story.GATES), 2)
-        self.assertEqual(place["SavedActorStates"][4:], [helpers.as_saved(helpers.KEY_GATE), helpers.as_saved(helpers.CAMP_GATE)])
-        self.assertEqual(story.changes(before, self.document), [line, "Key gates: 2 of the 2 the editor knows open (it was 0)"])
+        # With the gates go the lock that stands by one of them and the key that was put there with that lock: the lock
+        # has its key already, so it's the key that's left to mark as taken (the furthest state a save has shown it in).
+        self.assertEqual([(piece.kind, piece.name, piece.opened, piece.open) for piece in story.gate_parts(self.document)],
+                         [("key lock", "Key Golem Lock", (2, 1), True), ("key", "Key Golem Spawner", (1, 2), False)])
+        self.assertEqual(story.open_pieces(self.document, story.GATES), 3)
+        self.assertEqual(place["SavedActorStates"][4:], [helpers.as_saved(helpers.KEY_GATE), helpers.as_saved(helpers.CAMP_GATE), helpers.as_saved(helpers.THE_KEY, 1, 2)])
+        self.assertEqual(story.changes(before, self.document), [
+            line, "Key gates: 2 of the 2 the editor knows open (it was 0)", "Locks and keys of those gates: 2 of 2 as they are once a key is in (it was 1)"])
+        self.assertEqual((story.gate_parts_to_use(self.document), story.open_pieces(self.document, story.GATES)), ([], 0))
+        # A gate that stands open with its keyhole still there, as version 1.16.1's first try left one: the lock and the key are still to mark.
+        left = hero_with_a_world()
+        left["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"] = [helpers.as_saved(helpers.KEY_GATE), helpers.as_saved(helpers.CAMP_GATE)]
+        self.assertEqual((story.pieces_to_open(left, story.GATES), len(story.gate_parts_to_use(left)), story.open_pieces(left, story.GATES)), ([], 2, 2))
+        self.assertEqual(left["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"][2:], [helpers.as_saved(helpers.KEY_LOCK, 2, 1), helpers.as_saved(helpers.THE_KEY, 1, 2)])
+        # A lock that stands by no gate the editor knows, and a key put there with no such lock, are nobody's to mark.
+        self.assertFalse(any(piece.path in (helpers.CAVE_GATE, helpers.LIFT_BUTTON, helpers.ROCK_TWO_WAYS) for piece in story.gate_parts(left)))
         # The key in its lock is as it was, and so is everything else of the world.
         self.assertEqual(place["SavedActorStates"][1], helpers.as_saved(helpers.KEY_LOCK, 2, 1))
         self.assertEqual({key: value for key, value in place.items() if key != "SavedActorStates"}, untouched)
@@ -406,9 +419,18 @@ class RealListStoryTests(unittest.TestCase):
             self.assertEqual((piece.opened, piece.state, recorder.piece_kind(piece.path)), ((0, 1), None, piece.kind))
         self.assertEqual({piece.name for piece in gates}, {"Gold Key Gate Door", "Silver Key Gate Door", "Illager Concrete Gate7 Wide", "MA2 Key Gate"})
         self.assertTrue(all("Roadblock" in piece.name or "Bridge" in piece.name for piece in shortcuts))
-        # The keys and their locks are in the list, and are not the editor's to write.
+        # The keys and their locks are in the list, and the ones the editor can tell to be those gates' own go with them:
+        # a lock with its key in (2 then 1), a key taken (1 then 2).
         kinds = [recorder.piece_kind(piece["path"]) for piece in self.world["pieces"].values()]
         self.assertTrue(kinds.count(recorder.LOCK) >= 10 and kinds.count(recorder.KEY) >= 7)
+        parts = story.gate_parts(hero_with_a_world())
+        self.assertEqual(sorted({(piece.kind, piece.opened) for piece in parts}), [("key", (1, 2)), ("key lock", (2, 1))])
+        self.assertTrue(sum(piece.kind == recorder.LOCK for piece in parts) >= 10 and sum(piece.kind == recorder.KEY for piece in parts) >= 7)
+        self.assertTrue(all(story.OVERWORLD in piece.path and piece.state is None for piece in parts))
+        from dungeons2_editor import world as the_world
+        for lock, gate in story.SEEN_TOGETHER.items():  # the pair a recording saw change together is of the list's own pieces
+            names = {the_world.piece_id(piece["path"]) for piece in self.world["pieces"].values()}
+            self.assertTrue(lock in names and gate in names, lock)
 
     def test_a_count_is_of_a_step_it_knows(self):
         steps = {step for listed in self.world["quests"].values() for step in listed}

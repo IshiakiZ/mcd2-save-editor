@@ -166,12 +166,13 @@ class StoryToolsTests(ServerTestCase):
         self.assertEqual((done["done"], done["shortcuts_opened"], done["key_gates_opened"], done["shortcuts_open"], done["key_gates_open"]), ("Opened 3 shortcuts.", 3, 0, [3, 3], [0, 2]))
         self.assertEqual(done["unsaved_changes"], ["Shortcuts: 3 of the 3 the editor knows open (it was 0)"])
         done = self.call("open_shortcuts_and_gates", hero="00000000")
-        self.assertEqual((done["done"], done["shortcuts_opened"], done["key_gates_opened"]), ("Opened 2 key gates.", 0, 2))
+        self.assertEqual((done["done"], done["shortcuts_opened"], done["key_gates_opened"], done["locks_and_keys_used"]),
+                         ("Opened 2 key gates. 2 of the gates' locks and keys are now as a save holds them once a key is in.", 0, 2, 2))
         self.assertIn("Every one the editor knows is open already", self.call("open_shortcuts_and_gates", hero="00000000"))
         self.call("save_changes", hero="00000000")
         saved = self.saved_hero().document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]
-        self.assertEqual([actor["SoftObjectPath"] for actor in saved], [helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE])
-        self.assertTrue(all((actor["PreviousState"], actor["CurrentState"], actor["Version"]) == (0, 1, 0) for actor in saved))
+        self.assertEqual(saved, [helpers.as_saved(path) for path in (helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE)]
+                         + [helpers.as_saved(helpers.KEY_LOCK, 2, 1), helpers.as_saved(helpers.THE_KEY, 1, 2)])
         saves.SaveProfile(self.profile).save(HERO, hero_save(), self.dir / "backups", check_game=lambda: [])
         self.server = EditorServer(self.profile, self.dir / "backups")
         self.assertIn("keeps no list of the world's rocks and gates yet", self.call("open_shortcuts_and_gates", hero="00000000"))

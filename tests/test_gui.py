@@ -2776,7 +2776,7 @@ class WorldMapTests(WindowTestCase):
         self.assertTrue(self.app.change_count and self.app.simple_save_button.instate(["!disabled"]))
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
             gates.invoke()
-        self.assertIn("The keys and their locks are left as they are.", ask.call_args.args[1])
+        self.assertIn("the gate open, the key in its lock, and the key taken, for each lock and key the editor can tell to be a gate's own.", ask.call_args.args[1])
         self.assertEqual(dialog.hover_var.get(), "2 key gates opened. Press Save to game when you're done.")
         self.assertTrue(gates.instate(["disabled"]))
         # Asked again all the same, it says they're open and asks nothing.
@@ -2785,16 +2785,29 @@ class WorldMapTests(WindowTestCase):
         ask.assert_not_called()
         self.assertEqual(dialog.hover_var.get(), "Every shortcut the editor knows is open already.")
         actors = self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]
-        self.assertEqual(actors, [helpers.as_saved(path) for path in (helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE)])
+        self.assertEqual(actors, [helpers.as_saved(path) for path in (helpers.BRIDGE, helpers.ROCK, helpers.ROCK_OPENED, helpers.KEY_GATE, helpers.CAMP_GATE)]
+                         + [helpers.as_saved(helpers.KEY_LOCK, 2, 1), helpers.as_saved(helpers.THE_KEY, 1, 2)])  # with the gates, the lock by one of them and its key
         # Nothing reached the game yet; Save to game writes it, and says so in plain words first.
         self.assertEqual(snapshot_of(self.profile_path), before)
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):
             self.app.save_to_game()
         self.assertIn("• Shortcuts: 3 of the 3 the editor knows open (it was 0)", ask.call_args.args[1])
         self.assertIn("• Key gates: 2 of the 2 the editor knows open (it was 0)", ask.call_args.args[1])
+        self.assertIn("• Locks and keys of those gates: 2 of 2 as they are once a key is in (it was 0)", ask.call_args.args[1])
         saved = saves.SaveProfile(self.profile_path).get(HERO).decoded.document
         self.assertEqual((story.pieces_open(saved, story.SHORTCUTS), story.pieces_open(saved, story.GATES)), ((3, 3), (2, 2)))
         dialog.destroy()
+        # A gate that stands open with its keyhole still there: the button is there to finish it, and says what's left.
+        self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"][5:] = []
+        again = self.open_map()
+        self.assertTrue(again.piece_buttons[story.GATES].instate(["!disabled"]) and again.piece_buttons[story.SHORTCUTS].instate(["disabled"]))
+        with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask:
+            again.piece_buttons[story.GATES].invoke()
+        self.assertIn("Every key gate the editor knows is open for this hero, but 2 of their locks and keys are as before a key was put in", ask.call_args.args[1])
+        self.assertEqual(again.hover_var.get(), "2 locks and keys marked as used. Press Save to game when you're done.")
+        self.assertTrue(again.piece_buttons[story.GATES].instate(["disabled"]))
+        self.assertEqual(len(self.app.document["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"]), 7)
+        again.destroy()
         # A map that's only to look at has neither button, and the map of a hero no longer on screen opens nothing.
         plain = gui.WorldDialog(self.root, hero_with_a_world())
         self.assertFalse(any(button.winfo_manager() for button in plain.piece_buttons.values()))
