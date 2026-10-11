@@ -84,9 +84,11 @@ your zip is that build. The details are in
 
 ### Privacy
 
-The editor never sends your saves, your hero's data or anything about you anywhere. It goes online for three things
-only: when it opens, it asks GitHub whether a newer version is out; **Update** downloads that version; and it
-downloads item pictures from minecraft.wiki when you ask.
+The editor never sends your saves, your hero's data or anything about you anywhere. It goes online for these things
+only. When it opens, it asks GitHub whether a newer version is out, and it gets the game's item pictures from
+batch-ly.com, the developer's own site, if this PC hasn't got them yet (**Menu → Don't get item pictures
+automatically** turns that off). **Update** downloads the new version. **Get item pictures…** fetches pictures
+when you ask: from batch-ly.com, or from minecraft.wiki if they aren't there.
 [More](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Safety-and-privacy#privacy).
 
 ## Let an AI customise your hero (MCP)
@@ -175,7 +177,7 @@ python -m dungeons2_editor import GlobalSaveDataDefault out.json # asks first, b
 python -m dungeons2_editor backup
 python -m dungeons2_editor restore "backups\2026-09-30_14-35-12"
 python -m dungeons2_editor verify                               # checks saves re-encode exactly; writes nothing
-python -m dungeons2_editor pictures                             # download item pictures from minecraft.wiki
+python -m dungeons2_editor pictures                             # download item pictures (from batch-ly.com)
 python -m dungeons2_editor items                                # every item the editor can add, with its ID
 python -m dungeons2_editor ids                                  # item IDs in your saves the editor doesn't know yet
 python -m dungeons2_editor record                               # the play recorder in a console (--atlas: write the map files)
@@ -213,7 +215,7 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 | `dungeons2_editor/gui.py`, `item_picker.py`, `presets_dialog.py`, `restore_dialog.py`, `layout.py` | The window, its dialogs, and sizing them for the display's scaling |
 | `dungeons2_editor/inventory_screen.py`, `game_style.py`, `game_art.py` | Simple mode's game-style screen, its colours and theme, and its pixel art |
 | `dungeons2_editor/hero_tab.py`, `hero_editing.py` | Advanced mode's Hero tab, and the editing both modes share |
-| `dungeons2_editor/icons.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the Minecraft Wiki downloader, and the names you give items |
+| `dungeons2_editor/icons.py`, `picture_pack.py`, `wiki.py`, `my_items.py` | Pictures (and cutting items out of them), the downloaders for the picture pack and the Minecraft Wiki, and the names you give items |
 | `dungeons2_editor/mcp_server.py`, `ai_dialog.py` | The MCP server for AI assistants, and the window that shows how to connect one |
 | `dungeons2_editor/updater.py` | Finding a newer version on GitHub, and replacing the packaged editor with it |
 | `dungeons2_editor/edition.py` | Which edition this is: the one on GitHub, or the one for Nexus Mods that never goes online (`tools/make_edition.py` switches) |
@@ -221,8 +223,8 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 | `dungeons2_editor/recommend.py` | "Best for": the editor's picks of effects for a goal, out of the ones the game can roll on an item |
 | `dungeons2_editor/recorder.py`, `recorder_dialog.py`, `world_dialog.py` | The play recorder: what the game saves while you play, world progress and where things are, and its window; the World map window |
 | `dungeons2_editor/world.py`, `data/world.json` | What the editor knows of the game's world (quests, doors, stations, regions, chest spots), and what a save shows of it that's new, for Share item IDs (`tools/build_world_list.py` adds recordings and players' lists to it) |
-| `dungeons2_editor/game_launch.py`, `whats_new.py` | Starting the game, and the What's new window (the notes are `data/release-notes.md`) |
-| `tools/` | The item catalog builder, and the release build's helpers and checks |
+| `dungeons2_editor/game_launch.py`, `whats_new.py` | Starting the game, and the What's new window (the notes are `data/release-notes.md`, their pictures `data/whats-new/`) |
+| `tools/` | The item catalog builder, the picture pack maker, and the release build's helpers and checks |
 
 ## Credits and disclaimer
 
@@ -271,6 +273,8 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 - The last enchantment books got their names from [icicle1133](https://github.com/icicle1133), who has them
   ([#34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)), and Critical Quiver came in a second list from
   [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
+  [hayden-xyz](https://github.com/hayden-xyz)'s list ([#38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) added two doors and an
+  effect tier.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
@@ -292,8 +296,10 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
 - The best gear, the kits and the numbers in the presets come from MetaBot.GG's
   [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
   [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
-- Item pictures come from the [Minecraft Wiki](https://minecraft.wiki) and are downloaded on your PC when you ask;
-  none are included here. The screenshots use a made-up demo save and the editor's own drawings.
+- Item pictures are Mojang's artwork. The editor downloads the game's own to your PC from the developer's site,
+  batch-ly.com, and **Get item pictures…** gets the [Minecraft Wiki](https://minecraft.wiki)'s if those aren't
+  there. None of them is in this repository or in the download; one screenshot in the What's new window shows the
+  editor with them. The other screenshots use a made-up demo save and the editor's own drawings.
 - Simple mode follows the idea of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit), the save editor for the
   first Minecraft Dungeons, which is laid out like that game's inventory. Its colours and layout follow Minecraft
   Dungeons II's own inventory screen; the fonts are Windows' own and the icons are drawn by the editor.

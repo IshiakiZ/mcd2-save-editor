@@ -1,3 +1,12 @@
+## What's new in 1.15.4
+
+- **The game's own item pictures.** The editor now gets them by itself when it opens, for every item but one. **Menu → Don't get item pictures automatically** turns that off. <!-- online -->
+
+  ![The editor showing the game's item pictures](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.15.4/dungeons2_editor/data/whats-new/1.15.4-pictures.png)
+- **What's new can show pictures.** After an update it waits for you to close it, so the news isn't missed.
+- **Two more effect tiers count as seen,** on [darklynkttv](https://github.com/darklynkttv)'s and [hayden-xyz](https://github.com/hayden-xyz)'s word: Deflection I and Swiftness I. Two of the 180 are left.
+- **Two more doors** in the Frozen Highlands, from hayden-xyz's list.
+
 ## What's new in 1.15.3
 
 - **Every enchantment book goes by its name in the game.** The last five are Bottomless Brew, Shadowcloak, Shielding Smite, Soul Blast and Tumbleshot, thanks to [icicle1133](https://github.com/icicle1133).
@@ -13,17 +22,6 @@
 - **Tempo Theft, Ricochet and Shockwave can be put on weapons,** at tier III, from gchristol's and itamarnyg8-del's lists. Eleven more effect tiers count as seen, so **Best for** picks from them.
 - **Change an enchanted item's rarity** and its enchantment now gets the enchantment points the game counts at the new rarity.
 - **Stations that no map names** now read like Taiga Beach (Frozen Highlands), and the Town Fountain is no longer listed as one to find.
-
-## What's new in 1.15.1
-
-- **Soulstorm Enhanced.** Tick it in **Change effects…** and the game shows the item as a Soul Storm reward. Found in [regnirok](https://github.com/regnirok)'s list, and checked in the game.
-- **Every Unique comes with its own effect now: 116 of 116.** The last one, the Packleader Paws', was in [berwulf](https://github.com/berwulf)'s list.
-- **Dynamo can be put on armor,** at tier III. The Melee damage kit and the Best armor preset now put it on.
-- **Thundering III** is saved as 0.5 now, the tier's number in the game's table and in a player's save.
-- **Share this recording…** in the play recorder sends what a recording found, without the date, the time of day or where your saves are.
-- **The editor knows much more of the world:** 43 quests, 194 doors and 21 minecart stations, from [regnirok](https://github.com/regnirok)'s list.
-- **A new enchantment,** the one a save calls Multi Potion, at tier III. Twenty more effect tiers count as seen, so **Best for** picks from them.
-- **Shorter notes.** These keep to the main things, for the newest version and the two before it. Every version, in full, is in the changelog.
 
 ## Earlier versions, and the details
 

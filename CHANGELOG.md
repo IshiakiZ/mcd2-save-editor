@@ -7,6 +7,36 @@ The short notes for the newest versions are on the
 **Menu → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.15.4
+
+- **The game's own item pictures.** The editor now has a set of its own: the game's pictures of every weapon, armor
+  piece, artifact, talisman and enchantment book but one (the Wonderful Wheat), and of the emeralds, Echo Shards,
+  enchantment points and level. 331 pictures, 6.5 MB, kept on batch-ly.com, the developer's own site.
+  - **It gets them by itself.** When the editor opens it asks that site for the set's list and downloads the
+    pictures this PC hasn't got: all of them the first time, and after that only new or changed ones. It says
+    so in the status line and asks nothing. **Menu → Don't get item pictures automatically** turns it off.
+  - **Get item pictures…** in the menu (**Get pictures…** on the Hero tab, `pictures` on the command line) gets
+    the same set when you ask, and the Minecraft Wiki's pictures if the set isn't there. The Minecraft Wiki is
+    never asked unless you ask.
+  - They go into the icons folder's `pack` folder. Your own pictures still win over them, and they win over the
+    Minecraft Wiki's. Each download is checked against the size and the SHA-256 that the set's list gives for
+    it, and only a PNG picture is kept.
+  - The pictures are Mojang's artwork. They are not in the repository or the download, apart from one screenshot
+    in the What's new window that shows the editor with them, and the edition that never goes online doesn't
+    fetch them. The README's privacy list says what the editor now contacts.
+- **What's new can show a picture, and waits to be closed after an update.** A change that is easier to show than
+  to tell has a picture under it. The pictures ship with the editor, so nothing is fetched to show them. The
+  window that a new version opens by itself now stays in front until you close it; **Menu → What's new…** opens
+  the same notes without holding you up. The edition that never goes online leaves out a change that is only
+  true of the other one, such as the pictures above.
+- **Two more effect tiers count as seen:** Deflection I and Swiftness I. They are on
+  [darklynkttv](https://github.com/darklynkttv)'s second list ([issue 20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)) and
+  [hayden-xyz](https://github.com/hayden-xyz)'s ([issue 38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) with the numbers the game's table gives,
+  and both senders said the game rolled them. 178 of the 180 tiers are seen now. The two left are Elemental
+  Protection I and Prickly I.
+- **Two more doors:** two basements by the lake in the Frozen Highlands, from hayden-xyz's list. Its other doors
+  and roadblocks are the ones darklynkttv's list brought, in the same places. 247 doors now.
+
 ## 1.15.3
 
 - **Every enchantment book goes by the game's name.** The last five went by the names a save gives them.
