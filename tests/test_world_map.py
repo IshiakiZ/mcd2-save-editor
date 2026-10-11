@@ -108,6 +108,74 @@ class WorldMapListTests(unittest.TestCase):
         mine["found_at"]["quest CA04"] = mine["found_at"]["cutscene SW.UI.Cutscene.Cutscenes.CS02"] = dict(mine["found_at"]["minecart station SW.MinecartStation.ForestA1.Outpost"])
         self.assertEqual([name for kind, name, *_rest in world_dialog.things("SW.Region.Camp", regions, doors, mine) if kind == "found"], ["Little Howl Hamlet", "Cutscenes.CS02"])
 
+    def test_puts_a_rock_a_key_and_a_gate_where_a_recording_saw_them_change(self):
+        from dungeons2_editor import world
+
+        with tempfile.TemporaryDirectory() as folder:
+            listed = Path(folder) / "world.json"
+            # The editor's list knows where a recording saw the bridge and a lock change; this PC's recordings saw the gate.
+            listed.write_text(json.dumps({"pieces": helpers.PIECES, "found": {
+                f"piece {world.piece_id(helpers.BRIDGE)}": [{"region": "SW.Region.Camp", "at": [20, 60]}],
+                f"piece {world.piece_id(helpers.KEY_LOCK)}": [{"region": "SW.Area.Meadow.R1", "at": [1010, 1010]}],
+                f"piece {world.piece_id(helpers.LIFT_BUTTON)}": [{"region": "SW.Region.Camp", "at": [5, 5]}],
+            }}), encoding="utf-8")
+            tests.use_world_list(listed)
+            self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+            hero = hero_with_a_world()
+            hero["CharacterSaveV1"]["WorldExploration"]["SavedActorStates"] = [helpers.as_saved(helpers.KEY_GATE)]
+            # A recording's name for a thing is the end of the save's, which can be cut short in front.
+            seen = {"found_at": {
+                "actor " + helpers.KEY_GATE.rsplit("/", 1)[-1][-90:]: {"near": [40, 70], "region": "SW.Region.Camp"},
+                "actor " + helpers.ROCK.rsplit("/", 1)[-1][-90:]: {"near": None, "region": None},  # saw it change, with no ground newly explored: no place
+                "minecart station SW.MinecartStation.Town": {"near": [1, 1], "region": "SW.Region.Camp"},
+            }}
+            camp = world_dialog.pieces_placed("SW.Region.Camp", hero, seen)
+            self.assertEqual([(kind, name, x, y) for kind, name, x, y, _what in camp], [("piece", "Gold Key Gate Door", 40, 70), ("piece", "Farm Bridge", 20, 60)])
+            self.assertTrue(camp[0][4].startswith("Gold Key Gate Door, a gate a key opens: open for this hero. The save that showed it"), camp[0][4])
+            self.assertTrue(camp[1][4].startswith("Farm Bridge, a shortcut: not open yet for this hero. "), camp[1][4])
+            (lock,) = world_dialog.pieces_placed("SW.Area.Meadow.R1", hero, None)
+            self.assertEqual((lock[1], lock[4].split(". ")[0]), ("Key Golem Lock", "Key Golem Lock, a lock for a key: no key in it yet for this hero"))
+            self.assertEqual(world.piece_id("d:PersistentLevel.BP_MeadowRoadblockActorStateGimmick_C_UAID_B025_1138"), "BP_MeadowRoadblockActorStateGimmick UAID_B025_1138")
+            self.assertEqual((world.piece_id(helpers.CAMP_GATE), world.piece_id("SW.Doorway.Camp.Docks")), ("BP_MA2_KeyGate UAID_AA05_5", ""))
+            # And the list takes such a place from a recording's atlas, to tell and to read back.
+            told = world.of_recordings({"found_at": seen["found_at"]})["found"]
+            self.assertEqual(told, {"minecart station SW.MinecartStation.Town": [{"region": "SW.Region.Camp", "at": [1, 1]}],
+                                    f"piece {world.piece_id(helpers.KEY_GATE)}": [{"region": "SW.Region.Camp", "at": [40, 70]}]})
+            line = "found piece BP_GoldKeyGateDoorActorStateGimmick UAID_AA04_4 - around 40, 70 in SW.Region.Camp"
+            self.assertEqual(world.read_list(line)["found"], {f"piece {world.piece_id(helpers.KEY_GATE)}": [{"region": "SW.Region.Camp", "at": [40, 70]}]})
+
+    def test_puts_what_the_list_knows_and_the_hero_has_not_found_on_the_map_too(self):
+        from dungeons2_editor import recorder
+
+        with tempfile.TemporaryDirectory() as folder:
+            listed = Path(folder) / "world.json"
+            listed.write_text(json.dumps({
+                "doors": {"SW.Doorway.Camp.Docks": {"at": [48.0, 80.0, 0.0], "marker": 7}, "SW.Doorway.Camp.Cellar": {"at": [16.0, 48.0, 0.0], "marker": 8},
+                          "SW.Doorway.Far.Away": {"at": [90000.0, 90000.0, 0.0], "marker": 8}},
+                "found": {"minecart station SW.MinecartStation.PlainsA1.Barn": [{"region": "SW.Region.Camp", "at": [40, 40]}],
+                          "minecart station SW.MinecartStation.Town": [{"region": "SW.Region.Camp", "at": [8, 8]}],
+                          "minecart station SW.MinecartStation.ForestA1.Outpost": [{"region": "SW.Region.Camp", "at": [9, 9]}],
+                          "piece BP_FarmBridgeActorStateGimmick UAID_AA03_3": [{"region": "SW.Region.Camp", "at": [20, 60]}]},
+                "chests": [{"area": "SW.Area.Town", "region": "SW.Region.Camp", "at": [30, 30], "opened": 2},
+                           {"area": "SW.Area.Forest.A1", "region": "SW.Region.Camp", "at": [48, 48], "opened": 2}],
+            }), encoding="utf-8")
+            tests.use_world_list(listed)
+            self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+            document, mine = hero_with_a_world(), recordings_of_a_world()["heroes"]["00000000-0000-1000-8000-000000000002"]
+            regions, doors = recorder.map_regions(document), recorder.door_places(document)
+            more = world_dialog.things_not_found("SW.Region.Camp", regions, doors, mine, document)
+            self.assertEqual([(kind, name, x, y) for kind, name, x, y, _what in more], [
+                ("door?", "Camp.Cellar", 16.0, 48.0),  # a door the hero hasn't found, exactly where other saves have it; the docks' it has, and the far one is in no region of its map
+                ("found?", "Honeycomb Farm", 40, 40),  # a station the hero hasn't found
+                ("found", "Haven Station", 8, 8),  # one it has found, which its own recordings have no place for
+                ("chest?", "2 chests", 30, 30),  # a spot its own recordings don't have; the one they do isn't drawn twice
+            ])
+            self.assertEqual(more[0][4], "Door Camp.Cellar, at 16, 48. This hero hasn't found it yet: other players' saves have it here.")
+            self.assertTrue(more[1][4].endswith(", which this hero has not found yet. Another player's recording saw it turn up around here."), more[1][4])
+            self.assertEqual(more[2][4], "Minecart station Haven Station. Another player's recording saw it turn up around here.")
+            self.assertEqual(more[3][4], "A recording saw 2 chests opened around here, in Brave Haven.")
+        tests.use_world_list(tests.PINNED_WORLD_FILE)
+
     def test_names_made_from_the_games_ids(self):
         self.assertEqual([world_dialog.spaced(name) for name in ("Open100Chests", "Kill10MobsWithATNT", "DefeatACopperMonstrosity", "ReachLevel50")],
                          ["Open 100 Chests", "Kill 10 Mobs With A TNT", "Defeat A Copper Monstrosity", "Reach Level 50"])

@@ -18,16 +18,23 @@ from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
-from . import recorder, story
+from . import recorder, story, world
 from .game_style import match_title_bar
 from .layout import fit_to_contents, scaled_size
 
 GROUND, INK = "#0d1a24", "#d7e3ea"
-DOOR, FOUND, CHEST = "#ff9b3d", "#4cc3ff", "#ffd84a"
+DOOR, FOUND, CHEST, PIECE = "#ff9b3d", "#4cc3ff", "#ffd84a", "#d08cff"
+COLOURS = {"door": DOOR, "found": FOUND, "chest": CHEST, "piece": PIECE}
 LEGEND = (
     (recorder.clarity_colour(255), "explored"), (recorder.clarity_colour(0, True), "not explored, right next to it"),
-    (DOOR, "door"), (FOUND, "found around here"), (CHEST, "chest opened around here"),
+    (DOOR, "door"), (FOUND, "found around here"), (CHEST, "chest opened around here"), (PIECE, "shortcut, key, lock or gate"),
 )
+UNFOUND = "Not found yet"  # the box that shows what the editor's list knows and this hero hasn't found, as hollow dots
+ELSEWHERE = "Another player's recording saw it turn up around here."
+PIECE_WORDS = {  # a kind of piece: what it is, how it stands once the save lists it, and how it stands before
+    recorder.SHORTCUT: ("a shortcut", "open", "not open yet"), recorder.GATE: ("a gate a key opens", "open", "not open yet"),
+    recorder.LOCK: ("a lock for a key", "its key is in", "no key in it yet"), recorder.KEY: ("a key", "taken", "not taken yet"),
+}
 # A save says that a thing was found, not where. A recording has the save it first showed up in, and the ground
 # whose fog cleared between that save and the one before: so it was there, or somewhere the hero went into from there.
 AROUND = "The save that showed it also showed new ground explored here, so it was around here, or in a place you went into from here."
@@ -89,6 +96,63 @@ def things(tag: str, regions: dict[str, dict], doors: dict[str, list[float]], mi
             count = chest.get("opened", 1)
             words = f"{count} chest{'s' if count != 1 else ''}"
             placed.append(("chest", words, chest["near"][0], chest["near"][1], f"{words} opened in {recorder.area_name(str(chest.get('area')))}. {AROUND}"))
+    return placed
+
+
+def pieces_placed(tag: str, document: Any, atlas: dict[str, Any] | None) -> list[tuple[str, str, float, float, str]]:
+    """The shortcuts, keys, locks and gates with a place in a region, as ``things`` gives things: a save names one
+    and says how it stands, never where it is, so the place is where a recording saw it change (this PC's
+    recordings, then the editor's list, which other players' recordings add to). Each says how it stands for this hero."""
+    body = document.get("CharacterSaveV1") if isinstance(document, dict) else None
+    actors = ((body or {}).get("WorldExploration") or {}).get("SavedActorStates") or []
+    mine = {world.piece_id(str(actor.get("SoftObjectPath"))): actor for actor in actors if isinstance(actor, dict)}
+    spots: dict[str, tuple[float, float, str]] = {}
+    for label, place in ((atlas or {}).get("found_at") or {}).items():
+        piece = world.piece_id(label) if label.startswith("actor ") else ""
+        if piece and place.get("near") and place.get("region"):
+            spots.setdefault(piece, (place["near"][0], place["near"][1], str(place["region"])))
+    for label, places in world.known()["found"].items():
+        if label.startswith("piece ") and places:
+            spots.setdefault(label[6:], (places[0]["at"][0], places[0]["at"][1], str(places[0]["region"])))
+    placed = []
+    for piece, (x, y, region) in spots.items():
+        name = piece.replace(" UAID_", "_C_UAID_")  # as a save's name for it ends
+        kind = recorder.piece_kind(name)
+        if region != tag or kind not in PIECE_WORDS:
+            continue
+        what, done, not_yet = PIECE_WORDS[kind]
+        words = recorder.piece_name(name)
+        placed.append(("piece", words, x, y, f"{words}, {what}: {done if piece in mine else not_yet} for this hero. {AROUND}"))
+    return placed
+
+
+def things_not_found(tag: str, regions: dict[str, dict], doors: dict[str, list[float]], mine: dict[str, Any], document: Any) -> list[tuple[str, str, float, float, str]]:
+    """What the editor's list knows in a region that this hero hasn't found, as ``things`` gives things, each kind
+    with a ? after it: doors, exactly where other players' saves have them; minecart stations and cutscenes, around
+    where a recording saw them turn up; and the spots where recordings saw chests opened."""
+    known, progress = world.known(), recorder.world_progress(document)
+    placed = []
+    for name, door in known["doors"].items():
+        at = door.get("at") if isinstance(door, dict) else None
+        if name not in doors and isinstance(at, list) and len(at) >= 2 and recorder.region_of(at[0], at[1], regions) == tag:
+            placed.append(("door?", short(name), at[0], at[1], f"Door {short(name)}, at {at[0]:.0f}, {at[1]:.0f}. This hero hasn't found it yet: other players' saves have it here."))
+    for label, places in known["found"].items():
+        kind = next((kind for kind in ("minecart station", "cutscene") if label.startswith(kind + " ")), "")
+        if not kind or label in (mine.get("found_at") or {}):
+            continue  # a piece has its own dots; and what this hero's recordings placed is on the map already
+        rest = label[len(kind):].strip()
+        name = recorder.station_name(rest) if kind == "minecart station" else short(rest)
+        for place in places[:1]:
+            if place.get("region") == tag:
+                found = label in progress
+                placed.append(("found" if found else "found?", name, place["at"][0], place["at"][1],
+                               f"{kind.capitalize()} {name}{'' if found else ', which this hero has not found yet'}. {ELSEWHERE}"))
+    own = {(chest.get("region"), tuple(chest.get("near") or ())) for chest in mine.get("chests") or []}
+    for chest in known["chests"]:
+        if chest.get("region") == tag and (chest["region"], tuple(chest["at"])) not in own:
+            count = chest.get("opened", 1)
+            words = f"{count} chest{'s' if count != 1 else ''}"
+            placed.append(("chest?", words, chest["at"][0], chest["at"][1], f"A recording saw {words} opened around here, in {recorder.area_name(str(chest.get('area')))}."))
     return placed
 
 
@@ -223,7 +287,7 @@ class WorldDialog(tk.Toplevel):
         frame = ttk.Frame(self, padding=12)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(2, weight=1)
+        frame.rowconfigure(3, weight=1)
         base = tkfont.nametofont("TkDefaultFont", root=self)
         size = abs(int(base.cget("size"))) or 9
         self.fonts = {
@@ -247,16 +311,26 @@ class WorldDialog(tk.Toplevel):
         self.names_var = tk.BooleanVar(value=False)
         self.names_box = ttk.Checkbutton(top, text="Names", variable=self.names_var, command=self.draw)
         self.names_box.pack(side="left", padx=(0, 8))
-        for colour, what in LEGEND:
-            swatch = tk.Canvas(top, width=11, height=11, highlightthickness=0, background=colour)
-            swatch.pack(side="left", padx=(6, 4))
-            ttk.Label(top, text=what, style="Muted.TLabel").pack(side="left")
+        # What the editor's list knows and this hero hasn't found: on the map as hollow dots, unless unticked.
+        self.unfound_var = tk.BooleanVar(value=True)
+        self.unfound_box = ttk.Checkbutton(top, text=UNFOUND, variable=self.unfound_var, command=self.draw)
+        self.unfound_box.pack(side="left", padx=(0, 8))
+        legend = ttk.Frame(frame)
+        legend.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 8))
+        for number, (colour, what) in enumerate(LEGEND):
+            swatch = tk.Canvas(legend, width=11, height=11, highlightthickness=0, background=colour)
+            swatch.pack(side="left", padx=(0 if number == 0 else 10, 4))
+            ttk.Label(legend, text=what, style="Muted.TLabel").pack(side="left")
+        hollow = tk.Canvas(legend, width=11, height=11, highlightthickness=0, background=GROUND)
+        hollow.create_oval(1, 1, 9, 9, outline=INK, width=2)
+        hollow.pack(side="left", padx=(10, 4))
+        ttk.Label(legend, text="hollow: not found yet", style="Muted.TLabel").pack(side="left")
 
         self.heading_var = tk.StringVar()
-        ttk.Label(frame, textvariable=self.heading_var, font=self.fonts["bold"]).grid(row=1, column=0, sticky="w", pady=(0, 6))
+        ttk.Label(frame, textvariable=self.heading_var, font=self.fonts["bold"]).grid(row=2, column=0, sticky="w", pady=(0, 6))
         side = scaled_size(self, MAP_SIDE, MAP_SIDE)[1]
         self.canvas = tk.Canvas(frame, width=side, height=side, background=GROUND, highlightthickness=0)
-        self.canvas.grid(row=2, column=0, sticky="nsew")
+        self.canvas.grid(row=3, column=0, sticky="nsew")
         self.canvas.bind("<Configure>", self._resized)
         # The wheel zooms the map when the pointer is over it, whichever part of the window the turn of it goes to
         # (on Windows that can be the part that last had a click, not the one under the pointer).
@@ -266,7 +340,7 @@ class WorldDialog(tk.Toplevel):
         self.canvas.bind("<ButtonPress-1>", lambda event: self.canvas.scan_mark(event.x, event.y))
         self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
         data = ttk.Frame(frame)
-        data.grid(row=1, column=1, rowspan=2, sticky="nsew", padx=(12, 0))
+        data.grid(row=2, column=1, rowspan=2, sticky="nsew", padx=(12, 0))
         data.rowconfigure(0, weight=1)
         self.text = tk.Text(
             data, width=54, height=10, wrap="word", relief="flat", borderwidth=0, highlightthickness=0, padx=10, pady=6, cursor="arrow", takefocus=False,
@@ -278,7 +352,7 @@ class WorldDialog(tk.Toplevel):
         self.text.configure(yscrollcommand=scroll.set)
 
         bottom = ttk.Frame(frame)
-        bottom.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        bottom.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         bottom.columnconfigure(0, weight=1)
         self.hover_var = tk.StringVar(value=HINT)
         ttk.Label(bottom, textvariable=self.hover_var, style="Muted.TLabel", anchor="w").grid(row=0, column=0, sticky="ew")
@@ -390,14 +464,20 @@ class WorldDialog(tk.Toplevel):
         taken: dict[tuple[float, float], int] = {}
         names: list[tuple[float, float, str, str]] = []
         boxes: list[tuple[float, float, float, float]] = []  # where there's a dot or a name already
-        for kind, name, x, y, what in things(tag, self.regions, self.doors, self.mine):
+        every = things(tag, self.regions, self.doors, self.mine) + pieces_placed(tag, self.document, self.atlas)
+        if self.unfound_var.get():
+            every += things_not_found(tag, self.regions, self.doors, self.mine, self.document)
+        for kind, name, x, y, what in every:
             # Things one save showed are at one spot: side by side, then, not on top of each other.
             beside_it = taken[(x, y)] = taken.get((x, y), -1) + 1
             place, line = recorder.square_of(region, x, y)
             at_x, at_y = place * size + beside_it * (2 * dot + 2), line * size
             box = (at_x - dot, at_y - dot, at_x + dot, at_y + dot)
-            colour = {"door": DOOR, "found": FOUND, "chest": CHEST}[kind]
-            item = canvas.create_rectangle(*box, fill=colour, outline=GROUND, tags=("thing", kind)) if kind == "chest" else canvas.create_oval(*box, fill=colour, outline=GROUND, tags=("thing", kind))
+            # What this hero hasn't found is hollow: its kind's colour around the map's own.
+            unfound, kind = kind.endswith("?"), kind.rstrip("?")
+            colour = COLOURS[kind]
+            look = {"fill": GROUND, "outline": colour, "width": 2, "tags": ("thing", "unfound", "unfound " + kind)} if unfound else {"fill": colour, "outline": GROUND, "tags": ("thing", kind)}
+            item = canvas.create_rectangle(*box, **look) if kind == "chest" else canvas.create_oval(*box, **look)
             canvas.tag_bind(item, "<Enter>", lambda _event, text=what: self.hover_var.set(text))
             canvas.tag_bind(item, "<Leave>", lambda _event: self.hover_var.set(HINT))
             boxes.append(box)

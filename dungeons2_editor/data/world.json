@@ -4107,6 +4107,60 @@
      512
     ]
    }
+  ],
+  "piece BP_ForestRoadblockActorStateGimmick UAID_B025AA660315029902_1575102022": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     156,
+     515
+    ]
+   }
+  ],
+  "piece BP_FarmBridgeActorStateGimmick UAID_08BFB81E52B9489F02_2059509211": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     81,
+     510
+    ]
+   }
+  ],
+  "piece BP_KeyGolemLockActorStateGimmick UAID_B025AA66031527C702_1144398556": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     186,
+     701
+    ]
+   }
+  ],
+  "piece BP_GoldKeyGateDoorActorStateGimmick UAID_B025AA66031527C702_1144392555": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     186,
+     701
+    ]
+   }
+  ],
+  "piece BP_KeyGolemSpawnerActorStateGimmick UAID_B025AA66031527C702_1144401557": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     186,
+     701
+    ]
+   }
+  ],
+  "piece BP_ForestRoadblockActorStateGimmick UAID_B025AA660315049902_1155190365": [
+   {
+    "region": "SW.Region.Overworld",
+    "at": [
+     233,
+     622
+    ]
+   }
   ]
  },
  "chests": [

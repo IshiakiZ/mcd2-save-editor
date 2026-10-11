@@ -2476,6 +2476,12 @@ def newer_hero_save():
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
+def world_dialog_colours() -> dict:
+    from dungeons2_editor import world_dialog
+
+    return {"ground": world_dialog.GROUND, "door": world_dialog.DOOR, "chest": world_dialog.CHEST, "piece": world_dialog.PIECE}
+
+
 class WorldMapTests(WindowTestCase):
     """Menu > World > World map: the ground a hero has explored, drawn from its save, and how far it has got."""
 
@@ -2705,6 +2711,37 @@ class WorldMapTests(WindowTestCase):
         self.assertIn("• Map: 20 of 20 squares explored in 3 regions (it was 5 of 16 in 2)", ask.call_args.args[1])
         saved = saves.SaveProfile(self.profile_path).get(HERO).decoded.document
         self.assertEqual(story.map_explored(saved), (20, 20, 3))
+        dialog.destroy()
+
+    def test_shows_what_the_hero_has_not_found_as_hollow_dots_and_a_placed_shortcut(self):
+        from dungeons2_editor import world
+
+        from . import helpers
+
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps({
+            "regions": {"SW.Region.Camp": {"corner": [0, 0], "size": [4, 3]}}, "pieces": helpers.PIECES,
+            "doors": {"SW.Doorway.Camp.Cellar": {"at": [16.0, 48.0, 0.0], "marker": 8}},
+            "found": {f"piece {world.piece_id(helpers.BRIDGE)}": [{"region": "SW.Region.Camp", "at": [20, 60]}]},
+            "chests": [{"area": "SW.Area.Town", "region": "SW.Region.Camp", "at": [30, 30], "opened": 2}],
+        }), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+        dialog = self.open_map(recordings_of_a_world())
+        self.assertEqual((dialog.unfound_box.cget("text"), dialog.unfound_var.get()), ("Not found yet", True))
+        # The hero's own things as before, a shortcut where the list says a recording saw it, and two hollow dots: a door and a chest spot.
+        self.assertEqual([dialog.shown(kind) for kind in ("door", "found", "chest", "piece", "unfound")], [2, 1, 1, 1, 2])
+        hollow = dialog.canvas.find_withtag("unfound")
+        self.assertEqual({dialog.canvas.itemcget(item, "fill") for item in hollow}, {world_dialog_colours()["ground"]})
+        self.assertEqual({dialog.canvas.itemcget(item, "outline") for item in hollow}, {world_dialog_colours()["door"], world_dialog_colours()["chest"]})
+        (bridge,) = dialog.canvas.find_withtag("piece")
+        self.assertEqual(dialog.canvas.itemcget(bridge, "fill"), world_dialog_colours()["piece"])
+        # Unticked, only what the hero found is on the map; the shortcut stays, which is a thing of its own world.
+        dialog.unfound_box.invoke()
+        self.assertEqual([dialog.shown(kind) for kind in ("door", "found", "chest", "piece", "unfound")], [2, 1, 1, 1, 0])
+        dialog.unfound_box.invoke()
+        dialog.names_box.invoke()
+        self.assertEqual(dialog.shown("name"), 7)  # a name for each dot, the hollow ones too
         dialog.destroy()
 
     def test_opens_the_shortcuts_and_the_key_gates(self):

@@ -260,8 +260,11 @@ class RealWorldListTests(unittest.TestCase):
         self.assertTrue(all(tag.startswith("SW.Area.") for tag in have["areas"] + list(have["chest_counts"])))
         for chest in have["chests"]:
             self.assertTrue(set(chest) == {"area", "region", "at", "opened"} and chest["region"] in have["regions"], chest)
+        pieces = {world.piece_id(piece["path"]) for piece in have["pieces"].values()}
         for label, places in have["found"].items():
-            self.assertTrue(label.startswith(("minecart station ", "cutscene ")) and all(place["region"] in have["regions"] for place in places), label)
+            # A station, a cutscene, or one of the list's own pieces (a rock, a key, a lock, a gate), each in a region it knows.
+            self.assertTrue(label.startswith(("minecart station ", "cutscene ")) or (label.startswith("piece ") and label[6:] in pieces), label)
+            self.assertTrue(all(place["region"] in have["regions"] for place in places), label)
         # Nothing of anyone's: no hero's ID, no date, no recording's name anywhere in the file.
         text = tests.REAL_WORLD_FILE.read_text(encoding="utf-8")
         self.assertNotRegex(text, r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")

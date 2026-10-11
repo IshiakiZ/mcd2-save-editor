@@ -46,6 +46,7 @@ def count_is_news(step: str, count: int) -> bool:
 _OPENED = re.compile(r"^(\d+) opened in ([^,\s]+)(?:, around (-?\d+), (-?\d+) in (\S+))?$")
 _PIECE = re.compile(r"([^/.:]+):PersistentLevel\.(.+?)_C_(UAID_[0-9A-Za-z_]+)$")
 _TAG = re.compile(r"[A-Za-z0-9_.\-]{1,120}")  # one of the game's own names
+_PIECE_ID = re.compile(r"(BP_[A-Za-z0-9_]+?)_C_(UAID_[0-9A-Za-z_]+)$")
 
 
 def empty() -> dict[str, Any]:
@@ -59,7 +60,7 @@ def empty() -> dict[str, Any]:
         "achievements": {},  # an achievement: the group a save keeps it in
         "progression": {},  # a list under a save's Ability, by its name: the tags seen in it
         "pieces": {},  # a puzzle piece (a roadblock, a bridge, a key golem's lock): {"path": as saved, "states": [[before, now]]}
-        "found": {},  # from recordings: "minecart station <tag>" or "cutscene <tag>": [{"region", "at": [x, y]}] where it turned up
+        "found": {},  # from recordings: "minecart station <tag>", "cutscene <tag>" or "piece <piece_id>": [{"region", "at": [x, y]}] where it turned up
         "chests": [],  # from recordings: {"area", "region", "at": [x, y], "opened"} each time chests were opened with a spot to give
         "chest_counts": {},  # from recordings: an area: the most chests one player's recordings saw opened there
     }
@@ -92,6 +93,14 @@ def piece_key(path: str) -> str:
     """A puzzle piece by what stays the same wherever its level is put: the level, what it is, and its own ID."""
     match = _PIECE.search(path)
     return " ".join(match.groups()) if match else path.rsplit("/", 1)[-1][-100:]
+
+
+def piece_id(path: str) -> str:
+    """A puzzle piece by what it is and its own ID alone, which is all that's left of its name where a recording
+    has cut the name short: BP_FarmBridgeActorStateGimmick UAID_08BFB81E52B9489F02_2059509211. Nothing for a name
+    that isn't a piece's."""
+    match = _PIECE_ID.search(path)
+    return " ".join(match.groups()) if match else ""
 
 
 def of_save(document: Any) -> dict[str, Any]:
@@ -171,6 +180,8 @@ def of_recordings(atlas: dict[str, Any] | None) -> dict[str, Any]:
         near = _spot(place.get("near")) if isinstance(place, dict) else None
         if label.startswith(("minecart station ", "cutscene ")) and _tag(label.rsplit(" ", 1)[-1]) and near and _tag(place.get("region")):
             shown["found"].setdefault(label, []).append({"region": place["region"], "at": [round(near[0]), round(near[1])]})
+        elif label.startswith("actor ") and piece_id(label) and near and _tag(place.get("region")):  # a rock, a key, a lock or a gate, where it changed
+            shown["found"].setdefault(f"piece {piece_id(label)}", []).append({"region": place["region"], "at": [round(near[0]), round(near[1])]})
     for name, quests in _dict(atlas.get("follows")).items():
         came = [quest for quest in map(_tag, _list(quests)) if quest]
         if _tag(name) and came:
