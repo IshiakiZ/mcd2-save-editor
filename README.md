@@ -30,13 +30,13 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   six complete builds, in one click.
 - **World map and play recorder:** see the ground your hero has explored and how far it has got, and write down
   what the game saves while you play.
-- **Story progress:** every quest with its steps. Finish a quest, start one over or add one, and set the minecart
-  station your hero starts at.
+- **Story progress:** every quest with its steps. Finish a quest, start one over or add one, and start your hero
+  at any minecart station it has found.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
   ask for what you want.
 - **Safe saving:** a backup before every save, one-click restore, and no saving while the game runs.
-- **And more:** Simple and Advanced modes, sorting and filters, item pictures, a **Launch game** button, and an
-  **Update** button when a newer version is out.
+- **And more:** Simple and Advanced modes, sorting and filters, item pictures, a **Launch game** button, an
+  **Update** button when a newer version is out, and **Suggest something…** for your ideas.
 
 Every feature, in detail: **[Features](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features)** in the wiki.
 
@@ -48,11 +48,11 @@ Every feature, in detail: **[Features](https://github.com/IshiakiZ/mcd2-save-edi
 |---|---|
 | ![Simple mode in the Liquid Glass look](docs/screenshots/inventory-glass.png) | ![Advanced mode](docs/screenshots/advanced-mode.png) |
 
-| The world map (Menu → World map…) | The play recorder (Menu → Play recorder…) |
+| The world map (Menu → World → World map…) | The play recorder (Menu → World → Play recorder…) |
 |---|---|
 | ![The world map: the ground a hero has explored, its doors, and how far it has got](docs/screenshots/world-map.png) | ![The play recorder writing down what the game saved](docs/screenshots/play-recorder.png) |
 
-| Story progress (Menu → Story progress…) |
+| Story progress (Menu → World → Story progress…) |
 |---|
 | ![Story progress: a hero's quests and steps, with the buttons that change them](docs/screenshots/story-progress.png) |
 
@@ -92,9 +92,9 @@ your zip is that build. The details are in
 
 The editor never sends your saves, your hero's data or anything about you anywhere. It goes online for these things
 only. When it opens, it asks GitHub whether a newer version is out, and it gets the game's item pictures from
-batch-ly.com, the developer's own site, if this PC hasn't got them yet (**Menu → Don't get item pictures
-automatically** turns that off). **Update** downloads the new version. **Get item pictures…** fetches pictures
-when you ask: from batch-ly.com, or from minecraft.wiki if they aren't there.
+batch-ly.com, the developer's own site, if this PC hasn't got them yet (**Menu → Pictures → Don't get item
+pictures automatically** turns that off). **Update** downloads the new version. **Get item pictures…** fetches
+pictures when you ask: from batch-ly.com, or from minecraft.wiki if they aren't there.
 [More](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Safety-and-privacy#privacy).
 
 ## Let an AI customise your hero (MCP)
@@ -129,14 +129,14 @@ your sign-in, account or device data.
   with **offline** heroes.
 - **Anything it hasn't seen in a real save.** The game's own lists are in its encrypted files, which the editor
   doesn't break, so it learns how things are saved from players' saves. So far: all 180 items and 116 Uniques, all
-  60 gear effects, all 32 enchantment books, and 27 of the 32 enchantments. An effect tier nobody has sent yet is
+  60 gear effects, all 32 enchantment books, and 28 of the 32 enchantments. An effect tier nobody has sent yet is
   marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
   add; nothing is sent unless you send it.
-- **Still missing:** five enchantments and some tiers of the others, and levelling a companion's talisman outright
+- **Still missing:** four enchantments and some tiers of the others, and levelling a companion's talisman outright
   (**Ready to level up** leaves it one XP short, and the game does the rest).
 - **A quest step by step.** The editor finishes, starts over and adds whole quests. It can't move a quest on by
-  one step, it gives none of what the game gives for a quest (items, XP), and for most quests it doesn't know yet
-  which quests the game opens next: **Add it** lists those by hand.
+  one step, and it gives none of what the game gives for a quest (items, XP). The game opens the quests that
+  follow a finished one by itself.
 - **The map.** A preset adds minecart stations; the rest of the map stays as the game saved it. The world map and
   the play recorder only show what's there, and can't see a chest or a secret you haven't touched.
 - **Collections and achievements.** The editor leaves the game's own records alone: a book added here counts for

@@ -4,12 +4,12 @@ Every version of the MCD2 Save Editor and what changed in it, in full, newest fi
 
 The short notes for the newest versions are on the
 [releases page](https://github.com/IshiakiZ/mcd2-save-editor/releases), and in the editor under
-**Menu → What's new…**. What the editor does is in the
+**Menu → Updates → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
 ## 1.16.0
 
-- **Story progress.** **Menu → Story progress…** (and a button on Advanced mode's Help page) opens a window with
+- **Story progress.** **Menu → World → Story progress…** (and a button on Advanced mode's Help page) opens a window with
   every quest of the hero on screen, group by group: the main story, each area's side quests, and the rest. It
   shows how each quest stands (not open yet, available, active, finished), how many of its steps are done, the
   quest the game tracks on screen, and every step of the quest you pick with what it's about where its name says
@@ -30,11 +30,16 @@ The short notes for the newest versions are on the
 - **What follows a quest.** When the game finishes a quest it lists the quests that open next. The developer's
   play recordings caught it doing that six times (The Illagers from the Rift opens three quests, for one), and
   where the editor has seen it, **Finish it** lists those quests too. Replayed against those recordings, the
-  editor's finished quest is the same as the game's in all six. For every other quest the editor doesn't know
-  yet what the game opens after it, and says so: if the game doesn't open the next quest by itself, **Add it**
-  does.
+  editor's finished quest is the same as the game's in all six. For every other quest the game does it: it
+  opens the quests that follow the next time it loads the hero.
+- **Checked in the game** (1.1.2.0). With The Missing Note Blocks finished in the editor, the game loaded the
+  hero and opened the four quests that follow by itself: Wading Rainy Plains as the active main quest, and three
+  more as available. It gave no item, XP or achievement for the finished quest, and the story played on from
+  there.
 - **Where the hero starts.** A save keeps no position for a hero, only the minecart station it was last at and
-  the area it's in. The same window sets both, to a station the hero has found or to the town's fountain.
+  the area it's in. The same window sets both, to a station the hero has found or to the town's fountain, and
+  the game starts the hero there the next time it loads it. Checked in the game: a hero saved in Howling Woods
+  and set to the Frozen Fortress was standing in Frozen Highlands when the game loaded it.
 - **The editor learns more from recordings and lists.** The play recorder now notes which quests the game made
   available in the save that finished a quest, and **Share item IDs…** tells that with the rest of what your
   recordings saw. It notes that only for a save the game itself wrote: the editor finishes and adds quests too,
@@ -46,6 +51,23 @@ The short notes for the newest versions are on the
   like every other change.
 - **The list of changes before saving** says what was done to the story in plain words: a quest finished, started
   over or added, the quest tracked, and where the hero starts.
+- **A shorter menu.** Simple mode's menu had grown to twenty lines. What belongs together is in a submenu now, the
+  way the two looks already were: **Pictures** (Get item pictures…, Don't get item pictures automatically, Open the
+  pictures folder), **World** (World map…, Story progress…, Play recorder…), **Share and suggest** (Share item
+  IDs…, Suggest something…) and **Updates** (Check for updates, What's new…). Launching the game, reloading,
+  opening a save folder, the backups and Connect an AI (MCP)… are where they were.
+- **Suggest something.** **Menu → Share and suggest → Suggest something…** (and a line on Advanced mode's Help page) opens a box to
+  write an idea for the editor in, or what it gets wrong. **Open a GitHub issue…** takes it to the editor's page
+  on GitHub in your browser, filled in, for you to send; **Copy** puts it on the clipboard for anywhere else. A
+  line about the editor goes with it (its version, which kind of saves are open, the mode and the look), unless
+  you untick it. The editor sends nothing itself, and nothing of your saves is in it. What you wrote stays in
+  the box until the editor closes.
+- **Buddy Brew can be put on armor,** at tier III. A list on
+  [issue 34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34) has it on Monstrosity Horns, saved as
+  `PotionSharing` with the number 6, where the game's table says the brew lasts 6 seconds at that tier. No version
+  of the editor had it to write, and its sender, [icicle1133](https://github.com/icicle1133), says the Enchantsmith
+  put it on. The Companion support kit, whose build names Buddy Brew, now puts it on its armor. That makes 28 of the 32
+  enchantments, 35 tiers. Left: Frost Crescent, Shadowcloak, Shielding Smite and Tumbleshot.
 
 ## 1.15.4
 

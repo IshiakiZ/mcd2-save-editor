@@ -1,16 +1,19 @@
 ## What's new in 1.16.0
 
-- **Story progress.** A new window, **Menu → Story progress…**, lists every quest with its steps. Finish a quest, start one over, add one your hero hasn't met, or pick the quest the game tracks.
+- **Story progress.** A new window, **Menu → World → Story progress…**, lists every quest with its steps. Finish a quest, start one over, add one your hero hasn't met, or pick the quest the game tracks.
 
   ![Story progress: a hero's quests and steps, with the buttons that change them](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.0/dungeons2_editor/data/whats-new/1.16.0-story.png)
-- **It writes a quest the way a save holds one,** and none of what the game gives for it: no items, no XP, no achievement.
-- **Where your hero starts.** The same window sets the minecart station the save says your hero was last at, out of the ones it has found.
+- **It writes a quest the way a save holds one,** and none of what the game gives for it: no items, no XP, no achievement. Checked in the game: it opens the quests that follow by itself.
+- **Start at any minecart station you've found.** Pick one under **Where the hero starts** in the same window, and the game starts your hero there. Checked in the game.
 - **The editor learns what a quest opens.** **Share item IDs…** now tells which quests your recordings saw the game open after one, and the number saved with a finished step.
 - **An AI assistant can do the same,** with three new tools: `list_quests`, `change_quest` and `start_at_station`.
+- **Suggest something.** **Menu → Share and suggest → Suggest something…** is a place to leave an idea for the editor, or to say what it gets wrong.
+- **A shorter menu.** Pictures, World, Share and suggest, and Updates are submenus now, like Look.
+- **Buddy Brew can be put on armor,** at tier III, on [icicle1133](https://github.com/icicle1133)'s word. Four of the 32 enchantments are left.
 
 ## What's new in 1.15.4
 
-- **The game's own item pictures.** The editor now gets them by itself when it opens, for every item but one. **Menu → Don't get item pictures automatically** turns that off. <!-- online -->
+- **The game's own item pictures.** The editor now gets them by itself when it opens, for every item but one. **Menu → Pictures → Don't get item pictures automatically** turns that off. <!-- online -->
 
   ![The editor showing the game's item pictures](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.15.4/dungeons2_editor/data/whats-new/1.15.4-pictures.png)
 - **What's new can show pictures.** After an update it waits for you to close it, so the news isn't missed.
