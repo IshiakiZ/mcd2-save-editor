@@ -1,6 +1,6 @@
 """The play recorder: writes down what the game saves while you play, so you (and the editor) can learn from it.
 
-    Menu > Play recorder… in the editor, or:   python -m dungeons2_editor record
+    Menu > World > Play recorder… in the editor, or:   python -m dungeons2_editor record
 
 Leave it running while you play. It only ever reads. Every time the game saves, it reads the hero and settings
 saves again (never the sign-in, entitlement or device-ID containers), works out what changed and writes that
@@ -1296,7 +1296,7 @@ def run(profile: Path, out: Path, once: bool = False, questions: bool = True) ->
         recorder.look()
         print("\n" + recorder.summary())
         print(f"Summary written to {recorder.write_summary()}")
-        print(f"Beside it, {SHARE_FILE} is the copy that can be sent on. In the editor: Menu > Play recorder… > Share this recording…")
+        print(f"Beside it, {SHARE_FILE} is the copy that can be sent on. In the editor: Menu > World > Play recorder… > Share this recording…")
         if interactive:
             recorder.ask_names(ask)
 

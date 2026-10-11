@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping! In the editor, **Menu → Play recorder… → Share this recording…** fills this in for you.
+        Thanks for helping! In the editor, **Menu → World → Play recorder… → Share this recording…** fills this in for you.
         It sends what the recording found: new item IDs, what happened to your items, how your stats moved, quest
         steps and places, and what the Soul Storm check saw, in the game's own names and numbers, with your notes.
         It leaves out the date, the time of day and where your saves are.

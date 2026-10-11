@@ -31,6 +31,7 @@ from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
 from . import recorder
 from .recorder_dialog import RecorderDialog
+from .suggest import SuggestDialog, setup_line
 from .story_dialog import StoryDialog
 from .world_dialog import WorldDialog
 from .restore_dialog import RestoreDialog
@@ -70,8 +71,8 @@ _SAFE_TEXT = (
     f"doesn't download anything. New versions are on {edition.NAME}. Links open in your own browser."
 ) + (
     "\n• The first time a new version opens, it shows what's new in it. What's new… (on this page, and in Simple "
-    "mode's menu) shows that again, with the versions before it. The notes come with the editor: nothing is fetched."
-    "\n• Play recorder… (in Simple mode's menu, and on Advanced mode's Help page) writes down what the game saves while you "
+    "mode's menu under Updates) shows that again, with the versions before it. The notes come with the editor: nothing is fetched."
+    "\n• Play recorder… (in Simple mode's menu under World, and on Advanced mode's Help page) writes down what the game saves while you "
     "play: items, stats, quest steps, stations, doors, chests you open and the ground you explored. It only reads your "
     "saves, and its recordings stay on this PC, next to the backups. Share this recording…, in its window, shows the "
     "part of one that can be sent on, and sends it if you choose to."
@@ -83,6 +84,9 @@ _SAFE_TEXT = (
     "how far the hero has got: finish a quest, start one over, add one the hero hasn't met, pick the quest the game "
     "tracks, and say which minecart station the hero was last at. It writes a quest the way a save holds one, and nothing "
     "of what the game gives for a quest: no items, no XP, no achievement. Like every change, it waits for Save to game."
+    "\n• Suggest something… (in Simple mode's menu under Share and suggest, and on Advanced mode's Help page) is where to leave "
+    "an idea for the editor, or to say what it gets wrong. "
+    "It opens a GitHub issue in your browser with what you wrote, for you to send, or copies it. The editor sends nothing itself."
 )
 # The setting, and the menu's words for it, that stop the editor getting its item pictures by itself when it opens.
 NO_AUTO_PICTURES = "no_auto_pictures"
@@ -173,7 +177,7 @@ SIMPLE_HELP_SECTIONS = [
         "doesn't. "
         + (
             "The editor gets its own set of item pictures from batch-ly.com by itself when it opens; tick Don't get "
-            "item pictures automatically in MENU to stop that. Get item pictures… in MENU gets them when you ask, or "
+            "item pictures automatically in MENU > Pictures to stop that. Get item pictures…, in the same place, gets them when you ask, or "
             "the Minecraft Wiki's if that set isn't there. For an item without one, take your own: "
             if edition.ONLINE
             else "This edition never goes online, so it doesn't download pictures. Take your own: "
@@ -553,18 +557,29 @@ class EditorApp:
         for key, name in game_style.LOOKS.items():
             self.look_menu.add_radiobutton(label=name, value=key, variable=self.look_var, command=self._on_look_changed)
         menu.add_cascade(label="Look", menu=self.look_menu)
-        menu.add_command(label="Get item pictures…", command=self._get_pictures)
+        # The rest in groups of their own, like Look: one line each in the menu, however many things a group holds.
+        self.pictures_menu = tk.Menu(menu, tearoff=False)
+        self.pictures_menu.add_command(label="Get item pictures…", command=self._get_pictures)
         if edition.ONLINE:  # the edition that never goes online gets nothing by itself, so it has nothing to turn off
             self.no_auto_pictures_var = tk.BooleanVar(value=bool(self.settings.get(NO_AUTO_PICTURES)))
-            menu.add_checkbutton(label=NO_AUTO_PICTURES_LABEL, variable=self.no_auto_pictures_var, command=self._on_auto_pictures_changed)
-        menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
-        menu.add_command(label="Share item IDs…", command=self._share_ids)
-        menu.add_command(label="World map…", command=self.open_world_map)
-        menu.add_command(label="Story progress…", command=self.open_story)
-        menu.add_command(label="Play recorder…", command=self.open_recorder)
+            self.pictures_menu.add_checkbutton(label=NO_AUTO_PICTURES_LABEL, variable=self.no_auto_pictures_var, command=self._on_auto_pictures_changed)
+        self.pictures_menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
+        menu.add_cascade(label="Pictures", menu=self.pictures_menu)
+        self.world_menu = tk.Menu(menu, tearoff=False)
+        self.world_menu.add_command(label="World map…", command=self.open_world_map)
+        self.world_menu.add_command(label="Story progress…", command=self.open_story)
+        self.world_menu.add_command(label="Play recorder…", command=self.open_recorder)
+        menu.add_cascade(label="World", menu=self.world_menu)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
-        menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
-        menu.add_command(label="What's new…", command=self.show_whats_new)
+        menu.add_separator()
+        self.share_menu = tk.Menu(menu, tearoff=False)
+        self.share_menu.add_command(label="Share item IDs…", command=self._share_ids)
+        self.share_menu.add_command(label="Suggest something…", command=self.suggest)
+        menu.add_cascade(label="Share and suggest", menu=self.share_menu)
+        self.updates_menu = tk.Menu(menu, tearoff=False)
+        self.updates_menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
+        self.updates_menu.add_command(label="What's new…", command=self.show_whats_new)
+        menu.add_cascade(label="Updates", menu=self.updates_menu)
         menu.add_separator()
         for name, what, url in MORE_FROM_DEVELOPER:
             menu.add_command(label=f"{name}: {what} ↗", command=lambda url=url: webbrowser.open(url))
@@ -652,7 +667,7 @@ class EditorApp:
         self.inventory.apply_look(glass)
 
     def _on_auto_pictures_changed(self) -> None:
-        """Menu > Don't get item pictures automatically: remembered with the editor's other settings."""
+        """Menu > Pictures > Don't get item pictures automatically: remembered with the editor's other settings."""
         self.settings[NO_AUTO_PICTURES] = bool(self.no_auto_pictures_var.get())
         _save_settings(self.settings_file, self.settings)
 
@@ -799,6 +814,10 @@ class EditorApp:
         share.pack(fill="x", padx=6, pady=(4, 0))
         ttk.Label(share, text="Help the editor learn more items: send the item IDs in your saves that it doesn't know yet.").pack(side="left")
         ttk.Button(share, text="Share item IDs…", command=self._share_ids).pack(side="left", padx=10)
+        ideas = ttk.Frame(self.help_tab)
+        ideas.pack(fill="x", padx=6, pady=(6, 0))
+        ttk.Label(ideas, text="Have an idea for the editor, or is something not working the way you'd expect?").pack(side="left")
+        ttk.Button(ideas, text="Suggest something…", command=self.suggest).pack(side="left", padx=10)
         # The other tools get a line of their own: on one line with the sentence above, the last of them didn't fit.
         self.help_tools = ttk.Frame(self.help_tab)
         self.help_tools.pack(fill="x", padx=6, pady=(6, 6))
@@ -1491,14 +1510,14 @@ class EditorApp:
     # ------------------------------------------------------------------ the play recorder
 
     def open_recorder(self) -> RecorderDialog | None:
-        """Menu > Play recorder: the window that writes down what the game saves while you play."""
+        """Menu > World > Play recorder: the window that writes down what the game saves while you play."""
         if self.profile is None:
             messagebox.showinfo(APP_TITLE, "There are no saves open to record. Open a save folder first.", parent=self.root)
             return None
         return RecorderDialog(self.root, self.profile.path, show_map=self.open_world_map)
 
     def open_world_map(self) -> WorldDialog | None:
-        """Menu > World map: the ground the hero on screen has explored and what it found there, from its save, with
+        """Menu > World > World map: the ground the hero on screen has explored and what it found there, from its save, with
         what the play recorder's recordings add. It shows the hero as saved: the editor changes nothing of this."""
         document = self.original if is_hero_document(self.original) else None
         if document is None:
@@ -1514,7 +1533,7 @@ class EditorApp:
     # ------------------------------------------------------------------ the story
 
     def open_story(self) -> StoryDialog | None:
-        """Menu > Story progress: the quests of the hero on screen and how far each has got, with the few changes
+        """Menu > World > Story progress: the quests of the hero on screen and how far each has got, with the few changes
         the editor makes to them. They join the hero's other unsaved changes."""
         if not is_hero_document(self.document):
             messagebox.showinfo(APP_TITLE, "Pick a hero first: the story is a hero's own.", parent=self.root)
@@ -1533,10 +1552,18 @@ class EditorApp:
         elif current == str(self.raw_tab):
             self._refresh_raw()
 
+    # ------------------------------------------------------------------ suggestions
+
+    def suggest(self) -> SuggestDialog:
+        """Menu > Share and suggest > Suggest something: a box to write an idea for the editor in, and two ways to send it on. What
+        was written stays for the next time the window opens, until the editor closes."""
+        setup = setup_line(__version__, self.profile.layout if self.profile is not None else None, bool(self.advanced_var.get()), self.look_var.get())
+        return SuggestDialog(self.root, __version__, setup, getattr(self, "_suggestion", ""), lambda text: setattr(self, "_suggestion", text))
+
     # ------------------------------------------------------------------ what's new
 
     def show_whats_new(self) -> None:
-        """Menu > What's new: the notes of this version and the few before it."""
+        """Menu > Updates > What's new: the notes of this version and the few before it."""
         versions = whats_new.load()
         whats_new.WhatsNewDialog(self.root, whats_new.unseen(versions, "0", __version__))
 

@@ -1,0 +1,32 @@
+name: Suggest something
+description: An idea for the editor, something that could work better, or something it gets wrong.
+title: "Suggestion: "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! In the editor, **Menu → Share and suggest → Suggest something…** fills this in for you.
+        Say what you'd like the editor to do, or what it gets wrong, in your own words.
+        For an item, an effect or a quest the editor doesn't know yet, **Share item IDs…** is the way: it sends
+        what your saves show. Please don't paste anything from your save here: no character IDs, account names
+        or backup files.
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Your suggestion
+      description: If the editor says your suggestion is on your clipboard, paste it here.
+      placeholder: "Let me sort my inventory by power."
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Your editor
+      description: Which saves you edit (the Xbox app's or Steam's), and the mode you use. The editor fills this in.
+      placeholder: "Editor 1.16.0 (GitHub edition), saves from the Xbox app, Simple mode, Original look, Windows"
+  - type: input
+    id: version
+    attributes:
+      label: Editor version
+      placeholder: "1.16.0"

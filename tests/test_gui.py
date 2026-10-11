@@ -13,7 +13,9 @@ from tkinter import ttk
 from unittest import mock
 
 import tests
-from dungeons2_editor import __version__, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, story, story_dialog, updater, wgs, whats_new, world_dialog
+from dungeons2_editor import (
+    __version__, edition, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, story, story_dialog, suggest, updater, wgs, whats_new, world_dialog,
+)
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
 from dungeons2_editor.item_picker import ItemPicker
@@ -213,15 +215,20 @@ class AdvancedSettingsTests(WindowTestCase):
     def test_the_help_pages_buttons_all_fit(self):
         tools = self.app.help_tools
         self.assertEqual([button.cget("text") for button in tools.winfo_children()], ["World map…", "Story progress…", "Play recorder…", "What's new…", "Connect an AI…"])
-        # Their line asks for no more room than the line above it, which the page is wide enough for. (That much can
+        # Above them, a line each for the two things to send in: what your saves show, and what you think.
+        rows = self.app.help_tab.winfo_children()[:3]
+        self.assertEqual([row.winfo_children()[-1].cget("text") for row in rows[:2]], ["Share item IDs…", "Suggest something…"])
+        self.assertIs(rows[2], tools)
+        # Their line asks for no more room than the line at the top, which the page is wide enough for. (That much can
         # be checked on any screen; the rest needs one that shows the window whole.)
         self.root.update_idletasks()
-        self.assertLessEqual(tools.winfo_reqwidth(), self.app.help_tab.winfo_children()[0].winfo_reqwidth())
+        self.assertLessEqual(tools.winfo_reqwidth(), rows[0].winfo_reqwidth())
+        self.assertLessEqual(rows[1].winfo_reqwidth(), rows[0].winfo_reqwidth())
         self.app.notebook.select(self.app.help_tab)
         self.show_on_screen(self.root)
         self.needs_room_for(self.root)
         # Each line of buttons has the room it asks for: none of them runs off the side of the page.
-        for row in self.app.help_tab.winfo_children()[:2]:
+        for row in rows:
             self.assertLessEqual(row.winfo_reqwidth(), row.winfo_width(), [child.cget("text") for child in row.winfo_children()])
         last = tools.winfo_children()[-1]
         self.assertLessEqual(last.winfo_rootx() + last.winfo_width(), self.app.help_tab.winfo_rootx() + self.app.help_tab.winfo_width())
@@ -980,12 +987,12 @@ class HeroTabTests(WindowTestCase):
             self.assertEqual((asked, app.status_var.get()), (["index.json", "Sword.png", "index.json"], "Something else."))
             # The menu has a box that stops it, remembered with the editor's other settings.
             del asked[:]
-            app.app_menu.invoke(app.app_menu.index("Don't get item pictures automatically"))
+            app.pictures_menu.invoke(app.pictures_menu.index("Don't get item pictures automatically"))
             self.assertTrue(json.loads(self.settings_file.read_text(encoding="utf-8"))["no_auto_pictures"])
             (pack / "Sword.png").unlink()
             app.get_pictures_automatically()
             self.assertTrue(settled())
-            app.app_menu.invoke(app.app_menu.index("Don't get item pictures automatically"))
+            app.pictures_menu.invoke(app.pictures_menu.index("Don't get item pictures automatically"))
             self.assertFalse(json.loads(self.settings_file.read_text(encoding="utf-8"))["no_auto_pictures"])
             # The edition that never goes online asks no site.
             with mock.patch.object(edition, "ONLINE", False):
@@ -1637,7 +1644,7 @@ class SimpleModeTests(WindowTestCase):
     def test_the_play_recorder_writes_down_what_the_game_saves(self):
         out = self.dir / "recordings"
         with mock.patch.object(recorder, "DEFAULT_OUT", out):
-            self.app.app_menu.invoke(self.app.app_menu.index("Play recorder…"))
+            self.app.world_menu.invoke(self.app.world_menu.index("Play recorder…"))
         (dialog,) = [child for child in self.root.winfo_children() if isinstance(child, gui.RecorderDialog)]
         self.assertEqual((dialog.out, dialog.profile, dialog.start_button.cget("text")), (out, self.profile_path, "Start recording"))
         self.assertTrue(dialog.note_button.instate(["disabled"]))  # nothing to add a note to yet
@@ -1769,7 +1776,7 @@ class SimpleModeTests(WindowTestCase):
             self.assertNotIn("The first.", dialog.shown_text())
             dialog.destroy()
             # The menu shows the newest few whenever you ask.
-            app.app_menu.invoke(app.app_menu.index("What's new…"))
+            app.updates_menu.invoke(app.updates_menu.index("What's new…"))
             (dialog,) = dialogs()
             self.assertIn("The first.", dialog.shown_text())
             self.assertIsNone(dialog.grab_current())  # asked for, it doesn't hold the editor up
@@ -2001,13 +2008,23 @@ class SimpleModeTests(WindowTestCase):
         self.assertTrue(self.screen.winfo_manager())
 
     def test_menu_has_the_tools(self):
+        def labels(menu):
+            return [menu.entrycget(i, "label") for i in range(menu.index("end") + 1) if menu.type(i) != "separator"]
+
         menu = self.app.app_menu
-        labels = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1) if menu.type(i) != "separator"]
-        for label in ("Reload", "Back up now", "Restore a backup…", "Get item pictures…", "Open the pictures folder", "Share item IDs…",
-                      "Connect an AI (MCP)…", "Save profile"):
-            self.assertIn(label, labels)
-        self.assertIn("Lemma: a free creative studio for Minecraft ↗", labels)
-        self.assertIn("Batchly: free browser games, tools and experiments ↗", labels)
+        # The menu itself stays short: what belongs together is in a submenu, like the two looks.
+        self.assertEqual(labels(menu), [
+            "Launch Minecraft Dungeons II", "Reload", "Open a save folder…", "Save profile", "Back up now", "Restore a backup…", "Open the backups folder",
+            "Look", "Pictures", "World", "Connect an AI (MCP)…", "Share and suggest", "Updates",
+            "Lemma: a free creative studio for Minecraft ↗", "Batchly: free browser games, tools and experiments ↗",
+        ])
+        groups = {"Look": self.app.look_menu, "Pictures": self.app.pictures_menu, "World": self.app.world_menu, "Share and suggest": self.app.share_menu, "Updates": self.app.updates_menu}
+        for label, submenu in groups.items():
+            self.assertEqual((menu.type(menu.index(label)), menu.entrycget(label, "menu")), ("cascade", str(submenu)), label)
+        self.assertEqual(labels(self.app.pictures_menu), ["Get item pictures…", "Don't get item pictures automatically", "Open the pictures folder"])
+        self.assertEqual(labels(self.app.world_menu), ["World map…", "Story progress…", "Play recorder…"])
+        self.assertEqual(labels(self.app.share_menu), ["Share item IDs…", "Suggest something…"])
+        self.assertEqual(labels(self.app.updates_menu), ["Check for updates", "What's new…"])
 
     def test_help_links_to_the_developers_sites(self):
         for text in (self.app.simple_help_text, self.app.help_text):
@@ -2460,13 +2477,13 @@ def newer_hero_save():
 
 @unittest.skipUnless(_tk_available(), "needs a display")
 class WorldMapTests(WindowTestCase):
-    """Menu > World map: the ground a hero has explored, drawn from its save, and how far it has got."""
+    """Menu > World > World map: the ground a hero has explored, drawn from its save, and how far it has got."""
 
     containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: json.dumps(hero_with_a_world(), separators=(",", ":")).encode()}
 
     def open_map(self, atlas=None):
         with mock.patch.object(recorder, "fresh_atlas", return_value=atlas) as fresh, mock.patch.object(recorder, "DEFAULT_OUT", self.dir / "recordings"):
-            self.app.app_menu.invoke(self.app.app_menu.index("World map…"))
+            self.app.world_menu.invoke(self.app.world_menu.index("World map…"))
         fresh.assert_called_once_with(self.dir / "recordings")  # what the recordings have shown, up to the newest
         return self.app.world_map
 
@@ -2651,8 +2668,102 @@ class WorldMapInLiquidGlassTests(WorldMapTests):
 
 
 @unittest.skipUnless(_tk_available(), "needs a display")
+class SuggestSomethingTests(WindowTestCase):
+    """Menu > Share and suggest > Suggest something: a box to write an idea for the editor in, and two ways to send it on."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: hero_save_text().encode()}
+
+    def open_box(self):
+        self.app.share_menu.invoke(self.app.share_menu.index("Suggest something…"))
+        self.root.update()
+        return next(window for window in self.root.winfo_children() if isinstance(window, suggest.SuggestDialog))
+
+    def write(self, dialog, words):
+        dialog.text.delete("1.0", "end")
+        dialog.update()
+        dialog.text.insert("1.0", words)
+        dialog.update()  # the box says it has changed, as it does for typing, pasting and cutting
+
+    def test_writes_a_suggestion_and_sends_it_on_two_ways(self):
+        before = snapshot_of(self.profile_path)
+        with mock.patch("platform.system", return_value="Windows"):
+            dialog = self.open_box()
+        setup = f"Editor {__version__} ({edition.NAME} edition), saves from the Xbox app, {'Advanced mode' if self.advanced else 'Simple mode, ' + game_style.LOOKS[self.look or 'classic'] + ' look'}, Windows"
+        self.assertEqual((dialog.title(), dialog.setup), ("Suggest something", setup))
+        # Nothing written yet: nothing to send.
+        self.assertTrue(dialog.issue_button.instate(["disabled"]) and dialog.copy_button.instate(["disabled"]))
+        with mock.patch("webbrowser.open") as browser:
+            dialog.open_issue()
+            dialog.copy()
+            browser.assert_not_called()
+            self.write(dialog, "  Sort by power\nso the strongest is on top\n\n")
+            self.assertTrue(dialog.issue_button.instate(["!disabled"]) and dialog.copy_button.instate(["!disabled"]))
+            dialog.issue_button.invoke()
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(browser.call_args.args[0]).query)
+            self.assertEqual(query, {
+                "template": ["suggestion.yml"], "title": ["Suggestion: Sort by power"], "suggestion": ["Sort by power\nso the strongest is on top"],
+                "setup": [setup], "version": [__version__],
+            })
+            self.assertIn("press the green button there to send it", dialog.message.get())
+            dialog.copy_button.invoke()
+            self.assertEqual((self.root.clipboard_get(), dialog.message.get()), (f"Sort by power\nso the strongest is on top\n\n({setup})", "Copied."))
+            # The line about the editor is the writer's to leave out.
+            dialog.setup_box.invoke()
+            dialog.issue_button.invoke()
+            self.assertNotIn("setup", urllib.parse.parse_qs(urllib.parse.urlsplit(browser.call_args.args[0]).query))
+            dialog.copy_button.invoke()
+            self.assertEqual(self.root.clipboard_get(), "Sort by power\nso the strongest is on top")
+            # One too long for a link goes on the clipboard, and the page opens ready for it, under its own title.
+            long = "A long one\n" + "\n".join(f"line {number} of a suggestion that goes on and on" for number in range(300))
+            self.write(dialog, long)
+            dialog.issue_button.invoke()
+            link = browser.call_args.args[0]
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(link).query)
+            self.assertLess(len(link), share_ids.MAX_LINK)
+            self.assertEqual((query["title"], query["suggestion"]), (["Suggestion: A long one"], [suggest.PASTE_HERE]))
+            self.assertEqual((self.root.clipboard_get(), dialog.message.get()), (long, "Copied, and the page is open: paste your suggestion into its first box (Ctrl+V)."))
+            # And one that no issue could hold isn't opened at all.
+            calls = browser.call_count
+            self.write(dialog, "x" * (suggest.MOST_TEXT + 1))
+            dialog.issue_button.invoke()
+            self.assertEqual((browser.call_count, dialog.message.get()), (calls, "That's more than a GitHub issue holds. Shorten it a little, or send it in two."))
+        # What's in the box is there the next time, and it never was anywhere near the saves.
+        self.write(dialog, "Half an idea")
+        dialog.destroy()
+        again = self.open_box()
+        self.assertEqual(again.suggestion(), "Half an idea")
+        again.destroy()
+        self.assertEqual((self.app.change_count, snapshot_of(self.profile_path)), (0, before))
+
+    def test_fits_on_screen(self):
+        dialog = self.open_box()
+        self.show_on_screen(dialog)
+        self.needs_room_for(dialog)
+        for button in (dialog.issue_button, dialog.copy_button, dialog.close_button):
+            self.assert_in_view(button, dialog)
+        self.assertTrue(dialog.setup_box.winfo_ismapped())
+        dialog.destroy()
+        # With no line about the editor to add, there's no box to tick for it.
+        bare = suggest.SuggestDialog(self.root, "9.9.9")
+        self.assertFalse(bare.setup_box.winfo_manager())
+        bare.text.insert("1.0", "An idea")
+        with mock.patch("webbrowser.open") as browser:
+            bare.open_issue()
+        self.assertNotIn("setup=", browser.call_args.args[0])
+        bare.destroy()
+
+
+class SuggestSomethingInLiquidGlassTests(SuggestSomethingTests):
+    look = "glass"
+
+
+class SuggestSomethingInAdvancedModeTests(SuggestSomethingTests):
+    advanced = True
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
 class StoryProgressTests(WindowTestCase):
-    """Menu > Story progress: a hero's quests, and the changes the editor makes to how far it has got."""
+    """Menu > World > Story progress: a hero's quests, and the changes the editor makes to how far it has got."""
 
     containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: json.dumps(hero_with_a_world(), separators=(",", ":")).encode()}
     # What the editor's list of the world says here: the hero's three quests and three it hasn't met, the number saved
@@ -2673,7 +2784,7 @@ class StoryProgressTests(WindowTestCase):
         self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
 
     def open_story(self):
-        self.app.app_menu.invoke(self.app.app_menu.index("Story progress…"))
+        self.app.world_menu.invoke(self.app.world_menu.index("Story progress…"))
         self.root.update()
         return next(window for window in self.root.winfo_children() if isinstance(window, story_dialog.StoryDialog))
 
@@ -2708,7 +2819,7 @@ class StoryProgressTests(WindowTestCase):
         # Each kind of quest has its own buttons, and says what they do.
         for name, buttons, said, stands in (
             ("CA01", ["Start it over"], "available again with every step unset", "Finished, in the main story. 1 of 1 steps done."),
-            ("FOa1_S10_A", ["Finish it"], "hasn't seen which quests the game opens after this one", "Available, a side quest of Howling Woods. 0 of 1 steps done."),
+            ("FOa1_S10_A", ["Finish it"], "The game opens the quests that follow by itself", "Available, a side quest of Howling Woods. 0 of 1 steps done."),
             ("CA05", ["Add it"], "the way the game lists a quest it has just opened", "Not met yet, in the main story."),
         ):
             dialog.pick(name)
@@ -2773,7 +2884,7 @@ class StoryProgressTests(WindowTestCase):
         dialog.update()
         self.assertTrue(dialog.start_button.instate(["!disabled"]))
         dialog.start_button.invoke()
-        self.assertEqual(dialog.message_var.get(), "The save now says the hero was last at Haven Station (Brave Haven). Press Save to game when you're done.")
+        self.assertEqual(dialog.message_var.get(), "Your hero will start at Haven Station (Brave Haven). Press Save to game when you're done.")
         self.assertEqual((dialog.now_var.get(), dialog.start_button.instate(["disabled"])), ("Now: Haven Station (Brave Haven)", True))
         dialog.destroy()
         with mock.patch("tkinter.messagebox.askyesno", return_value=True) as ask, mock.patch("tkinter.messagebox.showinfo"):

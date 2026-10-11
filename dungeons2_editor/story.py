@@ -21,9 +21,14 @@ and which step follows which is in the game's own files.
 What the game gives for a quest (items, XP, an achievement) it gives when it finishes the quest itself. The editor
 writes none of that.
 
+Checked in the game (1.1.2.0, October 2026): with The Missing Note Blocks finished this way, the game loaded the
+hero, opened the four quests that follow it by itself (the next main quest active, three more available), gave no
+item, XP or achievement for the quest, and played on from there.
+
 Where a hero starts: a save keeps no position, only the minecart station the hero was last at
 (WorldExploration.LastMinecartStation) and the area it was in (MetaData.CurrentLocation). ``start_at`` writes the
-two the way a save has them for a hero standing at that station.
+two the way a save has them for a hero standing at that station. Checked in the game the same day: a hero saved
+in Howling Woods and set to the Frozen Fortress station was standing in Frozen Highlands when the game loaded it.
 """
 
 from __future__ import annotations

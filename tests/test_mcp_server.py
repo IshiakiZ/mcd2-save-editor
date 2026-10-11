@@ -113,14 +113,14 @@ class StoryToolsTests(ServerTestCase):
         self.assertEqual((done["quest"]["stands"], done["quest"]["steps_done"], done["quest"]["tracked"]), ("finished", 2, False))
         self.assertEqual(done["unsaved_changes"], ["Quest The Missing Note Blocks (CA04): finished", "Quest Hiking Frozen Highlands (CA05): added, available", "Quest tracked: none"])
         self.assertIn("is finished already", self.call("change_quest", hero="00000000", quest="CA04", action="finish"))
-        # A quest nothing is known to follow says so, since the next one may have to be added by hand.
-        self.assertIn("hasn't seen which quests the game opens after this one", self.call("change_quest", hero="00000000", quest="FOa1_S10_A", action="finish")["done"])
+        # A quest the editor has seen nothing follow: the game opens what does, and the tool says so.
+        self.assertIn("The game opens the quests that follow by itself", self.call("change_quest", hero="00000000", quest="FOa1_S10_A", action="finish")["done"])
         self.assertEqual(self.call("change_quest", hero="00000000", quest="CA01", action="start_over")["quest"]["stands"], "available")
         self.assertIn("Only an active quest", self.call("change_quest", hero="00000000", quest="CA01", action="track"))
         self.assertIn("has met Hiking Frozen Highlands (CA05) already", self.call("change_quest", hero="00000000", quest="CA05", action="add"))
         self.assertIn("There's no quest 'CA99'", self.call("change_quest", hero="00000000", quest="CA99", action="finish"))
         there = self.call("start_at_station", hero="00000000", station="haven station")
-        self.assertEqual((there["done"], there["last_station"]["station"]), ("The save now says the hero was last at Haven Station (Brave Haven).", "SW.MinecartStation.Town"))
+        self.assertEqual((there["done"], there["last_station"]["station"]), ("The hero will start at Haven Station (Brave Haven).", "SW.MinecartStation.Town"))
         self.assertIn("hasn't found a station called 'Monsoon Banks'", self.call("start_at_station", hero="00000000", station="Monsoon Banks"))
         # Nothing reaches the game before save_changes; then it's all there, and the achievements are as they were.
         self.assertEqual(story.quests(self.saved_hero().document)[1].state, "Active")

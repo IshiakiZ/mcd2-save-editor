@@ -26,8 +26,8 @@ INTRO = (
 STEPS_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat); the game keeps the words in its own files."
 REWARDS = "What the game gives for a quest (items, XP, an achievement) isn't added: the game gives those when it finishes one itself."
 START_NOTE = (
-    "A save keeps no position for a hero, only the minecart station it was last at and the area it's in. This sets both, to a "
-    "station the hero has found."
+    "A save keeps no position for a hero, only the minecart station it was last at and the area it's in. This sets both, and "
+    "the game starts your hero at that station the next time it loads it. Pick any station the hero has found."
 )
 MARKS = {story.DONE: "✓", story.ACTIVE: "▶", story.NOT_SET: "·"}
 
@@ -51,7 +51,7 @@ def what_it_does(quest: story.Quest, document: Any) -> str:
             if new else "The quests the game opened after this one are in this hero's list already."
         )
     else:
-        told.append("The editor hasn't seen which quests the game opens after this one. If the game doesn't open them by itself, add the next one here.")
+        told.append("The game opens the quests that follow by itself, the next time it loads your hero.")
     told.append(REWARDS)
     if quest.state == story.ACTIVE:
         told.append("Start it over makes it available again with every step unset. Track it makes it the quest the game shows on screen.")
@@ -154,6 +154,7 @@ class StoryDialog(tk.Toplevel):
 
         start = ttk.Frame(frame)
         start.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        start.columnconfigure(3, weight=1)  # the room the note under it takes goes to the end of the line, not between its parts
         ttk.Label(start, text="Where the hero starts", font=self.fonts["bold"]).grid(row=0, column=0, sticky="w")
         self.station_var = tk.StringVar()
         self.station_box = ttk.Combobox(start, textvariable=self.station_var, state="readonly", width=40)
@@ -341,4 +342,4 @@ class StoryDialog(tk.Toplevel):
             return
         self.on_change()
         self._fill_start()
-        self._say(f"The save now says the hero was last at {station_label(tag)}. {SAVE_REMINDER}")
+        self._say(f"Your hero will start at {station_label(tag)}. {SAVE_REMINDER}")

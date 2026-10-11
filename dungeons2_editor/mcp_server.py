@@ -87,8 +87,10 @@ INSTRUCTIONS = (
     "has met and how it stands, and the ones the editor knows from other heroes' saves that it hasn't met. change_quest "
     "finishes a quest (every step done, the way a save holds a finished quest), starts one over, adds one the hero hasn't met, "
     "or makes an active one the quest the game tracks. It can't move a quest on by one step, and it gives none of what the game "
-    "gives for a quest (items, XP, an achievement): say so if asked. start_at_station sets the minecart station and the area "
-    "the save says the hero is at, to a station the hero has found: a save keeps no other position."
+    "gives for a quest (items, XP, an achievement): say so if asked. The game opens the quests that follow a finished one by "
+    "itself, the next time it loads the hero (checked in the game). start_at_station sets the minecart station and the area "
+    "the save says the hero is at, to a station the hero has found: a save keeps no other position, and the game starts the "
+    "hero at that station the next time it loads it (checked in the game)."
 )
 
 _SLOT_WORDS = {"melee": "Melee weapon", "ranged": "Ranged weapon", "chest": "Chestplate", "legs": "Leggings", "helm": "Helmet"}
@@ -660,7 +662,7 @@ class EditorServer:
                     added = story.finish(document, quest.name)
                     text = f"Finished {quest.label}." + (f" Added what the game opens after it: {', '.join(story.label(name) for name in added)}." if added else "")
                     if not story.follows(quest.name):
-                        text += " The editor hasn't seen which quests the game opens after this one: if the game doesn't open them itself, add the next one."
+                        text += " The game opens the quests that follow by itself, the next time it loads the hero."
                 elif action == "start_over":
                     story.start_over(document, quest.name)
                     text = f"{quest.label} is available again, with every step unset."
@@ -692,7 +694,7 @@ class EditorServer:
                 story.start_at(document, tag)
             except ValueError as exc:
                 raise ToolError(str(exc)) from exc
-            return f"The save now says the hero was last at {story.station_label(tag)}.", {"last_station": {"station": tag, "name": story.station_label(tag)}}
+            return f"The hero will start at {story.station_label(tag)}.", {"last_station": {"station": tag, "name": story.station_label(tag)}}
 
         return self._edit(args["hero"], change)
 
@@ -908,8 +910,9 @@ class EditorServer:
                  "achievement), and a quest can't be moved on by a single step.",
                  {"hero": HERO, "quest": QUEST, "action": _string("What to do with it.", enum=["finish", "start_over", "add", "track"])},
                  self.change_quest, ("hero", "quest", "action")),
-            Tool("start_at_station", "Start at a minecart station", "Set the minecart station the save says the hero was last at, and its area, "
-                 "to a station the hero has found (start_points in list_quests). A save keeps no other position for a hero.",
+            Tool("start_at_station", "Start at a minecart station", "Have the hero start at a minecart station it has found (start_points in "
+                 "list_quests): sets the station the save says the hero was last at, and its area. A save keeps no other position for a hero, "
+                 "and the game starts it there the next time it loads it.",
                  {"hero": HERO, "station": _string("A station from start_points in list_quests: its station tag or its name.")},
                  self.start_at_station, ("hero", "station")),
             Tool("equip_item", "Equip an item", "Put an item on. Whatever was in the slot goes back to the inventory.",

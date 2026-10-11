@@ -37,7 +37,7 @@ ZOOM_STEP = 1.25
 HINT = "Point at a dot to see what it is. Scroll to zoom in and out, and drag to move the map."
 NO_MAP = "This save has no map yet: the game draws one as the hero explores."
 NO_RECORDINGS = (
-    "Nothing yet for this hero. Play with the play recorder on (Menu > Play recorder), and the minecart stations, cutscenes "
+    "Nothing yet for this hero. Play with the play recorder on (Menu > World > Play recorder), and the minecart stations, cutscenes "
     "and chests you find get a place on this map."
 )
 _PREFIXES = ("SW.Doorway.", "SW.MinecartStation.", "SW.UI.Cutscene.", "SW.Achievements.", "SW.Area.", "SW.Region.", "SW.")
