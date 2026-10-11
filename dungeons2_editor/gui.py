@@ -31,6 +31,7 @@ from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
 from . import recorder
 from .recorder_dialog import RecorderDialog
+from .story_dialog import StoryDialog
 from .world_dialog import WorldDialog
 from .restore_dialog import RestoreDialog
 
@@ -78,6 +79,10 @@ _SAFE_TEXT = (
     "door it has found, and lists how far it has got: the story, quests, minecart stations, what it may have missed. "
     "Your recordings add where stations, cutscenes and chests turned up. It can't show what the hero hasn't found: the "
     "game writes a chest or a secret to a save only once you've been to it. Nothing is changed by looking."
+    "\n• Story progress… (in the same two places) lists the quests of the hero on screen with every step, and changes "
+    "how far the hero has got: finish a quest, start one over, add one the hero hasn't met, pick the quest the game "
+    "tracks, and say which minecart station the hero was last at. It writes a quest the way a save holds one, and nothing "
+    "of what the game gives for a quest: no items, no XP, no achievement. Like every change, it waits for Save to game."
 )
 # The setting, and the menu's words for it, that stop the editor getting its item pictures by itself when it opens.
 NO_AUTO_PICTURES = "no_auto_pictures"
@@ -555,6 +560,7 @@ class EditorApp:
         menu.add_command(label="Open the pictures folder", command=self._open_icons_folder)
         menu.add_command(label="Share item IDs…", command=self._share_ids)
         menu.add_command(label="World map…", command=self.open_world_map)
+        menu.add_command(label="Story progress…", command=self.open_story)
         menu.add_command(label="Play recorder…", command=self.open_recorder)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_command(label="Check for updates", command=lambda: self.check_for_updates(announce=True))
@@ -796,7 +802,11 @@ class EditorApp:
         # The other tools get a line of their own: on one line with the sentence above, the last of them didn't fit.
         self.help_tools = ttk.Frame(self.help_tab)
         self.help_tools.pack(fill="x", padx=6, pady=(6, 6))
-        for label, command in (("World map…", self.open_world_map), ("Play recorder…", self.open_recorder), ("What's new…", self.show_whats_new), ("Connect an AI…", self._connect_ai)):
+        tools = (
+            ("World map…", self.open_world_map), ("Story progress…", self.open_story), ("Play recorder…", self.open_recorder),
+            ("What's new…", self.show_whats_new), ("Connect an AI…", self._connect_ai),
+        )
+        for label, command in tools:
             ttk.Button(self.help_tools, text=label, command=command).pack(side="left", padx=(0, 10))
         text = tk.Text(
             self.help_tab,
@@ -1500,6 +1510,28 @@ class EditorApp:
         # The map is the save's own: recordings that can't be read only leave it with less on it.
         self.world_map = WorldDialog(self.root, document, self._recordings_atlas(), hero.skin or f"Hero {hero.character_id[:8]}")
         return self.world_map
+
+    # ------------------------------------------------------------------ the story
+
+    def open_story(self) -> StoryDialog | None:
+        """Menu > Story progress: the quests of the hero on screen and how far each has got, with the few changes
+        the editor makes to them. They join the hero's other unsaved changes."""
+        if not is_hero_document(self.document):
+            messagebox.showinfo(APP_TITLE, "Pick a hero first: the story is a hero's own.", parent=self.root)
+            return None
+        if not self._hero_editor().commit_pending():
+            return None
+        hero = Hero(self.document)
+        return StoryDialog(self.root, self.document, self._on_story_changed, hero.skin or f"Hero {hero.character_id[:8]}")
+
+    def _on_story_changed(self) -> None:
+        """The Story progress window changed the hero's save: count the change, and show it where the save is on screen."""
+        self._on_hero_changed()
+        current = self.notebook.select()
+        if current == str(self.edit_tab):
+            self._rebuild_tree()
+        elif current == str(self.raw_tab):
+            self._refresh_raw()
 
     # ------------------------------------------------------------------ what's new
 

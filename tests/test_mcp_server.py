@@ -9,12 +9,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from dungeons2_editor import saves
+import tests
+from dungeons2_editor import saves, story
 from dungeons2_editor.hero import Hero
 from dungeons2_editor.mcp_server import PROTOCOL_VERSIONS, EditorServer, serve_streams
 
 from .helpers import (
-    SETTINGS_TEXT, book_item, enchanted, enchantment_effect, hero_item, hero_save, make_profile, rolled, rolled_effect, shift_encode,
+    SETTINGS_TEXT, book_item, enchanted, enchantment_effect, hero_item, hero_save, hero_with_a_world, make_profile, rolled, rolled_effect, shift_encode,
     talisman_item,
 )
 
@@ -72,6 +73,72 @@ class ServerTestCase(unittest.TestCase):
         return next(item["ref"] for item in items if item["name"] == name)
 
 
+class StoryToolsTests(ServerTestCase):
+    """The story through the AI server: a hero's quests, and the changes the editor makes to how far it has got."""
+
+    LIST = {
+        "quests": {"CA01": ["CA01_E01"], "CA04": ["CA04_E01", "CA04_E02"], "FOa1_S10_A": ["FOa1_S10_A_E01"], "CA05": ["CA05_K01", "CA05_Sequence01"]},
+        "counts": {"CA04_E02": 3}, "follows": {"CA04": ["CA05"]}, "areas": ["SW.Area.Town", "SW.Area.Forest.A1"],
+    }
+
+    def setUp(self):
+        super().setUp()
+        saves.SaveProfile(self.profile).save(HERO, hero_with_a_world(), self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps(self.LIST), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+
+    def test_lists_the_story(self):
+        told = self.call("list_quests", hero="00000000")
+        self.assertEqual([(quest["quest"], quest["name"], quest["part"], quest["met"], quest["stands"], quest["steps_done"], quest["steps"], quest["tracked"]) for quest in told["quests"]], [
+            ("CA01", "The Illagers from the Rift", "Main story", True, "finished", 1, 1, False),
+            ("CA04", "The Missing Note Blocks", "Main story", True, "active", 1, 2, True),
+            ("CA05", "Hiking Frozen Highlands", "Main story", False, "not met yet", 0, 2, False),
+            ("FOa1_S10_A", "The Cleric's Apprentice", "Side quests: Howling Woods", True, "available", 0, 1, False),
+        ])
+        self.assertEqual((told["quests"][1]["opens_after_it"], told["quests"][0]["opens_after_it"]), (["CA05"], None))
+        self.assertEqual((told["tracked"], told["last_station"]), ("CA04", {"station": "SW.MinecartStation.ForestA1.Outpost", "name": "Little Howl Hamlet (Howling Woods)"}))
+        self.assertEqual([point["name"] for point in told["start_points"]], ["Town Fountain (Brave Haven)", "Haven Station (Brave Haven)", "Little Howl Hamlet (Howling Woods)"])
+        # One quest, by the save's name for it or the game's, with every step.
+        for wanted in ("CA04", "the missing note blocks"):
+            one = self.call("list_quests", hero="00000000", quest=wanted)
+            self.assertEqual(one["quest"]["each_step"], [{"step": "E01", "stands": "done", "about": "reach a place"}, {"step": "E02", "stands": "active", "about": "reach a place"}])
+        self.assertIn("There's no quest 'CA99'", self.call("list_quests", hero="00000000", quest="CA99"))
+
+    def test_changes_a_quest_and_where_the_hero_starts(self):
+        done = self.call("change_quest", hero="00000000", quest="CA04", action="finish")
+        self.assertEqual(done["done"], "Finished The Missing Note Blocks (CA04). Added what the game opens after it: Hiking Frozen Highlands (CA05).")
+        self.assertEqual((done["quest"]["stands"], done["quest"]["steps_done"], done["quest"]["tracked"]), ("finished", 2, False))
+        self.assertEqual(done["unsaved_changes"], ["Quest The Missing Note Blocks (CA04): finished", "Quest Hiking Frozen Highlands (CA05): added, available", "Quest tracked: none"])
+        self.assertIn("is finished already", self.call("change_quest", hero="00000000", quest="CA04", action="finish"))
+        # A quest nothing is known to follow says so, since the next one may have to be added by hand.
+        self.assertIn("hasn't seen which quests the game opens after this one", self.call("change_quest", hero="00000000", quest="FOa1_S10_A", action="finish")["done"])
+        self.assertEqual(self.call("change_quest", hero="00000000", quest="CA01", action="start_over")["quest"]["stands"], "available")
+        self.assertIn("Only an active quest", self.call("change_quest", hero="00000000", quest="CA01", action="track"))
+        self.assertIn("has met Hiking Frozen Highlands (CA05) already", self.call("change_quest", hero="00000000", quest="CA05", action="add"))
+        self.assertIn("There's no quest 'CA99'", self.call("change_quest", hero="00000000", quest="CA99", action="finish"))
+        there = self.call("start_at_station", hero="00000000", station="haven station")
+        self.assertEqual((there["done"], there["last_station"]["station"]), ("The save now says the hero was last at Haven Station (Brave Haven).", "SW.MinecartStation.Town"))
+        self.assertIn("hasn't found a station called 'Monsoon Banks'", self.call("start_at_station", hero="00000000", station="Monsoon Banks"))
+        # Nothing reaches the game before save_changes; then it's all there, and the achievements are as they were.
+        self.assertEqual(story.quests(self.saved_hero().document)[1].state, "Active")
+        self.call("save_changes", hero="00000000")
+        saved = self.saved_hero().document
+        self.assertEqual([(quest.name, quest.state) for quest in story.quests(saved)], [("CA01", "Available"), ("CA04", "Completed"), ("FOa1_S10_A", "Completed"), ("CA05", "Available")])
+        self.assertEqual((story.last_station(saved), story.area(saved)), ("SW.MinecartStation.Town", "SW.Area.Town"))
+        self.assertEqual(saved["CharacterSaveV1"]["Achievements"], hero_with_a_world()["CharacterSaveV1"]["Achievements"])
+
+    def test_a_hero_with_no_story_yet(self):
+        saves.SaveProfile(self.profile).save(HERO, hero_save(), self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        told = self.call("list_quests", hero="00000000")
+        self.assertEqual(([quest["met"] for quest in told["quests"]], told["tracked"], told["last_station"], told["start_points"]), ([False, False, False, False], None, None, []))
+        self.assertIn("keeps no quests yet", self.call("change_quest", hero="00000000", quest="CA05", action="add"))
+        self.assertIn("doesn't say where the hero was last", self.call("start_at_station", hero="00000000", station="Haven Station"))
+
+
 class ProtocolTests(ServerTestCase):
     def test_initialize_agrees_a_protocol_version(self):
         for asked, agreed in (("2025-06-18", "2025-06-18"), ("2024-11-05", "2024-11-05"), ("2099-01-01", PROTOCOL_VERSIONS[0])):
@@ -87,8 +154,10 @@ class ProtocolTests(ServerTestCase):
             "list_heroes", "get_hero", "find_items", "list_presets", "set_stats", "add_item", "change_item", "equip_item",
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
             "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
-            "add_enchantment_books",
+            "add_enchantment_books", "list_quests", "change_quest", "start_at_station",
         })
+        self.assertTrue(tools["list_quests"]["annotations"]["readOnlyHint"])
+        self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "start_over", "add", "track"])
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
         self.assertEqual(tools["add_item"]["inputSchema"]["required"], ["hero", "item"])

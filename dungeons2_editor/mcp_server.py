@@ -23,7 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Callable
 
-from . import __version__, merge, presets, recommend, saves, wgs
+from . import __version__, merge, presets, recommend, recorder, saves, story, wgs
 from .hero import (
     ATTRIBUTE_LABELS,
     BOOK_KIND,
@@ -83,7 +83,12 @@ INSTRUCTIONS = (
     "add_unique_effect gives it to a Unique that's without it (unique_effect_note says when one is). set_talisman_level "
     "puts a talisman at a level outright, as the game saves a level-up; for a companion's talisman ready_talisman "
     "puts a talisman one XP short of its next level. get_hero's vendors says which town vendors the hero has unlocked; kits from "
-    "apply_preset add enchantments once the Enchantsmith is one of them."
+    "apply_preset add enchantments once the Enchantsmith is one of them. list_quests shows the story: every quest the hero "
+    "has met and how it stands, and the ones the editor knows from other heroes' saves that it hasn't met. change_quest "
+    "finishes a quest (every step done, the way a save holds a finished quest), starts one over, adds one the hero hasn't met, "
+    "or makes an active one the quest the game tracks. It can't move a quest on by one step, and it gives none of what the game "
+    "gives for a quest (items, XP, an achievement): say so if asked. start_at_station sets the minecart station and the area "
+    "the save says the hero is at, to a station the hero has found: a save keeps no other position."
 )
 
 _SLOT_WORDS = {"melee": "Melee weapon", "ranged": "Ranged weapon", "chest": "Chestplate", "legs": "Leggings", "helm": "Helmet"}
@@ -148,6 +153,7 @@ RARITY = _string("Common, Rare, Special or Unique.", enum=list(RARITIES))
 POWER = {"type": "integer", "minimum": 0, "maximum": MAX_ITEM_POWER, "description": "Item power. Stay near the hero's own gear."}
 COUNT = {"type": "integer", "minimum": 1, "maximum": MAX_STACK, "description": "How many (a stack)."}
 SLOT = _string("A gear slot: Melee weapon, Ranged weapon, Helmet, Chestplate, Leggings, Boots, Artifact 1-3 or Talisman 1-3.")
+QUEST = _string("A quest from list_quests: the save's name for it (CA04) or what the game calls it.")
 UNCONFIRMED = _flag(
     "Allow an item whose save ID is a best guess (confirmed: false), which the game may remove, or a talisman "
     "whose effect isn't known (effect_known: false), which may do nothing."
@@ -435,6 +441,25 @@ class EditorServer:
             result["note"] = "The game saved this hero since the first change; save_changes will re-apply the changes to the newer save."
         return result
 
+    def list_quests(self, args: dict) -> dict:
+        _profile, _container, hero, draft = self._hero_now(args["hero"])
+        document, wanted = hero.document, args.get("quest")
+        listed = story.every(document)
+        if wanted:
+            quest = next((quest for quest in listed if wanted.lower() in (quest.name.lower(), quest.title.lower())), None)
+            if quest is None:
+                raise ToolError(f"There's no quest {wanted!r}. list_quests without a quest lists them all.")
+            return {"quest": _quest_info(quest, steps=True), "note": story.STEP_NOTE}
+        now = story.last_station(document)
+        return {
+            "quests": [_quest_info(quest) for quest in listed],
+            "tracked": story.tracked(document) or None,
+            "last_station": {"station": now, "name": story.station_label(now)} if now else None,
+            "start_points": [{"station": tag, "name": story.station_label(tag)} for tag in story.start_points(document)],
+            "unsaved_changes": describe_changes(draft.original, draft.document) if draft else [],
+            "note": "A quest with met: false is one this hero hasn't met: the editor knows it from other heroes' saves. Pass quest to see one quest's steps.",
+        }
+
     # ----------------------------------------------------------------- editing
 
     def _edit(self, wanted: str, change: Callable[[Hero, saves.SaveProfile, saves.Container], tuple[str, dict]]) -> dict:
@@ -620,6 +645,54 @@ class EditorServer:
             text = (f"The {item.name}'s XP is {format_amount(xp)}, one short of level {item.level + 2}: the next XP earned in the "
                     "game with it equipped levels it up.")
             return text, {"item": _item_info(hero.item(index), _refs(hero), {})}
+
+        return self._edit(args["hero"], change)
+
+    def change_quest(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            document, action = hero.document, args["action"]
+            wanted = str(args["quest"])
+            quest = next((quest for quest in story.every(document) if wanted.lower() in (quest.name.lower(), quest.title.lower())), None)
+            if quest is None:
+                raise ToolError(f"There's no quest {wanted!r}. list_quests lists them all.")
+            try:
+                if action == "finish":
+                    added = story.finish(document, quest.name)
+                    text = f"Finished {quest.label}." + (f" Added what the game opens after it: {', '.join(story.label(name) for name in added)}." if added else "")
+                    if not story.follows(quest.name):
+                        text += " The editor hasn't seen which quests the game opens after this one: if the game doesn't open them itself, add the next one."
+                elif action == "start_over":
+                    story.start_over(document, quest.name)
+                    text = f"{quest.label} is available again, with every step unset."
+                elif action == "add":
+                    story.add(document, quest.name)
+                    text = f"Added {quest.label}: it's available."
+                elif action == "track":
+                    story.track(document, quest.name)
+                    text = f"The game will track {quest.label}."
+                else:
+                    raise ToolError("action is one of finish, start_over, add and track.")
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            now = next(found for found in story.quests(document) if found.name == quest.name)
+            return text, {"quest": _quest_info(now)}
+
+        return self._edit(args["hero"], change)
+
+    def start_at_station(self, args: dict) -> dict:
+        def change(hero: Hero, _profile: saves.SaveProfile, _container: saves.Container) -> tuple[str, dict]:
+            document, wanted = hero.document, str(args["station"]).lower()
+            points = story.start_points(document)
+            tag = next((tag for tag in points if wanted in (tag.lower(), story.station_label(tag).lower(), recorder.station_name(tag).lower())), None)
+            try:
+                if tag is None and not points:
+                    raise ValueError(story.NO_STATION)
+                if tag is None:
+                    raise ValueError(f"This hero hasn't found a station called {args['station']!r}. list_quests lists the ones it can start at (start_points).")
+                story.start_at(document, tag)
+            except ValueError as exc:
+                raise ToolError(str(exc)) from exc
+            return f"The save now says the hero was last at {story.station_label(tag)}.", {"last_station": {"station": tag, "name": story.station_label(tag)}}
 
         return self._edit(args["hero"], change)
 
@@ -823,6 +896,22 @@ class EditorServer:
             Tool("ready_talisman", "Ready a talisman to level up", "Put a talisman one XP short of its next level: the game levels it up the next time it "
                  "earns XP while equipped. A talisman's effect follows its level, which only the game changes.",
                  {"hero": HERO, "item": ITEM}, self.ready_talisman, ("hero", "item")),
+            Tool("list_quests", "List quests", "The story: every quest the hero has met with how it stands (not open yet, available, "
+                 "active, finished) and how many of its steps are done, the quests it hasn't met that the editor knows from other "
+                 "heroes' saves (met: false), the quest the game tracks, and the minecart stations the hero can start at. With "
+                 "quest, one quest with every step.",
+                 {"hero": HERO, "quest": QUEST}, self.list_quests, ("hero",), read_only=True),
+            Tool("change_quest", "Change a quest", "Change how far a hero has got with a quest. finish: the quest and every step done, "
+                 "the way a save holds a finished quest, plus the quests a play recording saw the game open after it. start_over: "
+                 "available again, every step unset. add: list a quest the hero hasn't met as available. track: make an active "
+                 "quest the one the game shows on screen. Nothing the game gives for a quest is added (no items, XP or "
+                 "achievement), and a quest can't be moved on by a single step.",
+                 {"hero": HERO, "quest": QUEST, "action": _string("What to do with it.", enum=["finish", "start_over", "add", "track"])},
+                 self.change_quest, ("hero", "quest", "action")),
+            Tool("start_at_station", "Start at a minecart station", "Set the minecart station the save says the hero was last at, and its area, "
+                 "to a station the hero has found (start_points in list_quests). A save keeps no other position for a hero.",
+                 {"hero": HERO, "station": _string("A station from start_points in list_quests: its station tag or its name.")},
+                 self.start_at_station, ("hero", "station")),
             Tool("equip_item", "Equip an item", "Put an item on. Whatever was in the slot goes back to the inventory.",
                  {"hero": HERO, "item": ITEM, "slot": SLOT, "ignore_slot_levels": LOCKED}, self.equip_item, ("hero", "item")),
             Tool("unequip_item", "Unequip an item", "Take an item off; it stays in the inventory.",
@@ -883,6 +972,22 @@ def _stat_name(key: str, names: set[str]) -> str:
         if wanted in (squash(name), squash(ATTRIBUTE_LABELS.get(name, ""))):
             return name
     raise ToolError(f"This hero has no stat {key!r}. It has: {', '.join(ATTRIBUTE_LABELS.get(n, n) for n in sorted(names))}.")
+
+
+def _quest_info(quest: story.Quest, steps: bool = False) -> dict:
+    """A quest as the tools tell it. With ``steps``, each of its steps too."""
+    info = {
+        "quest": quest.name, "name": quest.title or None, "part": quest.group, "met": quest.met, "stands": quest.standing,
+        "steps_done": quest.done, "steps": len(quest.steps), "tracked": quest.tracked,
+        "opens_after_it": story.follows(quest.name) or None,
+    }
+    if steps:
+        info["each_step"] = [
+            {"step": step.short, "stands": {story.DONE: "done", story.ACTIVE: "active", story.NOT_SET: "not begun"}.get(step.state, step.state),
+             **({"count": step.count} if step.count else {}), **({"about": step.kind} if step.kind else {})}
+            for step in quest.steps
+        ]
+    return info
 
 
 def _refs(hero: Hero) -> dict[int, str]:

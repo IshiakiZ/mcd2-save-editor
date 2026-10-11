@@ -2070,6 +2070,9 @@ def describe_changes(before: dict, after: dict) -> list[str]:
         from .recorder import station_name  # which reads this module, so not at the top
 
         lines.append(f"Minecart stations: {len(more)} more ({', '.join(station_name(tag) for tag in more)})")
+    from . import story  # which reads the recorder too
+
+    lines += story.changes(before, after)
     old_items, new_items = items_by_identity(old), items_by_identity(new)
     for key, item in old_items.items():
         other = new_items.get(key)
