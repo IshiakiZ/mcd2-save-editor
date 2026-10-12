@@ -2475,13 +2475,13 @@ def newer_hero_save():
     return json.dumps(document, separators=(",", ":")).encode()
 
 
-@unittest.skipUnless(_tk_available(), "needs a display")
 def world_dialog_colours() -> dict:
     from dungeons2_editor import world_dialog
 
     return {"ground": world_dialog.GROUND, "door": world_dialog.DOOR, "chest": world_dialog.CHEST, "piece": world_dialog.PIECE}
 
 
+@unittest.skipUnless(_tk_available(), "needs a display")
 class WorldMapTests(WindowTestCase):
     """Menu > World > World map: the ground a hero has explored, drawn from its save, and how far it has got."""
 
