@@ -53,7 +53,8 @@ def empty() -> dict[str, Any]:
     return {
         "quests": {},  # a quest, as a save names it: its steps, in the order of the save that first showed it
         "counts": {},  # a step that counts something: the number the game saved with it once it was done (5, for five to defeat)
-        "follows": {},  # from recordings: a quest: the quests the game made available in the save that finished it
+        "follows": {},  # a quest: the quests the game makes available as it finishes it (from recordings, and from the game's quest tables)
+        "again": {},  # from the game's quest tables: a quest the game lets a hero do again once it's finished: the rule it comes back by
         "stations": [], "cutscenes": [], "gimmicks": [], "areas": [],
         "doors": {},  # a door: {"at": [x, y, z] in metres, "marker": the kind of marker the map gives it}
         "regions": {},  # a region with a picture of its fog: {"corner": [x, y] in metres, "size": [squares across, down]}
@@ -197,6 +198,44 @@ def of_recordings(atlas: dict[str, Any] | None) -> dict[str, Any]:
     return shown
 
 
+def of_quest_tables(tables: Any) -> dict[str, Any]:
+    """What the game's own quest tables add, laid out like the editor's list. ``tables`` are the game's quest files
+    as JSON, each the quests of an area ({"Quests": [...]}), as a player read them out of the game and sent them.
+    From each quest: its steps in the order a save lists them (a group before its members, the quest's own group
+    last), the number each step to defeat enemies counts to, which quest it waits for, and whether the game lets a
+    hero do it again. A quest that starts out unavailable doesn't follow the one it waits for: the game opens it
+    some other way. The names in the tables are the makers' working names, not the game's, and are left there."""
+    shown = empty()
+    quests = [quest for table in _list(tables) for quest in _list(_dict(table).get("Quests")) if isinstance(quest, dict) and _tag(quest.get("id"))]
+
+    def walk(goal: Any, steps: list[str]) -> None:
+        name = _tag(_dict(goal).get("name"))
+        if not name:
+            return
+        steps.append(name)
+        count = goal.get("kill_count")
+        if isinstance(count, int) and not isinstance(count, bool) and 0 < count < 1000:
+            shown["counts"][name] = count
+        for sub in _list(goal.get("subgoals")):
+            walk(sub, steps)
+
+    for quest in quests:
+        root, steps = _dict(quest.get("goals")), []
+        for goal in _list(root.get("subgoals")):
+            walk(goal, steps)
+        if _tag(root.get("name")):
+            steps.append(root["name"])
+        shown["quests"][quest["id"]] = steps
+        if quest.get("is_replayable") is True and _tag(quest.get("replay_rule")):
+            shown["again"][quest["id"]] = quest["replay_rule"]
+    for quest in quests:
+        if quest.get("initial_state") == "Locked":
+            for before in _list(quest.get("prerequisites")):
+                if _tag(before):
+                    shown["follows"].setdefault(before, []).append(quest["id"])
+    return shown
+
+
 def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
     """Add to a list what another has and it doesn't. A quest keeps the order of its steps and gets new ones at
     the end; a door or a region keeps the place it has, and a different place for it is kept beside that
@@ -209,6 +248,8 @@ def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
     for name, quests in (more.get("follows") or {}).items():
         mine = into["follows"].setdefault(name, [])
         mine += [quest for quest in quests if quest not in mine]
+    for name, rule in (more.get("again") or {}).items():
+        into["again"].setdefault(name, rule)
     for kind in SIMPLE:
         into[kind] += [tag for tag in more.get(kind) or [] if tag not in into[kind]]
     for kind in ("doors", "regions"):
@@ -254,6 +295,7 @@ def news(shown: dict[str, Any], have: dict[str, Any] | None = None) -> dict[str,
         fresh = [quest for quest in quests if quest not in have["follows"].get(name, [])]
         if fresh:
             new["follows"][name] = fresh
+    new["again"] = {name: rule for name, rule in shown["again"].items() if name not in have["again"]}
     for kind in SIMPLE:
         new[kind] = [tag for tag in shown[kind] if tag not in have[kind]]
     for kind in ("doors", "regions"):
@@ -348,6 +390,7 @@ def lines_of(new: dict[str, Any], states: dict[str, str] | None = None, pictures
     for key, piece in new["pieces"].items():
         told.append(f"piece {key} - {'; '.join(f'{before} then {now}' for before, now in piece['states'])}; as saved: {piece['path']}")
     told += [f"follows {name} - {', '.join(quests)}" for name, quests in new["follows"].items()]
+    told += [f"again {name} - {rule}" for name, rule in new["again"].items()]  # only the game's own tables tell this: no save does
     for label, places in new["found"].items():
         told += [f"found {label} - around {place['at'][0]}, {place['at'][1]} in {place['region']}" for place in places]
     told += [f"chest - {chest['opened']} opened in {chest['area']}, around {chest['at'][0]}, {chest['at'][1]} in {chest['region']}" for chest in new["chests"]]
@@ -398,6 +441,8 @@ def read_list(text: str) -> dict[str, Any]:
                         found["counts"][step] = max(found["counts"].get(step, 0), int(match.group(3)[1:]))
         elif word == "count" and _tag(name) and re.fullmatch(r"[1-9][0-9]{0,5}", rest):  # a line of its own: only a save's news is told that way
             found["counts"][name] = max(found["counts"].get(name, 0), int(rest))
+        elif word == "again" and _tag(name) and _tag(rest):
+            found["again"][name] = rest
         elif word == "follows" and _tag(name) and rest:
             came = [quest for quest in map(_tag, rest.split(", ")) if quest]
             mine = found["follows"].setdefault(name, [])
@@ -445,5 +490,5 @@ def counts(world: dict[str, Any]) -> str:
         f"{len(world['quests'])} quests ({steps} steps), {len(world['doors'])} doors, {len(world['stations'])} minecart stations, {len(world['regions'])} regions, "
         f"{len(world['cutscenes'])} cutscenes, {len(world['areas'])} areas, {len(world['achievements'])} achievements, {len(world['pieces'])} puzzle pieces, "
         f"{sum(len(places) for places in world['found'].values())} places things turned up, {len(world['chests'])} chest spots, "
-        f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them"
+        f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them, {len(world['again'])} quests that can be done again"
     )

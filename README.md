@@ -128,7 +128,8 @@ your sign-in, account or device data.
 - **Online heroes.** They're stored on the game's servers, so no save editor can change them. This editor works
   with **offline** heroes.
 - **Anything it hasn't seen in a real save.** The game's own lists are in its encrypted files, which the editor
-  doesn't break, so it learns how things are saved from players' saves. So far: all 180 items and 116 Uniques, all
+  doesn't break, so it learns how things are saved from players' saves (and, for quests, from the game's own quest
+  tables as a player sent them). So far: all 180 items and 116 Uniques, all
   60 gear effects, all 32 enchantment books, and 28 of the 32 enchantments. An effect tier nobody has sent yet is
   marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
   add; nothing is sent unless you send it.
@@ -285,6 +286,11 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
   [hayden-xyz](https://github.com/hayden-xyz)'s list ([#38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) added two doors and an
   effect tier.
+- How many enemies each step to defeat counts to, which quest waits for which, and which quests the game lets
+  you do again come from the game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out
+  of the game and sent ([#40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)). They tell of the same 44
+  quests as players' saves, step for step and number for number, which is how they were checked. The tables
+  themselves are not in this repository.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

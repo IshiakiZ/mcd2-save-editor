@@ -2999,7 +2999,7 @@ class StoryProgressTests(WindowTestCase):
         self.assertEqual(dialog.stands_var.get(), "Active, in the main story. 1 of 2 steps done. The game tracks this one on screen.")
         self.assertEqual(dialog.steps_text().splitlines(), ["✓\tE01\treach a place", "▶\tE02\treach a place"])
         self.assertEqual(self.buttons(dialog), ["Finish it", "Start it over"])  # it's the one tracked already
-        self.assertIn("the game opened Hiking Frozen Highlands (CA05) and CA04_BR as it finished this quest, so the editor lists those too", dialog.note_var.get())
+        self.assertIn("The game opens Hiking Frozen Highlands (CA05) and CA04_BR as it finishes this quest, so the editor lists those too", dialog.note_var.get())
         self.assertIn("isn't added", dialog.note_var.get())
         # Each kind of quest has its own buttons, and says what they do.
         for name, buttons, said, stands in (

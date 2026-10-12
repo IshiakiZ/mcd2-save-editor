@@ -297,6 +297,79 @@ class RealWorldListTests(unittest.TestCase):
         self.assertEqual(world.merge(world.empty(), read), {key: value for key, value in self.world.items()})
         self.assertEqual(world.counts(read), world.counts(self.world))
 
+    def test_reads_the_games_own_quest_tables(self):
+        def goal(name, **more):
+            return {"name": name, "comment": "", "show_progress": False, **more}
+
+        tables = [{"Name": "Core_Quests", "DefaultQuestData": {"id": "CA"}, "Quests": [
+            {"id": "CA01", "initial_state": "Active", "is_replayable": False, "replay_rule": "TimeBased", "name": "A working name", "prerequisites": [],
+             "goals": goal("CA01_Sequence01", type="Sequence", subgoals=[
+                 goal("CA01_E01", destination="CA01_E01_Dest"), goal("CA01_K01", kill_count=5, kill_target="X"),
+                 goal("CA01_Standard01", type="Standard", subgoals=[goal("CA01_I01", interact_target="T", howmany_count=1), goal("CA01_K02", kill_count=0)]),
+                 goal("CA01_I02", interact_target="T", howmany_count=1)])},
+            {"id": "CA02", "initial_state": "Locked", "is_replayable": False, "replay_rule": "TimeBased", "prerequisites": ["CA01"], "goals": goal("CA02_Sequence01", type="Sequence", subgoals=[goal("CA02_E01")])},
+            {"id": "CA01_BR", "initial_state": "Locked", "is_replayable": True, "replay_rule": "TimeBased", "prerequisites": ["CA01"], "goals": goal("CA01_BR_Sequence01", subgoals=[goal("CA01_BR_AS01")])},
+            {"id": "TOa1_S01_A", "initial_state": "Unavailable", "is_replayable": False, "replay_rule": "TimeBased", "prerequisites": ["CA01"], "goals": goal("TOa1_S01_A_Sequence01")},
+            {"id": "not a name!", "goals": {}}, "not a quest",
+        ]}, {"Name": "Caretaker_Quests", "Quests": [
+            {"id": "CT_S01_A", "initial_state": "Locked", "is_replayable": True, "replay_rule": "WorldReset", "prerequisites": ["CA02"], "goals": goal("CT_S01_A_Sequence01", subgoals=[goal("CT_S01_A_E01")])},
+        ]}, "not a table", {"Quests": "nor this"}]
+        shown = world.of_quest_tables(tables)
+        # A quest's steps in the order a save lists them: a group before its members, the quest's own group last.
+        self.assertEqual(shown["quests"]["CA01"], ["CA01_E01", "CA01_K01", "CA01_Standard01", "CA01_I01", "CA01_K02", "CA01_I02", "CA01_Sequence01"])
+        self.assertEqual(list(shown["quests"]), ["CA01", "CA02", "CA01_BR", "TOa1_S01_A", "CT_S01_A"])
+        # The number a step to defeat enemies counts to; an interact step's 1 is the editor's own rule and isn't taken.
+        self.assertEqual(shown["counts"], {"CA01_K01": 5})
+        # What follows a quest: the quests that wait for it and start out locked. One that starts unavailable is opened some other way.
+        self.assertEqual(shown["follows"], {"CA01": ["CA02", "CA01_BR"], "CA02": ["CT_S01_A"]})
+        self.assertEqual(shown["again"], {"CA01_BR": "TimeBased", "CT_S01_A": "WorldReset"})
+        self.assertNotIn("A working name", json.dumps(shown))  # the makers' working names stay in the tables
+        # A list keeps the rule it has for a quest, tells it on a line of its own, and reads it back.
+        have = world.merge(world.empty(), shown)
+        self.assertEqual((world.merge(have, {"again": {"CA01_BR": "Other", "CA09_BR": "TimeBased"}})["again"], world.news(shown, have)["again"]),
+                         ({"CA01_BR": "TimeBased", "CT_S01_A": "WorldReset", "CA09_BR": "TimeBased"}, {}))
+        told = world.lines_of(world.news(shown, world.empty()), have=world.empty())
+        self.assertIn("again CT_S01_A - WorldReset", told)
+        self.assertEqual(world.read_list("\n".join(told))["again"], shown["again"])
+        self.assertIn("2 quests that can be done again", world.counts(world.merge(world.empty(), shown)))
+
+    def test_the_tool_takes_quest_tables_that_agree_with_the_saves_and_leaves_out_ones_that_do_not(self):
+        import zipfile
+
+        spec = importlib.util.spec_from_file_location("build_world_list", Path(__file__).resolve().parent.parent / "tools" / "build_world_list.py")
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        folder = Path(temp.name)
+        table = {"Name": "Core_Quests", "Quests": [
+            {"id": "CA01", "initial_state": "Active", "is_replayable": False, "replay_rule": "TimeBased", "prerequisites": [],
+             "goals": {"name": "CA01_Sequence01", "subgoals": [{"name": "CA01_E01"}, {"name": "CA01_K01", "kill_count": 5}]}},
+            {"id": "CA01_BR", "initial_state": "Locked", "is_replayable": True, "replay_rule": "TimeBased", "prerequisites": ["CA01"], "goals": {"name": "CA01_BR_Sequence01", "subgoals": []}},
+        ]}
+        with zipfile.ZipFile(folder / "quest-data.zip", "w") as archive:
+            archive.writestr("Core_Quests.json", json.dumps(table))
+            archive.writestr("notes.txt", "not a table")
+            archive.writestr("broken.json", "{")
+        out = folder / "world.json"
+        # The list has the quest as saves showed it: the same steps in the same order, and the same number.
+        out.write_text(json.dumps({"quests": {"CA01": ["CA01_E01", "CA01_K01", "CA01_Sequence01"]}, "counts": {"CA01_K01": 5}}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as printed:
+            self.assertEqual(tool.main(["--recordings", str(folder / "none"), "--quest-tables", str(folder / "quest-data.zip"), "--out", str(out)]), 0)
+        self.assertIn("Read 2 quests in the game's quest tables", printed.getvalue())
+        built = json.loads(out.read_text(encoding="utf-8"))
+        self.assertIn("issues/40", built["about"])
+        self.assertEqual((built["again"], built["follows"], built["quests"]["CA01_BR"]), ({"CA01_BR": "TimeBased"}, {"CA01": ["CA01_BR"]}, ["CA01_BR_Sequence01"]))
+        # A folder of the files does as well as a zip of them.
+        (folder / "tables").mkdir()
+        (folder / "tables" / "Core_Quests.json").write_text(json.dumps(table), encoding="utf-8")
+        self.assertEqual(len(tool.quest_tables(folder / "tables")), 1)
+        # Tables that tell a quest another way than the saves did aren't what they seem: nothing of them is taken.
+        for wrong in ({"quests": {"CA01": ["CA01_K01", "CA01_E01", "CA01_Sequence01"]}}, {"quests": {"CA01": ["CA01_E01", "CA01_K01", "CA01_Sequence01"]}, "counts": {"CA01_K01": 4}}):
+            built, said = tool.build(None, [], wrong, folder / "quest-data.zip")
+            self.assertTrue(any("don't agree with what saves have shown, and were left out" in line for line in said), said)
+            self.assertEqual((built["again"], built["follows"]), ({}, {}))
+
     def test_the_tool_adds_recordings_and_players_lists_to_it(self):
         spec = importlib.util.spec_from_file_location("build_world_list", Path(__file__).resolve().parent.parent / "tools" / "build_world_list.py")
         tool = importlib.util.module_from_spec(spec)

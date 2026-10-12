@@ -7,6 +7,37 @@ The short notes for the newest versions are on the
 **Menu → Updates → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.16.2
+
+- **The game's own quest tables.** [icicle1133](https://github.com/icicle1133) read the game's quest files out of
+  the game and sent them ([issue 40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)): ten files, one for
+  the main story and one for each area's side quests. They tell of the same 44 quests the editor had learned from
+  players' saves, and of nothing else, and they agree with all of it: every quest's steps in the very order a
+  save lists them (926 steps; a group of steps before its members, the quest's own group last), all eighteen
+  numbers a save had shown with a finished step to defeat enemies, the 1 with every step to interact with
+  something, and what the game opened after each of the six quests a play recording had caught it finishing.
+  That is how they were checked, and it is why the editor now takes three things from them that no save had
+  shown. The tables themselves, and the working names their makers gave the quests, are not in the editor.
+- **Which quests come back, put right.** 1.16.1 said the game offers its four golem quests again. The tables say
+  which quests can be done again: one golem quest, The Trembling Golem in Howling Woods, and the eight boss
+  fights (the quests whose names end in BR). The other three golems are rescued once. That fits what players
+  report, and what was seen in the game: with everything finished, four quests were still marked as new on the
+  map, and the stand at one of them offered The Trembling Golem. The Story progress window now says it on those
+  nine quests, and that quest goes by its name.
+- **Every step to defeat enemies has its number.** A save holds how many with such a step once it's done, and the
+  editor knew eighteen of the thirty-two. The other fourteen are in (3 to 9 enemies each, in five side quests),
+  so **Finish it** writes them, and a quest that was finished without them reads **finish again**.
+- **What follows every quest.** Each quest but the first waits for one other. **Finish it** now lists the quests
+  that wait for the one it finishes, for sixteen quests instead of six, the way the game lists them as it
+  finishes a quest itself. A quest that starts out unavailable (the merchant's) is left to the game, which opens
+  it some other way.
+- **The two interact steps without a number, explained.** CA07_I12 and CA09_I17 are named like steps to interact
+  with something, and saves hold no number with them. The tables show why: each is a place to reach.
+- **For whoever builds the editor's list:** `tools/build_world_list.py --quest-tables` takes a zip or a folder of
+  the game's quest files. It takes nothing from tables that tell a quest's steps or numbers another way than
+  saves have shown them.
+- **A little more of the world,** from the developer's newest recordings: more chests seen opened in Brave Haven.
+
 ## 1.16.1
 
 - **Finish all.** In **Menu → World → Story progress…** every group of quests (the main story, each area's side
@@ -75,7 +106,8 @@ The short notes for the newest versions are on the
   rescue, in five steps; The Trembling Golem is one), which the game offers again once they're finished. Players
   say the same of golem quests they finished by playing, and other heroes' saves hold them as finished exactly
   as the editor writes them, so there is nothing in a save to change. The Story progress window says so on each
-  of the four, and `list_quests` tells an AI assistant.
+  of the four, and `list_quests` tells an AI assistant. (Put right in 1.16.2: it is one golem quest and the
+  eight boss fights that come back, not the four golems.)
 - **For an AI assistant:** three new tools. `finish_quests` finishes a group of quests or the whole game,
   `discover_map` lifts the fog, and `open_shortcuts_and_gates` opens the shortcuts, the key gates or both.
   `list_quests` says which finished quests are to be finished again, and `change_quest` does that for one.

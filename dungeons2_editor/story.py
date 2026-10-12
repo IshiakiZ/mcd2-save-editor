@@ -34,7 +34,7 @@ hero, opened the four quests that follow it by itself (the next main quest activ
 item, XP or achievement for the quest, and played on from there. And with every quest the editor knows finished
 (44) and the whole map discovered, the game loaded the hero, changed nothing in its quests, kept every picture of
 the fog (the nineteen added ones too) and showed the whole map. Four side quests stayed marked on that map as new
-ones to take: the game's golem quests (COMES_BACK), which it offers again once they're finished.
+ones to take: quests the game lets a hero do again (comes_back), which it offers once more after they're finished.
 
 The map: for each region a hero has been in, a save keeps a picture of the fog over it
 (WorldExploration.SavedFogOfWarExploration.Items: the region's tag, where its corner is, how many squares it is
@@ -69,13 +69,6 @@ CLEAR = 255  # a square the fog is all gone from, as a save has it
 # Interact steps the game has saved as finished with no number: CA07_I12 in two heroes' lists (issues 33 and 34) and
 # CA09_I17 in one (issue 33). Every other finished interact step in the saves the editor couldn't have written has 1.
 NO_NUMBER = frozenset({"CA07_I12", "CA09_I17"})
-# The game's golem quests: an echo golem to rescue, in five steps (The Trembling Golem, in Howling Woods, is one).
-# The game offers them again once they're finished, so a finished one stays marked on its map as a new side quest
-# to take. Seen in the game (1.1.2.0) on a hero with every quest finished: four such marks, two in Howling Woods
-# and two in the Sift, and the stand at one of them offered The Trembling Golem, whose five steps are these four
-# quests' steps. Players say the same of golem quests they finished by playing. Nothing in a save tells them from a
-# quest that is finished for good: other heroes' saves hold them as Completed too.
-COMES_BACK = frozenset({"CT_S01_A", "CT_S02_A", "CT_S03_A", "CT_S04_A"})
 MOST_SQUARES = 20_000  # more than any region has: a size beyond this isn't one to write
 STEP_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat): the editor's reading, not the game's words."
 # What a step's name says it's about: the letters after its quest's name, as the game's own goals are called
@@ -266,8 +259,18 @@ def tracked(document: Any) -> str:
     return name if isinstance(name, str) else ""
 
 
+def comes_back(name: str) -> bool:
+    """Whether the game lets a hero do this quest again once it's finished: it then offers it once more, and the
+    quest comes back on the game's map as a new side quest to take. The game's own quest tables say which (the
+    list's ``again``): a golem to rescue in Howling Woods (The Trembling Golem) and eight boss fights. Seen in the
+    game (1.1.2.0) on a hero with every quest finished: four such marks on its map, one of them a stand that
+    offered The Trembling Golem. Nothing in a save tells such a quest from one that's finished for good."""
+    return name in world.known()["again"]
+
+
 def follows(name: str) -> list[str]:
-    """The quests the game made available as it finished this one, where a play recording has shown that."""
+    """The quests the game makes available as it finishes this one: the ones that wait for it, by the game's own
+    quest tables, which is what play recordings saw it do for the six quests they caught."""
     return list(world.known()["follows"].get(name, []))
 
 

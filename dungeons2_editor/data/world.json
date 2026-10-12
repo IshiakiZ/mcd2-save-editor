@@ -1,5 +1,5 @@
 {
- "about": "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where things turned up, where chests were opened and which quests the game made available as it finished one. Built by tools/build_world_list.py; added to from players' Share item IDs lists.",
+ "about": "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where things turned up, where chests were opened and which quests the game made available as it finished one. From the game's own quest tables, as a player read them out of the game and sent them (github.com/IshiakiZ/mcd2-save-editor/issues/40): the number each step to defeat enemies counts to, which quest waits for which, and which quests can be done again. Built by tools/build_world_list.py; added to from players' Share item IDs lists.",
  "quests": {
   "CA00": [
    "CA00_PC01",
@@ -1187,7 +1187,21 @@
   "MEa2_S03_A_I06": 1,
   "MEa2_S03_A_I07": 1,
   "MEa2_S03_A_I08": 1,
-  "MEa2_S03_A_I09": 1
+  "MEa2_S03_A_I09": 1,
+  "CAa1_S02_A_K01": 7,
+  "CAa1_S02_A_K02": 7,
+  "CAa1_S02_A_K03": 7,
+  "MEa1_S06_A_K01": 8,
+  "PLa1_S08_A_K05": 6,
+  "PLa1_S08_A_K02": 6,
+  "PLa1_S08_A_K03": 6,
+  "PLa1_S08_A_K04": 6,
+  "PLa1_S04_A_K01": 3,
+  "PLa1_S04_A_K02": 4,
+  "PLa1_S04_A_K03": 4,
+  "PLa1_S04_A_K04": 6,
+  "PLa2_S17_A_K01": 7,
+  "PLa2_S17_A_K02": 9
  },
  "follows": {
   "CA01": [
@@ -1213,7 +1227,68 @@
   "CA03": [
    "CA04",
    "CA03_BR"
+  ],
+  "CA09": [
+   "CAa1_S03_A",
+   "CAa1_S02_A",
+   "CA10"
+  ],
+  "CA04": [
+   "CT_S01_A",
+   "CT_S03_A",
+   "CA07",
+   "CA04_BR"
+  ],
+  "CA05": [
+   "CT_S02_A",
+   "CA06",
+   "CA05_BR",
+   "DEa1_S12_A",
+   "DEa1_S13_A",
+   "DEa1_S14_A"
+  ],
+  "CA07": [
+   "CT_S04_A",
+   "CA05",
+   "CA07_BR",
+   "PLa2_S15_A",
+   "PLa2_S16_A",
+   "PLa2_S17_A"
+  ],
+  "CA00": [
+   "CA01"
+  ],
+  "CA06": [
+   "CA08"
+  ],
+  "CA08_B": [
+   "CA09",
+   "CA09_BR"
+  ],
+  "CA08": [
+   "CA08_B",
+   "MEa1_S05_A",
+   "MEa1_S06_A"
+  ],
+  "CA10": [
+   "CA10_BR_B",
+   "CA10_BR",
+   "MEa2_S02_A"
+  ],
+  "MEa2_S02_A": [
+   "MEa2_S03_A"
   ]
+ },
+ "again": {
+  "CT_S01_A": "WorldReset",
+  "CA04_BR": "TimeBased",
+  "CA05_BR": "TimeBased",
+  "CA02_B_BR": "TimeBased",
+  "CA03_BR": "TimeBased",
+  "CA07_BR": "TimeBased",
+  "CA09_BR": "TimeBased",
+  "CA10_BR_B": "TimeBased",
+  "CA10_BR": "TimeBased"
  },
  "stations": [
   "SW.MinecartStation.Town",
@@ -4309,7 +4384,7 @@
   "SW.Area.Forest.A1.SpiderCaves.1": 6,
   "SW.Area.Forest.A1.SpiderCaves.3": 5,
   "SW.Area.DeepDark.A1": 8,
-  "SW.Area.Town": 3,
+  "SW.Area.Town": 6,
   "SW.Area.Meadow.T1.Rift.8": 3,
   "SW.Area.Desert.A1": 1,
   "SW.Area.Plains.A2": 1,

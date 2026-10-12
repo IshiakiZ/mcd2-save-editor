@@ -394,18 +394,35 @@ class RealListStoryTests(unittest.TestCase):
     def test_the_quests_the_game_offers_again_are_quests_it_knows(self):
         from dungeons2_editor import story_dialog
 
-        self.assertEqual(len(story.COMES_BACK), 4)
-        shapes = set()
-        for name in story.COMES_BACK:
-            steps = self.world["quests"].get(name)
-            self.assertTrue(steps, name)
-            shapes.add(tuple(re.sub(r"\d+$", "", step.removeprefix(name + "_")) for step in steps))
-        # Each is the same five steps and the quest's own: a place, a fight, a thing to pick up, a place, a thing to put down.
-        self.assertEqual(shapes, {("E", "Arena", "I", "E", "I", "Sequence")})
-        golem = story.Quest("CT_S01_A", story.DONE, tuple(story.Step(step, story.DONE, 0, "CT_S01_A") for step in self.world["quests"]["CT_S01_A"]), False)
-        other = story.Quest("CA03_BR", story.DONE, tuple(story.Step(step, story.DONE, 0, "CA03_BR") for step in self.world["quests"]["CA03_BR"]), False)
-        self.assertIn("offers again once they're finished", story_dialog.what_it_does(golem, {}))
-        self.assertNotIn("offers again", story_dialog.what_it_does(other, {}))
+        # By the game's own quest tables: one golem to rescue, and the eight boss fights. Each is a quest the list knows.
+        again = self.world["again"]
+        self.assertEqual(sorted(again), ["CA02_B_BR", "CA03_BR", "CA04_BR", "CA05_BR", "CA07_BR", "CA09_BR", "CA10_BR", "CA10_BR_B", "CT_S01_A"])
+        self.assertEqual({rule for rule in again.values()}, {"TimeBased", "WorldReset"})
+        self.assertTrue(all(name in self.world["quests"] for name in again))
+        self.assertEqual([story.comes_back(name) for name in ("CT_S01_A", "CA03_BR", "CT_S02_A", "CT_S03_A", "CT_S04_A", "CA03", "Unheard of")], [True, True, False, False, False, False, False])
+        golem = story.Quest("CT_S01_A", story.DONE, tuple(story.Step(step, story.DONE, 1, "CT_S01_A") for step in self.world["quests"]["CT_S01_A"]), False)
+        other = story.Quest("CT_S02_A", story.DONE, tuple(story.Step(step, story.DONE, 1, "CT_S02_A") for step in self.world["quests"]["CT_S02_A"]), False)
+        fight = story.Quest("CA03_BR", None, tuple(story.Step(step, story.NOT_SET, 0, "CA03_BR") for step in self.world["quests"]["CA03_BR"]), False)
+        self.assertTrue(story_dialog.what_it_does(golem, {}).endswith("The game lets a hero do this quest again: once it's finished the game offers it once more, and "
+                                                                     "it comes back on the game's map as a new side quest."))
+        self.assertIn("comes back on the game's map", story_dialog.what_it_does(fight, {}))  # said before the quest is met, too
+        self.assertNotIn("comes back", story_dialog.what_it_does(other, {}))  # the other three golems are rescued once
+
+    def test_every_defeat_step_has_its_number_and_every_quest_what_follows_it(self):
+        # The fourteen numbers no save had shown came with the game's quest tables, which agree with all the saves did show.
+        defeat = [step for steps in self.world["quests"].values() for step in steps if re.search(r"_K\d+$", step)]
+        self.assertEqual((len(defeat), [step for step in defeat if step not in self.world["counts"]]), (32, []))
+        self.assertEqual({step: self.world["counts"][step] for step in ("PLa1_S04_A_K01", "PLa2_S17_A_K02", "CA00_K01", "DEa1_S13_A_K01")}, {
+            "PLa1_S04_A_K01": 3, "PLa2_S17_A_K02": 9, "CA00_K01": 5, "DEa1_S13_A_K01": 10})
+        quest = story.Quest("PLa2_S17_A", story.DONE, tuple(story.Step(step, story.DONE, 0, "PLa2_S17_A") for step in self.world["quests"]["PLa2_S17_A"]), False)
+        self.assertEqual([step.number_when_done for step in quest.steps if step.short.startswith("K")], [7, 9])
+        # Every quest but the first waits for one other, so sixteen quests have something that follows them; one that
+        # starts out unavailable (the merchant's) is opened some other way and follows nothing.
+        follows = self.world["follows"]
+        self.assertEqual(len(follows), 16)
+        self.assertEqual((follows["CA04"], follows["CA00"], follows["MEa2_S02_A"]), (["CT_S01_A", "CT_S03_A", "CA07", "CA04_BR"], ["CA01"], ["MEa2_S03_A"]))
+        after = [name for came in follows.values() for name in came]
+        self.assertEqual((len(after), len(set(after)), "TOa1_S01_A" in after, "CA00" in after), (42, 42, False, False))
 
     def test_the_real_list_has_shortcuts_and_key_gates_to_open(self):
         from dungeons2_editor import recorder

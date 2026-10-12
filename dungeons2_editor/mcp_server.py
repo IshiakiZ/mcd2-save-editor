@@ -976,7 +976,7 @@ class EditorServer:
                  "quest, one quest with every step.",
                  {"hero": HERO, "quest": QUEST}, self.list_quests, ("hero",), read_only=True),
             Tool("change_quest", "Change a quest", "Change how far a hero has got with a quest. finish: the quest and every step done, "
-                 "the way a save holds a finished quest, plus the quests a play recording saw the game open after it. start_over: "
+                 "the way a save holds a finished quest, plus the quests the game opens after it. start_over: "
                  "available again, every step unset. add: list a quest the hero hasn't met as available. track: make an active "
                  "quest the one the game shows on screen. Nothing the game gives for a quest is added (no items, XP or "
                  "achievement), and a quest can't be moved on by a single step.",
@@ -1072,8 +1072,8 @@ def _quest_info(quest: story.Quest, steps: bool = False) -> dict:
         "steps_done": quest.done, "steps": len(quest.steps), "tracked": quest.tracked,
         # A quest finished by version 1.16.0 without the number its steps carry: change_quest finish gives them theirs.
         **({"finish_again": True} if quest.unnumbered else {}),
-        # One of the game's golem quests: finished, it stays marked on the game's map, because the game offers it again.
-        **({"the_game_offers_it_again": True} if quest.name in story.COMES_BACK else {}),
+        # A quest the game lets a hero do again: finished, it comes back on the game's map, because the game offers it once more.
+        **({"the_game_offers_it_again": True} if story.comes_back(quest.name) else {}),
         "opens_after_it": story.follows(quest.name) or None,
     }
     if steps:

@@ -41,7 +41,7 @@ WHY_AGAIN = (
     "This quest is finished, but {count} of its steps {are} without the number a save holds with such a step once it's done. Version "
     "1.16.0 of the editor left it out. Finish it gives {them} {their} number."
 )
-OFFERED_AGAIN = "This is one of the game's golem quests, which it offers again once they're finished: it stays marked on the game's map as a new side quest."
+OFFERED_AGAIN = "The game lets a hero do this quest again: once it's finished the game offers it once more, and it comes back on the game's map as a new side quest."
 
 
 station_label = story.station_label
@@ -51,7 +51,7 @@ def what_it_does(quest: story.Quest, document: Any) -> str:
     """What the buttons do for the quest picked, in a few plain sentences, and what the game does with such a quest
     where that isn't what one would expect."""
     told = _what_the_buttons_do(quest, document)
-    return f"{told} {OFFERED_AGAIN}" if quest.name in story.COMES_BACK else told
+    return f"{told} {OFFERED_AGAIN}" if story.comes_back(quest.name) else told
 
 
 def _what_the_buttons_do(quest: story.Quest, document: Any) -> str:
@@ -69,7 +69,7 @@ def _what_the_buttons_do(quest: story.Quest, document: Any) -> str:
         have = {other.name for other in story.quests(document)}
         new = [story.label(name) for name in came if name not in have]
         told.append(
-            f"In a play recording the game opened {_listed(new)} as it finished this quest, so the editor lists {'that one' if len(new) == 1 else 'those'} too."
+            f"The game opens {_listed(new)} as it finishes this quest, so the editor lists {'that one' if len(new) == 1 else 'those'} too."
             if new else "The quests the game opened after this one are in this hero's list already."
         )
     else:

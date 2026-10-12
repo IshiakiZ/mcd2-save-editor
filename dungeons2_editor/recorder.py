@@ -577,6 +577,7 @@ QUESTS = {  # a quest, as a save names it: what the game calls it (the ones Meta
     "CA01": "The Illagers from the Rift", "CA02": "The Silence in Little Howl", "CA02_B": "Corruption in the Woods", "CA04": "The Missing Note Blocks",
     "CA05": "Hiking Frozen Highlands", "CA06": "Returning the Note Blocks", "CA07": "Wading Rainy Plains", "PLa1_S04_A": "Keeper of the Bees",
     "FOa1_S10_A": "The Cleric's Apprentice", "DEa1_S13_A": "The Fight at the End of the Tunnel",
+    "CT_S01_A": "The Trembling Golem",  # as the game names it at its stand in Howling Woods (seen in the game, 1.1.2.0)
 }
 _NUMBERED = re.compile(r"SW\.Doorway\.(\w+)\.(Dungeon|Rift)\.(\d+)$")
 _STATION = "SW.MinecartStation."

@@ -1,3 +1,12 @@
+## What's new in 1.16.2
+
+- **Which quests come back, put right.** 1.16.1 said the game's four golem quests. It is one of them, The Trembling Golem, and the eight boss fights that can be fought again. Story progress says so on each.
+
+  ![Story progress on The Trembling Golem: the window says the game lets a hero do this quest again](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.2/dungeons2_editor/data/whats-new/1.16.2-comes-back.png)
+- **Every step to defeat enemies has its number.** The last fourteen are in. A quest that was finished without them reads **finish again**.
+- **Finish it lists what follows every quest,** not only the six that a play recording had shown.
+- **Where this comes from.** The game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out of the game and sent. They agree with everything the editor had learned from saves.
+
 ## What's new in 1.16.1
 
 - **Finish all.** In **Menu → World → Story progress…**, every group of quests has **Finish all** on its own line, and **Finish the whole game…** finishes every quest the editor knows. Both ask first.
@@ -10,7 +19,7 @@
   ![The world map: its three new buttons, and what the hero hasn't found as hollow dots](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
 - **The map shows more.** Doors, stations and chest spots your hero hasn't found are on it as hollow dots, and rocks, keys and gates where a play recording has placed them.
 - **The play recorder says when a rock, a key, a lock or a gate changes,** and lists them in its summary.
-- **Checked in the game.** It took a hero with every quest finished, the whole map discovered and the key gates opened just as saved. Its four golem quests come back on its map: it offers them again.
+- **Checked in the game.** It took a hero with every quest finished, the whole map discovered and the key gates opened just as saved.
 - **An AI assistant can do these too,** with three new tools: `finish_quests`, `discover_map` and `open_shortcuts_and_gates`.
 
 ## What's new in 1.16.0
@@ -25,15 +34,6 @@
 - **Suggest something.** **Menu → Share and suggest → Suggest something…** is a place to leave an idea for the editor, or to say what it gets wrong.
 - **A shorter menu.** Pictures, World, Share and suggest, and Updates are submenus now, like Look.
 - **Buddy Brew can be put on armor,** at tier III, on [icicle1133](https://github.com/icicle1133)'s word. Four of the 32 enchantments are left.
-
-## What's new in 1.15.4
-
-- **The game's own item pictures.** The editor now gets them by itself when it opens, for every item but one. **Menu → Pictures → Don't get item pictures automatically** turns that off. <!-- online -->
-
-  ![The editor showing the game's item pictures](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.15.4/dungeons2_editor/data/whats-new/1.15.4-pictures.png)
-- **What's new can show pictures.** After an update it waits for you to close it, so the news isn't missed.
-- **Two more effect tiers count as seen,** on [darklynkttv](https://github.com/darklynkttv)'s and [hayden-xyz](https://github.com/hayden-xyz)'s word: Deflection I and Swiftness I. Two of the 180 are left.
-- **Two more doors** in the Frozen Highlands, from hayden-xyz's list.
 
 ## Earlier versions, and the details
 
