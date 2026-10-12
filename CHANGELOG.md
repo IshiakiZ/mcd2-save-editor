@@ -7,6 +7,35 @@ The short notes for the newest versions are on the
 **Menu → Updates → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.17.0
+
+- **Next step.** **Menu → World → Story progress…** has a new button that moves the quest you've picked on by one
+  step, the way the game does. A quest that's available is begun: it is active, and so is what it starts with.
+  In a quest that's active, the step it's on is finished, with the number a save holds with a finished step, and
+  the next step's turn comes. When several steps are on at once it finishes the first; pressing again does the
+  others. The last step finishes the quest, the way **Finish it** leaves one, with the quests that follow it. The
+  window says what it did and what the quest is on now.
+- **How the steps hang together.** A save lists a quest's steps flat, and until now nothing readable said which
+  follows which. The game's own quest tables do
+  ([issue 40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)): some steps are groups of steps, and a
+  group's members come one after the other, all at once, or as a choice. The editor's list has that now, 186
+  groups in the 44 quests.
+- **The rules, and how they were checked.** A quest that's begun has its own group active and what that group
+  starts with. A group whose members come one after the other has one of them active at a time. One whose members
+  go all at once has them all active, and is finished when they all are. A finished group moves its own group on,
+  and the quest is finished when its own group is. The developer's play recordings hold 126 changes the game
+  itself made to a quest between two saves (8 quests begun, 112 moved on, 6 finished). Replayed by these rules
+  from the earlier save, the editor comes to the later one every time: every step's state, and every number with
+  a finished step. Three quests' worth of those saves are in the tests.
+- **Where it stops.** One quest, in the first meadow, has a choice between steps (four times: one of two things
+  to do). No save has shown how the game holds a choice that's under way, so the editor doesn't guess: there
+  **Next step** changes nothing and says so, and **Finish it** still finishes the quest whole. A quest whose
+  steps the editor's list can't put together is treated the same way.
+- **For an AI assistant:** `change_quest` has a new action, `next_step`.
+- **What it doesn't do,** as with a finished quest: nothing the game gives for a step or a quest is added, and
+  what the game shows in the world (a door opened by a step, a cutscene played) is the game's own to make of the
+  save.
+
 ## 1.16.2
 
 - **The game's own quest tables.** [icicle1133](https://github.com/icicle1133) read the game's quest files out of

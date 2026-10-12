@@ -21,7 +21,7 @@ SIZE = (980, 640)  # on a display at 100%
 GROUP_PREFIX, QUEST_PREFIX = "group:", "quest:"
 SAVE_REMINDER = "Press Save to game when you're done."
 INTRO = (
-    "How far this hero has got, quest by quest. Finish a quest, start one over, or add one the hero hasn't met yet. Finish all, "
+    "How far this hero has got, quest by quest. Finish a quest, move it on by a step, start one over, or add one the hero hasn't met yet. Finish all, "
     "on a category's line, does the whole of it. Nothing reaches the game until you press Save to game, which backs up your saves first."
 )
 STEPS_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat); the game keeps the words in its own files."
@@ -31,6 +31,9 @@ WHOLE_GAME = "the whole game"
 HOW_ALL = "Every step of each quest is marked done, the way a save holds a finished quest."
 UNDO_ALL = "It joins your unsaved changes: nothing reaches the game until Save to game, and Discard changes takes it back."
 REWARDS = "What the game gives for a quest (items, XP, an achievement) isn't added: the game gives those when it finishes one itself."
+NEXT_STEP = "Next step"
+NEXT_STEP_BEGINS = "Next step begins it the way the game does: the quest is active, on its first step."
+NEXT_STEP_FINISHES = "Next step finishes the step it's on and moves it to the one after, the way the game does."
 START_NOTE = (
     "A save keeps no position for a hero, only the minecart station it was last at and the area it's in. This sets both, and "
     "the game starts your hero at that station the next time it loads it. Pick any station the hero has found."
@@ -77,7 +80,24 @@ def _what_the_buttons_do(quest: story.Quest, document: Any) -> str:
     told.append(REWARDS)
     if quest.state == story.ACTIVE:
         told.append("Start it over makes it available again with every step unset. Track it makes it the quest the game shows on screen.")
-    return " ".join(told)
+    if quest.state in (story.AVAILABLE, story.ACTIVE):
+        told.append(_about_the_next_step(quest, document))
+    return " ".join(part for part in told if part)
+
+
+def _about_the_next_step(quest: story.Quest, document: Any) -> str:
+    """What Next step does for a quest that's available or active, or why it can't move this one on."""
+    try:
+        reason = story.why_no_step(document, quest.name)
+    except ValueError:
+        return ""  # no save in hand to ask
+    return reason or (NEXT_STEP_BEGINS if quest.state == story.AVAILABLE else NEXT_STEP_FINISHES)
+
+
+def step_words(name: str, quest: str) -> str:
+    """A step to read in a sentence: its short name, and what it's about where its name says so. E01 (reach a place)."""
+    step = story.Step(name, story.ACTIVE, 0, quest)
+    return f"{step.short} ({step.kind})" if step.kind else step.short
 
 
 def _listed(names: list[str]) -> str:
@@ -194,9 +214,12 @@ class StoryDialog(tk.Toplevel):
         self.track_button = ttk.Button(buttons, text="Track it", command=self.track)
         for column, button in enumerate((self.finish_button, self.over_button, self.add_button, self.track_button)):
             button.grid(row=0, column=column, padx=(0, 8))
-        # The whole category of the quest picked (or the category picked), on a line of its own under them.
+        # On a line of its own under them: the quest picked moved on by one step, and the whole category of the quest
+        # picked (or the category picked).
+        self.step_button = ttk.Button(buttons, text=NEXT_STEP, command=self.next_step)
+        self.step_button.grid(row=1, column=0, sticky="w", pady=(8, 0), padx=(0, 8))
         self.category_button = ttk.Button(buttons, text=FINISH_ALL, command=self.finish_category)
-        self.category_button.grid(row=1, column=0, columnspan=4, sticky="w", pady=(8, 0))
+        self.category_button.grid(row=1, column=1, columnspan=3, sticky="w", pady=(8, 0))
         ttk.Label(panel, textvariable=self.note_var, style="Muted.TLabel", wraplength=wrap, justify="left").grid(row=3, column=0, sticky="w", pady=(10, 0))
         self.list_note_var = tk.StringVar(value=STEPS_NOTE)
         ttk.Label(panel, textvariable=self.list_note_var, style="Muted.TLabel", wraplength=wrap, justify="left").grid(row=4, column=0, sticky="w", pady=(12, 4))
@@ -335,6 +358,8 @@ class StoryDialog(tk.Toplevel):
         }
         for button, enabled in can.items():
             button.state(["!disabled"] if enabled else ["disabled"])
+        can_step = quest is not None and quest.state in (story.AVAILABLE, story.ACTIVE) and not story.why_no_step(self.document, quest.name)
+        self.step_button.state(["!disabled"] if can_step else ["disabled"])
         group = self.category
         left = [other for other in self.in_category(group) if other.to_finish] if group else []
         self.category_button.configure(text=f"{FINISH_ALL} in {group}" if group else FINISH_ALL)
@@ -406,6 +431,21 @@ class StoryDialog(tk.Toplevel):
                 one = quest.unnumbered == 1
                 return f"{quest.label}: {'one finished step' if one else f'{quest.unnumbered} finished steps'} given {'its number' if one else 'their numbers'}."
             return f"Finished {quest.label}." + (f" Added what the game opens after it: {_listed([story.label(name) for name in added])}." if added else "")
+
+        self._change(change)
+
+    def next_step(self) -> None:
+        """Move the quest picked on the way the game does: begin one that's available, or finish the step an active one is on."""
+        def change(quest: story.Quest) -> str:
+            done = story.step(self.document, quest.name)
+            on = _listed([step_words(name, quest.name) for name in done.now_on]) if done.now_on else ""
+            if done.begun:
+                return f"Begun {quest.label}: it's on {on}."
+            was = step_words(done.step, quest.name)
+            if done.ended:
+                added = f" Added what the game opens after it: {_listed([story.label(name) for name in done.opened])}." if done.opened else ""
+                return f"Finished {was}, the last step of {quest.label}: the quest is finished.{added}"
+            return f"Finished {was} of {quest.label}. It's on {on} now."
 
         self._change(change)
 

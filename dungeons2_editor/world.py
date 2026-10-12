@@ -47,6 +47,7 @@ _OPENED = re.compile(r"^(\d+) opened in ([^,\s]+)(?:, around (-?\d+), (-?\d+) in
 _PIECE = re.compile(r"([^/.:]+):PersistentLevel\.(.+?)_C_(UAID_[0-9A-Za-z_]+)$")
 _TAG = re.compile(r"[A-Za-z0-9_.\-]{1,120}")  # one of the game's own names
 _PIECE_ID = re.compile(r"(BP_[A-Za-z0-9_]+?)_C_(UAID_[0-9A-Za-z_]+)$")
+_GROUP = re.compile(r"^([A-Za-z]{1,40})(?: pick (\d{1,3}))?: (.+)$")
 
 
 def empty() -> dict[str, Any]:
@@ -55,6 +56,9 @@ def empty() -> dict[str, Any]:
         "counts": {},  # a step that counts something: the number the game saved with it once it was done (5, for five to defeat)
         "follows": {},  # a quest: the quests the game makes available as it finishes it (from recordings, and from the game's quest tables)
         "again": {},  # from the game's quest tables: a quest the game lets a hero do again once it's finished: the rule it comes back by
+        # From the game's quest tables: a step that is a group of steps: {"kind": "Sequence" (its members one after the
+        # other), "Standard" (all at once) or "Selection" (a choice: "pick" of them), "of": its members, in order}
+        "groups": {},
         "stations": [], "cutscenes": [], "gimmicks": [], "areas": [],
         "doors": {},  # a door: {"at": [x, y, z] in metres, "marker": the kind of marker the map gives it}
         "regions": {},  # a region with a picture of its fog: {"corner": [x, y] in metres, "size": [squares across, down]}
@@ -208,6 +212,13 @@ def of_quest_tables(tables: Any) -> dict[str, Any]:
     shown = empty()
     quests = [quest for table in _list(tables) for quest in _list(_dict(table).get("Quests")) if isinstance(quest, dict) and _tag(quest.get("id"))]
 
+    def group(goal: dict, name: str) -> None:
+        """Write down a step that has members: what kind of group it is, and the members."""
+        members = [sub["name"] for sub in _list(goal.get("subgoals")) if isinstance(sub, dict) and _tag(sub.get("name"))]
+        kind, pick = _tag(goal.get("type")), goal.get("max_allowed")
+        if members and kind:
+            shown["groups"][name] = {"kind": kind, "of": members, **({"pick": pick} if isinstance(pick, int) and not isinstance(pick, bool) and pick > 0 else {})}
+
     def walk(goal: Any, steps: list[str]) -> None:
         name = _tag(_dict(goal).get("name"))
         if not name:
@@ -216,6 +227,7 @@ def of_quest_tables(tables: Any) -> dict[str, Any]:
         count = goal.get("kill_count")
         if isinstance(count, int) and not isinstance(count, bool) and 0 < count < 1000:
             shown["counts"][name] = count
+        group(goal, name)
         for sub in _list(goal.get("subgoals")):
             walk(sub, steps)
 
@@ -225,6 +237,7 @@ def of_quest_tables(tables: Any) -> dict[str, Any]:
             walk(goal, steps)
         if _tag(root.get("name")):
             steps.append(root["name"])
+            group(root, root["name"])
         shown["quests"][quest["id"]] = steps
         if quest.get("is_replayable") is True and _tag(quest.get("replay_rule")):
             shown["again"][quest["id"]] = quest["replay_rule"]
@@ -250,6 +263,8 @@ def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
         mine += [quest for quest in quests if quest not in mine]
     for name, rule in (more.get("again") or {}).items():
         into["again"].setdefault(name, rule)
+    for name, group in (more.get("groups") or {}).items():
+        into["groups"].setdefault(name, {key: (list(value) if isinstance(value, list) else value) for key, value in group.items()})
     for kind in SIMPLE:
         into[kind] += [tag for tag in more.get(kind) or [] if tag not in into[kind]]
     for kind in ("doors", "regions"):
@@ -296,6 +311,7 @@ def news(shown: dict[str, Any], have: dict[str, Any] | None = None) -> dict[str,
         if fresh:
             new["follows"][name] = fresh
     new["again"] = {name: rule for name, rule in shown["again"].items() if name not in have["again"]}
+    new["groups"] = {name: group for name, group in shown["groups"].items() if name not in have["groups"]}
     for kind in SIMPLE:
         new[kind] = [tag for tag in shown[kind] if tag not in have[kind]]
     for kind in ("doors", "regions"):
@@ -391,6 +407,9 @@ def lines_of(new: dict[str, Any], states: dict[str, str] | None = None, pictures
         told.append(f"piece {key} - {'; '.join(f'{before} then {now}' for before, now in piece['states'])}; as saved: {piece['path']}")
     told += [f"follows {name} - {', '.join(quests)}" for name, quests in new["follows"].items()]
     told += [f"again {name} - {rule}" for name, rule in new["again"].items()]  # only the game's own tables tell this: no save does
+    for name, group in new["groups"].items():  # nor this
+        pick = f" pick {group['pick']}" if "pick" in group else ""
+        told.append(f"group {name} - {group['kind']}{pick}: {', '.join(group['of'])}")
     for label, places in new["found"].items():
         told += [f"found {label} - around {place['at'][0]}, {place['at'][1]} in {place['region']}" for place in places]
     told += [f"chest - {chest['opened']} opened in {chest['area']}, around {chest['at'][0]}, {chest['at'][1]} in {chest['region']}" for chest in new["chests"]]
@@ -443,6 +462,11 @@ def read_list(text: str) -> dict[str, Any]:
             found["counts"][name] = max(found["counts"].get(name, 0), int(rest))
         elif word == "again" and _tag(name) and _tag(rest):
             found["again"][name] = rest
+        elif word == "group" and _tag(name) and _GROUP.match(rest):
+            kind, pick, members = _GROUP.match(rest).groups()
+            steps = [step for step in map(_tag, members.split(", ")) if step]
+            if steps:
+                found["groups"][name] = {"kind": kind, "of": steps, **({"pick": int(pick)} if pick else {})}
         elif word == "follows" and _tag(name) and rest:
             came = [quest for quest in map(_tag, rest.split(", ")) if quest]
             mine = found["follows"].setdefault(name, [])
@@ -490,5 +514,6 @@ def counts(world: dict[str, Any]) -> str:
         f"{len(world['quests'])} quests ({steps} steps), {len(world['doors'])} doors, {len(world['stations'])} minecart stations, {len(world['regions'])} regions, "
         f"{len(world['cutscenes'])} cutscenes, {len(world['areas'])} areas, {len(world['achievements'])} achievements, {len(world['pieces'])} puzzle pieces, "
         f"{sum(len(places) for places in world['found'].values())} places things turned up, {len(world['chests'])} chest spots, "
-        f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them, {len(world['again'])} quests that can be done again"
+        f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them, {len(world['again'])} quests that can be done again, "
+        f"{len(world['groups'])} groups of steps"
     )

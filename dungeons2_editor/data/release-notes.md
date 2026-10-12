@@ -1,3 +1,12 @@
+## What's new in 1.17.0
+
+- **Next step.** A new button in **Menu → World → Story progress…** moves a quest on by one step, the way the game does: it begins a quest that's available, and finishes the step an active one is on.
+
+  ![Story progress: the Next step button, and the steps of the quest picked](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.17.0/dungeons2_editor/data/whats-new/1.17.0-next-step.png)
+- **It follows the game's own order.** Steps come one after the other, several at once, or as a choice. Replayed against 126 changes the game made in recordings, the editor reaches the same save each time.
+- **Where it stops.** One quest has a choice between steps, which no save has shown under way. There the editor says so and leaves the quest as it is.
+- **An AI assistant can do it too:** `change_quest` has a new action, `next_step`.
+
 ## What's new in 1.16.2
 
 - **Which quests come back, put right.** 1.16.1 said the game's four golem quests. It is one of them, The Trembling Golem, and the eight boss fights that can be fought again. Story progress says so on each.
@@ -21,19 +30,6 @@
 - **The play recorder says when a rock, a key, a lock or a gate changes,** and lists them in its summary.
 - **Checked in the game.** It took a hero with every quest finished, the whole map discovered and the key gates opened just as saved.
 - **An AI assistant can do these too,** with three new tools: `finish_quests`, `discover_map` and `open_shortcuts_and_gates`.
-
-## What's new in 1.16.0
-
-- **Story progress.** A new window, **Menu → World → Story progress…**, lists every quest with its steps. Finish a quest, start one over, add one your hero hasn't met, or pick the quest the game tracks.
-
-  ![Story progress: a hero's quests and steps, with the buttons that change them](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.0/dungeons2_editor/data/whats-new/1.16.0-story.png)
-- **It writes a quest the way a save holds one,** and none of what the game gives for it: no items, no XP, no achievement. Checked in the game: it opens the quests that follow by itself.
-- **Start at any minecart station you've found.** Pick one under **Where the hero starts** in the same window, and the game starts your hero there. Checked in the game.
-- **The editor learns what a quest opens.** **Share item IDs…** now tells which quests your recordings saw the game open after one, and the number saved with a finished step.
-- **An AI assistant can do the same,** with three new tools: `list_quests`, `change_quest` and `start_at_station`.
-- **Suggest something.** **Menu → Share and suggest → Suggest something…** is a place to leave an idea for the editor, or to say what it gets wrong.
-- **A shorter menu.** Pictures, World, Share and suggest, and Updates are submenus now, like Look.
-- **Buddy Brew can be put on armor,** at tier III, on [icicle1133](https://github.com/icicle1133)'s word. Four of the 32 enchantments are left.
 
 ## Earlier versions, and the details
 

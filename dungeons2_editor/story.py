@@ -22,9 +22,17 @@ shown the game to mind the difference: the number is written because that is how
 
 So the editor finishes a quest (every step done, with the number a save holds with a finished step), starts one
 over (available again, every step unset), adds one the hero hasn't met (available, every step
-unset, its steps as another hero's save listed them) and picks the quest the game tracks. It doesn't move a quest
-on by a single step: steps come in groups that run in order, side by side or by choice, a save lists them flat,
-and which step follows which is in the game's own files.
+unset, its steps as another hero's save listed them) and picks the quest the game tracks.
+
+It also moves a quest on by one step (``step``). Steps come in groups, and a save lists them flat: which step
+follows which is in the game's own quest tables, which a player read out of the game and sent, and the editor's
+list has it from them (a group's members one after the other, all at once, or as a choice). The rules: a quest
+that's begun has its own group active, and what that group starts with; a group whose members come one after the
+other has one of them active at a time; one whose members go all at once has them all active, and is finished
+when they all are; a finished group moves its own group on; the quest is finished when its own group is. Replayed
+against the developer's play recordings, the rules give the very save the game wrote all 118 times a quest moved
+on between two saves, and all 7 times the game began one. A choice between steps is in one quest only, and no
+save has shown one under way: there the editor stops, and says so.
 
 What the game gives for a quest (items, XP, an achievement) it gives when it finishes the quest itself. The editor
 writes none of that.
@@ -302,6 +310,146 @@ def finish(document: Any, name: str) -> list[str]:
     for quest in added:
         add(document, quest)
     return added
+
+
+# ------------------------------------------------------------------ one step at a time
+
+NOT_UNDER_WAY = "{label} is {standing}: a step can be finished in a quest that's active, and a quest that's available can be begun."
+NO_TREE = "The editor doesn't know how the steps of {label} hang together, so it can't move it on by one. Finish it whole instead."
+A_CHOICE = (
+    "The next step of {label} is a choice between steps, and the editor hasn't seen how the game saves a choice that's under way. "
+    "Finish the quest whole instead."
+)
+
+
+class _Choice(Exception):
+    """The rules have come to a group of the kind the editor has never seen under way in a save (a Selection)."""
+
+
+@dataclass(frozen=True)
+class Stepped:
+    """What moving a quest on did: it was begun, or one of its steps was finished."""
+
+    quest: str
+    begun: bool  # it was available, and is under way now
+    step: str  # the step that was finished, as the save names it ("" when the quest was begun)
+    now_on: tuple[str, ...]  # the steps it is on now: the ones active that aren't groups
+    ended: bool  # that was its last step: the quest is finished
+    opened: tuple[str, ...]  # with that, the quests listed as available after it
+
+
+def _tree(entry: dict) -> tuple[dict[str, dict], dict[str, str]] | None:
+    """How a quest's steps hang together, by the editor's list: its groups (a step with members: their kind and
+    their members) and each member's group. None unless the list knows the quest's own group, the last step a save
+    lists, and every other step is in a group: a tree of all of them, and nothing else."""
+    known = world.known()["groups"]
+    names = [str(task.get("TaskName")) for task in entry["TaskData"]]
+    groups = {name: known[name] for name in names if name in known}
+    parents = {member: name for name, group in groups.items() for member in group["of"]}
+    whole = bool(names) and names[-1] in groups and set(parents) == set(names[:-1]) and len(set(names)) == len(names)
+    return (groups, parents) if whole else None
+
+
+def _activate(name: str, tasks: dict[str, dict], groups: dict[str, dict]) -> None:
+    """A step's turn has come: it's active, and if it's a group so is what it starts with (its first member, or
+    every member of a group whose members go all at once)."""
+    tasks[name]["State"] = ACTIVE
+    group = groups.get(name)
+    if group is None:
+        return
+    if group["kind"] == "Sequence":
+        _activate(group["of"][0], tasks, groups)
+    elif group["kind"] == "Standard":
+        for member in group["of"]:
+            _activate(member, tasks, groups)
+    else:
+        raise _Choice(name)
+
+
+def _moved_on(name: str, tasks: dict[str, dict], groups: dict[str, dict], parents: dict[str, str]) -> bool:
+    """A step has just been finished: its group moves on. In a group whose members come one after the other the
+    next one's turn comes; a group is finished when its last member is, or all of them; and so on up. True when it
+    is the quest's own group that has finished."""
+    parent = parents.get(name)
+    if parent is None:
+        return True
+    group = groups[parent]
+    if group["kind"] == "Sequence":
+        place = group["of"].index(name)
+        if place + 1 < len(group["of"]):
+            _activate(group["of"][place + 1], tasks, groups)
+            return False
+    elif group["kind"] == "Standard":
+        if any(tasks[member].get("State") != DONE for member in group["of"]):
+            return False
+    else:
+        raise _Choice(parent)
+    tasks[parent]["State"] = DONE
+    return _moved_on(parent, tasks, groups, parents)
+
+
+def steps_it_is_on(document: Any, name: str) -> list[Step]:
+    """The steps a quest under way is on: the active ones that aren't groups, in the save's order. A group's
+    members that go all at once are all there."""
+    entry = _entry(_section(document), name)
+    groups = world.known()["groups"]
+    return [step for step in _quest(entry, None).steps if step.state == ACTIVE and step.name not in groups] if entry.get("State") == ACTIVE else []
+
+
+def why_no_step(document: Any, name: str) -> str:
+    """Why this quest can't be moved on by a step, in a sentence; nothing if it can."""
+    entry = _entry(_section(document), name)
+    if entry.get("State") not in (AVAILABLE, ACTIVE):
+        return NOT_UNDER_WAY.format(label=label(name), standing=STATE_WORDS.get(str(entry.get("State")), str(entry.get("State"))))
+    if _tree(entry) is None:
+        return NO_TREE.format(label=label(name))
+    if entry.get("State") == ACTIVE and not steps_it_is_on(document, name):
+        return f"No step of {label(name)} is active, so there's none to finish. Finish it whole instead."
+    return ""
+
+
+def step(document: Any, name: str, which: str | None = None) -> Stepped:
+    """Move a quest on the way the game does. One that's available is begun: it is active, and so is what it starts
+    with. In one that's active, a step it is on is finished (``which`` of them, or the first as the save lists
+    them), with the number a save holds with a finished step, and its group moves on: the next step's turn comes,
+    and when the quest's own group is finished the quest is, as ``finish`` leaves one. All of it or none: a quest
+    the rules can't move on (a choice between steps comes next) is left as it was, with an error that says why."""
+    section = _section(document)
+    entry = _entry(section, name)
+    reason = why_no_step(document, name)
+    if reason:
+        raise ValueError(reason)
+    groups, parents = _tree(entry)
+    trial = copy.deepcopy(entry["TaskData"])
+    tasks = {str(task.get("TaskName")): task for task in trial}
+    root = str(trial[-1].get("TaskName"))
+    finished, ended = "", False
+    try:
+        if entry.get("State") == AVAILABLE:
+            if which is not None:
+                raise ValueError(f"{label(name)} isn't begun yet: it has no step to finish.")
+            _activate(root, tasks, groups)
+        else:
+            on = [found.name for found in steps_it_is_on(document, name)]
+            finished = on[0] if which is None else which
+            if finished not in on:
+                raise ValueError(f"{label(name)} isn't on the step {which}.")
+            task = tasks[finished]
+            task["State"] = DONE
+            had, count = task.get("PartialProgress"), Step(finished, DONE, 0, name).number_when_done
+            if count and not (isinstance(had, int) and not isinstance(had, bool) and had >= count):
+                task["PartialProgress"] = count
+            ended = _moved_on(finished, tasks, groups, parents)
+    except _Choice:
+        raise ValueError(A_CHOICE.format(label=label(name))) from None
+    entry["TaskData"][:] = trial
+    opened: list[str] = []
+    if ended:
+        opened = finish(document, name)  # every step is done by now: this finishes the quest itself, and lists what follows
+    else:
+        entry["State"] = ACTIVE
+    now_on = tuple(found.name for found in steps_it_is_on(document, name))
+    return Stepped(name, not finished, finished, now_on, ended, tuple(opened))
 
 
 @dataclass(frozen=True)

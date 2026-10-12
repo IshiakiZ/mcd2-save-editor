@@ -369,6 +369,149 @@ class StoryTests(unittest.TestCase):
         ])
 
 
+class StepByStepTests(unittest.TestCase):
+    """Moving a quest on one step at a time, the way the game does."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.folder = tempfile.TemporaryDirectory()
+        path = Path(cls.folder.name) / "world.json"
+        path.write_text(json.dumps(helpers.STEPPING), encoding="utf-8")
+        tests.use_world_list(path)
+
+    @classmethod
+    def tearDownClass(cls):
+        tests.use_world_list(tests.PINNED_WORLD_FILE)
+        cls.folder.cleanup()
+
+    def hero(self, *quests, focus=""):
+        document = hero_with_a_world()
+        document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": focus, "Quests": list(quests)}
+        return document
+
+    def stands(self, document, name):
+        quest = next(quest for quest in story.quests(document) if quest.name == name)
+        marks = {story.DONE: "+", story.ACTIVE: "~", story.NOT_SET: ""}
+        return quest.state, " ".join(step.short + marks[step.state] + (str(step.count) if step.count else "") for step in quest.steps)
+
+    def test_begins_a_quest_and_finishes_it_step_by_step(self):
+        document = self.hero(helpers.a_quest("QA"), focus="QA")
+        self.assertEqual((story.why_no_step(document, "QA"), story.steps_it_is_on(document, "QA")), ("", []))
+        # Begun: the quest is active, with its own group and the first member of it.
+        done = story.step(document, "QA")
+        self.assertEqual(done, story.Stepped("QA", True, "", ("QA_E01",), False, ()))
+        self.assertEqual(self.stands(document, "QA"), ("Active", "E01~ Standard01 I01 K01 Sequence02 E02 E03 I02 Sequence01~"))
+        # The place reached: the turn of the group whose members go all at once, both of them.
+        done = story.step(document, "QA")
+        self.assertEqual((done.begun, done.step, done.now_on, done.ended), (False, "QA_E01", ("QA_I01", "QA_K01"), False))
+        self.assertEqual(self.stands(document, "QA"), ("Active", "E01+ Standard01~ I01~ K01~ Sequence02 E02 E03 I02 Sequence01~"))
+        # Either of the two can be finished first; a step to defeat enemies gets the number a save holds with it once it's done.
+        with self.assertRaisesRegex(ValueError, "isn't on the step QA_E02"):
+            story.step(document, "QA", "QA_E02")
+        self.assertEqual(story.step(document, "QA", "QA_K01").now_on, ("QA_I01",))
+        self.assertEqual(self.stands(document, "QA"), ("Active", "E01+ Standard01~ I01~ K01+3 Sequence02 E02 E03 I02 Sequence01~"))
+        # The other one: the group is done, and the next group's turn comes, on its first member. An interact step gets its 1.
+        self.assertEqual(story.step(document, "QA").now_on, ("QA_E02",))
+        self.assertEqual(self.stands(document, "QA"), ("Active", "E01+ Standard01+ I01+1 K01+3 Sequence02~ E02~ E03 I02 Sequence01~"))
+        self.assertEqual(story.step(document, "QA").now_on, ("QA_E03",))
+        self.assertEqual(story.step(document, "QA").now_on, ("QA_I02",))
+        self.assertEqual(self.stands(document, "QA"), ("Active", "E01+ Standard01+ I01+1 K01+3 Sequence02+ E02+ E03+ I02~ Sequence01~"))
+        before = copy.deepcopy(document)
+        # The last step: the quest is finished the way Finish it leaves one, with what follows it listed and nothing tracked.
+        done = story.step(document, "QA")
+        self.assertEqual(done, story.Stepped("QA", False, "QA_I02", (), True, ("QC",)))
+        self.assertEqual(self.stands(document, "QA"), ("Completed", "E01+ Standard01+ I01+1 K01+3 Sequence02+ E02+ E03+ I02+1 Sequence01+"))
+        self.assertEqual((self.stands(document, "QC"), story.tracked(document)), (("Available", "E01 Sequence01"), ""))
+        self.assertEqual(story.changes(before, document), ["Quest QA: finished", "Quest QC: added, available", "Quest tracked: none"])
+        with self.assertRaisesRegex(ValueError, "QA is finished: a step can be finished in a quest that's active, and a quest that's available can be begun"):
+            story.step(document, "QA")
+        # Finishing it whole from the start comes to the very same save.
+        whole = self.hero(helpers.a_quest("QA"), focus="QA")
+        story.step(whole, "QA")
+        story.finish(whole, "QA")
+        self.assertEqual(whole["CharacterSaveV1"]["quest"], document["CharacterSaveV1"]["quest"])
+
+    def test_leaves_a_quest_alone_where_the_rules_do_not_reach(self):
+        # A choice between steps comes next: no save has shown one under way, so nothing is changed and the editor says so.
+        document = self.hero(helpers.a_quest("QB", "Active", E01="Active", Sequence01="Active"), helpers.a_quest("QD"))
+        before = copy.deepcopy(document)
+        with self.assertRaisesRegex(ValueError, "The next step of QB is a choice between steps, and the editor hasn't seen how the game saves a choice that's under way"):
+            story.step(document, "QB")
+        self.assertEqual(document, before)
+        self.assertEqual(story.why_no_step(document, "QB"), "")  # it has a step to finish: only finishing it shows what comes next
+        # A quest whose groups the list doesn't have, one the hero hasn't met, and one with no step under way.
+        self.assertIn("The editor doesn't know how the steps of QD hang together", story.why_no_step(document, "QD"))
+        with self.assertRaisesRegex(ValueError, "doesn't know how the steps of QD hang together, so it can't move it on by one. Finish it whole instead."):
+            story.step(document, "QD")
+        with self.assertRaisesRegex(ValueError, "hasn't met the quest QA"):
+            story.step(document, "QA")
+        stuck = self.hero(helpers.a_quest("QA", "Active", Sequence01="Active"))
+        self.assertEqual(story.why_no_step(stuck, "QA"), "No step of QA is active, so there's none to finish. Finish it whole instead.")
+        begun = self.hero(helpers.a_quest("QA"))
+        with self.assertRaisesRegex(ValueError, "QA isn't begun yet: it has no step to finish"):
+            story.step(begun, "QA", "QA_E01")
+        self.assertEqual(document, before)
+
+
+class StepsAsTheGameTookThemTests(unittest.TestCase):
+    """The same rules, with the editor's real list, replayed against what the game did: each line of the fixture is a
+    quest as one save of a play recording held it, and follows from the line before."""
+
+    @classmethod
+    def setUpClass(cls):
+        tests.use_world_list(tests.REAL_WORLD_FILE)
+
+    @classmethod
+    def tearDownClass(cls):
+        tests.use_world_list(tests.PINNED_WORLD_FILE)
+
+    def test_every_move_the_game_made_is_the_one_the_rules_make(self):
+        lines = [line for line in (Path(__file__).resolve().parent / "data" / "quest-steps.txt").read_text(encoding="utf-8").splitlines() if line.startswith("quest ")]
+        groups = world.known()["groups"]
+        moves = {"begun": 0, "moved on": 0, "finished": 0}
+        for earlier, later in zip(lines, lines[1:]):
+            before, after = as_saved(earlier), as_saved(later)
+            name = before["QuestName"]
+            if after["QuestName"] != name:
+                continue  # the next quest's first line
+            document, stood = hero_with_a_world(), before["State"]
+            document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": "", "Quests": [before]}
+            if stood == "Available":
+                self.assertTrue(story.step(document, name).begun)
+                moves["begun"] += 1
+            todo = [task["TaskName"] for task, old in zip(after["TaskData"], before["TaskData"]) if task["State"] == "Completed" and old["State"] != "Completed" and task["TaskName"] not in groups]
+            while todo:
+                on = [step.name for step in story.steps_it_is_on(document, name)]
+                ready = [step for step in todo if step in on]
+                self.assertTrue(ready, (later, todo, on))
+                story.step(document, name, ready[0])
+                todo.remove(ready[0])
+            mine = document["CharacterSaveV1"]["quest"]["Quests"][0]
+            self.assertEqual(mine["State"], after["State"], later)
+            self.assertEqual([(task["TaskName"], task["State"]) for task in mine["TaskData"]], [(task["TaskName"], task["State"]) for task in after["TaskData"]], later)
+            # A finished step holds the number the game saved with it; one still under way counts as the game counted.
+            for task, theirs in zip(mine["TaskData"], after["TaskData"]):
+                if theirs["State"] == "Completed":
+                    self.assertEqual(task["PartialProgress"], theirs["PartialProgress"], (task["TaskName"], later))
+            if stood != "Available":
+                moves["finished" if after["State"] == "Completed" else "moved on"] += 1
+        # Three quests begun, forty-five moves along the way, and the two of them that the game went on to finish.
+        self.assertEqual((len(lines), moves), (53, {"begun": 3, "moved on": 45, "finished": 2}))
+
+    def test_the_list_knows_how_every_quest_hangs_together(self):
+        known = world.known()
+        for name, steps in known["quests"].items():
+            entry = {"QuestName": name, "State": "Available", "TaskData": [{"TaskName": step, "State": "NotSet", "PartialProgress": 0} for step in steps]}
+            self.assertIsNotNone(story._tree(entry), name)
+            # Begun, every quest is on at least one step that isn't a group.
+            document = hero_with_a_world()
+            document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": "", "Quests": [entry]}
+            self.assertTrue(story.step(document, name).now_on, name)
+        self.assertEqual({group["kind"] for group in known["groups"].values()}, {"Sequence", "Standard", "Selection"})
+        self.assertEqual(sorted(name for name, group in known["groups"].items() if group["kind"] == "Selection"),
+                         ["MEa1_S06_A_Selection01", "MEa1_S06_A_Selection02", "MEa1_S06_A_Selection03", "MEa1_S06_A_Selection04"])
+
+
 class RealListStoryTests(unittest.TestCase):
     """What the editor's real list of the world knows about how quests follow each other."""
 

@@ -177,6 +177,27 @@ class StoryToolsTests(ServerTestCase):
         self.server = EditorServer(self.profile, self.dir / "backups")
         self.assertIn("keeps no list of the world's rocks and gates yet", self.call("open_shortcuts_and_gates", hero="00000000"))
 
+    def test_moves_a_quest_on_by_one_step(self):
+        from . import helpers
+
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps(helpers.STEPPING), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+        document = hero_with_a_world()
+        document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": "", "Quests": [helpers.a_quest("QA"), helpers.a_quest("QB", "Active", E01="Active", Sequence01="Active")]}
+        saves.SaveProfile(self.profile).save(HERO, document, self.dir / "backups", check_game=lambda: [])
+        self.server = EditorServer(self.profile, self.dir / "backups")
+        done = self.call("change_quest", hero="00000000", quest="QA", action="next_step")
+        self.assertEqual((done["done"], done["quest"]["stands"], done["quest"]["steps_done"]), ("Begun QA: it's on E01.", "active", 0))
+        done = self.call("change_quest", hero="00000000", quest="QA", action="next_step")
+        self.assertEqual((done["done"], done["quest"]["steps_done"]), ("Finished E01 of QA. It's on I01, K01 now.", 1))
+        for _step in range(5):
+            done = self.call("change_quest", hero="00000000", quest="QA", action="next_step")
+        self.assertEqual((done["done"], done["quest"]["stands"]), ("Finished I02, the last step of QA: the quest is finished. Added what the game opens after it: QC.", "finished"))
+        self.assertIn("is a choice between steps", self.call("change_quest", hero="00000000", quest="QB", action="next_step"))
+        self.assertIn("QA is finished: a step can be finished in a quest that's active", self.call("change_quest", hero="00000000", quest="QA", action="next_step"))
+
     def test_discovers_the_whole_map(self):
         done = self.call("discover_map", hero="00000000")
         self.assertEqual((done["done"], done["squares"], done["regions"], done["regions_added"]), ("The whole map is discovered: 16 squares in 2 regions.", 16, 2, []))
@@ -213,7 +234,7 @@ class ProtocolTests(ServerTestCase):
             "add_enchantment_books", "list_quests", "change_quest", "start_at_station", "finish_quests", "discover_map", "open_shortcuts_and_gates",
         })
         self.assertTrue(tools["list_quests"]["annotations"]["readOnlyHint"])
-        self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "start_over", "add", "track"])
+        self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "next_step", "start_over", "add", "track"])
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
         self.assertEqual(tools["add_item"]["inputSchema"]["required"], ["hero", "item"])

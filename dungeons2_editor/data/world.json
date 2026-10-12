@@ -1,5 +1,5 @@
 {
- "about": "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where things turned up, where chests were opened and which quests the game made available as it finished one. From the game's own quest tables, as a player read them out of the game and sent them (github.com/IshiakiZ/mcd2-save-editor/issues/40): the number each step to defeat enemies counts to, which quest waits for which, and which quests can be done again. Built by tools/build_world_list.py; added to from players' Share item IDs lists.",
+ "about": "What the editor knows of the game's world, from saves: quests and their steps, doors and where they are (metres), minecart stations, the regions a save keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where things turned up, where chests were opened and which quests the game made available as it finished one. From the game's own quest tables, as a player read them out of the game and sent them (github.com/IshiakiZ/mcd2-save-editor/issues/40): the number each step to defeat enemies counts to, which quest waits for which, which quests can be done again, and how a quest's steps hang together (a group's members one after the other, all at once, or as a choice). Built by tools/build_world_list.py; added to from players' Share item IDs lists.",
  "quests": {
   "CA00": [
    "CA00_PC01",
@@ -1289,6 +1289,1824 @@
   "CA09_BR": "TimeBased",
   "CA10_BR_B": "TimeBased",
   "CA10_BR": "TimeBased"
+ },
+ "groups": {
+  "CAa1_S03_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CAa1_S03_A_Sequence02",
+    "CAa1_S03_A_Sequence03",
+    "CAa1_S03_A_Sequence04"
+   ]
+  },
+  "CAa1_S03_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S03_A_E01",
+    "CAa1_S03_A_Arena01"
+   ]
+  },
+  "CAa1_S03_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S03_A_E02",
+    "CAa1_S03_A_Arena02"
+   ]
+  },
+  "CAa1_S03_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S03_A_E03",
+    "CAa1_S03_A_Arena03"
+   ]
+  },
+  "CAa1_S03_A_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S03_A_E04",
+    "CAa1_S03_A_Arena04"
+   ]
+  },
+  "CAa1_S03_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S03_A_Standard01",
+    "CAa1_S03_A_Sequence05",
+    "CAa1_S03_A_E05",
+    "CAa1_S03_A_I02"
+   ]
+  },
+  "CAa1_S02_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CAa1_S02_A_Sequence02",
+    "CAa1_S02_A_Sequence03"
+   ]
+  },
+  "CAa1_S02_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_E01",
+    "CAa1_S02_A_Standard02"
+   ]
+  },
+  "CAa1_S02_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "CAa1_S02_A_I01",
+    "CAa1_S02_A_I02",
+    "CAa1_S02_A_I03"
+   ]
+  },
+  "CAa1_S02_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_E02",
+    "CAa1_S02_A_Standard03"
+   ]
+  },
+  "CAa1_S02_A_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CAa1_S02_A_I04",
+    "CAa1_S02_A_I05",
+    "CAa1_S02_A_I06"
+   ]
+  },
+  "CAa1_S02_A_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "CAa1_S02_A_Sequence04",
+    "CAa1_S02_A_Sequence05",
+    "CAa1_S02_A_Sequence06"
+   ]
+  },
+  "CAa1_S02_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_E04",
+    "CAa1_S02_A_SM01",
+    "CAa1_S02_A_K01",
+    "CAa1_S02_A_I08"
+   ]
+  },
+  "CAa1_S02_A_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_E05",
+    "CAa1_S02_A_SM02",
+    "CAa1_S02_A_K02",
+    "CAa1_S02_A_I09"
+   ]
+  },
+  "CAa1_S02_A_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_E07",
+    "CAa1_S02_A_SM03",
+    "CAa1_S02_A_K03",
+    "CAa1_S02_A_I11"
+   ]
+  },
+  "CAa1_S02_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CAa1_S02_A_Standard01",
+    "CAa1_S02_A_Standard04",
+    "CAa1_S02_A_E06",
+    "CAa1_S02_A_I10"
+   ]
+  },
+  "CT_S01_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CT_S01_A_E01",
+    "CT_S01_A_Arena01",
+    "CT_S01_A_I01",
+    "CT_S01_A_E02",
+    "CT_S01_A_I02"
+   ]
+  },
+  "CT_S02_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CT_S02_A_E01",
+    "CT_S02_A_Arena",
+    "CT_S02_A_I01",
+    "CT_S02_A_E02",
+    "CT_S02_A_I02"
+   ]
+  },
+  "CT_S03_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CT_S03_A_E01",
+    "CT_S03_A_Arena01",
+    "CT_S03_A_I01",
+    "CT_S03_A_E02",
+    "CT_S03_A_I02"
+   ]
+  },
+  "CT_S04_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CT_S04_A_E01",
+    "CT_S04_A_Arena01",
+    "CT_S04_A_I01",
+    "CT_S04_A_E02",
+    "CT_S04_A_I02"
+   ]
+  },
+  "CA01_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA01_E02",
+    "CA01_SM03",
+    "CA01_SM06",
+    "CA01_K03"
+   ]
+  },
+  "CA01_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA01_E06",
+    "CA01_AS02"
+   ]
+  },
+  "CA01_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA01_E14",
+    "CA01_I07",
+    "CA01_E12",
+    "CA01_E13",
+    "CA01_E10",
+    "CA01_AS01",
+    "CA01_I08",
+    "CA01_E01",
+    "CA01_SM02",
+    "CA01_K02",
+    "CA01_I02",
+    "CA01_Sequence03",
+    "CA01_E03",
+    "CA01_I03",
+    "CA01_PC01",
+    "CA01_AS03",
+    "CA01_I04",
+    "CA01_PC03",
+    "CA01_Sequence02",
+    "CA01_E07",
+    "CA01_I05"
+   ]
+  },
+  "CA02_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_E05",
+    "CA02_I03",
+    "CA02_PC02",
+    "CA02_AS02",
+    "CA02_E06",
+    "CA02_AS03",
+    "CA02_I04",
+    "CA02_PC03",
+    "CA02_I05"
+   ]
+  },
+  "CA02_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_E08",
+    "CA02_I09",
+    "CA02_I08",
+    "CA02_E02",
+    "CA02_I01",
+    "CA02_E03",
+    "CA02_AS01",
+    "CA02_PC01",
+    "CA02_E04",
+    "CA02_Sequence03",
+    "CA02_PC04",
+    "CA02_I07"
+   ]
+  },
+  "CA03_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA03_MT01",
+    "CA03_MT02",
+    "CA03_MT03",
+    "CA03_MT04"
+   ]
+  },
+  "CA03_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA03_E01",
+    "CA03_E09",
+    "CA03_E10",
+    "CA03_E07",
+    "CA03_E08",
+    "CA03_E06",
+    "CA03_AS02",
+    "CA03_E02",
+    "CA03_I01",
+    "CA03_PC01",
+    "CA03_AS01",
+    "CA03_E03",
+    "CA03_I02",
+    "CA03_Sequence02"
+   ]
+  },
+  "CA04_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA04_Sequence02",
+    "CA04_Sequence03"
+   ]
+  },
+  "CA04_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_E02",
+    "CA04_E07",
+    "CA04_AS02",
+    "CA04_I02"
+   ]
+  },
+  "CA04_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_SM01",
+    "CA04_E03",
+    "CA04_AS03",
+    "CA04_I03"
+   ]
+  },
+  "CA04_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA04_Sequence04",
+    "CA04_Sequence05"
+   ]
+  },
+  "CA04_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_I05",
+    "CA04_MT01"
+   ]
+  },
+  "CA04_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_I06",
+    "CA04_MT02"
+   ]
+  },
+  "CA04_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "CA04_MT03",
+    "CA04_MT04"
+   ]
+  },
+  "CA04_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_F01",
+    "CA04_MT05"
+   ]
+  },
+  "CA04_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_E08",
+    "CA04_I10",
+    "CA04_E01",
+    "CA04_I01",
+    "CA04_Standard01",
+    "CA04_E04",
+    "CA04_I04",
+    "CA04_Standard03",
+    "CA04_AS01",
+    "CA04_Standard02",
+    "CA04_I07",
+    "CA04_Sequence06",
+    "CA04_I08",
+    "CA04_E05",
+    "CA04_E06",
+    "CA04_I09"
+   ]
+  },
+  "CA05_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA05_Sequence01",
+    "CA05_Sequence02"
+   ]
+  },
+  "CA05_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_E02",
+    "CA05_E03",
+    "CA05_Standard04",
+    "CA05_E17",
+    "CA05_AS01"
+   ]
+  },
+  "CA05_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "CA05_I02",
+    "CA05_I15"
+   ]
+  },
+  "CA05_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_E04",
+    "CA05_E05",
+    "CA05_I03"
+   ]
+  },
+  "CA05_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA05_Sequence03",
+    "CA05_Sequence07"
+   ]
+  },
+  "CA05_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_E08",
+    "CA05_AS04",
+    "CA05_I07"
+   ]
+  },
+  "CA05_Sequence07": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_E18",
+    "CA05_AS05",
+    "CA05_I14"
+   ]
+  },
+  "CA05_Standard05": {
+   "kind": "Standard",
+   "of": [
+    "CA05_I19",
+    "CA05_I20"
+   ]
+  },
+  "CA05_Sequence00": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_E20",
+    "CA05_I18",
+    "CA05_E01",
+    "CA05_I01",
+    "CA05_Standard01",
+    "CA05_E06",
+    "CA05_I05",
+    "CA05_E07",
+    "CA05_I06",
+    "CA05_Standard03",
+    "CA05_E12",
+    "CA05_I11",
+    "CA05_PC01",
+    "CA05_E13",
+    "CA05_E21",
+    "CA05_Standard05",
+    "CA05_E22",
+    "CA05_E14",
+    "CA05_PC02",
+    "CA05_AS03",
+    "CA05_E15",
+    "CA05_I12",
+    "CA05_PC03",
+    "CA05_E19",
+    "CA05_E16",
+    "CA05_I13",
+    "CA05_PC04"
+   ]
+  },
+  "CA06_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA06_E02",
+    "CA06_I02",
+    "CA06_E03",
+    "CA06_E04",
+    "CA06_I04",
+    "CA06_PC01",
+    "CA06_I05",
+    "CA06_PC02"
+   ]
+  },
+  "CA07_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_Sequence05",
+    "CA07_E23",
+    "CA07_I05"
+   ]
+  },
+  "CA07_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_E04",
+    "CA07_I04"
+   ]
+  },
+  "CA07_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_Sequence06",
+    "CA07_E24",
+    "CA07_I07"
+   ]
+  },
+  "CA07_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_E06",
+    "CA07_I06"
+   ]
+  },
+  "CA07_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_Sequence07",
+    "CA07_E25",
+    "CA07_I09"
+   ]
+  },
+  "CA07_Sequence07": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_E08",
+    "CA07_I08"
+   ]
+  },
+  "CA07_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_E26",
+    "CA07_I18",
+    "CA07_E01",
+    "CA07_E03",
+    "CA07_I12",
+    "CA07_I02",
+    "CA07_E02",
+    "CA07_I19",
+    "CA07_E16",
+    "CA07_E22",
+    "CA07_Sequence02",
+    "CA07_Sequence03",
+    "CA07_Sequence04",
+    "CA07_E17",
+    "CA07_E19",
+    "CA07_E20",
+    "CA07_AS02",
+    "CA07_MT01",
+    "CA07_I15",
+    "CA07_E14",
+    "CA07_I10",
+    "CA07_PC01",
+    "CA07_AS01",
+    "CA07_E15",
+    "CA07_I11",
+    "CA07_PC02",
+    "CA07_E21",
+    "CA07_I16"
+   ]
+  },
+  "CA04_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA04_BR_AS01"
+   ]
+  },
+  "CA00_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA00_Sequence02",
+    "CA00_Sequence03",
+    "CA00_Sequence04",
+    "CA00_Sequence05"
+   ]
+  },
+  "CA00_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA00_SM03",
+    "CA00_I03"
+   ]
+  },
+  "CA00_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA00_SM04",
+    "CA00_SM06",
+    "CA00_I04"
+   ]
+  },
+  "CA00_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA00_SM05",
+    "CA00_SM07",
+    "CA00_I06"
+   ]
+  },
+  "CA00_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA00_SM08",
+    "CA00_I10"
+   ]
+  },
+  "CA00_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA00_PC01",
+    "CA00_E01",
+    "CA00_SM01",
+    "CA00_K01",
+    "CA00_I01",
+    "CA00_E03",
+    "CA00_PC02",
+    "CA00_SM02",
+    "CA00_K02",
+    "CA00_I02",
+    "CA00_Standard01",
+    "CA00_E04",
+    "CA00_I07",
+    "CA00_I08",
+    "CA00_E05",
+    "CA00_AS01",
+    "CA00_E06",
+    "CA00_I09",
+    "CA00_PC03"
+   ]
+  },
+  "CA02_B_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_B_MT01",
+    "CA02_B_MT02"
+   ]
+  },
+  "CA02_B_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_B_E07",
+    "CA02_B_I09",
+    "CA02_B_E01",
+    "CA02_B_E02",
+    "CA02_B_I01",
+    "CA02_B_E03",
+    "CA02_B_E04",
+    "CA02_B_AS02",
+    "CA02_B_I03",
+    "CA02_B_E05",
+    "CA02_B_I06",
+    "CA02_B_E06",
+    "CA02_B_I07",
+    "CA02_B_PC01",
+    "CA02_B_AS03",
+    "CA02_B_Sequence02",
+    "CA02_B_I08"
+   ]
+  },
+  "CA08_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA08_Sequence02",
+    "CA08_Sequence03",
+    "CA08_Sequence04",
+    "CA08_Sequence05"
+   ]
+  },
+  "CA08_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_E04",
+    "CA08_AS03",
+    "CA08_I02"
+   ]
+  },
+  "CA08_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_E05",
+    "CA08_AS04",
+    "CA08_I04"
+   ]
+  },
+  "CA08_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_I06"
+   ]
+  },
+  "CA08_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_I09"
+   ]
+  },
+  "CA08_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_E01",
+    "CA08_Standard01",
+    "CA08_E02",
+    "CA08_AS01",
+    "CA08_I07",
+    "CA08_E03",
+    "CA08_AS02",
+    "CA08_I08",
+    "CA08_PC01"
+   ]
+  },
+  "CA09_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_Standard07",
+    "CA09_E02B"
+   ]
+  },
+  "CA09_Standard07": {
+   "kind": "Standard",
+   "of": [
+    "CA09_E21",
+    "CA09_E22",
+    "CA09_E23"
+   ]
+  },
+  "CA09_Standard06": {
+   "kind": "Standard",
+   "of": [
+    "CA09_Sequence02",
+    "CA09_Sequence03",
+    "CA09_Sequence04"
+   ]
+  },
+  "CA09_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_E07",
+    "CA09_SM02",
+    "CA09_K01",
+    "CA09_SM05",
+    "CA09_K04",
+    "CA09_I19",
+    "CA09_MT02"
+   ]
+  },
+  "CA09_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_E19",
+    "CA09_SM03",
+    "CA09_K02",
+    "CA09_SM06",
+    "CA09_SM09",
+    "CA09_K05",
+    "CA09_I20",
+    "CA09_MT03"
+   ]
+  },
+  "CA09_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_E18",
+    "CA09_SM04",
+    "CA09_K03",
+    "CA09_SM07",
+    "CA09_SM08",
+    "CA09_K06",
+    "CA09_I21",
+    "CA09_MT04"
+   ]
+  },
+  "CA09_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_E15",
+    "CA09_E16",
+    "CA09_AS05",
+    "CA09_E17",
+    "CA09_Standard03",
+    "CA09_E20"
+   ]
+  },
+  "CA09_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA09_I07",
+    "CA09_I08"
+   ]
+  },
+  "CA09_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "CA09_I12",
+    "CA09_I13"
+   ]
+  },
+  "CA09_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_Sequence06",
+    "CA09_E03",
+    "CA09_E04",
+    "CA09_I16",
+    "CA09_Standard06",
+    "CA09_E08",
+    "CA09_E09",
+    "CA09_I17",
+    "CA09_E14",
+    "CA09_A04",
+    "CA09_Sequence05",
+    "CA09_Standard04",
+    "CA09_F01",
+    "CA09_MT01",
+    "CA09_I18"
+   ]
+  },
+  "CA10_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA10_E02",
+    "CA10_E03",
+    "CA10_E04"
+   ]
+  },
+  "CA10_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "CA10_Sequence07"
+   ]
+  },
+  "CA10_Sequence07": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_Standard06",
+    "CA10_Sequence08"
+   ]
+  },
+  "CA10_Standard06": {
+   "kind": "Standard",
+   "of": [
+    "CA10_MT02",
+    "CA10_E21"
+   ]
+  },
+  "CA10_Sequence08": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_E23",
+    "CA10_MT05"
+   ]
+  },
+  "CA10_Standard05": {
+   "kind": "Standard",
+   "of": [
+    "CA10_F01",
+    "CA10_Sequence05"
+   ]
+  },
+  "CA10_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_E22",
+    "CA10_SM03"
+   ]
+  },
+  "CA10_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA10_SM01"
+   ]
+  },
+  "CA10_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_MT03",
+    "CA10_I16"
+   ]
+  },
+  "CA10_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_I17",
+    "CA10_Sequence06",
+    "CA10_I10",
+    "CA10_I11",
+    "CA10_I12"
+   ]
+  },
+  "CA10_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_F02",
+    "CA10_MT04"
+   ]
+  },
+  "CA10_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_E00",
+    "CA10_E01",
+    "CA10_Standard01",
+    "CA10_E05",
+    "CA10_Standard04",
+    "CA10_E06",
+    "CA10_I07",
+    "CA10_Standard05",
+    "CA10_Standard03",
+    "CA10_AS05",
+    "CA10_Sequence04",
+    "CA10_PC01",
+    "CA10_Sequence03",
+    "CA10_E13",
+    "CA10_E14",
+    "CA10_E08",
+    "CA10_AS01",
+    "CA10_E09",
+    "CA10_E15",
+    "CA10_E16",
+    "CA10_E17",
+    "CA10_E24",
+    "CA10_AS06",
+    "CA10_E18",
+    "CA10_E19",
+    "CA10_E20",
+    "CA10_AS02",
+    "CA10_E10",
+    "CA10_E11",
+    "CA10_I13",
+    "CA10_PC02",
+    "CA10_AS03",
+    "CA10_T01",
+    "CA10_PC03",
+    "CA10_AS04",
+    "CA10_T02",
+    "CA10_I14",
+    "CA10_PC04"
+   ]
+  },
+  "CA05_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA05_BR_E01",
+    "CA05_BR_AS01"
+   ]
+  },
+  "CA02_B_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_B_BR_E01",
+    "CA02_B_BR_AS01"
+   ]
+  },
+  "CA03_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA03_BR_E01",
+    "CA03_BR_AS01"
+   ]
+  },
+  "CA07_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA07_BR_E01",
+    "CA07_BR_AS01"
+   ]
+  },
+  "CA01_B_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA01_B_Standard02",
+    "CA01_B_Standard03",
+    "CA01_B_Standard04",
+    "CA01_B_Standard05"
+   ]
+  },
+  "CA01_B_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "CA01_B_SM01",
+    "CA01_B_I03"
+   ]
+  },
+  "CA01_B_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA01_B_SM02",
+    "CA01_B_I04"
+   ]
+  },
+  "CA01_B_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "CA01_B_SM03",
+    "CA01_B_I05"
+   ]
+  },
+  "CA01_B_Standard05": {
+   "kind": "Standard",
+   "of": [
+    "CA01_B_SM04",
+    "CA01_B_I06"
+   ]
+  },
+  "CA01_B_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA01_B_I01",
+    "CA01_B_E02",
+    "CA01_B_AS01",
+    "CA01_B_I02",
+    "CA01_B_Standard01",
+    "CA01_B_E03",
+    "CA01_B_I07",
+    "CA01_B_E04",
+    "CA01_B_E05",
+    "CA01_B_I08"
+   ]
+  },
+  "CA02_C_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_C_I01"
+   ]
+  },
+  "CA02_C_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_C_I02",
+    "CA02_C_SM02",
+    "CA02_C_K01"
+   ]
+  },
+  "CA02_C_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_C_E04",
+    "CA02_C_E05",
+    "CA02_C_I03",
+    "CA02_C_AS01"
+   ]
+  },
+  "CA02_C_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_C_E09",
+    "CA02_C_E10",
+    "CA02_C_E11",
+    "CA02_C_I07",
+    "CA02_C_AS02",
+    "CA02_C_E12",
+    "CA02_C_E13",
+    "CA02_C_I08"
+   ]
+  },
+  "CA02_C_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA02_C_SM01",
+    "CA02_C_E01",
+    "CA02_C_Sequence02",
+    "CA02_C_E02",
+    "CA02_C_Sequence03",
+    "CA02_C_E03",
+    "CA02_C_Sequence04",
+    "CA02_C_E06",
+    "CA02_C_I05",
+    "CA02_C_E07",
+    "CA02_C_E08",
+    "CA02_C_I06",
+    "CA02_C_Sequence05"
+   ]
+  },
+  "CA09_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA09_BR_E01",
+    "CA09_BR_AS01"
+   ]
+  },
+  "CA08_B_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_B_Standard03",
+    "CA08_B_E02"
+   ]
+  },
+  "CA08_B_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "CA08_B_E06",
+    "CA08_B_E07",
+    "CA08_B_E08"
+   ]
+  },
+  "CA08_B_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "CA08_B_Standard02"
+   ]
+  },
+  "CA08_B_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "CA08_B_Sequence02",
+    "CA08_B_Sequence04",
+    "CA08_B_Sequence03"
+   ]
+  },
+  "CA08_B_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_B_SM02",
+    "CA08_B_I01"
+   ]
+  },
+  "CA08_B_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_B_SM03",
+    "CA08_B_I02"
+   ]
+  },
+  "CA08_B_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_B_SM04",
+    "CA08_B_I03"
+   ]
+  },
+  "CA08_B_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA08_B_E01",
+    "CA08_B_Sequence05",
+    "CA08_B_E03",
+    "CA08_B_I04",
+    "CA08_B_Standard01",
+    "CA08_B_SM01",
+    "CA08_B_E04",
+    "CA08_B_E05",
+    "CA08_B_AS01"
+   ]
+  },
+  "CA10_BR_B_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_BR_B_E01",
+    "CA10_BR_B_AS01"
+   ]
+  },
+  "CA10_BR_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "CA10_BR_E01",
+    "CA10_BR_AS01",
+    "CA10_BR_I01",
+    "CA10_BR_AS02"
+   ]
+  },
+  "DEa1_S12_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "DEa1_S12_A_I01"
+   ]
+  },
+  "DEa1_S12_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "DEa1_S12_A_Sequence02",
+    "DEa1_S12_A_Sequence03",
+    "DEa1_S12_A_Sequence04"
+   ]
+  },
+  "DEa1_S12_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S12_A_E03",
+    "DEa1_S12_A_E10",
+    "DEa1_S12_A_E04",
+    "DEa1_S12_A_Arena01",
+    "DEa1_S12_A_I05"
+   ]
+  },
+  "DEa1_S12_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S12_A_E05",
+    "DEa1_S12_A_E06",
+    "DEa1_S12_A_E11",
+    "DEa1_S12_A_Arena02",
+    "DEa1_S12_A_I06"
+   ]
+  },
+  "DEa1_S12_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S12_A_E07",
+    "DEa1_S12_A_E08",
+    "DEa1_S12_A_SM01",
+    "DEa1_S12_A_SM02",
+    "DEa1_S12_A_I07"
+   ]
+  },
+  "DEa1_S12_A_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S12_A_I08",
+    "DEa1_S12_A_I09",
+    "DEa1_S12_A_I10"
+   ]
+  },
+  "DEa1_S12_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S12_A_E01",
+    "DEa1_S12_A_Standard01",
+    "DEa1_S12_A_Arena03",
+    "DEa1_S12_A_I11",
+    "DEa1_S12_A_Standard02",
+    "DEa1_S12_A_E09",
+    "DEa1_S12_A_Sequence05",
+    "DEa1_S12_A_Arena04"
+   ]
+  },
+  "DEa1_S13_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "DEa1_S13_A_I02",
+    "DEa1_S13_A_I03",
+    "DEa1_S13_A_I04",
+    "DEa1_S13_A_I05",
+    "DEa1_S13_A_I06",
+    "DEa1_S13_A_I07"
+   ]
+  },
+  "DEa1_S13_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S13_A_SM01",
+    "DEa1_S13_A_SM02",
+    "DEa1_S13_A_K01",
+    "DEa1_S13_A_I01",
+    "DEa1_S13_A_E02",
+    "DEa1_S13_A_Standard01",
+    "DEa1_S13_A_E03",
+    "DEa1_S13_A_E04",
+    "DEa1_S13_A_I08",
+    "DEa1_S13_A_E05",
+    "DEa1_S13_A_E06",
+    "DEa1_S13_A_E07",
+    "DEa1_S13_A_E08",
+    "DEa1_S13_A_AS01",
+    "DEa1_S13_A_E09",
+    "DEa1_S13_A_I09"
+   ]
+  },
+  "DEa1_S14_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "DEa1_S14_A_I04",
+    "DEa1_S14_A_I05",
+    "DEa1_S14_A_I06"
+   ]
+  },
+  "DEa1_S14_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "DEa1_S14_A_E01",
+    "DEa1_S14_A_E02",
+    "DEa1_S14_A_E03",
+    "DEa1_S14_A_I01",
+    "DEa1_S14_A_E04",
+    "DEa1_S14_A_E05",
+    "DEa1_S14_A_Arena01",
+    "DEa1_S14_A_I02",
+    "DEa1_S14_A_E06",
+    "DEa1_S14_A_I03",
+    "DEa1_S14_A_E07",
+    "DEa1_S14_A_E08",
+    "DEa1_S14_A_Arena02",
+    "DEa1_S14_A_Standard01",
+    "DEa1_S14_A_E10",
+    "DEa1_S14_A_I07"
+   ]
+  },
+  "FOa1_S08_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "FOa1_S08_A_E01",
+    "FOa1_S08_A_AS01"
+   ]
+  },
+  "FOa1_S08_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "FOa1_S08_A_I01"
+   ]
+  },
+  "FOa1_S08_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "FOa1_S08_A_I06",
+    "FOa1_S08_A_I07",
+    "FOa1_S08_A_I08"
+   ]
+  },
+  "FOa1_S08_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "FOa1_S08_A_E03",
+    "FOa1_S08_A_I12",
+    "FOa1_S08_A_Sequence02",
+    "FOa1_S08_A_Standard01",
+    "FOa1_S08_A_I05",
+    "FOa1_S08_A_E04",
+    "FOa1_S08_A_I11",
+    "FOa1_S08_A_E02",
+    "FOa1_S08_A_AS02",
+    "FOa1_S08_A_Standard02",
+    "FOa1_S08_A_I10"
+   ]
+  },
+  "FOa1_S10_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "FOa1_S10_A_E01",
+    "FOa1_S10_A_I01",
+    "FOa1_S10_A_A01",
+    "FOa1_S10_A_I02",
+    "FOa1_S10_A_E02",
+    "FOa1_S10_A_SM01",
+    "FOa1_S10_A_I03",
+    "FOa1_S10_A_I04"
+   ]
+  },
+  "MEa1_S05_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "MEa1_S05_A_Sequence02",
+    "MEa1_S05_A_Sequence03",
+    "MEa1_S05_A_Sequence04"
+   ]
+  },
+  "MEa1_S05_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "MEa1_S05_A_I02",
+    "MEa1_S05_A_Arena01"
+   ]
+  },
+  "MEa1_S05_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "MEa1_S05_A_I03",
+    "MEa1_S05_A_Arena02"
+   ]
+  },
+  "MEa1_S05_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "MEa1_S05_A_I05",
+    "MEa1_S05_A_Arena03Gateless"
+   ]
+  },
+  "MEa1_S05_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "MEa1_S05_A_E01",
+    "MEa1_S05_A_I01",
+    "MEa1_S05_A_Standard01",
+    "MEa1_S05_A_E02",
+    "MEa1_S05_A_I06",
+    "MEa1_S05_A_Arena03",
+    "MEa1_S05_A_E03",
+    "MEa1_S05_A_I07"
+   ]
+  },
+  "MEa1_S06_A_Selection04": {
+   "kind": "Selection",
+   "of": [
+    "MEa1_S06_A_Standard04",
+    "MEa1_S06_A_I13"
+   ],
+   "pick": 1
+  },
+  "MEa1_S06_A_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "MEa1_S06_A_I12",
+    "false04"
+   ]
+  },
+  "MEa1_S06_A_Selection01": {
+   "kind": "Selection",
+   "of": [
+    "MEa1_S06_A_Standard01",
+    "MEa1_S06_A_I03"
+   ],
+   "pick": 1
+  },
+  "MEa1_S06_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "MEa1_S06_A_I01",
+    "MEa1_S06_A_I02",
+    "false01"
+   ]
+  },
+  "MEa1_S06_A_Selection02": {
+   "kind": "Selection",
+   "of": [
+    "MEa1_S06_A_Standard02",
+    "MEa1_S06_A_I06"
+   ],
+   "pick": 1
+  },
+  "MEa1_S06_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "MEa1_S06_A_I04",
+    "MEa1_S06_A_I05",
+    "false02"
+   ]
+  },
+  "MEa1_S06_A_Selection03": {
+   "kind": "Selection",
+   "of": [
+    "MEa1_S06_A_Standard03",
+    "MEa1_S06_A_I09"
+   ],
+   "pick": 1
+  },
+  "MEa1_S06_A_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "MEa1_S06_A_I07",
+    "MEa1_S06_A_I08",
+    "false03"
+   ]
+  },
+  "MEa1_S06_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "MEa1_S06_A_E06",
+    "MEa1_S06_A_Selection04",
+    "MEa1_S06_A_Follow01",
+    "MEa1_S06_A_I14",
+    "MEa1_S06_A_E01",
+    "MEa1_S06_A_Selection01",
+    "MEa1_S06_A_E02",
+    "MEa1_S06_A_Selection02",
+    "MEa1_S06_A_E03",
+    "MEa1_S06_A_Selection03",
+    "MEa1_S06_A_E04",
+    "MEa1_S06_A_I10",
+    "MEa1_S06_A_E05",
+    "MEa1_S06_A_SM01",
+    "MEa1_S06_A_K01",
+    "MEa1_S06_A_I11"
+   ]
+  },
+  "MEa2_S02_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "MEa2_S02_A_Sequence02",
+    "MEa2_S02_A_Sequence03",
+    "MEa2_S02_A_Sequence04"
+   ]
+  },
+  "MEa2_S02_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S02_A_E03",
+    "MEa2_S02_A_I03",
+    "MEa2_S02_A_Arena02"
+   ]
+  },
+  "MEa2_S02_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S02_A_E04",
+    "MEa2_S02_A_I04",
+    "MEa2_S02_A_Arena03"
+   ]
+  },
+  "MEa2_S02_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S02_A_E05",
+    "MEa2_S02_A_I05",
+    "MEa2_S02_A_Arena04"
+   ]
+  },
+  "MEa2_S02_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S02_A_E01",
+    "MEa2_S02_A_I01",
+    "MEa2_S02_A_E02",
+    "MEa2_S02_A_I02",
+    "MEa2_S02_A_Standard01",
+    "MEa2_S02_A_E06",
+    "MEa2_S02_A_I06"
+   ]
+  },
+  "MEa2_S03_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "MEa2_S03_A_Sequence01",
+    "MEa2_S03_A_Sequence02",
+    "MEa2_S03_A_Sequence03",
+    "MEa2_S03_A_Sequence04"
+   ]
+  },
+  "MEa2_S03_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S03_A_E02",
+    "MEa2_S03_A_Arena01",
+    "MEa2_S03_A_I01"
+   ]
+  },
+  "MEa2_S03_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S03_A_E03",
+    "MEa2_S03_A_Arena02",
+    "MEa2_S03_A_I02"
+   ]
+  },
+  "MEa2_S03_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S03_A_E04",
+    "MEa2_S03_A_Arena03",
+    "MEa2_S03_A_I03"
+   ]
+  },
+  "MEa2_S03_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S03_A_E05",
+    "MEa2_S03_A_Arena04",
+    "MEa2_S03_A_I04"
+   ]
+  },
+  "MEa2_S03_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "MEa2_S03_A_I05",
+    "MEa2_S03_A_I06",
+    "MEa2_S03_A_I07",
+    "MEa2_S03_A_I08"
+   ]
+  },
+  "MEa2_S03_A_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "MEa2_S03_A_E01",
+    "MEa2_S03_A_Standard01",
+    "MEa2_S03_A_E06",
+    "MEa2_S03_A_Standard02",
+    "MEa2_S03_A_I09"
+   ]
+  },
+  "PLa1_S08_A_Sequence06": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_E09",
+    "PLa1_S08_A_SM05",
+    "PLa1_S08_A_K05",
+    "PLa1_S08_A_I12"
+   ]
+  },
+  "PLa1_S08_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_Sequence03",
+    "PLa1_S08_A_Sequence04",
+    "PLa1_S08_A_Sequence05"
+   ]
+  },
+  "PLa1_S08_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_E04",
+    "PLa1_S08_A_SM02",
+    "PLa1_S08_A_K02",
+    "PLa1_S08_A_I04"
+   ]
+  },
+  "PLa1_S08_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_E05",
+    "PLa1_S08_A_SM03",
+    "PLa1_S08_A_K03",
+    "PLa1_S08_A_I05"
+   ]
+  },
+  "PLa1_S08_A_Sequence05": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_E06",
+    "PLa1_S08_A_SM04",
+    "PLa1_S08_A_K04",
+    "PLa1_S08_A_I06"
+   ]
+  },
+  "PLa1_S08_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "PLa1_S08_A_I08",
+    "PLa1_S08_A_I09",
+    "PLa1_S08_A_I10",
+    "PLa1_S08_A_I11"
+   ]
+  },
+  "PLa1_S08_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S08_A_E01",
+    "PLa1_S08_A_I01",
+    "PLa1_S08_A_Sequence06",
+    "PLa1_S08_A_E02",
+    "PLa1_S08_A_I02",
+    "PLa1_S08_A_E03",
+    "PLa1_S08_A_AS01",
+    "PLa1_S08_A_I03",
+    "PLa1_S08_A_Sequence02",
+    "PLa1_S08_A_E07",
+    "PLa1_S08_A_Standard01",
+    "PLa1_S08_A_A01",
+    "PLa1_S08_A_E08",
+    "PLa1_S08_A_I07"
+   ]
+  },
+  "PLa1_S04_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "PLa1_S04_A_I01",
+    "PLa1_S04_A_I02",
+    "PLa1_S04_A_I03"
+   ]
+  },
+  "PLa1_S04_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S04_A_E02",
+    "PLa1_S04_A_SM01",
+    "PLa1_S04_A_K01"
+   ]
+  },
+  "PLa1_S04_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "PLa1_S04_A_I08",
+    "PLa1_S04_A_I09",
+    "PLa1_S04_A_I10"
+   ]
+  },
+  "PLa1_S04_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "PLa1_S04_A_E01",
+    "PLa1_S04_A_Standard01",
+    "PLa1_S04_A_E06",
+    "PLa1_S04_A_I12",
+    "PLa1_S04_A_Sequence02",
+    "PLa1_S04_A_I04",
+    "PLa1_S04_A_E03",
+    "PLa1_S04_A_SM02",
+    "PLa1_S04_A_K02",
+    "PLa1_S04_A_I05",
+    "PLa1_S04_A_E04",
+    "PLa1_S04_A_SM03",
+    "PLa1_S04_A_K03",
+    "PLa1_S04_A_I06",
+    "PLa1_S04_A_E05",
+    "PLa1_S04_A_SM04",
+    "PLa1_S04_A_K04",
+    "PLa1_S04_A_I07",
+    "PLa1_S04_A_Standard02",
+    "PLa1_S04_A_MT01",
+    "PLa1_S04_A_I11"
+   ]
+  },
+  "PLa2_S15_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S15_A_E01",
+    "PLa2_S15_A_SM01",
+    "PLa2_S15_A_K01",
+    "PLa2_S15_A_I01"
+   ]
+  },
+  "PLa2_S15_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S15_A_E02",
+    "PLa2_S15_A_SM02",
+    "PLa2_S15_A_K02",
+    "PLa2_S15_A_I02"
+   ]
+  },
+  "PLa2_S15_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S15_A_Sequence02",
+    "PLa2_S15_A_Sequence03",
+    "PLa2_S15_A_E03",
+    "PLa2_S15_A_AS01",
+    "PLa2_S15_A_I04",
+    "PLa2_S15_A_I05"
+   ]
+  },
+  "PLa2_S16_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S16_A_E01",
+    "PLa2_S16_A_Standard04",
+    "PLa2_S16_A_K01"
+   ]
+  },
+  "PLa2_S16_A_Standard04": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_SM08",
+    "PLa2_S16_A_SM01"
+   ]
+  },
+  "PLa2_S16_A_Standard01": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_I02",
+    "PLa2_S16_A_I03",
+    "PLa2_S16_A_I14"
+   ]
+  },
+  "PLa2_S16_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S16_A_E02",
+    "PLa2_S16_A_Standard05",
+    "PLa2_S16_A_K02"
+   ]
+  },
+  "PLa2_S16_A_Standard05": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_SM05",
+    "PLa2_S16_A_SM02"
+   ]
+  },
+  "PLa2_S16_A_Standard02": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_I06",
+    "PLa2_S16_A_I07",
+    "PLa2_S16_A_I11",
+    "PLa2_S16_A_I12"
+   ]
+  },
+  "PLa2_S16_A_Sequence04": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S16_A_E03",
+    "PLa2_S16_A_Standard06",
+    "PLa2_S16_A_K03"
+   ]
+  },
+  "PLa2_S16_A_Standard06": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_SM06",
+    "PLa2_S16_A_SM03",
+    "PLa2_S16_A_SM07"
+   ]
+  },
+  "PLa2_S16_A_Standard03": {
+   "kind": "Standard",
+   "of": [
+    "PLa2_S16_A_I08",
+    "PLa2_S16_A_I09",
+    "PLa2_S16_A_I13"
+   ]
+  },
+  "PLa2_S16_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S16_A_E05",
+    "PLa2_S16_A_I10",
+    "PLa2_S16_A_Sequence02",
+    "PLa2_S16_A_Standard01",
+    "PLa2_S16_A_Sequence03",
+    "PLa2_S16_A_Standard02",
+    "PLa2_S16_A_Sequence04",
+    "PLa2_S16_A_Standard03",
+    "PLa2_S16_A_I04",
+    "PLa2_S16_A_F01",
+    "PLa2_S16_A_SM04",
+    "PLa2_S16_A_K04",
+    "PLa2_S16_A_F02",
+    "PLa2_S16_A_I05"
+   ]
+  },
+  "PLa2_S17_A_Sequence02": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S17_A_E02",
+    "PLa2_S17_A_SM01",
+    "PLa2_S17_A_SM02",
+    "PLa2_S17_A_K01"
+   ]
+  },
+  "PLa2_S17_A_Sequence03": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S17_A_E03",
+    "PLa2_S17_A_SM03",
+    "PLa2_S17_A_SM04",
+    "PLa2_S17_A_K02"
+   ]
+  },
+  "PLa2_S17_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "PLa2_S17_A_E01",
+    "PLa2_S17_A_I01",
+    "PLa2_S17_A_MT01",
+    "PLa2_S17_A_I03",
+    "PLa2_S17_A_AS01",
+    "PLa2_S17_A_Sequence02",
+    "PLa2_S17_A_Sequence03",
+    "PLa2_S17_A_I02"
+   ]
+  },
+  "TOa1_S01_A_Sequence01": {
+   "kind": "Sequence",
+   "of": [
+    "TOa1_S01_A_MT01",
+    "TOa1_S01_A_E01"
+   ]
+  }
  },
  "stations": [
   "SW.MinecartStation.Town",

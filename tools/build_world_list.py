@@ -15,8 +15,9 @@ from saves, the way it learns items. This adds to the list it has:
     each list given: the world's part of a Share item IDs list, as a player posted it (a text file with the
     lines; the item IDs and the headings in it are passed over)
     the game's quest tables (a zip or a folder of the game's quest files as JSON, as a player read them out of
-    the game and sent them): the number each step to defeat enemies counts to, which quest waits for which, and
-    which quests the game lets a hero do again
+    the game and sent them): the number each step to defeat enemies counts to, which quest waits for which,
+    which quests the game lets a hero do again, and how a quest's steps hang together (which are groups of steps,
+    and whether a group's members come one after the other, all at once, or as a choice)
 
 Nothing is ever taken out, and nothing a list already has is changed: a door or a region that a save puts
 somewhere else than the list does is kept beside it ("also") and named here, to be looked at. No hero's ID or
@@ -43,7 +44,8 @@ ABOUT = (
     "keeps a picture of the fog for, cutscenes, areas, achievements, puzzle pieces, the number saved with a finished step, and from play recordings where "
     "things turned up, where chests were opened and which quests the game made available as it finished one. From the game's own quest tables, as a "
     "player read them out of the game and sent them (github.com/IshiakiZ/mcd2-save-editor/issues/40): the number each step to defeat enemies counts to, "
-    "which quest waits for which, and which quests can be done again. "
+    "which quest waits for which, which quests can be done again, and how a quest's steps hang together (a group's members one after the other, "
+    "all at once, or as a choice). "
     "Built by tools/build_world_list.py; added to from players' Share item IDs lists."
 )
 

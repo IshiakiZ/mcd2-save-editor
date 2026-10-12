@@ -86,8 +86,8 @@ INSTRUCTIONS = (
     "apply_preset add enchantments once the Enchantsmith is one of them. list_quests shows the story: every quest the hero "
     "has met and how it stands, and the ones the editor knows from other heroes' saves that it hasn't met. change_quest "
     "finishes a quest (every step done, the way a save holds a finished quest), starts one over, adds one the hero hasn't met, "
-    "or makes an active one the quest the game tracks. It can't move a quest on by one step, and it gives none of what the game "
-    "gives for a quest (items, XP, an achievement): say so if asked. The game opens the quests that follow a finished one by "
+    "or makes an active one the quest the game tracks; next_step moves one on by a single step, the way the game does. It gives "
+    "none of what the game gives for a quest (items, XP, an achievement): say so if asked. The game opens the quests that follow a finished one by "
     "itself, the next time it loads the hero (checked in the game). finish_quests finishes a whole part of the game at once, or "
     "every quest the editor knows: get the user's word first, it's a lot at once. discover_map lifts the fog from every map and "
     "adds the maps of places the hero hasn't been to. open_shortcuts_and_gates opens the overworld's shortcuts (rocks that move out "
@@ -678,8 +678,18 @@ class EditorServer:
                 elif action == "track":
                     story.track(document, quest.name)
                     text = f"The game will track {quest.label}."
+                elif action == "next_step":
+                    done = story.step(document, quest.name)
+                    on = ", ".join(story.Step(name, story.ACTIVE, 0, quest.name).short for name in done.now_on)
+                    if done.begun:
+                        text = f"Begun {quest.label}: it's on {on}."
+                    elif done.ended:
+                        text = f"Finished {story.Step(done.step, story.DONE, 0, quest.name).short}, the last step of {quest.label}: the quest is finished."
+                        text += f" Added what the game opens after it: {', '.join(story.label(name) for name in done.opened)}." if done.opened else ""
+                    else:
+                        text = f"Finished {story.Step(done.step, story.DONE, 0, quest.name).short} of {quest.label}. It's on {on} now."
                 else:
-                    raise ToolError("action is one of finish, start_over, add and track.")
+                    raise ToolError("action is one of finish, next_step, start_over, add and track.")
             except ValueError as exc:
                 raise ToolError(str(exc)) from exc
             now = next(found for found in story.quests(document) if found.name == quest.name)
@@ -976,11 +986,13 @@ class EditorServer:
                  "quest, one quest with every step.",
                  {"hero": HERO, "quest": QUEST}, self.list_quests, ("hero",), read_only=True),
             Tool("change_quest", "Change a quest", "Change how far a hero has got with a quest. finish: the quest and every step done, "
-                 "the way a save holds a finished quest, plus the quests the game opens after it. start_over: "
+                 "the way a save holds a finished quest, plus the quests the game opens after it. next_step: move it on the way the "
+                 "game does: begin a quest that's available, or finish the step an active one is on (the first, when it's on "
+                 "several), so that the next step's turn comes; the last step finishes the quest. start_over: "
                  "available again, every step unset. add: list a quest the hero hasn't met as available. track: make an active "
                  "quest the one the game shows on screen. Nothing the game gives for a quest is added (no items, XP or "
-                 "achievement), and a quest can't be moved on by a single step.",
-                 {"hero": HERO, "quest": QUEST, "action": _string("What to do with it.", enum=["finish", "start_over", "add", "track"])},
+                 "achievement).",
+                 {"hero": HERO, "quest": QUEST, "action": _string("What to do with it.", enum=["finish", "next_step", "start_over", "add", "track"])},
                  self.change_quest, ("hero", "quest", "action")),
             Tool("finish_quests", "Finish a part of the game", "Finish every quest of a part of the game at once (part: Main story, "
                  "Side quests: Rainy Plains and so on, the part values in list_quests), or with no part every quest the editor "

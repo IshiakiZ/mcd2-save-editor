@@ -2983,6 +2983,44 @@ class StoryProgressTests(WindowTestCase):
     def saved(self):
         return saves.SaveProfile(self.profile_path).get(HERO).decoded.document
 
+    def test_moves_a_quest_on_by_one_step(self):
+        from . import helpers
+
+        listed = self.dir / "world.json"
+        listed.write_text(json.dumps({**helpers.STEPPING, "quests": {**self.LIST["quests"], **helpers.STEPPING["quests"]}}), encoding="utf-8")
+        tests.use_world_list(listed)
+        self.app.document["CharacterSaveV1"]["quest"]["Quests"] += [helpers.a_quest("QA"), helpers.a_quest("QB", "Active", E01="Active", Sequence01="Active")]
+        dialog = self.open_story()
+        self.assertEqual(dialog.step_button.cget("text"), "Next step")
+        # An available quest: Next step begins it, and the window says what it's on.
+        dialog.pick("QA")
+        self.assertTrue(dialog.step_button.instate(["!disabled"]))
+        self.assertIn("Next step begins it the way the game does: the quest is active, on its first step.", dialog.note_var.get())
+        dialog.step_button.invoke()
+        self.assertEqual(dialog.message_var.get(), "Begun QA: it's on E01 (reach a place). " + story_dialog.SAVE_REMINDER)
+        self.assertEqual((dialog.quest.state, dialog.quest.done), ("Active", 0))
+        self.assertIn("Next step finishes the step it's on and moves it to the one after, the way the game does.", dialog.note_var.get())
+        # An active one: the step it's on is finished and the next ones' turn comes, here two at once.
+        dialog.step_button.invoke()
+        self.assertEqual(dialog.message_var.get(), "Finished E01 (reach a place) of QA. It's on I01 (interact with something) and K01 (defeat enemies) now. " + story_dialog.SAVE_REMINDER)
+        self.assertIn("▶\tI01", dialog.text.get("1.0", "end"))
+        for _step in range(5):
+            dialog.step_button.invoke()
+        self.assertEqual(dialog.message_var.get(), "Finished I02 (interact with something), the last step of QA: the quest is finished. Added what the game opens after it: QC. "
+                         + story_dialog.SAVE_REMINDER)
+        self.assertEqual(dialog.quest.state, "Completed")
+        self.assertTrue(dialog.step_button.instate(["disabled"]))
+        # A quest that comes to a choice between steps: the press changes nothing and says why. One whose groups the
+        # list lacks: the button is off, and the window says why.
+        dialog.pick("QB")
+        dialog.step_button.invoke()
+        self.assertIn("The next step of QB is a choice between steps", dialog.message_var.get())
+        self.assertEqual(dialog.quest.done, 0)
+        dialog.pick("CA04")
+        self.assertTrue(dialog.step_button.instate(["disabled"]))
+        self.assertIn("The editor doesn't know how the steps of The Missing Note Blocks (CA04) hang together, so it can't move it on by one.", dialog.note_var.get())
+        dialog.destroy()
+
     def test_lists_the_quests_and_shows_the_one_the_game_tracks(self):
         before = snapshot_of(self.profile_path)
         dialog = self.open_story()

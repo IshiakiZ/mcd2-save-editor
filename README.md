@@ -30,8 +30,8 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   six complete builds, in one click.
 - **World map and play recorder:** see the ground your hero has explored and what it hasn't found yet, discover
   the whole map, open the shortcuts and the key gates, and write down what the game saves while you play.
-- **Story progress:** every quest with its steps. Finish a quest, a whole group or the whole game, start a quest
-  over or add one, and start your hero at any minecart station it has found.
+- **Story progress:** every quest with its steps. Move a quest on by one step, finish it, a whole group or the
+  whole game, start a quest over or add one, and start your hero at any minecart station it has found.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
   ask for what you want.
 - **Safe saving:** a backup before every save, one-click restore, and no saving while the game runs.
@@ -135,8 +135,9 @@ your sign-in, account or device data.
   add; nothing is sent unless you send it.
 - **Still missing:** four enchantments and some tiers of the others, and levelling a companion's talisman outright
   (**Ready to level up** leaves it one XP short, and the game does the rest).
-- **A quest step by step.** The editor finishes, starts over and adds whole quests. It can't move a quest on by
-  one step, and it gives none of what the game gives for a quest (items, XP). The game opens the quests that
+- **What a quest gives.** The editor finishes quests, moves them on a step at a time, starts them over and adds
+  them. It gives none of what the game gives for a quest or a step (items, XP), and one quest has a choice
+  between steps that it can't step through, only finish whole. The game opens the quests that
   follow a finished one by itself, and it offers its four golem quests again once they're finished, so those
   stay marked on its map.
 - **The map.** A preset adds minecart stations, **Discover the whole map** lifts the fog, and the shortcuts and
@@ -286,8 +287,8 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
   [hayden-xyz](https://github.com/hayden-xyz)'s list ([#38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) added two doors and an
   effect tier.
-- How many enemies each step to defeat counts to, which quest waits for which, and which quests the game lets
-  you do again come from the game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out
+- How many enemies each step to defeat counts to, which quest waits for which, which quests the game lets
+  you do again, and how a quest's steps hang together come from the game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out
   of the game and sent ([#40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)). They tell of the same 44
   quests as players' saves, step for step and number for number, which is how they were checked. The tables
   themselves are not in this repository.

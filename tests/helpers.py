@@ -195,6 +195,31 @@ def as_saved(path: str, was: int = 0, now: int = 1) -> dict:
     return {"SoftObjectPath": path, "PreviousState": was, "CurrentState": now, "Version": 0}
 
 
+# A made-up quest whose steps hang together every way the editor knows: QA's own group runs its members one after the
+# other (a place to reach, a group whose two members go all at once, a group of two places one after the other, a thing
+# to interact with). QB comes to a choice between two steps. QC follows QA. QD is a quest whose groups the list lacks.
+STEPPING = {
+    "quests": {
+        "QA": ["QA_E01", "QA_Standard01", "QA_I01", "QA_K01", "QA_Sequence02", "QA_E02", "QA_E03", "QA_I02", "QA_Sequence01"],
+        "QB": ["QB_E01", "QB_Selection01", "QB_I01", "QB_I02", "QB_Sequence01"], "QC": ["QC_E01", "QC_Sequence01"], "QD": ["QD_E01", "QD_Sequence01"],
+    },
+    "counts": {"QA_K01": 3},
+    "follows": {"QA": ["QC"]},
+    "groups": {
+        "QA_Sequence01": {"kind": "Sequence", "of": ["QA_E01", "QA_Standard01", "QA_Sequence02", "QA_I02"]},
+        "QA_Standard01": {"kind": "Standard", "of": ["QA_I01", "QA_K01"]}, "QA_Sequence02": {"kind": "Sequence", "of": ["QA_E02", "QA_E03"]},
+        "QB_Sequence01": {"kind": "Sequence", "of": ["QB_E01", "QB_Selection01"]}, "QB_Selection01": {"kind": "Selection", "pick": 1, "of": ["QB_I01", "QB_I02"]},
+        "QC_Sequence01": {"kind": "Sequence", "of": ["QC_E01"]},
+    },
+}
+
+
+def a_quest(name: str, state: str = "Available", **steps: str) -> dict:
+    """A quest of STEPPING as a save holds it: every step unset, but for the ones named (E01="Completed")."""
+    return {"QuestName": name, "State": state, "TaskData": [
+        {"TaskName": step, "State": steps.get(step.removeprefix(name + "_"), "NotSet"), "PartialProgress": 0} for step in STEPPING["quests"][name]]}
+
+
 def hero_with_a_world() -> dict:
     """A hero that has been somewhere: a camp four squares across and three down, a meadow, three doors, two
     minecart stations, quests at every stage and the game's counts."""
