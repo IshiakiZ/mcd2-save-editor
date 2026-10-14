@@ -4,7 +4,8 @@ The game keeps its quests, doors, minecart stations and regions in its encrypted
 the way it learns items: from saves. data/world.json is what it has so far: every quest with its steps, every door
 with its place, the stations, regions, cutscenes, areas and puzzle pieces that any save sent to it has shown, and,
 from play recordings, where chests were opened, where stations and cutscenes turned up, and which quests the game
-made available as it finished one.
+made available as it finished one. From the game's own quest tables and quest text, as a player read them out of the
+game and sent them: how a quest's steps hang together, and what the game calls each quest and step.
 
 Share item IDs… adds what your saves show that this list doesn't have (``lines``), and tools/build_world_list.py
 puts a list someone sent into it (``read_list``, ``merge``). Only the game's own names and numbers go into a list:
@@ -48,6 +49,7 @@ _PIECE = re.compile(r"([^/.:]+):PersistentLevel\.(.+?)_C_(UAID_[0-9A-Za-z_]+)$")
 _TAG = re.compile(r"[A-Za-z0-9_.\-]{1,120}")  # one of the game's own names
 _PIECE_ID = re.compile(r"(BP_[A-Za-z0-9_]+?)_C_(UAID_[0-9A-Za-z_]+)$")
 _GROUP = re.compile(r"^([A-Za-z]{1,40})(?: pick (\d{1,3}))?: (.+)$")
+_MARKUP = re.compile(r"<[^<>]*>")  # the game's mark-up in its text: <emphasis>…</>
 
 
 def empty() -> dict[str, Any]:
@@ -59,6 +61,9 @@ def empty() -> dict[str, Any]:
         # From the game's quest tables: a step that is a group of steps: {"kind": "Sequence" (its members one after the
         # other), "Standard" (all at once) or "Selection" (a choice: "pick" of them), "of": its members, in order}
         "groups": {},
+        # From the game's own quest text: what the game calls a quest (The Lost Merchant), and the words it shows on
+        # screen for a step, under the quest's name (Defeat the monsters). No save tells either, and no list a player shares.
+        "names": {}, "labels": {},
         "stations": [], "cutscenes": [], "gimmicks": [], "areas": [],
         "doors": {},  # a door: {"at": [x, y, z] in metres, "marker": the kind of marker the map gives it}
         "regions": {},  # a region with a picture of its fog: {"corner": [x, y] in metres, "size": [squares across, down]}
@@ -249,6 +254,28 @@ def of_quest_tables(tables: Any) -> dict[str, Any]:
     return shown
 
 
+def of_quest_words(rows: Any, quests: dict[str, list[str]]) -> dict[str, Any]:
+    """What the game's own quest text adds, laid out like the editor's list: what the game calls each quest, and the
+    words it shows on screen for each step, as a player read them out of the game and sent them. ``rows`` are the
+    text's rows ({"Key": CA00_K01, "SourceString": the words, "ContextDescription": what they're for}); ``quests``
+    are the quests a list has, with their steps, and only what's said of those is kept. Words the game marks as
+    outdated, or as ERROR, are left out."""
+    shown = empty()
+    steps = {step for named in quests.values() for step in named}
+    for row in _list(rows):
+        name, words, about = _tag(_dict(row).get("Key")), _dict(row).get("SourceString"), _dict(row).get("ContextDescription")
+        if not name or not isinstance(words, str) or "outdated" in str(about or "").lower():
+            continue
+        words = " ".join(_MARKUP.sub("", words).replace("’", "'").split())  # as plain text, with a plain apostrophe
+        if not words or words == "ERROR" or len(words) > 120:
+            continue
+        if name in quests:
+            shown["names"][name] = words
+        elif name in steps:
+            shown["labels"][name] = words
+    return shown
+
+
 def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
     """Add to a list what another has and it doesn't. A quest keeps the order of its steps and gets new ones at
     the end; a door or a region keeps the place it has, and a different place for it is kept beside that
@@ -265,6 +292,9 @@ def merge(into: dict[str, Any], more: dict[str, Any]) -> dict[str, Any]:
         into["again"].setdefault(name, rule)
     for name, group in (more.get("groups") or {}).items():
         into["groups"].setdefault(name, {key: (list(value) if isinstance(value, list) else value) for key, value in group.items()})
+    for kind in ("names", "labels"):
+        for name, words in (more.get(kind) or {}).items():
+            into[kind].setdefault(name, words)
     for kind in SIMPLE:
         into[kind] += [tag for tag in more.get(kind) or [] if tag not in into[kind]]
     for kind in ("doors", "regions"):
@@ -516,4 +546,5 @@ def counts(world: dict[str, Any]) -> str:
         f"{sum(len(places) for places in world['found'].values())} places things turned up, {len(world['chests'])} chest spots, "
         f"{len(world['counts'])} steps with their count, {len(world['follows'])} quests with what follows them, {len(world['again'])} quests that can be done again, "
         f"{len(world['groups'])} groups of steps"
+        + (f", {len(world['names'])} quests and {len(world['labels'])} steps in the game's words" if world["names"] or world["labels"] else "")
     )

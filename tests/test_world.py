@@ -291,11 +291,53 @@ class RealWorldListTests(unittest.TestCase):
         self.assertEqual(sorted(hero.minecart_stations()), sorted(known))
 
     def test_tells_and_reads_back_whole(self):
+        # All of it but the game's words for quests and steps, which come from its quest text alone: a list a player
+        # shares never carries them, so none can be slipped in that way.
         told = world.lines_of(self.world, have=world.empty())
         read = world.read_list("\n".join(told))
         read.pop("pictures")
-        self.assertEqual(world.merge(world.empty(), read), {key: value for key, value in self.world.items()})
-        self.assertEqual(world.counts(read), world.counts(self.world))
+        whole = {**self.world, "names": {}, "labels": {}}
+        self.assertEqual(world.merge(world.empty(), read), whole)
+        self.assertEqual(world.counts(read), world.counts(whole))
+        self.assertNotIn(self.world["names"]["CA00"], "\n".join(told))
+
+    def test_names_its_quests_and_steps_in_the_games_words(self):
+        have = self.world
+        # Every quest but two: one the game's text marks as outdated, and one it has no name for.
+        self.assertEqual(sorted(set(have["quests"]) - set(have["names"])), ["CA04_BR", "TOa1_S01_A"])
+        self.assertEqual((have["names"]["CA00"], have["labels"]["CA00_K01"]), ("Escape from Squid Coast", "Defeat the monsters"))
+        steps = {step for named in have["quests"].values() for step in named}
+        self.assertGreaterEqual(len(have["labels"]), 500)
+        self.assertTrue(set(have["labels"]) <= steps)
+        for words in [*have["names"].values(), *have["labels"].values()]:
+            self.assertRegex(words, r"^[A-Z][A-Za-z0-9 ',.!?:-]{1,59}$")
+        # The names MetaBot's map gives are the game's own.
+        from dungeons2_editor import recorder
+
+        self.assertEqual({name: have["names"][name] for name in recorder.QUESTS}, recorder.QUESTS)
+
+    def test_reads_the_games_own_quest_text(self):
+        quests = {"CA00": ["CA00_E01", "CA00_K01", "CA00_Sequence01"], "FOa1_S10_A": ["FOa1_S10_A_E01"], "TOa1_S01_A": ["TOa1_S01_A_E01"]}
+        rows = [
+            {"Key": "CA00", "SourceString": "Escape from Squid Coast", "ContextDescription": "Name of a quest."},
+            {"Key": "CA00_K01", "SourceString": "Defeat the  monsters", "ContextDescription": "Name of one objective"},
+            {"Key": "CA00_Sequence01", "SourceString": "<emphasis>Get</> out", "ContextDescription": ""},
+            {"Key": "FOa1_S10_A", "SourceString": "The Cleric’s Apprentice", "ContextDescription": "Name of a quest."},
+            {"Key": "TOa1_S01_A", "SourceString": "ERROR", "ContextDescription": "Outdated quest."},
+            {"Key": "TOa1_S01_A_E01", "SourceString": "Walk", "ContextDescription": "outdated quest objective"},
+            {"Key": "CA00_E01", "SourceString": "x" * 121},
+            {"Key": "CA09_E02", "SourceString": "A step the list doesn't have"}, {"Key": "not a name!", "SourceString": "No"},
+            {"Key": "CA00_E01"}, "not a row",
+        ]
+        shown = world.of_quest_words(rows, quests)
+        # As plain text with a plain apostrophe; nothing marked outdated or ERROR, too long, or of a quest or step the list lacks.
+        self.assertEqual(shown["names"], {"CA00": "Escape from Squid Coast", "FOa1_S10_A": "The Cleric's Apprentice"})
+        self.assertEqual(shown["labels"], {"CA00_K01": "Defeat the monsters", "CA00_Sequence01": "Get out"})
+        # A list keeps the words it has.
+        have = world.merge(world.merge(world.empty(), shown), {"names": {"CA00": "Another", "CA01": "The Illagers from the Rift"}})
+        self.assertEqual(have["names"], {"CA00": "Escape from Squid Coast", "FOa1_S10_A": "The Cleric's Apprentice", "CA01": "The Illagers from the Rift"})
+        self.assertTrue(world.counts(have).endswith(", 3 quests and 2 steps in the game's words"))
+        self.assertNotIn("game's words", world.counts(world.empty()))
 
     def test_reads_the_games_own_quest_tables(self):
         def goal(name, **more):
@@ -369,6 +411,35 @@ class RealWorldListTests(unittest.TestCase):
             built, said = tool.build(None, [], wrong, folder / "quest-data.zip")
             self.assertTrue(any("don't agree with what saves have shown, and were left out" in line for line in said), said)
             self.assertEqual((built["again"], built["follows"]), ({}, {}))
+
+    def test_the_tool_takes_the_games_quest_text_from_a_file_a_folder_or_a_zip(self):
+        import zipfile
+
+        spec = importlib.util.spec_from_file_location("build_world_list", Path(__file__).resolve().parent.parent / "tools" / "build_world_list.py")
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        folder = Path(temp.name)
+        text = ("﻿Key,SourceString,ContextDescription,LengthWarning\r\nCA01,The Illagers from the Rift,\"Name of a quest, shown above\",50\r\n"
+                "CA01_E01,Get to the rift,,50\r\nCA02,Not in the list,,50\r\n")
+        (folder / "Quests").mkdir()
+        (folder / "Quests" / tool.QUEST_WORDS).write_text(text, encoding="utf-8")
+        with zipfile.ZipFile(folder / "datamine.zip", "w") as archive:
+            archive.writestr(f"Quests/{tool.QUEST_WORDS}", text)
+            archive.writestr("Quests/QuestDescriptions.csv", "Key,SourceString\r\nCA01,A long description\r\n")
+        for given in (folder / "Quests" / tool.QUEST_WORDS, folder / "Quests", folder, folder / "datamine.zip"):
+            self.assertEqual([row["Key"] for row in tool.quest_words(given)], ["CA01", "CA01_E01", "CA02"], given)
+        self.assertEqual(tool.quest_words(folder / "none"), [])
+        out = folder / "world.json"
+        out.write_text(json.dumps({"quests": {"CA01": ["CA01_E01", "CA01_Sequence01"]}}), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as printed:
+            self.assertEqual(tool.main(["--recordings", str(folder / "none"), "--quest-words", str(folder / "datamine.zip"), "--out", str(out)]), 0)
+        self.assertIn("Read 1 quests' names and 1 steps' words in the game's quest text", printed.getvalue())
+        built = json.loads(out.read_text(encoding="utf-8"))
+        self.assertIn("issues/41", built["about"])
+        self.assertEqual((built["names"], built["labels"]), ({"CA01": "The Illagers from the Rift"}, {"CA01_E01": "Get to the rift"}))
+        self.assertNotIn("A long description", out.read_text(encoding="utf-8"))
 
     def test_the_tool_adds_recordings_and_players_lists_to_it(self):
         spec = importlib.util.spec_from_file_location("build_world_list", Path(__file__).resolve().parent.parent / "tools" / "build_world_list.py")

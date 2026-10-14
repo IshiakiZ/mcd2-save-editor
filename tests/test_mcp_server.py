@@ -79,6 +79,7 @@ class StoryToolsTests(ServerTestCase):
     LIST = {
         "quests": {"CA01": ["CA01_E01"], "CA04": ["CA04_E01", "CA04_E02"], "FOa1_S10_A": ["FOa1_S10_A_E01"], "CA05": ["CA05_K01", "CA05_Sequence01"]},
         "counts": {"CA04_E02": 3}, "follows": {"CA04": ["CA05"]}, "areas": ["SW.Area.Town", "SW.Area.Forest.A1"],
+        "labels": {"CA04_E02": "Find the note blocks"},  # the game's words for a step, from its quest text
     }
 
     def setUp(self):
@@ -104,7 +105,8 @@ class StoryToolsTests(ServerTestCase):
         # One quest, by the save's name for it or the game's, with every step.
         for wanted in ("CA04", "the missing note blocks"):
             one = self.call("list_quests", hero="00000000", quest=wanted)
-            self.assertEqual(one["quest"]["each_step"], [{"step": "E01", "stands": "done", "about": "reach a place"}, {"step": "E02", "stands": "active", "about": "reach a place"}])
+            self.assertEqual(one["quest"]["each_step"], [
+                {"step": "E01", "stands": "done", "about": "reach a place"}, {"step": "E02", "stands": "active", "words": "Find the note blocks", "about": "reach a place"}])
         self.assertIn("There's no quest 'CA99'", self.call("list_quests", hero="00000000", quest="CA99"))
 
     def test_changes_a_quest_and_where_the_hero_starts(self):

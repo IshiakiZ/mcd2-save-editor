@@ -453,6 +453,30 @@ class StepByStepTests(unittest.TestCase):
         self.assertEqual(document, before)
 
 
+class TheGamesWordsTests(unittest.TestCase):
+    """A quest by the game's name for it and a step by the game's words, where the editor's list has them from the
+    game's quest text; MetaBot's name where it hasn't."""
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        path = Path(folder.name) / "world.json"
+        path.write_text(json.dumps({**helpers.STEPPING, "names": {"QA": "The Made-up Quest", "CA04": "Another Name"}, "labels": {"QA_K01": "Defeat the monsters"}}), encoding="utf-8")
+        tests.use_world_list(path)
+        self.addCleanup(tests.use_world_list, tests.PINNED_WORLD_FILE)
+
+    def test_names_quests_and_steps_the_way_the_game_does(self):
+        from dungeons2_editor import recorder
+
+        self.assertEqual((story.label("QA"), story.label("QB"), story.label("CA04"), story.label("CA01")),
+                         ("The Made-up Quest (QA)", "QB", "Another Name (CA04)", "The Illagers from the Rift (CA01)"))
+        self.assertEqual((recorder.quest_name("QA"), recorder.quest_name("QB")), ("QA (The Made-up Quest)", "QB"))
+        document = hero_with_a_world()
+        document["CharacterSaveV1"]["quest"] = {"FocusedQuestId": "", "Quests": [helpers.a_quest("QA")]}
+        quest = next(quest for quest in story.quests(document) if quest.name == "QA")
+        self.assertEqual((quest.title, {step.short: step.words for step in quest.steps if step.words}), ("The Made-up Quest", {"K01": "Defeat the monsters"}))
+
+
 class StepsAsTheGameTookThemTests(unittest.TestCase):
     """The same rules, with the editor's real list, replayed against what the game did: each line of the fixture is a
     quest as one save of a play recording held it, and follows from the line before."""

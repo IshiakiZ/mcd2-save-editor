@@ -573,7 +573,7 @@ NOT_FOUND_BY_RIDING = frozenset({"TownFountain"})
 # MetaBot's map marks those nineteen. Saves have since shown stations it doesn't mark (two in the Carapace, four in
 # the meadows, and two more in Frozen Highlands, in /issues/33), so nineteen is not how many the game has: see
 # stations_at_least().
-QUESTS = {  # a quest, as a save names it: what the game calls it (the ones MetaBot's map marks a spot for)
+QUESTS = {  # a quest, as a save names it: what the game calls it (the ones MetaBot's map marks a spot for; quest_title asks the world list first)
     "CA01": "The Illagers from the Rift", "CA02": "The Silence in Little Howl", "CA02_B": "Corruption in the Woods", "CA04": "The Missing Note Blocks",
     "CA05": "Hiking Frozen Highlands", "CA06": "Returning the Note Blocks", "CA07": "Wading Rainy Plains", "PLa1_S04_A": "Keeper of the Bees",
     "FOa1_S10_A": "The Cleric's Apprentice", "DEa1_S13_A": "The Fight at the End of the Tunnel",
@@ -631,9 +631,18 @@ def stations_at_least(found: int = 0) -> int:
     return max(len(STATIONS), len(world.known().get("stations") or ()), found)
 
 
+def quest_title(name: str) -> str:
+    """What the game calls a quest, where that's known: from the game's own quest text in the editor's world list,
+    or else from MetaBot's map (QUESTS). Nothing for a quest neither names."""
+    from . import world  # which reads this module, so not at the top
+
+    return world.known()["names"].get(name) or QUESTS.get(name, "")
+
+
 def quest_name(name: str) -> str:
     """A quest as a save names it, with what the game calls it where that's known."""
-    return f"{name} ({QUESTS[name]})" if name in QUESTS else name
+    title = quest_title(name)
+    return f"{name} ({title})" if title else name
 
 
 def frontier(region: dict) -> list[int]:

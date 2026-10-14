@@ -35,6 +35,21 @@ The short notes for the newest versions are on the
 - **What it doesn't do,** as with a finished quest: nothing the game gives for a step or a quest is added, and
   what the game shows in the world (a door opened by a step, a cutscene played) is the game's own to make of the
   save.
+- **Every quest by the game's name.** [icicle1133](https://github.com/icicle1133) sent the game's own quest text
+  ([issue 41](https://github.com/IshiakiZ/mcd2-save-editor/issues/41)), and Story progress, the World map, the play
+  recorder and the AI tools now name 42 of the 44 quests the way the game does (Escape from Squid Coast, Wrath of
+  the Sculkers). The game's text marks one as outdated and has no name for one boss fight (CA04_BR). Until now the
+  editor knew eleven names, from MetaBot's map, and all eleven are the game's own.
+- **Each step in the game's words.** A step shows what the game shows on screen for it (Defeat the monsters, Open
+  the gate), for 502 of the 926 steps; the others still show what their names say they're about. **Next step**
+  says it the same way: "It's on K01 (Defeat the monsters) now." The text's long quest descriptions are not in the
+  editor.
+- **What the rest of issue 41 checked.** It also held the game's item tables. Every item ID and name the editor
+  has, all 116 Uniques' own effects (19 of them were worked out from a twin, and the game's table agrees) and all 32
+  books with the enchantment each one gives are the game's own, and each of the 180 effect tiers is in the game's
+  own list of them (which has no others).
+- **Two doors and an area** from [Pandzio21](https://github.com/Pandzio21)'s list
+  ([issue 42](https://github.com/IshiakiZ/mcd2-save-editor/issues/42)) are in the world list.
 
 ## 1.16.2
 

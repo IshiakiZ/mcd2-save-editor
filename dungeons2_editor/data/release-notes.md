@@ -6,6 +6,7 @@
 - **It follows the game's own order.** Steps come one after the other, several at once, or as a choice. Replayed against 126 changes the game made in recordings, the editor reaches the same save each time.
 - **Where it stops.** One quest has a choice between steps, which no save has shown under way. There the editor says so and leaves the quest as it is.
 - **An AI assistant can do it too:** `change_quest` has a new action, `next_step`.
+- **Every quest by the game's name, and each step in the game's words** (Defeat the monsters, Open the gate), from the game's own quest text that [icicle1133](https://github.com/icicle1133) sent.
 
 ## What's new in 1.16.2
 

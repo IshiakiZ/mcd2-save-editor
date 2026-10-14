@@ -24,7 +24,7 @@ INTRO = (
     "How far this hero has got, quest by quest. Finish a quest, move it on by a step, start one over, or add one the hero hasn't met yet. Finish all, "
     "on a category's line, does the whole of it. Nothing reaches the game until you press Save to game, which backs up your saves first."
 )
-STEPS_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat); the game keeps the words in its own files."
+STEPS_NOTE = "A step shows the game's own words, where the editor has them; otherwise what it's about, read off its name (E is a place to reach, K enemies to defeat)."
 QUESTS_NOTE = "The quests in this category:"
 FINISH_ALL = "Finish all"  # what a category's line says where a quest's has its steps: press it to finish the category
 WHOLE_GAME = "the whole game"
@@ -95,9 +95,11 @@ def _about_the_next_step(quest: story.Quest, document: Any) -> str:
 
 
 def step_words(name: str, quest: str) -> str:
-    """A step to read in a sentence: its short name, and what it's about where its name says so. E01 (reach a place)."""
+    """A step to read in a sentence: its short name, and the game's words for it, or else what it's about where its
+    name says so. K01 (Defeat the monsters); E01 (reach a place)."""
     step = story.Step(name, story.ACTIVE, 0, quest)
-    return f"{step.short} ({step.kind})" if step.kind else step.short
+    about = step.words or step.kind
+    return f"{step.short} ({about})" if about else step.short
 
 
 def _listed(names: list[str]) -> str:
@@ -136,8 +138,9 @@ def question(left: list[story.Quest], part: str | None) -> str:
 
 
 def step_line(step: story.Step) -> tuple[str, str, str]:
-    """(mark, name, what to say) for a step in the list of a quest's steps."""
-    said = step.kind
+    """(mark, name, what to say) for a step in the list of a quest's steps: the game's words for it where the editor
+    has them, or else what its name says it's about."""
+    said = step.words or step.kind
     if step.count:
         said += f"{'  ' if said else ''}({step.count}{'' if step.state == story.DONE else ' so far'})"
     return MARKS.get(step.state, "?"), step.short, said

@@ -30,7 +30,7 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   six complete builds, in one click.
 - **World map and play recorder:** see the ground your hero has explored and what it hasn't found yet, discover
   the whole map, open the shortcuts and the key gates, and write down what the game saves while you play.
-- **Story progress:** every quest with its steps. Move a quest on by one step, finish it, a whole group or the
+- **Story progress:** every quest and its steps, in the game's own words. Move a quest on by one step, finish it, a whole group or the
   whole game, start a quest over or add one, and start your hero at any minecart station it has found.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
   ask for what you want.
@@ -286,12 +286,15 @@ trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
   ([#34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)), and Critical Quiver came in a second list from
   [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
   [hayden-xyz](https://github.com/hayden-xyz)'s list ([#38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) added two doors and an
-  effect tier.
+  effect tier, and [Pandzio21](https://github.com/Pandzio21)'s ([#42](https://github.com/IshiakiZ/mcd2-save-editor/issues/42)) two
+  more doors and an area.
 - How many enemies each step to defeat counts to, which quest waits for which, which quests the game lets
   you do again, and how a quest's steps hang together come from the game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out
   of the game and sent ([#40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)). They tell of the same 44
-  quests as players' saves, step for step and number for number, which is how they were checked. The tables
-  themselves are not in this repository.
+  quests as players' saves, step for step and number for number, which is how they were checked. The quests'
+  names and the words the game shows for their steps come from its quest text, which icicle1133 sent too
+  ([#41](https://github.com/IshiakiZ/mcd2-save-editor/issues/41)). The tables and the rest of the text are not in
+  this repository.
 - Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
   [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
   [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),

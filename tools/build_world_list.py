@@ -4,6 +4,7 @@
     python tools/build_world_list.py list.txt another.txt   # and what players' lists say
     python tools/build_world_list.py --recordings FOLDER    # recordings somewhere else than recordings/
     python tools/build_world_list.py --quest-tables ZIP     # and the game's own quest tables, as a player sent them
+    python tools/build_world_list.py --quest-words FOLDER   # and the game's own quest text (QuestTrackerLabels.csv)
 
 The game keeps its quests, doors, minecart stations and regions in its encrypted files, so the editor learns them
 from saves, the way it learns items. This adds to the list it has:
@@ -18,16 +19,21 @@ from saves, the way it learns items. This adds to the list it has:
     the game and sent them): the number each step to defeat enemies counts to, which quest waits for which,
     which quests the game lets a hero do again, and how a quest's steps hang together (which are groups of steps,
     and whether a group's members come one after the other, all at once, or as a choice)
+    the game's quest text (its QuestTrackerLabels.csv, alone or in a folder or zip, as a player read it out of the
+    game and sent it): what the game calls each quest the list has, and the words it shows for each step
 
 Nothing is ever taken out, and nothing a list already has is changed: a door or a region that a save puts
 somewhere else than the list does is kept beside it ("also") and named here, to be looked at. No hero's ID or
-name goes in, and nothing about when anyone played. What the game calls an area, a minecart station and a quest
-isn't in a save: those names are in dungeons2_editor/recorder.py, from MetaBot's map.
+name goes in, and nothing about when anyone played. What the game calls an area and a minecart station isn't in a
+save: those names are in dungeons2_editor/recorder.py, from MetaBot's map; a quest's and a step's come from the
+game's quest text. The text's long quest descriptions are left in it.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import sys
 import zipfile
@@ -45,9 +51,11 @@ ABOUT = (
     "things turned up, where chests were opened and which quests the game made available as it finished one. From the game's own quest tables, as a "
     "player read them out of the game and sent them (github.com/IshiakiZ/mcd2-save-editor/issues/40): the number each step to defeat enemies counts to, "
     "which quest waits for which, which quests can be done again, and how a quest's steps hang together (a group's members one after the other, "
-    "all at once, or as a choice). "
+    "all at once, or as a choice). From the game's own quest text, as the same player sent it (github.com/IshiakiZ/mcd2-save-editor/issues/41): "
+    "what the game calls each quest, and the words it shows for each step. "
     "Built by tools/build_world_list.py; added to from players' Share item IDs lists."
 )
+QUEST_WORDS = "QuestTrackerLabels.csv"  # the game's quest text: a quest's name and each step's words, by the save's name for them
 
 
 def quest_tables(path: Path) -> list[dict]:
@@ -69,9 +77,27 @@ def quest_tables(path: Path) -> list[dict]:
     return tables
 
 
-def build(recordings: Path | None, lists: list[Path], start: dict | None = None, tables: Path | None = None) -> tuple[dict, list[str]]:
-    """The list, added to from the recordings under a folder, from players' lists and from the game's quest tables,
-    and what to say about it."""
+def quest_words(path: Path) -> list[dict]:
+    """The rows of the game's quest text: the file itself, or the one in a folder or a zip. None if it isn't there."""
+    text = b""
+    if path.is_dir():
+        found = sorted(path.rglob(QUEST_WORDS))
+        text = found[0].read_bytes() if found else b""
+    elif zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as archive:
+            inside = [info for info in archive.infolist() if info.filename.rsplit("/", 1)[-1] == QUEST_WORDS and info.file_size < 5_000_000]
+            text = archive.read(inside[0]) if inside else b""
+    elif path.is_file():
+        text = path.read_bytes()
+    try:
+        return list(csv.DictReader(io.StringIO(text.decode("utf-8-sig"), newline="")))
+    except (UnicodeDecodeError, csv.Error):
+        return []
+
+
+def build(recordings: Path | None, lists: list[Path], start: dict | None = None, tables: Path | None = None, words: Path | None = None) -> tuple[dict, list[str]]:
+    """The list, added to from the recordings under a folder, from players' lists and from the game's quest tables
+    and quest text, and what to say about it."""
     built = world.merge(world.empty(), start or {})
     said = [f"The list had: {world.counts(built)}"]
     if tables is not None:
@@ -100,6 +126,11 @@ def build(recordings: Path | None, lists: list[Path], start: dict | None = None,
         told = world.read_list(path.read_text(encoding="utf-8"))
         world.merge(built, told)
         said.append(f"Read {path.name}: {world.counts(told)}" + (f"; pictures of the fog for {', '.join(told['pictures'])}" if told["pictures"] else ""))
+    if words is not None:
+        # Last, so that the quests the recordings and lists brought have their names too.
+        shown = world.of_quest_words(quest_words(words), built["quests"])
+        world.merge(built, shown)
+        said.append(f"Read {len(shown['names'])} quests' names and {len(shown['labels'])} steps' words in the game's quest text under {words}")
     for kind in ("doors", "regions"):
         said += [f"LOOK AT: {kind[:-1]} {name} is in two places: {json.dumps(entry)}" for name, entry in built[kind].items() if entry.get("also")]
     said.append(f"The list has: {world.counts(built)}")
@@ -111,13 +142,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("lists", nargs="*", type=Path, help="text files holding the world's part of a Share item IDs list")
     parser.add_argument("--recordings", type=Path, default=ROOT / "recordings", help="the play recorder's recordings (default: recordings/)")
     parser.add_argument("--quest-tables", type=Path, default=None, help="the game's quest tables as JSON: a zip of them, or a folder")
+    parser.add_argument("--quest-words", type=Path, default=None, help=f"the game's quest text: its {QUEST_WORDS}, or a folder or zip holding it")
     parser.add_argument("--out", type=Path, default=TARGET)
     args = parser.parse_args(argv)
     try:
         start = json.loads(args.out.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         start = {}
-    built, said = build(args.recordings, args.lists, start, args.quest_tables)
+    built, said = build(args.recordings, args.lists, start, args.quest_tables, args.quest_words)
     args.out.write_text(json.dumps({"about": ABOUT, **built}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print("\n".join(said))
     print(f"Written to {args.out}")

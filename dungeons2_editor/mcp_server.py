@@ -1091,7 +1091,7 @@ def _quest_info(quest: story.Quest, steps: bool = False) -> dict:
     if steps:
         info["each_step"] = [
             {"step": step.short, "stands": {story.DONE: "done", story.ACTIVE: "active", story.NOT_SET: "not begun"}.get(step.state, step.state),
-             **({"count": step.count} if step.count else {}), **({"about": step.kind} if step.kind else {})}
+             **({"count": step.count} if step.count else {}), **({"words": step.words} if step.words else {}), **({"about": step.kind} if step.kind else {})}
             for step in quest.steps
         ]
     return info

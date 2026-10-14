@@ -78,7 +78,10 @@ CLEAR = 255  # a square the fog is all gone from, as a save has it
 # CA09_I17 in one (issue 33). Every other finished interact step in the saves the editor couldn't have written has 1.
 NO_NUMBER = frozenset({"CA07_I12", "CA09_I17"})
 MOST_SQUARES = 20_000  # more than any region has: a size beyond this isn't one to write
-STEP_NOTE = "What a step is about is read off its name (E is a place to reach, K enemies to defeat): the editor's reading, not the game's words."
+STEP_NOTE = (
+    "A step's words are the game's own, where the editor has them. What a step is about is read off its name (E is a place to reach, "
+    "K enemies to defeat): the editor's reading, not the game's words."
+)
 # What a step's name says it's about: the letters after its quest's name, as the game's own goals are called
 # (ExploreGoal, InteractGoal, KillGoal and so on, in its readable scripts). The editor's reading, not the game's words.
 STEP_KINDS = {
@@ -104,6 +107,12 @@ class Step:
     def short(self) -> str:
         """Its name without its quest's in front: K02."""
         return self.name[len(self.quest) + 1:] if self.name.startswith(self.quest + "_") and len(self.name) > len(self.quest) + 1 else self.name
+
+    @property
+    def words(self) -> str:
+        """What the game shows for it on screen, under its quest's name (Defeat the monsters), where the editor's
+        world list has the game's own words for it. Otherwise nothing."""
+        return world.known()["labels"].get(self.name, "")
 
     @property
     def kind(self) -> str:
@@ -148,7 +157,7 @@ class Quest:
     @property
     def title(self) -> str:
         """What the game calls it, where that's known."""
-        return recorder.QUESTS.get(self.name, "")
+        return recorder.quest_title(self.name)
 
     @property
     def label(self) -> str:
@@ -181,7 +190,7 @@ class Quest:
 
 def label(name: str) -> str:
     """A quest to read: what the game calls it, where that's known, with the save's name for it."""
-    title = recorder.QUESTS.get(name, "")
+    title = recorder.quest_title(name)
     return f"{title} ({name})" if title else name
 
 

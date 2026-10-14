@@ -2987,7 +2987,9 @@ class StoryProgressTests(WindowTestCase):
         from . import helpers
 
         listed = self.dir / "world.json"
-        listed.write_text(json.dumps({**helpers.STEPPING, "quests": {**self.LIST["quests"], **helpers.STEPPING["quests"]}}), encoding="utf-8")
+        # The game's words for one step and its name for one quest, as its quest text gives them.
+        listed.write_text(json.dumps({**helpers.STEPPING, "quests": {**self.LIST["quests"], **helpers.STEPPING["quests"]},
+                                      "names": {"QC": "The Quest After"}, "labels": {"QA_K01": "Defeat the monsters"}}), encoding="utf-8")
         tests.use_world_list(listed)
         self.app.document["CharacterSaveV1"]["quest"]["Quests"] += [helpers.a_quest("QA"), helpers.a_quest("QB", "Active", E01="Active", Sequence01="Active")]
         dialog = self.open_story()
@@ -3002,11 +3004,12 @@ class StoryProgressTests(WindowTestCase):
         self.assertIn("Next step finishes the step it's on and moves it to the one after, the way the game does.", dialog.note_var.get())
         # An active one: the step it's on is finished and the next ones' turn comes, here two at once.
         dialog.step_button.invoke()
-        self.assertEqual(dialog.message_var.get(), "Finished E01 (reach a place) of QA. It's on I01 (interact with something) and K01 (defeat enemies) now. " + story_dialog.SAVE_REMINDER)
-        self.assertIn("▶\tI01", dialog.text.get("1.0", "end"))
+        # A step the game has words for is told by them; the others by what their names say they're about.
+        self.assertEqual(dialog.message_var.get(), "Finished E01 (reach a place) of QA. It's on I01 (interact with something) and K01 (Defeat the monsters) now. " + story_dialog.SAVE_REMINDER)
+        self.assertIn("▶\tI01\tinteract with something\n▶\tK01\tDefeat the monsters\n", dialog.text.get("1.0", "end"))
         for _step in range(5):
             dialog.step_button.invoke()
-        self.assertEqual(dialog.message_var.get(), "Finished I02 (interact with something), the last step of QA: the quest is finished. Added what the game opens after it: QC. "
+        self.assertEqual(dialog.message_var.get(), "Finished I02 (interact with something), the last step of QA: the quest is finished. Added what the game opens after it: The Quest After (QC). "
                          + story_dialog.SAVE_REMINDER)
         self.assertEqual(dialog.quest.state, "Completed")
         self.assertTrue(dialog.step_button.instate(["disabled"]))
