@@ -27,6 +27,9 @@ The short notes for the newest versions are on the
   itself made to a quest between two saves (8 quests begun, 112 moved on, 6 finished). Replayed by these rules
   from the earlier save, the editor comes to the later one every time: every step's state, and every number with
   a finished step. Three quests' worth of those saves are in the tests.
+- **Checked in the game** (1.1.2.0). The Cleric's Apprentice, started over and moved on three steps with **Next
+  step**, loaded as it was saved: active, on its fourth step, with the three before it done. The game kept it so
+  through its own saves.
 - **Where it stops.** One quest, in the first meadow, has a choice between steps (four times: one of two things
   to do). No save has shown how the game holds a choice that's under way, so the editor doesn't guess: there
   **Next step** changes nothing and says so, and **Finish it** still finishes the quest whole. A quest whose
