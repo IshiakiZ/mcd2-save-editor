@@ -616,7 +616,7 @@ class MapTests(unittest.TestCase):
         # by what a save calls it, set out to be read.
         self.assertEqual(
             [play_recorder.station_name("SW.MinecartStation." + key) for key in ("PlainsA1.Barn", "Forest.A1.DangerZone", "Town.Fountain", "DesertA1.TaigaBeach", "CarapaceA1.North", "Somewhere")],
-            ["Honeycomb Farm", "Woodcutter's Outpost", "Town Fountain", "Taiga Beach (Frozen Highlands)", "North (Carapace A1)", "Somewhere"],
+            ["Honeycomb Farm", "Woodcutter's Outpost", "Town Fountain", "Taiga Beach (Frozen Highlands)", "North (Humbler Huskland)", "Somewhere"],
         )
         self.assertEqual(lines[6:], [
             "Quest CA02_B (Corruption in the Woods): 1 of 2 steps left", "Quest CA02_B_BR: not started", "Quest CA04 (The Missing Note Blocks): 1 of 1 steps left",

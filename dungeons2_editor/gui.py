@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 from typing import Any
 
-from . import __version__, codec, edition, game_launch, game_style, merge, paths, picture_pack, saves, share_ids, story, updater, whats_new, wgs
+from . import __version__, codec, edition, game_launch, game_style, merge, paths, picture_pack, saves, share_ids, soul_storms, story, updater, whats_new, wgs
 from . import document as doc
 from .ai_dialog import ConnectAiDialog
 from .game_art import Art
@@ -31,6 +31,7 @@ from .layout import scaled_size, screen_room
 from .my_items import NAMES_FILE, load_names
 from . import recorder
 from .recorder_dialog import RecorderDialog
+from .soul_storm_dialog import SoulStormDialog
 from .suggest import SuggestDialog, setup_line
 from .story_dialog import StoryDialog
 from .world_dialog import WorldDialog
@@ -89,6 +90,9 @@ _SAFE_TEXT = (
     "tracks, and say which minecart station the hero was last at. It writes a quest the way a save holds one, and nothing "
     "of what the game gives for a quest: no items, no XP, no achievement. Finish all, on a category's line, finishes the whole "
     "category, and Finish the whole game… every quest the editor knows; both ask first. Like every change, it waits for Save to game."
+    "\n• Soul Storms… (in the same two places) shows the Soul Storm that's on now and when each area gets its next one, on this "
+    "PC's clock. The times come from the game's own timetable, which comes with the editor: nothing is fetched, and no save is needed. "
+    "The game gets that timetable from its servers, so it can change."
     "\n• Suggest something… (in Simple mode's menu under Share and suggest, and on Advanced mode's Help page) is where to leave "
     "an idea for the editor, or to say what it gets wrong. "
     "It opens a GitHub issue in your browser with what you wrote, for you to send, or copies it. The editor sends nothing itself."
@@ -341,6 +345,7 @@ class EditorApp:
         self.container: saves.Container | None = None
         self.original: Any = None  # document as loaded from disk
         self.world_map: WorldDialog | None = None  # the World map window, while one is open
+        self.soul_storms: SoulStormDialog | None = None  # the Soul Storms window, while one is open
         self.document: Any = None  # document being edited
         self.change_count = 0
         self.changed_paths: set[tuple] = set()
@@ -574,6 +579,7 @@ class EditorApp:
         self.world_menu.add_command(label="World map…", command=self.open_world_map)
         self.world_menu.add_command(label="Story progress…", command=self.open_story)
         self.world_menu.add_command(label="Play recorder…", command=self.open_recorder)
+        self.world_menu.add_command(label="Soul Storms…", command=self.open_soul_storms)
         menu.add_cascade(label="World", menu=self.world_menu)
         menu.add_command(label="Connect an AI (MCP)…", command=self._connect_ai)
         menu.add_separator()
@@ -828,7 +834,7 @@ class EditorApp:
         self.help_tools.pack(fill="x", padx=6, pady=(6, 6))
         tools = (
             ("World map…", self.open_world_map), ("Story progress…", self.open_story), ("Play recorder…", self.open_recorder),
-            ("What's new…", self.show_whats_new), ("Connect an AI…", self._connect_ai),
+            ("Soul Storms…", self.open_soul_storms), ("What's new…", self.show_whats_new), ("Connect an AI…", self._connect_ai),
         )
         for label, command in tools:
             ttk.Button(self.help_tools, text=label, command=command).pack(side="left", padx=(0, 10))
@@ -1520,6 +1526,20 @@ class EditorApp:
             messagebox.showinfo(APP_TITLE, "There are no saves open to record. Open a save folder first.", parent=self.root)
             return None
         return RecorderDialog(self.root, self.profile.path, show_map=self.open_world_map)
+
+    def open_soul_storms(self) -> SoulStormDialog | None:
+        """Menu > World > Soul Storms: the storm that's on now and each area's next one, from the game's own timetable. It
+        needs no save, so it opens with none."""
+        if self.soul_storms is not None and self.soul_storms.winfo_exists():
+            self.soul_storms.lift()  # one is enough: it keeps itself up to date
+            return self.soul_storms
+        try:
+            table = soul_storms.load()
+        except (OSError, ValueError, KeyError) as exc:
+            messagebox.showerror(APP_TITLE, f"The Soul Storm timetable can't be read: {exc}", parent=self.root)
+            return None
+        self.soul_storms = SoulStormDialog(self.root, table)
+        return self.soul_storms
 
     def open_world_map(self) -> WorldDialog | None:
         """Menu > World > World map: the ground the hero on screen has explored and what it found there, from its save, with

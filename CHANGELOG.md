@@ -7,6 +7,26 @@ The short notes for the newest versions are on the
 **Menu → Updates → What's new…**. What the editor does is in the
 [wiki](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Features).
 
+## 1.18.0
+
+- **Soul Storms.** **Menu → World → Soul Storms…** (and a button on Advanced mode's Help page) shows the Soul Storm
+  that's on now and how long it has left, or the next one if none is, and below it each area's next storm: where,
+  when it starts and ends on the PC's clock, and how long until then. It keeps itself up to date while it's open.
+  It needs no save, and nothing is fetched.
+- **The game's own timetable.** [icicle1133](https://github.com/icicle1133) sent the game's Soul Storm tables with
+  its other tables ([issue 41](https://github.com/IshiakiZ/mcd2-save-editor/issues/41)): a storm every 40 minutes
+  that lasts 20, going round seven areas in a fixed order (Howling Woods, Singer's Meadow, Rainy Plains, Humbler
+  Huskland, Lullaby Hills, Frozen Highlands, Honeycomb Fields), counted from the first moment of 2026 in UTC. The
+  times it gives were checked in the game. The game gets the timetable from its servers, so it can change without
+  an update to the game; the window says so, and if the game shows a storm somewhere else, the editor's copy
+  (`dungeons2_editor/data/soul_storms.json`) is out of date.
+- **The Sift's three areas by the game's names:** Singer's Meadow (Meadow A1), Humbler Huskland (Carapace A1) and
+  Lullaby Hills (Meadow A2). Each quest's own table names the area it belongs to, and the quests of these three say
+  where they are (Defend Singer's Meadow; you traversed Humbler Huskland; Lonesome in Lullaby Hills). Story
+  progress's groups of side quests, the World map and the play recorder use them.
+- **For an AI assistant:** a new tool, `soul_storms`, lists the storm that's on now and the next ones, with their
+  times on the PC's clock.
+
 ## 1.17.0
 
 - **Next step.** **Menu → World → Story progress…** has a new button that moves the quest you've picked on by one

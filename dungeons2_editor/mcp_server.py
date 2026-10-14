@@ -19,11 +19,11 @@ import os
 import sys
 import traceback
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, BinaryIO, Callable
 
-from . import __version__, merge, presets, recommend, recorder, saves, story, wgs
+from . import __version__, merge, presets, recommend, recorder, saves, soul_storms, story, wgs
 from .hero import (
     ATTRIBUTE_LABELS,
     BOOK_KIND,
@@ -174,6 +174,7 @@ class EditorServer:
         self.backup_root = Path(backup_root)
         self.protocol = PROTOCOL_VERSIONS[0]
         self.drafts: dict[str, Draft] = {}
+        self.clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)  # the tests give a fixed one
         self.tools = {tool.name: tool for tool in self._tools()}
 
     # ---------------------------------------------------------------- protocol
@@ -418,6 +419,29 @@ class EditorServer:
             found.append(_catalog_info(entry))
         note = "" if container is not None else "There's no offline hero to copy an item's layout from yet, so items can't be added."
         return {"items": found[:limit], "matches": len(found), "note": note}
+
+    def soul_storms(self, args: dict) -> dict:
+        try:
+            table = soul_storms.load()
+        except (OSError, ValueError, KeyError) as exc:
+            raise ToolError(f"The Soul Storm timetable can't be read: {exc}") from exc
+        now = self.clock()
+        storms = soul_storms.coming(table, now, _number(args, "count", len(table.areas), 1, 50))
+        return {
+            "now": soul_storms.now_text(table, now),
+            "storms": [
+                {
+                    "area": storm.name,
+                    "area_tag": storm.area,
+                    "on_now": storm.is_on(now),
+                    "starts": storm.starts.astimezone().isoformat(timespec="minutes"),
+                    "ends": storm.ends.astimezone().isoformat(timespec="minutes"),
+                }
+                for storm in storms
+            ],
+            "times_are": f"this PC's clock ({soul_storms.zone_name(now)}), with their offset from UTC",
+            "where_from": soul_storms.WHERE_FROM,
+        }
 
     def list_presets(self, _args: dict) -> dict:
         return {
@@ -1015,6 +1039,12 @@ class EditorServer:
                  "and the game starts it there the next time it loads it.",
                  {"hero": HERO, "station": _string("A station from start_points in list_quests: its station tag or its name.")},
                  self.start_at_station, ("hero", "station")),
+            Tool("soul_storms", "Soul Storms", "Where and when the Soul Storms are: the one on now, if one is, and the ones after it (with "
+                 "the default count, each area's next storm), on this PC's clock. From the game's own timetable, a storm every 40 minutes "
+                 "that lasts 20, in seven areas in turn; it comes with the editor, and the game gets it from its servers, so it can change. "
+                 "Needs no save.",
+                 {"count": {"type": "integer", "minimum": 1, "maximum": 50, "default": 7, "description": "How many storms to list; 7 is one in each area."}},
+                 self.soul_storms, read_only=True),
             Tool("equip_item", "Equip an item", "Put an item on. Whatever was in the slot goes back to the inventory.",
                  {"hero": HERO, "item": ITEM, "slot": SLOT, "ignore_slot_levels": LOCKED}, self.equip_item, ("hero", "item")),
             Tool("unequip_item", "Unequip an item", "Take an item off; it stays in the inventory.",

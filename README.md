@@ -32,6 +32,7 @@ lists of item IDs the editor makes for you, in [Issues](https://github.com/Ishia
   the whole map, open the shortcuts and the key gates, and write down what the game saves while you play.
 - **Story progress:** every quest and its steps, in the game's own words. Move a quest on by one step, finish it, a whole group or the
   whole game, start a quest over or add one, and start your hero at any minecart station it has found.
+- **Soul Storms:** which area has a storm now, and when each area gets its next one, on your PC's clock.
 - **Let an AI do it:** connect Claude or another AI assistant [over MCP](#let-an-ai-customise-your-hero-mcp) and
   ask for what you want.
 - **Safe saving:** a backup before every save, one-click restore, and no saving while the game runs.
@@ -52,9 +53,9 @@ Every feature, in detail: **[Features](https://github.com/IshiakiZ/mcd2-save-edi
 |---|---|
 | ![The world map: the ground a hero has explored, its doors, and how far it has got](docs/screenshots/world-map.png) | ![The play recorder writing down what the game saved](docs/screenshots/play-recorder.png) |
 
-| Story progress (Menu → World → Story progress…) |
-|---|
-| ![Story progress: a hero's quests and steps, with the buttons that change them](docs/screenshots/story-progress.png) |
+| Story progress (Menu → World → Story progress…) | Soul Storms (Menu → World → Soul Storms…) |
+|---|---|
+| ![Story progress: a hero's quests and steps, with the buttons that change them](docs/screenshots/story-progress.png) | ![Soul Storms: the storm on now, and the next one in each area](docs/screenshots/soul-storms.png) |
 
 ## Download
 

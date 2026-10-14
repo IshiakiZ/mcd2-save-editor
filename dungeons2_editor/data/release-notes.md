@@ -1,3 +1,12 @@
+## What's new in 1.18.0
+
+- **Soul Storms.** A new window, **Menu → World → Soul Storms…**, shows the storm that's on now and when each area gets its next one, on your PC's clock.
+
+  ![Soul Storms: the storm on now, and the next one in each area](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.18.0/dungeons2_editor/data/whats-new/1.18.0-soul-storms.png)
+- **From the game's own timetable,** which [icicle1133](https://github.com/icicle1133) sent: a storm every 40 minutes that lasts 20, in seven areas in turn. It needs no save, and nothing is fetched.
+- **The Sift's areas go by their names:** Singer's Meadow, Humbler Huskland and Lullaby Hills, in Story progress, the World map and the play recorder.
+- **An AI assistant can ask too,** with a new tool: `soul_storms`.
+
 ## What's new in 1.17.0
 
 - **Next step.** A new button in **Menu → World → Story progress…** moves a quest on by one step, the way the game does: it begins a quest that's available, and finishes the step an active one is on.
@@ -17,21 +26,6 @@
 - **Every step to defeat enemies has its number.** The last fourteen are in. A quest that was finished without them reads **finish again**.
 - **Finish it lists what follows every quest,** not only the six that a play recording had shown.
 - **Where this comes from.** The game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out of the game and sent. They agree with everything the editor had learned from saves.
-
-## What's new in 1.16.1
-
-- **Finish all.** In **Menu → World → Story progress…**, every group of quests has **Finish all** on its own line, and **Finish the whole game…** finishes every quest the editor knows. Both ask first.
-
-  ![Story progress: Finish all on a group's line, and Finish the whole game at the bottom](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-finish-all.png)
-- **A finished quest gets its steps' numbers.** 1.16.0 left out some of the numbers a save holds with finished steps. Such a quest now reads **finish again**: finish it once more, or use Finish all.
-- **Discover the whole map.** A new button in **Menu → World → World map…** lifts the fog from every region the editor knows, the ones your hero hasn't been to as well.
-- **Open the shortcuts and the key gates.** Two more buttons there: one moves the rocks that block a way round, the other opens the gates a key opens, with their locks and keys.
-
-  ![The world map: its three new buttons, and what the hero hasn't found as hollow dots](https://raw.githubusercontent.com/IshiakiZ/mcd2-save-editor/v1.16.1/dungeons2_editor/data/whats-new/1.16.1-map.png)
-- **The map shows more.** Doors, stations and chest spots your hero hasn't found are on it as hollow dots, and rocks, keys and gates where a play recording has placed them.
-- **The play recorder says when a rock, a key, a lock or a gate changes,** and lists them in its summary.
-- **Checked in the game.** It took a hero with every quest finished, the whole map discovered and the key gates opened just as saved.
-- **An AI assistant can do these too,** with three new tools: `finish_quests`, `discover_map` and `open_shortcuts_and_gates`.
 
 ## Earlier versions, and the details
 

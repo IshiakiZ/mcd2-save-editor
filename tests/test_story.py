@@ -88,7 +88,7 @@ class StoryTests(unittest.TestCase):
     def test_a_quest_and_a_step_say_what_they_are(self):
         self.assertEqual([story.group_of(name) for name in ("CA04", "CA10_BR_B", "PLa1_S04_A", "FOa1_S10_A", "PLa2_S15_A", "DEa1_S13_A", "MEa2_S03_A", "CAa1_S02_A", "TOa1_S01_A", "CT_S01_A")], [
             "Main story", "Main story", "Side quests: Honeycomb Fields", "Side quests: Howling Woods", "Side quests: Rainy Plains", "Side quests: Frozen Highlands",
-            "Side quests: Meadow A2", "Side quests: Carapace A1", "Side quests: Brave Haven", "Other quests",
+            "Side quests: Lullaby Hills", "Side quests: Humbler Huskland", "Side quests: Brave Haven", "Other quests",
         ])
         self.assertEqual((story.label("CA04"), story.label("CA02_C")), ("The Missing Note Blocks (CA04)", "CA02_C"))
         kinds = {name: story.Step(f"CA09_{name}", "NotSet", 0, "CA09").kind for name in ("E02B", "I16", "K04", "SM09", "PC01", "MT02", "A04", "Arena03Gateless", "Follow01", "Sequence06", "Standard07", "Selection04", "AS05", "F01", "false04")}

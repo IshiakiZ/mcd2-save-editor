@@ -8,13 +8,15 @@ import time
 import tkinter as tk
 import unittest
 import urllib.parse
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tkinter import ttk
 from unittest import mock
 
 import tests
 from dungeons2_editor import (
-    __version__, edition, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, story, story_dialog, suggest, updater, wgs, whats_new, world_dialog,
+    __version__, edition, game_style, gui, layout, recorder, recorder_dialog, saves, share_ids, soul_storm_dialog, soul_storms, story, story_dialog, suggest, updater,
+    wgs, whats_new, world_dialog,
 )
 from dungeons2_editor.effects_dialog import EffectsDialog
 from dungeons2_editor.hero import BOOK_KIND, Hero, effect_choices, use_local_names
@@ -214,7 +216,7 @@ class AdvancedSettingsTests(WindowTestCase):
 
     def test_the_help_pages_buttons_all_fit(self):
         tools = self.app.help_tools
-        self.assertEqual([button.cget("text") for button in tools.winfo_children()], ["World map…", "Story progress…", "Play recorder…", "What's new…", "Connect an AI…"])
+        self.assertEqual([button.cget("text") for button in tools.winfo_children()], ["World map…", "Story progress…", "Play recorder…", "Soul Storms…", "What's new…", "Connect an AI…"])
         # Above them, a line each for the two things to send in: what your saves show, and what you think.
         rows = self.app.help_tab.winfo_children()[:3]
         self.assertEqual([row.winfo_children()[-1].cget("text") for row in rows[:2]], ["Share item IDs…", "Suggest something…"])
@@ -2022,7 +2024,7 @@ class SimpleModeTests(WindowTestCase):
         for label, submenu in groups.items():
             self.assertEqual((menu.type(menu.index(label)), menu.entrycget(label, "menu")), ("cascade", str(submenu)), label)
         self.assertEqual(labels(self.app.pictures_menu), ["Get item pictures…", "Don't get item pictures automatically", "Open the pictures folder"])
-        self.assertEqual(labels(self.app.world_menu), ["World map…", "Story progress…", "Play recorder…"])
+        self.assertEqual(labels(self.app.world_menu), ["World map…", "Story progress…", "Play recorder…", "Soul Storms…"])
         self.assertEqual(labels(self.app.share_menu), ["Share item IDs…", "Suggest something…"])
         self.assertEqual(labels(self.app.updates_menu), ["Check for updates", "What's new…"])
 
@@ -2943,6 +2945,88 @@ class SuggestSomethingInLiquidGlassTests(SuggestSomethingTests):
 
 
 class SuggestSomethingInAdvancedModeTests(SuggestSomethingTests):
+    advanced = True
+
+
+@unittest.skipUnless(_tk_available(), "needs a display")
+class SoulStormsTests(WindowTestCase):
+    """Menu > World > Soul Storms: the storm that's on now and each area's next one, from the game's own timetable."""
+
+    containers = {"GlobalSaveDataDefault": shift_encode(SETTINGS_TEXT), HERO: hero_save_text().encode()}
+    NOW = datetime(2026, 10, 14, 21, 21, tzinfo=timezone.utc)  # storm 10,328, in Humbler Huskland from 21:20 to 21:40
+    MOUNTAIN = timezone(timedelta(hours=-6), "MDT")
+
+    def timers(self):
+        """The Soul Storms windows' timers waiting to go off."""
+        call = self.root.tk.call
+        return [name for name in self.root.tk.splitlist(call("after", "info")) if str(self.root.tk.splitlist(call("after", "info", name))[0]).endswith("refresh")]
+
+    def open_window(self):
+        self.app.world_menu.invoke(self.app.world_menu.index("Soul Storms…"))
+        self.root.update()
+        return [window for window in self.root.winfo_children() if isinstance(window, soul_storm_dialog.SoulStormDialog)]
+
+    def test_shows_the_storm_now_and_each_areas_next(self):
+        before = snapshot_of(self.profile_path)
+        with mock.patch.object(soul_storm_dialog, "_now", return_value=self.NOW):
+            [dialog] = self.open_window()
+            self.assertEqual(dialog.title(), "Soul Storms")
+            self.assertTrue(dialog.now_var.get().startswith("A Soul Storm is on in Humbler Huskland until "), dialog.now_var.get())
+            rows = dialog.listing.get_children()
+            self.assertEqual([dialog.listing.item(row, "text") for row in rows], [
+                "Humbler Huskland", "Lullaby Hills", "Frozen Highlands", "Honeycomb Fields", "Howling Woods", "Singer's Meadow", "Rainy Plains",
+            ])
+            self.assertEqual(dialog.listing.set(rows[0], "wait"), "on now, 19 minutes left")
+            self.assertEqual([dialog.listing.set(row, "wait") for row in rows[1:3]], ["in 39 minutes", "in 1 hour 19 minutes"])
+            self.assertEqual(tuple(dialog.listing.item(rows[0], "tags")), ("on",))
+            # From the menu again, the window that's open comes forward: there's never a second one.
+            self.assertEqual(self.open_window(), [dialog])
+        dialog.destroy()
+        self.assertEqual((self.app.change_count, snapshot_of(self.profile_path)), (0, before))
+
+    def test_keeps_itself_up_to_date(self):
+        now = [self.NOW]
+        dialog = soul_storm_dialog.SoulStormDialog(self.root, soul_storms.load(), lambda: now[0], self.MOUNTAIN)
+        self.assertEqual(dialog.now_var.get(), "A Soul Storm is on in Humbler Huskland until 15:40 (19 minutes left).")
+        self.assertEqual(dialog.zone_var.get(), "The next storm in each area, on this PC's clock (MDT):")
+        first = dialog.listing.get_children()[0]
+        self.assertEqual((dialog.listing.item(first, "text"), *dialog.listing.item(first, "values")), ("Humbler Huskland", "15:20", "15:40", "on now, 19 minutes left"))
+        last = dialog.listing.get_children()[-1]
+        self.assertEqual((dialog.listing.item(last, "text"), *dialog.listing.item(last, "values")), ("Rainy Plains", "19:20", "19:40", "in 3 hours 59 minutes"))
+        now[0] = datetime(2026, 10, 14, 21, 45, tzinfo=timezone.utc)
+        dialog.refresh()  # what the window's own timer does every so often
+        self.assertEqual(dialog.now_var.get(), "No Soul Storm is on now. The next is in Lullaby Hills at 16:00, in 15 minutes.")
+        rows = dialog.listing.get_children()
+        self.assertEqual((len(rows), dialog.listing.item(rows[0], "text"), dialog.listing.set(rows[0], "wait")), (7, "Lullaby Hills", "in 15 minutes"))
+        self.assertEqual(tuple(dialog.listing.item(rows[0], "tags")), ())
+        # Past midnight on its clock, a time says which day.
+        now[0] = datetime(2026, 10, 15, 5, 30, tzinfo=timezone.utc)
+        dialog.refresh()
+        self.assertIn("Thu ", dialog.listing.set(dialog.listing.get_children()[-1], "starts"))
+        self.assertEqual(len(self.timers()), 1)  # however often it was told to look again, one timer waits
+        dialog.destroy()
+        self.assertEqual(self.timers(), [])  # and it goes with the window
+
+    def test_opens_without_a_hero(self):
+        self.app.document = None
+        with mock.patch.object(soul_storm_dialog, "_now", return_value=self.NOW):
+            [dialog] = self.open_window()
+        self.assertEqual(len(dialog.listing.get_children()), 7)
+        dialog.destroy()
+
+    def test_fits_on_screen(self):
+        [dialog] = self.open_window()
+        self.show_on_screen(dialog)
+        self.needs_room_for(dialog)
+        self.assert_in_view(dialog.close_button, dialog)
+        dialog.destroy()
+
+
+class SoulStormsInLiquidGlassTests(SoulStormsTests):
+    look = "glass"
+
+
+class SoulStormsInAdvancedModeTests(SoulStormsTests):
     advanced = True
 
 

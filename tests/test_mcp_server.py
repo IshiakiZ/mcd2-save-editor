@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -234,12 +235,28 @@ class ProtocolTests(ServerTestCase):
             "unequip_item", "copy_item", "delete_item", "apply_preset", "preview_changes", "save_changes", "discard_changes",
             "list_effects", "set_item_effects", "add_unique_effect", "ready_talisman", "set_talisman_level",
             "add_enchantment_books", "list_quests", "change_quest", "start_at_station", "finish_quests", "discover_map", "open_shortcuts_and_gates",
+            "soul_storms",
         })
+        self.assertTrue(tools["soul_storms"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["list_quests"]["annotations"]["readOnlyHint"])
         self.assertEqual(tools["change_quest"]["inputSchema"]["properties"]["action"]["enum"], ["finish", "next_step", "start_over", "add", "track"])
         self.assertTrue(tools["get_hero"]["annotations"]["readOnlyHint"])
         self.assertTrue(tools["save_changes"]["annotations"]["destructiveHint"])
         self.assertEqual(tools["add_item"]["inputSchema"]["required"], ["hero", "item"])
+
+    def test_soul_storms(self):
+        self.server.clock = lambda: datetime(2026, 10, 14, 21, 21, tzinfo=timezone.utc)
+        result = self.call("soul_storms", count=2)
+        self.assertTrue(result["now"].startswith("A Soul Storm is on in Humbler Huskland until "))
+        first, second = result["storms"]
+        self.assertEqual((first["area"], first["area_tag"], first["on_now"]), ("Humbler Huskland", "SW.Area.Carapace.A1", True))
+        self.assertEqual(datetime.fromisoformat(first["starts"]), datetime(2026, 10, 14, 21, 20, tzinfo=timezone.utc))
+        self.assertEqual(datetime.fromisoformat(first["ends"]), datetime(2026, 10, 14, 21, 40, tzinfo=timezone.utc))
+        self.assertEqual((second["area"], second["on_now"]), ("Lullaby Hills", False))
+        self.assertEqual(datetime.fromisoformat(second["starts"]), datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc))
+        self.assertIn("servers", result["where_from"])
+        self.assertEqual([storm["area"] for storm in self.call("soul_storms")["storms"]][:2], ["Humbler Huskland", "Lullaby Hills"])
+        self.assertEqual(len(self.call("soul_storms")["storms"]), 7)  # one in each area
 
     def test_notifications_and_mistakes(self):
         self.assertIsNone(self.server.handle({"jsonrpc": "2.0", "method": "notifications/initialized"}))

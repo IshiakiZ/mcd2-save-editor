@@ -555,7 +555,12 @@ def build_atlas(play: Path) -> dict[str, Any]:
 # are in the developer's saves; Rainy Plains and Frozen Highlands are keyed the way their stations are, and no
 # save has shown the editor a door there yet. The game opens only some of an area's dungeon and rift spots at a
 # time (four of its dungeons, MetaBot says), so a spot a hero hasn't found may not be there to find just now.
-AREAS = {"Town": "Brave Haven", "PlainsA1": "Honeycomb Fields", "ForestA1": "Howling Woods", "PlainsA2": "Rainy Plains", "DesertA1": "Frozen Highlands"}
+AREAS = {
+    "Town": "Brave Haven", "PlainsA1": "Honeycomb Fields", "ForestA1": "Howling Woods", "PlainsA2": "Rainy Plains", "DesertA1": "Frozen Highlands",
+    # The Sift's three, from the game's quest text and tables (issues 40 and 41): each quest's table names its area, and the
+    # quests of these say where they are (Defend Singer's Meadow; you traversed Humbler Huskland; Lonesome in Lullaby Hills).
+    "MeadowA1": "Singer's Meadow", "CarapaceA1": "Humbler Huskland", "MeadowA2": "Lullaby Hills",
+}
 AREA_TOTALS = {"PlainsA1": (7, 8), "ForestA1": (12, 12), "PlainsA2": (9, 10), "DesertA1": (11, 16)}  # dungeon spots, rift spots
 STATIONS = {  # a minecart station, as its tag ends: (what the game calls it, the area it's in)
     "Town": ("Haven Station", "Town"), "TownFountain": ("Town Fountain", "Town"),

@@ -1,0 +1,15 @@
+{
+  "about": "The game's own Soul Storm timetable: a storm every 40 minutes that lasts 20, going round seven areas in this order, counted from the first moment of 2026 (UTC). icicle1133 sent it with the game's other tables (https://github.com/IshiakiZ/mcd2-save-editor/issues/41). The game gets it from its servers, which can change it.",
+  "starts": "2026-01-01T00:00:00Z",
+  "every_seconds": 2400,
+  "lasts_seconds": 1200,
+  "areas": [
+    "SW.Area.Forest.A1",
+    "SW.Area.Meadow.A1",
+    "SW.Area.Plains.A2",
+    "SW.Area.Carapace.A1",
+    "SW.Area.Meadow.A2",
+    "SW.Area.Desert.A1",
+    "SW.Area.Plains.A1"
+  ]
+}
