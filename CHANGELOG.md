@@ -26,6 +26,20 @@ The short notes for the newest versions are on the
   progress's groups of side quests, the World map and the play recorder use them.
 - **For an AI assistant:** a new tool, `soul_storms`, lists the storm that's on now and the next ones, with their
   times on the PC's clock.
+- **Frost Crescent and Tumbleshot, at tier III:** the first tiers of either that anyone has sent.
+  [darklynkttv](https://github.com/darklynkttv) sent two friends' heroes ([issue 43](https://github.com/IshiakiZ/mcd2-save-editor/issues/43)), from an online
+  hero turned offline: Frost Crescent III as 3 on a Special War Hammer, with a Special's 12 points, and Tumbleshot
+  III (saved as BurstBowstring, its book's ID) as 1.5 on a Unique chest piece, with a Unique's 15. No version of the
+  editor has had a tier of either to write, so both are the game's. That makes 30 of the 32 enchantments, in 37
+  tiers; Shadowcloak and Shielding Smite are left.
+- **Elemental Protection I counts as seen.** [Pandzio21](https://github.com/Pandzio21)'s list
+  ([issue 42](https://github.com/IshiakiZ/mcd2-save-editor/issues/42)) had it as -0.1 on Frost Rime Leggings, and asked about it, they said the game rolled it.
+  179 of the 180 effect tiers are seen now; Prickly I is the last.
+- **Two doors and a region** from issue 43 are in the world list (251 doors, 26 regions): a rift in Frozen Highlands,
+  and a watchtower in the Frozen Fortress with its own picture of the fog, which **Discover the whole map** now
+  clears too.
+- **A shorter README.** Its credits, disclaimer and limits keep to a line each, and every contributor is still named
+  there; who sent what, in full, is on the wiki's new [Credits](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Credits) page.
 
 ## 1.17.0
 

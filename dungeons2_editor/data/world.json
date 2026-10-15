@@ -5726,6 +5726,22 @@
     152.0
    ],
    "marker": 7
+  },
+  "SW.Doorway.DesertA1.Rift.5": {
+   "at": [
+    184.0,
+    1130.0,
+    -5.5
+   ],
+   "marker": 9
+  },
+  "SW.Doorway.DesertA1.Fortress.Interior.WatchTower": {
+   "at": [
+    -974.4,
+    437.2,
+    42.9
+   ],
+   "marker": 7
   }
  },
  "regions": {
@@ -5977,6 +5993,16 @@
    "size": [
     12,
     12
+   ]
+  },
+  "SW.Area.Desert.A1.Watchtower": {
+   "corner": [
+    -1024,
+    384
+   ],
+   "size": [
+    4,
+    4
    ]
   }
  },

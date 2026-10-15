@@ -126,33 +126,17 @@ your sign-in, account or device data.
 
 ## What it can't do
 
-- **Online heroes.** They're stored on the game's servers, so no save editor can change them. This editor works
-  with **offline** heroes.
-- **Anything it hasn't seen in a real save.** The game's own lists are in its encrypted files, which the editor
-  doesn't break, so it learns how things are saved from players' saves (and, for quests, from the game's own quest
-  tables as a player sent them). So far: all 180 items and 116 Uniques, all
-  60 gear effects, all 32 enchantment books, and 28 of the 32 enchantments. An effect tier nobody has sent yet is
-  marked as not seen, and the editor asks before adding it. **Share item IDs…** makes a list of what your saves
-  add; nothing is sent unless you send it.
-- **Still missing:** four enchantments and some tiers of the others, and levelling a companion's talisman outright
-  (**Ready to level up** leaves it one XP short, and the game does the rest).
-- **What a quest gives.** The editor finishes quests, moves them on a step at a time, starts them over and adds
-  them. It gives none of what the game gives for a quest or a step (items, XP), and one quest has a choice
-  between steps that it can't step through, only finish whole. The game opens the quests that
-  follow a finished one by itself, and it offers its four golem quests again once they're finished, so those
-  stay marked on its map.
-- **The map.** A preset adds minecart stations, **Discover the whole map** lifts the fog, and the shortcuts and
-  key gates the editor knows can be opened; doors and chests stay as the game saved them. A save says where a
-  door is and nothing else: a rock, a gate or a chest is on the map only where a play recording has placed it.
-- **Collections and achievements.** The editor leaves the game's own records alone: a book added here counts for
-  neither, and it writes no achievement for a quest it finishes.
-- **Very high power or level may be undone by the game.** Stay close to what the game gives at your level.
-- **If you're asked which save to keep** after an edit, keep this PC's: that's the one with your changes.
-- **Steam and Mac support are new,** and nobody has reported from a real Mac yet. Try a small change first.
-- **Best for is a recommendation, not a measurement,** and item power caps come from community datamines.
+- **Online heroes.** The game keeps them on its servers; the editor changes **offline** heroes only.
+- **Only what real saves have shown:** every item, Unique and enchantment book, 30 of the 32 enchantments and 179 of
+  the 180 effect tiers. A tier nobody has sent is marked, and the editor asks before adding it.
+- **No rewards.** A quest finished or moved on here gives no items, XP or achievement, and an added book doesn't
+  count in the game's collections.
+- **Doors and chests** stay as the game saved them.
+- **Very high power or level** may be undone by the game: stay close to what it gives at your level.
+- **Asked which save to keep** after an edit? Keep this PC's: it has your changes.
+- **Steam and Mac support are new:** try a small change first.
 
-The long version, with what's known and how:
-**[Known limits](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Known-limits)** in the wiki.
+Everything else, and why: **[Known limits](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Known-limits)** in the wiki.
 
 ## How it works
 
@@ -241,96 +225,42 @@ The tests run on every push and pull request, on Windows, on Linux and on a Mac 
 
 ## Credits and disclaimer
 
-This is a fan project. It is **not affiliated with or endorsed by Mojang Studios or Microsoft**. Minecraft is a
-trademark of Mojang Synergies AB. Use it at your own risk and keep your backups.
+A fan project, **not affiliated with or endorsed by Mojang Studios or Microsoft**. Minecraft is a trademark of Mojang
+Synergies AB. Use it at your own risk, and keep your backups.
 
-- Steam support, on Windows and on Linux with Proton, was written and tested by
-  [icicle1133](https://github.com/icicle1133) ([#1](https://github.com/IshiakiZ/mcd2-save-editor/pull/1)); keeping the
-  Steam build's sign-in files unread comes from [douglas-93](https://github.com/douglas-93)'s Steam support
-  ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)).
-- Most of the item IDs marked Confirmed come from lists that [icicle1133](https://github.com/icicle1133)
-  ([#2](https://github.com/IshiakiZ/mcd2-save-editor/issues/2)),
-  [MEGASLAVMAN](https://github.com/MEGASLAVMAN) ([#7](https://github.com/IshiakiZ/mcd2-save-editor/issues/7)),
-  [WyattDrako](https://github.com/WyattDrako) ([#9](https://github.com/IshiakiZ/mcd2-save-editor/issues/9)),
-  [Blake5256](https://github.com/Blake5256) ([#11](https://github.com/IshiakiZ/mcd2-save-editor/issues/11),
-  [#12](https://github.com/IshiakiZ/mcd2-save-editor/issues/12)) and
-  [mauricioggizi](https://github.com/mauricioggizi) ([#17](https://github.com/IshiakiZ/mcd2-save-editor/issues/17))
-  collected from real saves, and what most talismans do comes from their saves too.
-- What a Unique's own effect is, most of the gear effects and most enchantment tiers come from three lists:
-  [darklynkttv](https://github.com/darklynkttv)'s, from a first playthrough
-  ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)), with sixty Uniques the game made;
-  [Blake5256](https://github.com/Blake5256)'s ([#21](https://github.com/IshiakiZ/mcd2-save-editor/issues/21),
-  [#22](https://github.com/IshiakiZ/mcd2-save-editor/issues/22)), with thirty-one more and twenty-nine other items;
-  and [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl)'s
-  ([#23](https://github.com/IshiakiZ/mcd2-save-editor/issues/23)), with twenty-seven Uniques nobody had sent and the
-  last three talismans.
-  [dtreddy30-source](https://github.com/dtreddy30-source) found that Uniques from the editor were missing it
-  ([#19](https://github.com/IshiakiZ/mcd2-save-editor/issues/19)).
-- Later lists added enchantments, enchantment books, effect tiers and names:
-  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl)'s ([#24](https://github.com/IshiakiZ/mcd2-save-editor/issues/24)),
-  [Frikduf](https://github.com/Frikduf)'s ([#26](https://github.com/IshiakiZ/mcd2-save-editor/issues/26)),
-  [blasterguy24](https://github.com/blasterguy24)'s ([#28](https://github.com/IshiakiZ/mcd2-save-editor/issues/28)),
-  [Armagedon13](https://github.com/Armagedon13)'s ([#29](https://github.com/IshiakiZ/mcd2-save-editor/issues/29),
-  [#30](https://github.com/IshiakiZ/mcd2-save-editor/issues/30)), [icicle1133](https://github.com/icicle1133)'s
-  ([#31](https://github.com/IshiakiZ/mcd2-save-editor/issues/31)) and [berwulf](https://github.com/berwulf)'s
-  ([#32](https://github.com/IshiakiZ/mcd2-save-editor/issues/32)), which had the last Unique's own effect.
-- Most of what the editor knows of the game's world (its quests and their steps, doors, minecart stations and
-  regions) comes from [regnirok](https://github.com/regnirok)'s list ([#33](https://github.com/IshiakiZ/mcd2-save-editor/issues/33)), the first to hold
-  the world's part, and [icicle1133](https://github.com/icicle1133)'s ([#34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)), which bears it
-  out. The first of the two also showed how the game saves the Soulstorm Enhanced tag.
-  [gchristol](https://github.com/gchristol)'s ([#35](https://github.com/IshiakiZ/mcd2-save-editor/issues/35)),
-  [XcenZ](https://github.com/XcenZ)'s ([#36](https://github.com/IshiakiZ/mcd2-save-editor/issues/36)) and
-  [itamarnyg8-del](https://github.com/itamarnyg8-del)'s ([#37](https://github.com/IshiakiZ/mcd2-save-editor/issues/37)) added more of the world;
-  the first of those the Tempo Theft enchantment and two effect tiers, and the last Ricochet, Shockwave and three
-  effect tiers.
-- The last enchantment books got their names from [icicle1133](https://github.com/icicle1133), who has them
-  ([#34](https://github.com/IshiakiZ/mcd2-save-editor/issues/34)), and Critical Quiver came in a second list from
-  [darklynkttv](https://github.com/darklynkttv) ([#20](https://github.com/IshiakiZ/mcd2-save-editor/issues/20)).
-  [hayden-xyz](https://github.com/hayden-xyz)'s list ([#38](https://github.com/IshiakiZ/mcd2-save-editor/issues/38)) added two doors and an
-  effect tier, and [Pandzio21](https://github.com/Pandzio21)'s ([#42](https://github.com/IshiakiZ/mcd2-save-editor/issues/42)) two
-  more doors and an area.
-- How many enemies each step to defeat counts to, which quest waits for which, which quests the game lets
-  you do again, and how a quest's steps hang together come from the game's own quest tables, which [icicle1133](https://github.com/icicle1133) read out
-  of the game and sent ([#40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40)). They tell of the same 44
-  quests as players' saves, step for step and number for number, which is how they were checked. The quests'
-  names and the words the game shows for their steps come from its quest text, which icicle1133 sent too
-  ([#41](https://github.com/IshiakiZ/mcd2-save-editor/issues/41)). The tables and the rest of the text are not in
-  this repository.
-- Item names, armor sets and slots, Unique versions and what they do, and the enchantments come from
-  [MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)'s database, which is built from the game files:
-  [Unique items](https://metabot.gg/en/minecraft-dungeons-2/uniques),
+- **Players' saves** taught the editor its item IDs, effects, enchantments and world. Thank you to everyone who sent a
+  list or a find: [icicle1133](https://github.com/icicle1133), [MEGASLAVMAN](https://github.com/MEGASLAVMAN),
+  [WyattDrako](https://github.com/WyattDrako), [Blake5256](https://github.com/Blake5256),
+  [mauricioggizi](https://github.com/mauricioggizi), [darklynkttv](https://github.com/darklynkttv),
+  [dtreddy30-source](https://github.com/dtreddy30-source),
+  [gabrielgm0803-ctrl](https://github.com/gabrielgm0803-ctrl), [Frikduf](https://github.com/Frikduf),
+  [blasterguy24](https://github.com/blasterguy24), [Armagedon13](https://github.com/Armagedon13),
+  [berwulf](https://github.com/berwulf), [regnirok](https://github.com/regnirok),
+  [gchristol](https://github.com/gchristol), [XcenZ](https://github.com/XcenZ),
+  [itamarnyg8-del](https://github.com/itamarnyg8-del), [hayden-xyz](https://github.com/hayden-xyz) and
+  [Pandzio21](https://github.com/Pandzio21).
+- **Steam support:** icicle1133 ([#1](https://github.com/IshiakiZ/mcd2-save-editor/pull/1)) and
+  [douglas-93](https://github.com/douglas-93) ([#5](https://github.com/IshiakiZ/mcd2-save-editor/pull/5)). **The
+  game's quest tables and quest text,** used for their facts only: icicle1133
+  ([#40](https://github.com/IshiakiZ/mcd2-save-editor/issues/40),
+  [#41](https://github.com/IshiakiZ/mcd2-save-editor/issues/41)).
+- **[MetaBot.GG](https://metabot.gg/en/minecraft-dungeons-2)**, built from the game files: item names, sets, Uniques,
+  enchantments, effects and their numbers, archetypes, the map's names and the presets' builds, from its
+  [uniques](https://metabot.gg/en/minecraft-dungeons-2/uniques),
   [artifacts](https://metabot.gg/en/minecraft-dungeons-2/artifacts),
-  [talismans](https://metabot.gg/en/minecraft-dungeons-2/talismans) and
-  [enchantments](https://metabot.gg/en/minecraft-dungeons-2/enchantments). What the game calls a gear effect and its
-  number at each tier come from its [gear effects](https://metabot.gg/en/minecraft-dungeons-2/effects) page, what
-  each enchantment does and costs from its
-  [enchanting guide](https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide), and the XP a talisman
-  level takes from its talismans page. How an effect or an enchantment is saved comes from real saves only.
-  Each item's archetypes, which decide the effects the game can roll on it, come from its
-  [weapons](https://metabot.gg/en/minecraft-dungeons-2/weapons), [armor](https://metabot.gg/en/minecraft-dungeons-2/armor)
-  and artifacts pages and the archetypes' pages under [builds](https://metabot.gg/en/minecraft-dungeons-2/builds),
-  and an artifact's element from the artifacts page.
-  `tools/build_item_catalog.py` rebuilds the lists from those pages.
-- What the game calls an area, a minecart station and a quest, how many dungeon and rift spots an area has, and
-  which way round the map lies, in the World map and the play recorder's list of what you may have missed, come
-  from MetaBot.GG's [Overworld map](https://metabot.gg/en/minecraft-dungeons-2/map).
-- The best gear, the kits and the numbers in the presets come from MetaBot.GG's
-  [best builds guide](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds),
-  [tier list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) and other guides; each preset links its pages.
-- Item pictures are Mojang's artwork. The editor downloads the game's own to your PC from the developer's site,
-  batch-ly.com, and **Get item pictures…** gets the [Minecraft Wiki](https://minecraft.wiki)'s if those aren't
-  there. The pictures themselves are not in this repository or in the download. The screenshots, here and in the
-  What's new window, show the editor with them, on a made-up demo save.
-- Simple mode follows the idea of [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit), the save editor for the
-  first Minecraft Dungeons, which is laid out like that game's inventory. Its colours and layout follow Minecraft
-  Dungeons II's own inventory screen; the fonts are Windows' own, and the interface's own icons are drawn by the editor.
-- The Liquid Glass look follows Apple's design of that name (capsule buttons, rounded panels with a bright rim, one
-  tinted button for the main action, glass for the controls and not for the content). Every shape in it is drawn by
-  the editor itself, the first time you pick the look (`dungeons2_editor/glass.py`); no picture files are involved.
-- The Xbox save container layout follows [libNOM.io](https://github.com/zencq/libNOM.io), which writes No Man's Sky
-  saves the same way.
-- Game facts come from community datamines by [MetaBot](https://metabot.gg/en/minecraft-dungeons-2) and
-  [Maxroll](https://maxroll.gg/minecraft-dungeons-2); see [mcd2-research](mcd2-research/README.md).
+  [talismans](https://metabot.gg/en/minecraft-dungeons-2/talismans),
+  [enchantments](https://metabot.gg/en/minecraft-dungeons-2/enchantments),
+  [effects](https://metabot.gg/en/minecraft-dungeons-2/effects), [enchanting
+  guide](https://metabot.gg/en/minecraft-dungeons-2/guides/enchanting-guide),
+  [weapons](https://metabot.gg/en/minecraft-dungeons-2/weapons),
+  [armor](https://metabot.gg/en/minecraft-dungeons-2/armor),
+  [builds](https://metabot.gg/en/minecraft-dungeons-2/builds), [map](https://metabot.gg/en/minecraft-dungeons-2/map),
+  [best builds](https://metabot.gg/en/minecraft-dungeons-2/guides/best-builds) and [tier
+  list](https://metabot.gg/en/minecraft-dungeons-2/tier-list) pages.
+- **Item pictures** are Mojang's artwork, downloaded to your PC from batch-ly.com (or from the [Minecraft
+  Wiki](https://minecraft.wiki) with **Get item pictures…**); none are in this repository or the download.
+- **Ideas from** [MCDSaveEdit](https://github.com/CutFlame/MCDSaveEdit) (Simple mode's inventory), Apple's Liquid
+  Glass (the look of that name) and [libNOM.io](https://github.com/zencq/libNOM.io) (the Xbox save layout).
 
-Released under the [MIT License](LICENSE): do what you like with it, change it, share your own version or build on
-it, as long as the copyright notice, which credits the author, stays with it.
+Who sent what, in full: **[Credits](https://github.com/IshiakiZ/mcd2-save-editor/wiki/Credits)** in the wiki. Released
+under the [MIT License](LICENSE): do what you like with it, as long as the copyright notice stays with it.

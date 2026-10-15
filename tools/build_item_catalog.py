@@ -379,9 +379,10 @@ TALISMAN_LEVEL_TAGS = {
 # with 1.15.2) holds RapidStrike I (0.1, on Rover Pauldrons). Each sender was asked about the tier by name: the game
 # rolled it. (The first of those lists has a Greatsword saved as Unique under the plain item's ID, which no other
 # save has shown; its sender says nothing on it was edited, so what makes one isn't known.)
+# /issues/42 (made with 1.16.2) holds ElementalProtection I (-0.1, on Frost Rime Leggings). Its sender was asked about
+# the tier by name: the game rolled it.
 # Still waiting: the ones on /issues/26. Nothing was taken from the items on /issues/34: its sender said every item
-# with effects there had been changed with the editor. Two tiers are left that no list has vouched for:
-# ElementalProtection I and Thorns I.
+# with effects there had been changed with the editor. One tier is left that no list has vouched for: Thorns I.
 GEAR_EFFECTS = {
     "ArrowBurst": ("ArrowBurst", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "BeastBoss": ("BeastBoss", {"I": 0.2, "II": 0.25, "III": 0.3}),
@@ -395,7 +396,7 @@ GEAR_EFFECTS = {
     "Desperation": ("Desperation", {"I": 0.1, "II": 0.15, "III": 0.2}),
     "Duelist": ("Duelist", {"I": 0.2, "II": 0.25, "III": 0.3}),
     "EagleEye": ("EagleEye", {"I": 0.1, "II": 0.15, "III": 0.2}),
-    "ElementalProtection": ("ElementalProtection", {"II": -0.15, "III": -0.2}),
+    "ElementalProtection": ("ElementalProtection", {"I": -0.1, "II": -0.15, "III": -0.2}),
     "EmeraldsIncrease": ("Prospector", {"I": 0.05, "II": 0.1, "III": 0.15}),
     "Expand": ("Expand", {"I": 0.2, "II": 0.3, "III": 0.4}),
     "Finesse": ("Finesse", {"I": 0.15, "II": 0.25, "III": 0.35}),
@@ -561,17 +562,23 @@ EFFECT_GUESSES: dict[str, str] = {}
 # table) on Monstrosity Horns, with a Unique's 15 points. No release has had it to write, but its sender works
 # from a build of their own and says every item with effects on their lists was changed with the editor, so it
 # waited for their word: asked whether the Enchantsmith put it on, they said it did (2026-10-11).
+# /issues/43 (2026-10-14; two friends' heroes, sent by darklynkttv, who says they came from an online hero turned
+# offline) has the first tiers anyone has sent of two enchantments: FrostCrescent III as 3 on a Special War Hammer,
+# with a Special's 12 points, and BurstBowstring III (Tumbleshot) as 1.5 on a Unique chest piece, with a Unique's
+# 15. No version of the editor has had a tier of either to write, so both are the game's.
 ENCHANTMENT_TEMPLATES = {"SpringLoaded": "Springloaded"}
 ENCHANTMENT_TIERS = {
     "Arcane": {"III": 9},
     "Blowback": {"III": 0.5},
     "Borealis": {"III": 0.287547},
+    "BurstBowstring": {"III": 1.5},
     "ChainReaction": {"III": 5},
     "Channeling": {"III": 3},
     "CriticalQuiver": {"III": 5},
     "Dynamo": {"III": 0.4},
     "ExpandedQuiver": {"II": 3, "III": 4},
     "FireAspect": {"III": 1},
+    "FrostCrescent": {"III": 3},
     "GravityPulse": {"III": 0},
     "HealthSynergy": {"I": 0.15, "III": 0.35},
     "LingeringPower": {"III": 0.244871},

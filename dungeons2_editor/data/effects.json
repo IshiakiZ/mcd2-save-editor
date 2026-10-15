@@ -413,7 +413,7 @@
      "tier": "I",
      "strength": -0.1,
      "shown": "10%",
-     "seen": false,
+     "seen": true,
      "text": "Reduces damage taken from elemental attacks by 10%."
     },
     {
@@ -1923,6 +1923,17 @@
    ]
   },
   {
+   "effect": "SW.Enchantment.BurstBowstring",
+   "name": "Tumbleshot",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 1.5,
+     "seen": true
+    }
+   ]
+  },
+  {
    "effect": "SW.Enchantment.ChainReaction",
    "name": "Chain Reaction",
    "tiers": [
@@ -1989,6 +2000,17 @@
     {
      "tier": "III",
      "strength": 1,
+     "seen": true
+    }
+   ]
+  },
+  {
+   "effect": "SW.Enchantment.FrostCrescent",
+   "name": "Frost Crescent",
+   "tiers": [
+    {
+     "tier": "III",
+     "strength": 3,
      "seen": true
     }
    ]

@@ -6,6 +6,7 @@
 - **From the game's own timetable,** which [icicle1133](https://github.com/icicle1133) sent: a storm every 40 minutes that lasts 20, in seven areas in turn. It needs no save, and nothing is fetched.
 - **The Sift's areas go by their names:** Singer's Meadow, Humbler Huskland and Lullaby Hills, in Story progress, the World map and the play recorder.
 - **An AI assistant can ask too,** with a new tool: `soul_storms`.
+- **Two more enchantments, and one more effect tier,** from players' saves: Frost Crescent III, Tumbleshot III and Elemental Protection I. Prickly I is the only tier left unseen.
 
 ## What's new in 1.17.0
 

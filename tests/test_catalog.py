@@ -203,7 +203,12 @@ class RealItemListTests(unittest.TestCase):
         # Buddy Brew at tier III, from a list whose sender works from a build of their own: taken once they said the
         # Enchantsmith put it on (issue 34). 6, where the game's table says the brew lasts 6 seconds; it goes on armor.
         self.assertEqual(made["Buddy Brew III"], (6, True, "SW.Enchantment.PotionSharing.III", ("Armor",)))
-        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (28, 35))
+        # The first tiers anyone sent of Frost Crescent and Tumbleshot (issue 43, from an online hero turned offline):
+        # no version had either to write. 3 on a War Hammer with a Special's 12 points, and 1.5 (Tumbleshot is saved
+        # as BurstBowstring, its book's ID) on a Unique chest piece with a Unique's 15.
+        self.assertEqual(made["Frost Crescent III"], (3, True, "SW.Enchantment.FrostCrescent.III", ("Melee",)))
+        self.assertEqual(made["Tumbleshot III"], (1.5, True, "SW.Enchantment.BurstBowstring.III", ("Armor",)))
+        self.assertEqual((len({choice.effect for choice in book.enchantments}), len(book.enchantments)), (30, 37))
         # What a save calls an effect isn't always MetaBot's name for it, even when MetaBot has that name too.
         self.assertEqual({choice.effect for choice in book.effects if choice.name == "Recovery"}, {"SW.Effect.Constitution"})
         self.assertEqual(next(choice for choice in book.effects if choice.title == "Acrobat I").what, "Reduces rolling cooldown time by 10%.")
@@ -497,12 +502,14 @@ class RealItemListTests(unittest.TestCase):
         # A second list on /issues/20 and the one on /issues/38, both made with 1.15.2, hold one each. Each sender was
         # asked about the tier by name: the game rolled it.
         vouched.update({("Deflect", "I"): 0.1, ("RapidStrike", "I"): 0.1})
+        # /issues/42 was made with 1.16.2, which could write Elemental Protection I from the table. Its sender was
+        # asked about it by name: the game rolled it.
+        vouched.update({("ElementalProtection", "I"): -0.1})
         self.assertEqual({key: seen[key] for key in vouched}, {key: (strength, True) for key, strength in vouched.items()})
-        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 178))
-        # The two nobody has vouched for stay as the table has them. Elemental Protection I is on a list whose items
-        # were the editor's work, its sender said; no list has shown Prickly I.
+        self.assertEqual((len(gear), sum(choice.seen for choice in gear)), (180, 179))
+        # The one nobody has vouched for stays as the table has it: no list has shown Prickly I.
         unseen = {key: value for key, value in seen.items() if not value[1]}
-        self.assertEqual(unseen, {("ElementalProtection", "I"): (-0.1, False), ("Thorns", "I"): (0.5, False)})
+        self.assertEqual(unseen, {("Thorns", "I"): (0.5, False)})
 
     def test_what_a_list_made_with_1_15_0_added(self):
         # /issues/33. 1.15.0 had no MultiPotion to write, so the one on this list's Dreamruler Cover is the game's.
